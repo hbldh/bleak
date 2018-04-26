@@ -28,8 +28,8 @@ install:
   # about it being out of date.
   - "pip install --disable-pip-version-check --user --upgrade pip"
   # Install dependencies
-  - "pip install pipenv --upgrade"
-  - "pipenv install --dev --skip-lock"
+  - "pip install pytest pytest-cov"
+  - "pip install pythonnet"
 
 test_script:
   - "py.test tests/ --cov bleak --cov-report term-missing"
