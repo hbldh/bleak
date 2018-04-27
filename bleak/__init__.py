@@ -16,6 +16,8 @@ import asyncio
 from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
 
+_on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
 _logger.setLevel(logging.DEBUG)
@@ -32,11 +34,11 @@ if platform.system() == "Linux":
                          stdout=subprocess.PIPE)
     out, _ = p.communicate()
     s = re.search(b"^(\d+).(\d+)", out.strip(b"'"))
-    if not s:
+    if (not s) and (not _on_rtd):
         raise BleakError("Could not determine BlueZ version: {0}".format(out))
 
     major, minor = s.groups()
-    if not (int(major) == 5 and int(minor) >= 43):
+    if (not (int(major) == 5 and int(minor) >= 43)) and (not _on_rtd):
         raise BleakError(
             "Bleak requires BlueZ >= 5.43. " "Found version {0} installed.".format(out)
         )
@@ -51,12 +53,12 @@ elif platform.system() == "Darwin":
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
-    if int(_vtup[0]) != 10:
+    if (int(_vtup[0]) != 10) and (not _on_rtd):
         raise BleakError("Only Windows 10 is supported. Detected was {0}".format(
             platform.win32_ver()
         ))
 
-    if int(_vtup[1]) == 0 and int(_vtup[2]) < 16299:
+    if (int(_vtup[1]) == 0 and int(_vtup[2]) < 16299) and (not _on_rtd):
         raise BleakError(
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
