@@ -52,11 +52,13 @@ elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
     if int(_vtup[0]) != 10:
-        raise BleakError("Only Windows 10 is supported.")
+        raise BleakError("Only Windows 10 is supported. Detected was {0}".format(
+            platform.win32_ver()
+        ))
 
     if int(_vtup[1]) == 0 and int(_vtup[2]) < 16299:
         raise BleakError(
-            "Requires at least Windows 10 version " "0.16299 (Fall Creators Update)."
+            "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
     from bleak.backends.dotnet.discovery import discover  # noqa
