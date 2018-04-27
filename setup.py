@@ -88,6 +88,9 @@ setup(
     author_email=EMAIL,
     url=URL,
     packages=find_packages(exclude=('tests', 'examples', 'docs')),
+    package_data={
+        'bleak.backends.dotnet': ['*.dll', ]
+    },
     entry_points={
         'console_scripts': ['bleak-lescan=bleak:cli'],
     },
