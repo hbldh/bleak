@@ -10,9 +10,9 @@ import pytest
 
 
 @pytest.mark.skipif(
-    condition=bool(os.environ.get('CI', False)) and (
-        bool(os.environ.get('TRAVIS', False))
-        or bool(os.environ.get('APPVEYOR', False))
+    condition=bool(os.environ.get('CI', "false").lower() == "true") and (
+        bool(os.environ.get('TRAVIS', "false").lower() == "true")
+        or bool(os.environ.get('APPVEYOR', "false").lower() == "true")
     ),
     reason="Cannot run on Travis CI (has BlueZ 4.101 <= 5.43) or on Appveyor (runs Windows < 10)."
 )
