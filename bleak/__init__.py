@@ -29,19 +29,20 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.addHandler(handler)
 
 if platform.system() == "Linux":
-    # TODO: Check if BlueZ version 5.43 is sufficient.
-    p = subprocess.Popen(["dpkg-query", "-Wf", "'${Version}\n'", "bluez"],
-                         stdout=subprocess.PIPE)
-    out, _ = p.communicate()
-    s = re.search(b"^(\d+).(\d+)", out.strip(b"'"))
-    if (not s) and (not _on_rtd):
-        raise BleakError("Could not determine BlueZ version: {0}".format(out))
+    if not _on_rtd:
+        # TODO: Check if BlueZ version 5.43 is sufficient.
+        p = subprocess.Popen(["dpkg-query", "-Wf", "'${Version}\n'", "bluez"],
+                             stdout=subprocess.PIPE)
+        out, _ = p.communicate()
+        s = re.search(b"^(\d+).(\d+)", out.strip(b"'"))
+        if not s:
+            raise BleakError("Could not determine BlueZ version: {0}".format(out))
 
-    major, minor = s.groups()
-    if (not (int(major) == 5 and int(minor) >= 43)) and (not _on_rtd):
-        raise BleakError(
-            "Bleak requires BlueZ >= 5.43. " "Found version {0} installed.".format(out)
-        )
+        major, minor = s.groups()
+        if not (int(major) == 5 and int(minor) >= 43):
+            raise BleakError(
+                "Bleak requires BlueZ >= 5.43. " "Found version {0} installed.".format(out)
+            )
 
     from bleak.backends.bluezdbus.discovery import discover  # noqa
     from bleak.backends.bluezdbus.client import BleakClientBlueZDBus as BleakClient  # noqa
@@ -53,12 +54,12 @@ elif platform.system() == "Darwin":
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
-    if (int(_vtup[0]) != 10) and (not _on_rtd):
+    if int(_vtup[0]) != 10:
         raise BleakError("Only Windows 10 is supported. Detected was {0}".format(
             platform.win32_ver()
         ))
 
-    if (int(_vtup[1]) == 0 and int(_vtup[2]) < 16299) and (not _on_rtd):
+    if (int(_vtup[1]) == 0) and (int(_vtup[2]) < 16299):
         raise BleakError(
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
