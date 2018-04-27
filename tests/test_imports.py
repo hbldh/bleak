@@ -8,17 +8,18 @@ import platform
 
 import pytest
 
+_IS_CI = os.environ.get('CI', "false").lower() == "true"
+_IS_TRAVIS =os.environ.get('TRAVIS', "false").lower() == "true"
+_IS_APPVEYOR = os.environ.get('APPVEYOR', "false").lower() == "true"
 
 @pytest.mark.skipif(
-    condition=bool(os.environ.get('CI', "false").lower() == "true") and (
-        bool(os.environ.get('TRAVIS', "false").lower() == "true")
-        or bool(os.environ.get('APPVEYOR', "false").lower() == "true")
-    ),
+    condition=_IS_CI and (_IS_TRAVIS or _IS_APPVEYOR),
     reason="Cannot run on Travis CI (has BlueZ 4.101 <= 5.43) or on Appveyor (runs Windows < 10)."
 )
 def test_import():
     """Test by importing the client and assert correct client by OS."""
     if platform.system() == 'Linux':
+        print(_IS_CI, _IS_TRAVIS, _IS_APPVEYOR)
         from bleak import BleakClient
         assert BleakClient.__name__ == 'BleakClientBlueZDBus'
     elif platform.system() == 'Windows':
