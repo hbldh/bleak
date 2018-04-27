@@ -14,7 +14,7 @@ bleak
 .. image:: https://img.shields.io/travis/hbldh/bleak.svg
     :target: https://travis-ci.org/hbldh/bleak
 
-.. image:: https://ci.appveyor.com/api/projects/status/XXX?svg=true
+.. image:: https://ci.appveyor.com/api/projects/status/ujrddq7n2uqqy3bh?svg=true
     :target: https://ci.appveyor.com/project/hbldh/bleak
 
 .. image:: https://readthedocs.org/projects/bleak/badge/?version=latest
