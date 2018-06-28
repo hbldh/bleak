@@ -7,6 +7,7 @@ Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 
 import logging
 import asyncio
+from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any
 
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 class BleakClientDotNet(BaseBleakClient):
     """The .NET Bleak Client."""
 
-    def __init__(self, address, loop=None, **kwargs):
+    def __init__(self, address: str, loop: AbstractEventLoop=None, **kwargs):
         super(BleakClientDotNet, self).__init__(address, loop, **kwargs)
 
         # Backend specific. Python.NET objects.
@@ -134,7 +135,7 @@ class BleakClientDotNet(BaseBleakClient):
             self._services_resolved = True
             return self.services
 
-    async def _get_chars(self, service):
+    async def _get_chars(self, service: Any):
         """Get characteristics for a service
 
         Args:
@@ -280,10 +281,9 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
 
-def _notification_wrapper(func):
-
+def _notification_wrapper(func: Callable):
     @wraps(func)
-    def dotnet_notification_parser(sender, data):
+    def dotnet_notification_parser(sender: Any, data: Any):
         # Return only the UUID string representation as sender.
         # Also do a conversion from System.Bytes[] to bytearray.
         return func(sender.Uuid.ToString(), bytearray(data))

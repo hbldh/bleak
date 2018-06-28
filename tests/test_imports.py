@@ -9,7 +9,7 @@ import platform
 import pytest
 
 _IS_CI = os.environ.get('CI', "false").lower() == "true"
-_IS_TRAVIS =os.environ.get('TRAVIS', "false").lower() == "true"
+_IS_TRAVIS = os.environ.get('TRAVIS', "false").lower() == "true"
 _IS_APPVEYOR = os.environ.get('APPVEYOR', "false").lower() == "true"
 
 
