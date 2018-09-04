@@ -10,4 +10,4 @@ cryptography==2.3
 PyYAML==3.13
 pytest==3.7.2
 pytest-runner==4.2
-pytest-cov==2.5.1
+pytest-cov==2.6.0
