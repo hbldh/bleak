@@ -27,7 +27,4 @@ class BLEDevice(object):
         self.details = details
 
     def __str__(self):
-        return f"{self.address}: {self.name}"
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}({self.address}, {self.name})>"
+        return "{0}: {0}".format(self.address, self.name)

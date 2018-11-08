@@ -25,8 +25,3 @@ wheel = "*"
 watchdog = "*"
 coverage = "*"
 pytest-runner = "*"
-
-
-[requires]
-
-python_version = "3.6"
