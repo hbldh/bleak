@@ -31,8 +31,9 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 if platform.system() == "Linux":
     if not _on_rtd:
         # TODO: Check if BlueZ version 5.43 is sufficient.
-        p = subprocess.Popen(["dpkg-query", "-Wf", "'${Version}\n'", "bluez"],
-                             stdout=subprocess.PIPE)
+        #p = subprocess.Popen(["dpkg-query", "-Wf", "'${Version}\n'", "bluez"],
+        #                     stdout=subprocess.PIPE)
+        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
         s = re.search(b"^(\d+).(\d+)", out.strip(b"'"))
         if not s:
