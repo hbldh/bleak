@@ -27,4 +27,4 @@ class BLEDevice(object):
         self.details = details
 
     def __str__(self):
-        return "{0}: {0}".format(self.address, self.name)
+        return "{0}: {1}".format(self.address, self.name)

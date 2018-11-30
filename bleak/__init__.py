@@ -35,7 +35,7 @@ if platform.system() == "Linux":
         #                     stdout=subprocess.PIPE)
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
-        s = re.search(b"^(\d+).(\d+)", out.strip(b"'"))
+        s = re.search(b"(\d+).(\d+)", out.strip(b"'"))
         if not s:
             raise BleakError("Could not determine BlueZ version: {0}".format(out))
 

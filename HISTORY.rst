@@ -2,10 +2,17 @@
 History
 =======
 
+0.2.4 (2018-11-30)
+------------------
+
+* Fix for issue #52: Timing issue getting characteristics
+* Additional fix for issue #51.
+* Bugfix for string method for BLEDevice.
+
 0.2.3 (2018-11-28)
 ------------------
 
-* Fix for issue #51: ``dpkg-query not found on all Linux systems```
+* Fix for issue #51: ``dpkg-query not found on all Linux systems``
 
 0.2.2 (2018-11-08)
 ------------------

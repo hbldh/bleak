@@ -86,7 +86,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # Get all services. This means making the actual connection.
         await self.get_services()
-        # Sleep to ensure `_services_resolved` is set.
         properties = await self._get_device_properties()
         if not properties.get("Connected"):
             raise BleakError("Connection failed!")
@@ -148,6 +147,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
             service object's properties as values.
 
         """
+        if self.services:
+            return self.services
+
+        while True:
+            properties = await self._get_device_properties()
+            services_resolved = properties.get("ServicesResolved", False)
+            if services_resolved:
+                break
+            await asyncio.sleep(0.02, loop=self.loop)
+
         logger.debug("Get Services...")
         objs = await get_managed_objects(
             self._bus, self.loop, self._device_path + "/service"
@@ -171,14 +180,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self._descriptors[desc.get("UUID")] = desc
                 self._descriptors[desc.get("UUID")]["Path"] = object_path
 
-        await asyncio.sleep(0.01, loop=self.loop)
-
-        properties = await self._get_device_properties()
-        services_resolved = properties.get("ServicesResolved", False)
-
-        if self._services_resolved and not services_resolved:
-            raise BleakError("Services had not been resolved yet!")
-
+        self._services_resolved = True
         return self.services
 
     # IO methods
