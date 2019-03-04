@@ -74,6 +74,7 @@ jobs:
     displayName: 'Install Python dependencies'
 
   - script: |
+      python -c "import os; import json; print(json.dumps(dict(os.environ)))"
       pip install -e .
       pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov bleak --cov-report term-missing
     displayName: 'pytest'
