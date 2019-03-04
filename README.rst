@@ -9,14 +9,11 @@ bleak
 
 |
 
+.. image:: https://dev.azure.com/hbldh/github/_apis/build/status/hbldh.bleak?branchName=master
+    :target: https://dev.azure.com/hbldh/github/_build/latest?definitionId=4&branchName=master
+
 .. image:: https://img.shields.io/pypi/v/bleak.svg
     :target: https://pypi.python.org/pypi/bleak
-
-.. image:: https://img.shields.io/travis/hbldh/bleak.svg
-    :target: https://travis-ci.org/hbldh/bleak
-
-.. image:: https://ci.appveyor.com/api/projects/status/ujrddq7n2uqqy3bh?svg=true
-    :target: https://ci.appveyor.com/project/hbldh/bleak
 
 .. image:: https://readthedocs.org/projects/bleak/badge/?version=latest
     :target: https://bleak.readthedocs.io/en/latest/?badge=latest
@@ -25,7 +22,6 @@ bleak
 .. image:: https://pyup.io/repos/github/hbldh/bleak/shield.svg
      :target: https://pyup.io/repos/github/hbldh/bleak/
      :alt: Updates
-
 
 Bleak is an acronym for Bluetooth Low Energy platform Agnostic Klient.
 
@@ -48,7 +44,7 @@ Installation
 Features
 --------
 
-* Supports Windows 10, version 16299 (Fall Creators Update)
+* Supports Windows 10, version 16299 (Fall Creators Update) or greater
 * Supports Linux distributions with BlueZ >= 5.43
 * Plans on macOS support via Core Bluetooth API (see `develop` branch for progress)
 

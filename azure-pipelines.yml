@@ -77,7 +77,7 @@ jobs:
       pip install -e .
       pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov bleak --cov-report term-missing
     displayName: 'pytest'
-    env: { CI: true, AZURE_PIPELINES: true }
+    env: { CI: 'true' }
 
   - task: PublishTestResults@2
     inputs:
