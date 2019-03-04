@@ -1,0 +1,161 @@
+# Bleak Azure Pipelines CI
+
+trigger:
+- master
+- releases/*
+- develop
+- feature/*
+
+jobs:
+
+- job: 'TestLinux'
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+      Python35-x64:
+        python.version: '3.5'
+        python.architecture: 'x64'
+      Python36-x64:
+        python.version: '3.6'
+        python.architecture: 'x64'
+      Python37-x64:
+        python.version: '3.7'
+        python.architecture: 'x64'
+    maxParallel: 4
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+      architecture: '$(python.architecture)'
+
+  - script: sudo apt install build-essential bluez bluetooth python3-dev libbluetooth-dev
+    displayName: 'Install system dependencies'
+
+  - script: python -m pip install --upgrade pip && pip install -r requirements_dev.txt
+    displayName: 'Install Python dependencies'
+
+  - script: |
+      pip install -e .
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov pymetawear --cov-report term-missing
+    displayName: 'pytest'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/test-results.xml'
+      testRunTitle: 'Python $(python.version)'
+    condition: succeededOrFailed()
+
+
+- job: 'TestWindows'
+  pool:
+    vmImage: 'windows-2019'
+  strategy:
+    matrix:
+      Python35-x64:
+        python.version: '3.5'
+        python.architecture: 'x64'
+      Python36-x64:
+        python.version: '3.6'
+        python.architecture: 'x64'
+      Python37-x64:
+        python.version: '3.7'
+        python.architecture: 'x64'
+    maxParallel: 4
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+      architecture: '$(python.architecture)'
+
+  - script: python -m pip install --upgrade pip && pip install -r requirements_dev.txt
+    displayName: 'Install Python dependencies'
+
+  - script: |
+      pip install -e .
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov pymetawear --cov-report term-missing
+    displayName: 'pytest'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/test-results.xml'
+      testRunTitle: 'Python $(python.version)'
+    condition: succeededOrFailed()
+
+- job: 'PublishLinux'
+  dependsOn: 'TestLinux'
+  pool:
+    vmImage: 'Ubuntu 16.04'
+
+  strategy:
+    matrix:
+      Python35-x64:
+        python.version: '3.5'
+        python.architecture: 'x64'
+      Python36-x64:
+        python.version: '3.6'
+        python.architecture: 'x64'
+      Python37-x64:
+        python.version: '3.7'
+        python.architecture: 'x64'
+    maxParallel: 4
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+      architecture: '$(python.architecture)'
+
+  - script: sudo apt install build-essential bluez bluetooth python3-dev libbluetooth-dev
+    displayName: 'Install system dependencies'
+
+  - script: python -m pip install --upgrade pip && pip install -U setuptools wheel
+    displayName: 'Install Python dependencies'
+
+  - script: python setup.py sdist bdist_wheel
+    displayName: 'Build sdist and bdist_wheel'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: dist'
+    inputs:
+      PathtoPublish: dist
+      ArtifactName: 'dist-$(python.version)-$(python.architecture)'
+
+- job: 'PublishWindows'
+  dependsOn: 'TestWindows'
+  pool:
+    vmImage: 'windows-2019'
+
+  strategy:
+    matrix:
+      Python35-x64:
+        python.version: '3.5'
+        python.architecture: 'x64'
+      Python36-x64:
+        python.version: '3.6'
+        python.architecture: 'x64'
+      Python37-x64:
+        python.version: '3.7'
+        python.architecture: 'x64'
+    maxParallel: 4
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+      architecture: '$(python.architecture)'
+
+  - script: python -m pip install --upgrade pip && pip install -U setuptools wheel
+    displayName: 'Install Python dependencies'
+
+  - script: python setup.py sdist bdist_wheel
+    displayName: 'Build sdist and bdist_wheel'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: dist'
+    inputs:
+      PathtoPublish: dist
+      ArtifactName: 'dist-$(python.version)-$(python.architecture)'
+
