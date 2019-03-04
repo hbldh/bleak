@@ -64,21 +64,27 @@ f000ffc4-0451-4000-b000-000000000000
 uuid16_dict = {v: k for k, v in uuid16_dict.items()}
 
 SYSTEM_ID_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("System ID"))
+    uuid16_dict.get("System ID")
+)
 MODEL_NBR_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("Model Number String"))
+    uuid16_dict.get("Model Number String")
+)
 FIRMWARE_REV_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("Firmware Revision String"))
+    uuid16_dict.get("Firmware Revision String")
+)
 HARDWARE_REV_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("Hardware Revision String"))
+    uuid16_dict.get("Hardware Revision String")
+)
 SOFTWARE_REV_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("Software Revision String"))
+    uuid16_dict.get("Software Revision String")
+)
 MANUFACTURER_NAME_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("Manufacturer Name String"))
+    uuid16_dict.get("Manufacturer Name String")
+)
 BATTERY_LEVEL_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    uuid16_dict.get("Battery Level"))
-KEY_PRESS_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
-    0xffe1)
+    uuid16_dict.get("Battery Level")
+)
+KEY_PRESS_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(0xffe1)
 # I/O test points on SensorTag.
 IO_DATA_CHAR_UUID = "f000aa65-0451-4000-b000-000000000000"
 IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
@@ -87,8 +93,9 @@ IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 async def run(address, loop, debug=False):
     if debug:
         import sys
+
         loop.set_debug(True)
-        l = logging.getLogger('asyncio')
+        l = logging.getLogger("asyncio")
         l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
         h.setLevel(logging.DEBUG)
@@ -99,7 +106,11 @@ async def run(address, loop, debug=False):
         logger.info("Connected: {0}".format(x))
 
         system_id = await client.read_gatt_char(SYSTEM_ID_UUID)
-        print("System ID: {0}".format(":".join(["{:02x}".format(x) for x in system_id[::-1]])))
+        print(
+            "System ID: {0}".format(
+                ":".join(["{:02x}".format(x) for x in system_id[::-1]])
+            )
+        )
 
         model_number = await client.read_gatt_char(MODEL_NBR_UUID)
         print("Model Number: {0}".format("".join(map(chr, model_number))))
@@ -122,7 +133,7 @@ async def run(address, loop, debug=False):
         def keypress_handler(sender, data):
             print("{0}: {1}".format(sender, data))
 
-        write_value = bytearray([0xa0, ])
+        write_value = bytearray([0xa0])
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
         print("I/O Data Pre-Write Value: {0}".format(value))
 
@@ -136,9 +147,11 @@ async def run(address, loop, debug=False):
         await asyncio.sleep(5.0, loop=loop)
         await client.stop_notify(KEY_PRESS_UUID)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import os
-    os.environ['PYTHONASYNCIODEBUG'] = str(1)
+
+    os.environ["PYTHONASYNCIODEBUG"] = str(1)
     address = "24:71:89:cc:09:05"
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))

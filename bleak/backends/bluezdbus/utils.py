@@ -74,9 +74,7 @@ async def get_managed_objects(bus, loop, object_path_filter=None):
         "GetManagedObjects",
         interface="org.freedesktop.DBus.ObjectManager",
         destination="org.bluez",
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
     if object_path_filter:
         return dict(
             filter(lambda i: i[0].startswith(object_path_filter), objects.items())

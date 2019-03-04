@@ -51,8 +51,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         def _services_resolved_callback(message):
             iface, changed, invalidated = message.body
-            is_resolved = (
-                defs.DEVICE_INTERFACE and changed.get("ServicesResolved", False)
+            is_resolved = defs.DEVICE_INTERFACE and changed.get(
+                "ServicesResolved", False
             )
             if iface == is_resolved:
                 logger.info("Services resolved.")
@@ -71,9 +71,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 "Connect",
                 interface="org.bluez.Device1",
                 destination="org.bluez",
-            ).asFuture(
-                self.loop
-            )
+            ).asFuture(self.loop)
         except RemoteError as e:
             raise BleakError(str(e))
 
@@ -112,9 +110,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             "Disconnect",
             interface=defs.DEVICE_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
         return not await self.is_connected()
 
     async def is_connected(self) -> bool:
@@ -133,9 +129,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="ss",
             body=[defs.DEVICE_INTERFACE, "Connected"],
             returnSignature="v",
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
 
     # GATT services methods
 
@@ -209,9 +203,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 signature="a{sv}",
                 body=[{}],
                 returnSignature="ay",
-            ).asFuture(
-                self.loop
-            )
+            ).asFuture(self.loop)
         )
 
         logger.debug(
@@ -222,10 +214,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return value
 
     async def write_gatt_char(
-        self,
-        _uuid: str,
-        data: bytearray,
-        response: bool=False
+        self, _uuid: str, data: bytearray, response: bool = False
     ) -> Any:
         """Write data to a GATT characteristic.
 
@@ -248,9 +237,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="aya{sv}",
             body=[data, {}],
             returnSignature="",
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
         logger.debug(
             "Write Characteristic {0} | {1}: {2}".format(
                 _uuid, char_props.get("Path"), data
@@ -260,10 +247,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             return await self.read_gatt_char(_uuid)
 
     async def start_notify(
-        self,
-        _uuid: str,
-        callback: Callable[[str, Any], Any],
-        **kwargs
+        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Starts a notification session from a characteristic.
 
@@ -287,20 +271,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="",
             body=[],
             returnSignature="",
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
 
         if _wrap:
-            self._notification_callbacks[char_props.get("Path")] = \
-                _data_notification_wrapper(
-                    callback, self._char_path_to_uuid
-                )  # noqa | E123 error in flake8...
+            self._notification_callbacks[
+                char_props.get("Path")
+            ] = _data_notification_wrapper(
+                callback, self._char_path_to_uuid
+            )  # noqa | E123 error in flake8...
         else:
-            self._notification_callbacks[char_props.get("Path")] = \
-                _regular_notification_wrapper(
-                    callback, self._char_path_to_uuid
-                )  # noqa | E123 error in flake8...
+            self._notification_callbacks[
+                char_props.get("Path")
+            ] = _regular_notification_wrapper(
+                callback, self._char_path_to_uuid
+            )  # noqa | E123 error in flake8...
 
     async def stop_notify(self, _uuid: str) -> None:
         """Stops a notification session from a characteristic.
@@ -319,9 +303,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="",
             body=[],
             returnSignature="",
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
         self._notification_callbacks.pop(char_props.get("Path"), None)
 
     # DBUS introspection method for characteristics.
@@ -336,9 +318,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="s",
             body=[defs.GATT_CHARACTERISTIC_INTERFACE],
             returnSignature="a{sv}",
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
         return out
 
     async def _get_device_properties(self):
@@ -350,9 +330,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="s",
             body=[defs.DEVICE_INTERFACE],
             returnSignature="a{sv}",
-        ).asFuture(
-            self.loop
-        )
+        ).asFuture(self.loop)
 
     # Internal Callbacks
 
@@ -409,8 +387,7 @@ def _data_notification_wrapper(func, char_map):
     def args_parser(sender, data):
         if "Value" in data:
             # Do a conversion from {'Value': [...]} to bytearray.
-            return func(char_map.get(sender, sender),
-                        bytearray(data.get("Value")))
+            return func(char_map.get(sender, sender), bytearray(data.get("Value")))
 
     return args_parser
 

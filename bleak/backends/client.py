@@ -60,18 +60,12 @@ class BaseBleakClient(object):
         raise NotImplementedError()
 
     async def write_gatt_char(
-        self,
-        _uuid: str,
-        data: bytearray,
-        response: bool = False
+        self, _uuid: str, data: bytearray, response: bool = False
     ) -> Any:
         raise NotImplementedError()
 
     async def start_notify(
-        self,
-        _uuid: str,
-        callback: Callable[[str, Any], Any],
-        **kwargs
+        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         raise NotImplementedError()
 

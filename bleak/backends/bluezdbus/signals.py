@@ -17,9 +17,7 @@ def listen_properties_changed(bus, loop, callback):
     """
     return bus.addMatch(
         callback, interface=PROPERTIES_INTERFACE, member="PropertiesChanged"
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
 
 
 def listen_interfaces_added(bus, loop, callback):
@@ -36,9 +34,7 @@ def listen_interfaces_added(bus, loop, callback):
     """
     return bus.addMatch(
         callback, interface=OBJECT_MANAGER_INTERFACE, member="InterfacesAdded"
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
 
 
 def listen_interfaces_removed(bus, loop, callback):
@@ -55,6 +51,4 @@ def listen_interfaces_removed(bus, loop, callback):
     """
     return bus.addMatch(
         callback, interface=OBJECT_MANAGER_INTERFACE, member="InterfacesRemoved"
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)

@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
 
 
-async def discover(timeout: float=5.0, loop: AbstractEventLoop=None, **kwargs) -> List[BLEDevice]:
+async def discover(
+    timeout: float = 5.0, loop: AbstractEventLoop = None, **kwargs
+) -> List[BLEDevice]:
     """Perform a Bluetooth LE Scan.
 
     Args:
@@ -44,8 +46,7 @@ async def discover(timeout: float=5.0, loop: AbstractEventLoop=None, **kwargs) -
             "System.Devices.Aep.Bluetooth.Le.IsConnectable",
         ]
     )
-    aqs_all_bluetooth_le_devices = '(System.Devices.Aep.ProtocolId:="' \
-                                   '{bb7bb05e-5972-42b5-94fc-76eaa7084d49}")'
+    aqs_all_bluetooth_le_devices = '(System.Devices.Aep.ProtocolId:="' '{bb7bb05e-5972-42b5-94fc-76eaa7084d49}")'
     watcher = Enumeration.DeviceInformation.CreateWatcher(
         aqs_all_bluetooth_le_devices,
         requested_properties,
@@ -57,8 +58,7 @@ async def discover(timeout: float=5.0, loop: AbstractEventLoop=None, **kwargs) -
     def _format_device_info(d):
         try:
             return "{0}: {1}".format(
-                d.Id.split('-')[-1],
-                d.Name if d.Name else 'Unknown'
+                d.Id.split("-")[-1], d.Name if d.Name else "Unknown"
             )
         except Exception:
             return d.Id
@@ -73,25 +73,34 @@ async def discover(timeout: float=5.0, loop: AbstractEventLoop=None, **kwargs) -
     def DeviceWatcher_Updated(sender, dinfo_update):
         if sender == watcher:
             if dinfo_update.Id in devices:
-                logger.debug("Updated {0}.".format(
-                    _format_device_info(devices[dinfo_update.Id])))
+                logger.debug(
+                    "Updated {0}.".format(_format_device_info(devices[dinfo_update.Id]))
+                )
                 devices[dinfo_update.Id].Update(dinfo_update)
 
     def DeviceWatcher_Removed(sender, dinfo_update):
         if sender == watcher:
-            logger.debug("Removed {0}.".format(
-                _format_device_info(devices[dinfo_update.Id])))
+            logger.debug(
+                "Removed {0}.".format(_format_device_info(devices[dinfo_update.Id]))
+            )
             if dinfo_update.Id in devices:
                 devices.pop(dinfo_update.Id)
 
     def DeviceWatcher_EnumCompleted(sender, obj):
         if sender == watcher:
-            logger.debug("{0} devices found. Enumeration completed. Watching for updates...".format(len(devices)))
+            logger.debug(
+                "{0} devices found. Enumeration completed. Watching for updates...".format(
+                    len(devices)
+                )
+            )
 
     def DeviceWatcher_Stopped(sender, obj):
         if sender == watcher:
-            logger.debug("{0} devices found. Watcher status: {1}.".format(
-                len(devices), watcher.Status))
+            logger.debug(
+                "{0} devices found. Watcher status: {1}.".format(
+                    len(devices), watcher.Status
+                )
+            )
 
     watcher.Added += DeviceWatcher_Added
     watcher.Updated += DeviceWatcher_Updated

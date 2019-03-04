@@ -63,18 +63,20 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         if message.member in ("InterfacesAdded", "InterfacesRemoved"):
             msg_path = message.body[0]
             device_interface = message.body[1].get("org.bluez.Device1", {})
-            devices[msg_path] = {
-                **devices[msg_path], **device_interface
-            } if msg_path in devices else device_interface
+            devices[msg_path] = (
+                {**devices[msg_path], **device_interface}
+                if msg_path in devices
+                else device_interface
+            )
         elif message.member == "PropertiesChanged":
             iface, changed, invalidated = message.body
             if iface != defs.DEVICE_INTERFACE:
                 return
 
             msg_path = message.path
-            devices[msg_path] = {
-                **devices[msg_path], **changed
-            } if msg_path in devices else changed
+            devices[msg_path] = (
+                {**devices[msg_path], **changed} if msg_path in devices else changed
+            )
         else:
             msg_path = message.path
             logger.info(
@@ -96,9 +98,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         "GetManagedObjects",
         interface=defs.OBJECT_MANAGER_INTERFACE,
         destination=defs.BLUEZ_SERVICE,
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
     adapter_path, interface = _filter_on_adapter(objects, device)
 
     # Add signal listeners
@@ -106,28 +106,20 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         parse_msg,
         interface="org.freedesktop.DBus.ObjectManager",
         member="InterfacesAdded",
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
     await bus.addMatch(
         parse_msg,
         interface="org.freedesktop.DBus.ObjectManager",
         member="InterfacesRemoved",
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
     await bus.addMatch(
         parse_msg,
         interface="org.freedesktop.DBus.Properties",
         member="PropertiesChanged",
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
     await bus.addMatch(
         parse_msg, interface="org.bluez.Adapter1", member="PropertyChanged"
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
 
     # dd = {'objectPath': '/org/bluez/hci0', 'methodName': 'StartDiscovery',
     # 'interface': 'org.bluez.Adapter1', 'destination': 'org.bluez',
@@ -139,18 +131,14 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         "StartDiscovery",
         interface="org.bluez.Adapter1",
         destination="org.bluez",
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
     await asyncio.sleep(timeout)
     await bus.callRemote(
         adapter_path,
         "StopDiscovery",
         interface="org.bluez.Adapter1",
         destination="org.bluez",
-    ).asFuture(
-        loop
-    )
+    ).asFuture(loop)
 
     # Reduce output.
     # out = []

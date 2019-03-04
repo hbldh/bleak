@@ -50,7 +50,6 @@ class TaskWrapper(Awaitable):
         self.done = asyncio.Event()
 
     def __await__(self):
-
         def callback(task):
             self._loop.call_soon_threadsafe(self.done.set)
 

@@ -24,7 +24,8 @@ from BleakBridge import Bridge
 from System import Array, Byte
 from Windows.Devices.Bluetooth import BluetoothConnectionStatus
 from Windows.Devices.Bluetooth.GenericAttributeProfile import (
-    GattCharacteristic, GattCommunicationStatus
+    GattCharacteristic,
+    GattCommunicationStatus,
 )
 from Windows.Foundation import TypedEventHandler
 
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 class BleakClientDotNet(BaseBleakClient):
     """The .NET Bleak Client."""
 
-    def __init__(self, address: str, loop: AbstractEventLoop=None, **kwargs):
+    def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
         super(BleakClientDotNet, self).__init__(address, loop, **kwargs)
 
         # Backend specific. Python.NET objects.
@@ -56,7 +57,9 @@ class BleakClientDotNet(BaseBleakClient):
         """
         # Try to find the desired device.
         devices = await discover(2.0, loop=self.loop)
-        sought_device = list(filter(lambda x: x.address.upper() == self.address.upper(), devices))
+        sought_device = list(
+            filter(lambda x: x.address.upper() == self.address.upper(), devices)
+        )
 
         if len(sought_device):
             self._device_info = sought_device[0].details
@@ -104,7 +107,9 @@ class BleakClientDotNet(BaseBleakClient):
 
     async def is_connected(self) -> bool:
         if self._requester:
-            return self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
+            return (
+                self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
+            )
 
         else:
             return False
@@ -189,10 +194,7 @@ class BleakClientDotNet(BaseBleakClient):
         return value
 
     async def write_gatt_char(
-        self,
-        _uuid: str,
-        data: bytearray,
-        response: bool = False
+        self, _uuid: str, data: bytearray, response: bool = False
     ) -> Any:
         """Perform a write operation of the specified characteristic.
 
@@ -207,9 +209,7 @@ class BleakClientDotNet(BaseBleakClient):
             raise BleakError("Characteristic {0} was not found!".format(_uuid))
 
         write_results = await wrap_Task(
-            self._bridge.WriteCharacteristicValueAsync(
-                characteristic, data, response
-            ),
+            self._bridge.WriteCharacteristicValueAsync(characteristic, data, response),
             loop=self.loop,
         )
         if write_results == GattCommunicationStatus.Success:
@@ -223,10 +223,7 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
     async def start_notify(
-        self,
-        _uuid: str,
-        callback: Callable[[str, Any], Any],
-        **kwargs
+        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Activate notifications on a characteristic.
 
