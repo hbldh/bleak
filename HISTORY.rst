@@ -2,6 +2,13 @@
 History
 =======
 
+0.3.0 (2019-03-18)
+------------------
+
+* Fix for issue #53: Windows and Python 3.7 error
+* Azure Pipelines used for CI
+
+
 0.2.4 (2018-11-30)
 ------------------
 

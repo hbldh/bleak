@@ -23,9 +23,7 @@ def test_import():
         assert BleakClient.__name__ == "BleakClientBlueZDBus"
     elif platform.system() == "Windows":
         from bleak import BleakClient
-
         assert BleakClient.__name__ == "BleakClientDotNet"
     elif platform.system() == "Darwin":
         from bleak import BleakClient
-
         assert BleakClient.__name__ == "BleakClientCoreBluetooth"
