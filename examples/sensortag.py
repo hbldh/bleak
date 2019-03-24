@@ -3,7 +3,7 @@
 sensortag
 ---------
 
-An example connecting to a
+An example connecting to a TI CC2650 SensorTag.
 
 
 Created on 2018-01-10 by hbldh <henrik.blidh@nedomkull.com>
@@ -94,7 +94,7 @@ async def run(address, loop, debug=False):
     if debug:
         import sys
 
-        loop.set_debug(True)
+        # loop.set_debug(True)
         l = logging.getLogger("asyncio")
         l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)

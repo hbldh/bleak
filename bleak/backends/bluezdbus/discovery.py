@@ -60,9 +60,12 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     devices = {}
 
     def parse_msg(message):
-        if message.member in ("InterfacesAdded", "InterfacesRemoved"):
+        if message.member == "InterfacesAdded":
             msg_path = message.body[0]
-            device_interface = message.body[1].get("org.bluez.Device1", {})
+            try:
+                device_interface = message.body[1].get("org.bluez.Device1", {})
+            except Exception as e:
+                raise e
             devices[msg_path] = (
                 {**devices[msg_path], **device_interface}
                 if msg_path in devices

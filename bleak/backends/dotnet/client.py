@@ -14,7 +14,16 @@ from typing import Callable, Any
 from bleak.exc import BleakError, BleakDotNetTaskError
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.dotnet.discovery import discover
-from bleak.backends.dotnet.utils import wrap_Task
+from bleak.backends.dotnet.utils import (
+    wrap_Task,
+    wrap_IAsyncOperation,
+    IAsyncOperationAwaitable,
+)
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.dotnet.service import BleakGATTServiceDotNet
+from bleak.backends.dotnet.characteristic import BleakGATTCharacteristicDotNet
+from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
+
 
 # CLR imports
 # Import of Bleak CLR->UWP Bridge.
@@ -22,12 +31,27 @@ from BleakBridge import Bridge
 
 # Import of other CLR components needed.
 from System import Array, Byte
-from Windows.Devices.Bluetooth import BluetoothConnectionStatus
-from Windows.Devices.Bluetooth.GenericAttributeProfile import (
-    GattCharacteristic,
-    GattCommunicationStatus,
+from Windows.Foundation import IAsyncOperation, TypedEventHandler
+from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
+from Windows.Devices.Bluetooth import (
+    BluetoothLEDevice,
+    BluetoothConnectionStatus,
+    BluetoothCacheMode,
 )
-from Windows.Foundation import TypedEventHandler
+from Windows.Devices.Bluetooth.GenericAttributeProfile import (
+    GattDeviceService,
+    GattDeviceServicesResult,
+    GattCharacteristic,
+    GattCharacteristicsResult,
+    GattDescriptor,
+    GattDescriptorsResult,
+    GattCommunicationStatus,
+    GattReadResult,
+    GattWriteResult,
+    GattValueChangedEventArgs,
+    GattCharacteristicProperties,
+    GattClientCharacteristicConfigurationDescriptorValue,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +66,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._device_info = None
         self._requester = None
         self._bridge = Bridge()
+        self._callbacks = {}
 
     def __str__(self):
         return "BleakClientDotNet ({0})".format(self.address)
@@ -69,8 +94,11 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
         logger.debug("Connecting to BLE device @ {0}".format(self.address))
-        self._requester = await wrap_Task(
-            self._bridge.BluetoothLEDeviceFromIdAsync(self._device_info.Id),
+        self._requester = await wrap_IAsyncOperation(
+            IAsyncOperation[BluetoothLEDevice](
+                BluetoothLEDevice.FromIdAsync(self._device_info.Id)
+            ),
+            return_type=BluetoothLEDevice,
             loop=self.loop,
         )
 
@@ -97,9 +125,13 @@ class BleakClientDotNet(BaseBleakClient):
         # Remove notifications
         # TODO: Make sure all notifications are removed prior to Dispose.
         # Dispose all components that we have requested and created.
-        for service_uuid, service in self.services.items():
-            service.Dispose()
-        self.services = None
+        for service in self.services:
+            # for characteristic in service.characteristics:
+            #     for descriptor in characteristic.descriptors:
+            #         descriptor.obj.Dispose()
+            #     characteristic.obj.Dispose()
+            service.obj.Dispose()
+        self.services = BleakGATTServiceCollection()
         self._requester.Dispose()
         self._requester = None
 
@@ -116,51 +148,63 @@ class BleakClientDotNet(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(self) -> dict:
-        # Return a list of all services for the device.
-        if self.services:
+    async def get_services(self) -> BleakGATTServiceCollection:
+        # Return the Service Collection.
+        if self._services_resolved:
             return self.services
         else:
             logger.debug("Get Services...")
-            services = await wrap_Task(
-                self._bridge.GetGattServicesAsync(self._requester), loop=self.loop
+            services_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattDeviceServicesResult](
+                    self._requester.GetGattServicesAsync()
+                ),
+                return_type=GattDeviceServicesResult,
+                loop=self.loop,
             )
-            if services.Status == GattCommunicationStatus.Success:
-                self.services = {s.Uuid.ToString(): s for s in services.Services}
-            else:
+
+            if services_result.Status != GattCommunicationStatus.Success:
                 raise BleakDotNetTaskError("Could not get GATT services.")
 
-            # TODO: Could this be sped up?
-            await asyncio.gather(
-                *[
-                    asyncio.ensure_future(self._get_chars(service), loop=self.loop)
-                    for service_uuid, service in self.services.items()
-                ]
-            )
+            # TODO: Check if fetching yeilds failures...
+            for service in services_result.Services:
+                characteristics_result = await wrap_IAsyncOperation(
+                    IAsyncOperation[GattCharacteristicsResult](
+                        service.GetCharacteristicsAsync()
+                    ),
+                    return_type=GattCharacteristicsResult,
+                    loop=self.loop,
+                )
+                self.services.add_service(BleakGATTServiceDotNet(service))
+                if characteristics_result.Status != GattCommunicationStatus.Success:
+                    raise BleakDotNetTaskError(
+                        "Could not get GATT characteristics for {0}.".format(service)
+                    )
+                for characteristic in characteristics_result.Characteristics:
+                    descriptors_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[GattDescriptorsResult](
+                            characteristic.GetDescriptorsAsync()
+                        ),
+                        return_type=GattDescriptorsResult,
+                        loop=self.loop,
+                    )
+                    self.services.add_characteristic(
+                        BleakGATTCharacteristicDotNet(characteristic)
+                    )
+                    if descriptors_result.Status != GattCommunicationStatus.Success:
+                        raise BleakDotNetTaskError(
+                            "Could not get GATT descriptors for {0}.".format(
+                                characteristic
+                            )
+                        )
+                    for descriptor in list(descriptors_result.Descriptors):
+                        self.services.add_descriptor(
+                            BleakGATTDescriptorDotNet(
+                                descriptor, characteristic.Uuid.ToString()
+                            )
+                        )
+
             self._services_resolved = True
             return self.services
-
-    async def _get_chars(self, service: Any):
-        """Get characteristics for a service
-
-        Args:
-            service: The .NET service object.
-
-        """
-        logger.debug("Get Characteristics for {0}...".format(service.Uuid.ToString()))
-        char_results = await wrap_Task(
-            self._bridge.GetCharacteristicsAsync(service), loop=self.loop
-        )
-
-        if char_results.Status != GattCommunicationStatus.Success:
-            logger.warning(
-                "Could not fetch characteristics for {0}: {1}",
-                service.Uuid.ToString(),
-                char_results.Status,
-            )
-        else:
-            for characteristic in char_results.Characteristics:
-                self.characteristics[characteristic.Uuid.ToString()] = characteristic
 
     # I/O methods
 
@@ -168,27 +212,70 @@ class BleakClientDotNet(BaseBleakClient):
         """Perform read operation on the specified characteristic.
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to start notification on.
+            _uuid (str or UUID): The uuid of the characteristics to read from.
 
         Returns:
             (bytearray) The read data.
 
         """
-        characteristic = self.characteristics.get(str(_uuid))
+        characteristic = self.services.get_characteristic(str(_uuid))
         if not characteristic:
             raise BleakError("Characteristic {0} was not found!".format(_uuid))
 
-        read_results = await wrap_Task(
-            self._bridge.ReadCharacteristicValueAsync(characteristic), loop=self.loop
+        read_result = await wrap_IAsyncOperation(
+            IAsyncOperation[GattReadResult](
+                characteristic.obj.ReadValueAsync(BluetoothCacheMode.Uncached)
+            ),
+            return_type=GattReadResult,
+            loop=self.loop,
         )
-        status, value = read_results.Item1, bytearray(read_results.Item2)
-        if status == GattCommunicationStatus.Success:
+        if read_result.Status == GattCommunicationStatus.Success:
+            reader = DataReader.FromBuffer(IBuffer(read_result.Value))
+            # TODO: Find better way of initializing this...
+            output = Array[Byte]([0] * reader.UnconsumedBufferLength)
+            reader.ReadBytes(output)
+            value = bytearray(output)
             logger.debug("Read Characteristic {0} : {1}".format(_uuid, value))
         else:
             raise BleakError(
-                "Could not read characteristic value for {0}: {1}",
-                characteristic.Uuid.ToString(),
-                status,
+                "Could not read characteristic value for {0}: {1}".format(
+                    characteristic.uuid, read_result.Status
+                )
+            )
+        return value
+
+    async def read_gatt_descriptor(self, handle: int) -> bytearray:
+        """Perform read operation on the specified descriptor.
+
+        Args:
+            handle (int): The handle of the descriptor to read from.
+
+        Returns:
+            (bytearray) The read data.
+
+        """
+        descriptor = self.services.get_descriptor(handle)
+        if not descriptor:
+            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
+
+        read_result = await wrap_IAsyncOperation(
+            IAsyncOperation[GattReadResult](
+                descriptor.obj.ReadValueAsync(BluetoothCacheMode.Uncached)
+            ),
+            return_type=GattReadResult,
+            loop=self.loop,
+        )
+        if read_result.Status == GattCommunicationStatus.Success:
+            reader = DataReader.FromBuffer(IBuffer(read_result.Value))
+            output = Array[Byte]([0] * reader.UnconsumedBufferLength)
+            reader.ReadBytes(output)
+            value = bytearray(output)
+            logger.debug("Read Descriptor {0} : {1}".format(handle, value))
+        else:
+            raise BleakError(
+                "Could not read Descriptor value for {0}: {1}".format(
+                    descriptor.uuid, read_result.Status
+                )
             )
 
         return value
@@ -199,27 +286,86 @@ class BleakClientDotNet(BaseBleakClient):
         """Perform a write operation of the specified characteristic.
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to start notification on.
+            _uuid (str or UUID): The uuid of the characteristics to write to.
             data (bytes or bytearray): The data to send.
             response (bool): If write response is desired.
 
         """
-        characteristic = self.characteristics.get(str(_uuid))
+        characteristic = self.services.get_characteristic(str(_uuid))
         if not characteristic:
             raise BleakError("Characteristic {0} was not found!".format(_uuid))
 
-        write_results = await wrap_Task(
-            self._bridge.WriteCharacteristicValueAsync(characteristic, data, response),
-            loop=self.loop,
-        )
-        if write_results == GattCommunicationStatus.Success:
+        writer = DataWriter()
+        writer.WriteBytes(Array[Byte](data))
+        if response:
+
+            write_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattWriteResult](
+                    characteristic.obj.WriteValueWithResultAsync(writer.DetachBuffer())
+                ),
+                return_type=GattWriteResult,
+                loop=self.loop,
+            )
+            status = write_result.Status
+        else:
+            write_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattCommunicationStatus](
+                    characteristic.obj.WriteValueAsync(writer.DetachBuffer())
+                ),
+                return_type=GattCommunicationStatus,
+                loop=self.loop,
+            )
+            status = write_result
+        if status == GattCommunicationStatus.Success:
             logger.debug("Write Characteristic {0} : {1}".format(_uuid, data))
         else:
             raise BleakError(
-                "Could not write value {0} to characteristic {1}: {2}",
-                data,
-                characteristic.Uuid.ToString(),
-                write_results,
+                "Could not write value {0} to characteristic {1}: {2}".format(
+                    data, characteristic.uuid, write_result.Status
+                )
+            )
+
+    async def write_gatt_descriptor(
+        self, _uuid: str, data: bytearray, response: bool = False
+    ) -> Any:
+        """Perform a write operation of the specified descriptor.
+
+        Args:
+            _uuid (str or UUID): The uuid of the descriptor to write to.
+            data (bytes or bytearray): The data to send.
+            response (bool): If write response is desired.
+
+        """
+        descriptor = self.services.get_descriptor(str(_uuid))
+        if not descriptor:
+            raise BleakError("Descriptor {0} was not found!".format(_uuid))
+
+        writer = DataWriter()
+        writer.WriteBytes(Array[Byte](data))
+        if response:
+
+            write_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattWriteResult](
+                    descriptor.obj.WriteValueWithResultAsync(writer.DetachBuffer())
+                ),
+                return_type=GattWriteResult,
+                loop=self.loop,
+            )
+        else:
+            write_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattWriteResult](
+                    descriptor.obj.WriteValueAsync(writer.DetachBuffer())
+                ),
+                return_type=GattWriteResult,
+                loop=self.loop,
+            )
+        if write_result.Status == GattCommunicationStatus.Success:
+            logger.debug("Write Descriptor {0} : {1}".format(_uuid, data))
+        else:
+            raise BleakError(
+                "Could not write value {0} to descriptor {1}: {2}".format(
+                    data, descriptor.uuid, write_result.Status
+                )
             )
 
     async def start_notify(
@@ -241,23 +387,67 @@ class BleakClientDotNet(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
-        characteristic = self.characteristics.get(str(_uuid))
+        characteristic = self.services.get_characteristic(str(_uuid))
 
         if self._notification_callbacks.get(str(_uuid)):
             await self.stop_notify(_uuid)
 
-        dotnet_callback = TypedEventHandler[GattCharacteristic, Array[Byte]](
-            _notification_wrapper(callback)
-        )
-        status = await wrap_Task(
-            self._bridge.StartNotify(characteristic, dotnet_callback), loop=self.loop
-        )
+        status = await self._start_notify(characteristic.obj, callback)
+
         if status != GattCommunicationStatus.Success:
             raise BleakError(
-                "Could not start notify on {0}: {1}",
-                characteristic.Uuid.ToString(),
-                status,
+                "Could not start notify on {0}: {1}".format(characteristic.uuid, status)
             )
+
+    async def _start_notify(
+        self,
+        characteristic_obj: GattCharacteristic,
+        callback: Callable[[str, Any], Any],
+    ):
+
+        if (
+            characteristic_obj.CharacteristicProperties
+            & GattCharacteristicProperties.Indicate
+        ):
+            cccd = GattClientCharacteristicConfigurationDescriptorValue.Indicate
+        elif (
+            characteristic_obj.CharacteristicProperties
+            & GattCharacteristicProperties.Notify
+        ):
+            cccd = GattClientCharacteristicConfigurationDescriptorValue.Notify
+        else:
+            cccd = getattr(GattClientCharacteristicConfigurationDescriptorValue, "None")
+
+        # status = await IAsyncOperationAwaitable(
+        #     characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(cccd),
+        #     return_type=GattCommunicationStatus, loop=self.loop
+        # )
+
+        status = await wrap_IAsyncOperation(
+            IAsyncOperation[GattCommunicationStatus](
+                characteristic_obj.WriteClientCharacteristicConfigurationDescriptorAsync(
+                    cccd
+                )
+            ),
+            return_type=GattCommunicationStatus,
+            loop=self.loop,
+        )
+        if status == GattCommunicationStatus.Success:
+            # Server has been informed of clients interest.
+            try:
+                # TODO: Enable adding multiple handlers!
+                self._callbacks[characteristic_obj.Uuid.ToString()] = TypedEventHandler[
+                    GattCharacteristic, GattValueChangedEventArgs
+                ](_notification_wrapper(callback))
+                self._bridge.AddValueChangedCallback(
+                    characteristic_obj,
+                    self._callbacks[characteristic_obj.Uuid.ToString()],
+                )
+            except Exception as e:
+                # This usually happens when a device reports that it support indicate, but it actually doesn't.
+                # TODO: Do not use Indicate? Return with Notify?
+                return GattCommunicationStatus.AccessDenied
+        return status
 
     async def stop_notify(self, _uuid: str) -> None:
         """Deactivate notification on a specified characteristic.
@@ -266,23 +456,38 @@ class BleakClientDotNet(BaseBleakClient):
             _uuid: The characteristic to stop notifying on.
 
         """
-        characteristic = self.characteristics.get(str(_uuid))
-        status = await wrap_Task(
-            self._bridge.StopNotify(characteristic), loop=self.loop
+        characteristic = self.services.get_characteristic(str(_uuid))
+
+        status = await wrap_IAsyncOperation(
+            IAsyncOperation[GattCommunicationStatus](
+                characteristic.obj.WriteClientCharacteristicConfigurationDescriptorAsync(
+                    getattr(
+                        GattClientCharacteristicConfigurationDescriptorValue, "None"
+                    )
+                )
+            ),
+            return_type=GattCommunicationStatus,
+            loop=self.loop,
         )
+
         if status != GattCommunicationStatus.Success:
             raise BleakError(
-                "Could not start notify on {0}: {1}",
-                characteristic.Uuid.ToString(),
-                status,
+                "Could not start notify on {0}: {1}".format(characteristic.uuid, status)
             )
+        else:
+            callback = self._callbacks.pop(characteristic.uuid)
+            self._bridge.RemoveValueChangedCallback(characteristic.obj, callback)
 
 
 def _notification_wrapper(func: Callable):
     @wraps(func)
-    def dotnet_notification_parser(sender: Any, data: Any):
+    def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
         # Also do a conversion from System.Bytes[] to bytearray.
-        return func(sender.Uuid.ToString(), bytearray(data))
+        reader = DataReader.FromBuffer(args.CharacteristicValue)
+        output = Array[Byte]([0] * reader.UnconsumedBufferLength)
+        reader.ReadBytes(output)
+
+        return func(sender.Uuid.ToString(), bytearray(output))
 
     return dotnet_notification_parser
