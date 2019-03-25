@@ -26,24 +26,31 @@ class BleakGATTService(abc.ABC):
     @property
     @abc.abstractmethod
     def uuid(self) -> str:
+        """The UUID to this service"""
         raise NotImplementedError()
 
     @property
-    @abc.abstractmethod
     def description(self) -> str:
+        """String description for this service"""
         return uuidstr_to_str(self.uuid)
 
     @property
     @abc.abstractmethod
     def characteristics(self) -> List[BleakGATTCharacteristic]:
+        """List of characteristics for this service"""
         raise NotImplementedError()
 
     @abc.abstractmethod
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
+        """Add a :py:class:`~BleakGATTCharacteristic` to the service.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def get_characteristic(self, _uuid) -> Union[BleakGATTCharacteristic, None]:
+        """Get a characteristic by UUID"""
         raise NotImplementedError()
 
 
@@ -56,29 +63,37 @@ class BleakGATTServiceCollection(object):
         self.__descriptors = {}
 
     def __getitem__(
-        self, item
+        self, item: Union[str, int]
     ) -> Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor]:
-        """Get a service, charactersitic or descriptor from uuid."""
+        """Get a service, characteristic or descriptor from uuid or handle"""
         return self.services.get(
             item, self.characteristics.get(item, self.descriptors.get(item, None))
         )
 
     def __iter__(self) -> Iterator[BleakGATTService]:
+        """Returns an iterator over all BleakGATTService objects"""
         return iter(self.services.values())
 
     @property
     def services(self) -> dict:
+        """Returns dictionary of UUID strings to BleakGATTService"""
         return self.__services
 
     @property
     def characteristics(self) -> dict:
+        """Returns dictionary of UUID strings to BleakGATTCharacteristic"""
         return self.__characteristics
 
     @property
     def descriptors(self) -> dict:
+        """Returns a dictionary of integer handles to BleakGATTDescriptor"""
         return self.__descriptors
 
     def add_service(self, service: BleakGATTService):
+        """Add a :py:class:`~BleakGATTService` to the service collection.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
         if service.uuid not in self.__services:
             self.__services[service.uuid] = service
         else:
@@ -87,9 +102,14 @@ class BleakGATTServiceCollection(object):
             )
 
     def get_service(self, _uuid) -> BleakGATTService:
+        """Get a service by UUID string"""
         return self.services.get(_uuid, None)
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
+        """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
         if characteristic.uuid not in self.__characteristics:
             self.__characteristics[characteristic.uuid] = characteristic
             self.__services[characteristic.service_uuid].add_characteristic(
@@ -101,9 +121,14 @@ class BleakGATTServiceCollection(object):
             )
 
     def get_characteristic(self, _uuid) -> BleakGATTCharacteristic:
+        """Get a characteristic by UUID string"""
         return self.characteristics.get(_uuid, None)
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
+        """Add a :py:class:`~BleakGATTDescriptor` to the service collection.
+
+         Should not be used by end user, but rather by `bleak` itself.
+         """
         if descriptor.handle not in self.__descriptors:
             self.__descriptors[descriptor.handle] = descriptor
             self.__characteristics[descriptor.characteristic_uuid].add_descriptor(
@@ -114,5 +139,6 @@ class BleakGATTServiceCollection(object):
                 "This descriptor is already present in this BleakGATTServiceCollection!"
             )
 
-    def get_descriptor(self, handle) -> BleakGATTDescriptor:
+    def get_descriptor(self, handle: int) -> BleakGATTDescriptor:
+        """Get a descriptor by integer handle"""
         return self.descriptors.get(handle, None)

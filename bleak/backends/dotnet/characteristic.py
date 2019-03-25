@@ -43,7 +43,7 @@ _GattCharacteristicsPropertiesEnum = {
 
 
 class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
-    """Interface for the Bleak representation of a GATT Characteristic"""
+    """GATT Characteristic implementation for the .NET backend"""
 
     def __init__(self, obj: GattCharacteristic):
         super().__init__(obj)
@@ -71,21 +71,29 @@ class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
 
     @property
     def description(self) -> str:
+        """Description for this characteristic"""
         return self.obj.UserDescription
 
     @property
     def properties(self) -> List:
+        """Properties of this characteristic"""
         return self.__props
 
     @property
     def descriptors(self) -> List[BleakGATTDescriptorDotNet]:
+        """List of descriptors for this service"""
         return self.__descriptors
 
     def get_descriptor(self, _uuid) -> Union[BleakGATTDescriptorDotNet, None]:
+        """Get a descriptor by UUID"""
         try:
             return next(filter(lambda x: x.uuid == _uuid, self.descriptors))
         except StopIteration:
             return None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
+        """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
         self.__descriptors.append(descriptor)
