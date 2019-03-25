@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 class BleakClientBlueZDBus(BaseBleakClient):
-    """BlueZ DBUS BLE client."""
+    """A native Linux Bleak Client
+
+    Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
+    """
 
     def __init__(self, address, loop=None, **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address, loop, **kwargs)
@@ -210,13 +213,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # IO methods
 
     async def read_gatt_char(self, _uuid: str) -> bytearray:
-        """Read the data on a GATT characteristic.
+        """Perform read operation on the specified GATT characteristic.
 
         Args:
-            _uuid (str or uuid.UUID): UUID for the characteristic to read from.
+            _uuid (str or UUID): The uuid of the characteristics to read from.
 
         Returns:
-            Byte array of data.
+            (bytearray) The read data.
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
@@ -260,15 +263,47 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return value
 
+    async def read_gatt_descriptor(self, handle: int) -> bytearray:
+        """Perform read operation on the specified GATT descriptor.
+
+        Args:
+            handle (int): The handle of the descriptor to read from.
+
+        Returns:
+            (bytearray) The read data.
+
+        """
+        descriptor = self.services.get_descriptor(handle)
+        if not descriptor:
+            # TODO: Raise error instead?
+            return None
+
+        value = bytearray(
+            await self._bus.callRemote(
+                descriptor.path,
+                "ReadValue",
+                interface=defs.GATT_DESCRIPTOR_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+                signature="a{sv}",
+                body=[{}],
+                returnSignature="ay",
+            ).asFuture(self.loop)
+        )
+
+        logger.debug(
+            "Read Descriptor {0} | {1}: {2}".format(handle, descriptor.path, value)
+        )
+        return value
+
     async def write_gatt_char(
         self, _uuid: str, data: bytearray, response: bool = False
     ) -> Any:
-        """Write data to a GATT characteristic.
+        """Perform a write operation on the specified GATT characteristic.
 
         Args:
-            _uuid (str or uuid.UUID): The UUID of the GATT characteristic to write to.
-            data (bytearray): The data to write.
-            response (bool): If write with response should be done.
+            _uuid (str or UUID): The uuid of the characteristics to write to.
+            data (bytes or bytearray): The data to send.
+            response (bool): If write-with-response operation should be done. Defaults to `False`.
 
         Returns:
             None if not `response=True`, in which case a bytearray is returned.
@@ -292,49 +327,42 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if response:
             return await self.read_gatt_char(_uuid)
 
-    async def read_gatt_descriptor(self, handle: int) -> bytearray:
-        descriptor = self.services.get_descriptor(handle)
-        if not descriptor:
-            # TODO: Raise error instead?
-            return None
-
-        value = bytearray(
-            await self._bus.callRemote(
-                descriptor.path,
-                "ReadValue",
-                interface=defs.GATT_DESCRIPTOR_INTERFACE,
-                destination=defs.BLUEZ_SERVICE,
-                signature="a{sv}",
-                body=[{}],
-                returnSignature="ay",
-            ).asFuture(self.loop)
-        )
-
-        logger.debug(
-            "Read Descriptor {0} | {1}: {2}".format(handle, descriptor.path, value)
-        )
-        return value
-
     async def write_gatt_descriptor(
-        self, _uuid: str, data: bytearray, response: bool = False
+        self, handle: int, data: bytearray
     ) -> Any:
-        return await super().write_gatt_descriptor(_uuid, data, response)
+        """Perform a write operation on the specified GATT descriptor.
+
+        Args:
+            handle (int): The handle of the descriptor to read from.
+            data (bytes or bytearray): The data to send.
+
+        """
+        return await super().write_gatt_descriptor(handle, data)
 
     async def start_notify(
         self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
-        """Starts a notification session from a characteristic.
+        """Activate notifications/indications on a characteristic.
+
+        Callbacks must accept two inputs. The first will be a uuid string
+        object and the second will be a bytearray.
+
+        .. code-block:: python
+
+            def callback(sender, data):
+                print(f"{sender}: {data}")
+            client.start_notify(char_uuid, callback)
 
         Args:
-            _uuid (str or uuid.UUID): The UUID of the GATT
-            characteristic to start subscribing to notifications from.
-            callback (Callable): A function that will be called on notification.
+            _uuid (str or UUID): The uuid of the characteristics to start notification on.
+            callback (function): The function to be called on notification.
 
         Keyword Args:
             notification_wrapper (bool): Set to `False` to avoid parsing of
                 notification to bytearray.
 
         """
+
         _wrap = kwargs.get("notification_wrapper", True)
         characteristic = self.services.get_characteristic(str(_uuid))
         await self._bus.callRemote(
@@ -361,11 +389,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )  # noqa | E123 error in flake8...
 
     async def stop_notify(self, _uuid: str) -> None:
-        """Stops a notification session from a characteristic.
+        """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            _uuid (str or uuid.UUID): The UUID of the characteristic to stop
-                subscribing to notifications from.
+            _uuid: The characteristic to stop notifying/indicating on.
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
@@ -382,7 +409,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # DBUS introspection method for characteristics.
 
-    async def get_all_for_characteristic(self, _uuid):
+    async def get_all_for_characteristic(self, _uuid) -> dict:
+        """Get all properties for a characteristic.
+
+        This method should generally not be needed by end user, since it is a DBus specific method.
+
+        Args:
+            _uuid: The characteristic to get properties for.
+
+        Returns:
+            (dict) Properties dictionary
+
+        """
         characteristic = self.services.get_characteristic(str(_uuid))
         out = await self._bus.callRemote(
             characteristic.path,
@@ -395,7 +433,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         ).asFuture(self.loop)
         return out
 
-    async def _get_device_properties(self, interface=defs.DEVICE_INTERFACE):
+    async def _get_device_properties(self, interface=defs.DEVICE_INTERFACE) -> dict:
+        """Get properties of the connected device.
+
+        Args:
+            interface: Which DBus interface to get properties on. Defaults to `org.bluez.Device1`.
+
+        Returns:
+            (dict) The properties.
+
+        """
         return await self._bus.callRemote(
             self._device_path,
             "GetAll",

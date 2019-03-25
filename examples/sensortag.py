@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-sensortag
----------
+TI CC2650 SensorTag
+-------------------
 
 An example connecting to a TI CC2650 SensorTag.
-
 
 Created on 2018-01-10 by hbldh <henrik.blidh@nedomkull.com>
 

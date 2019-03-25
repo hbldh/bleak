@@ -37,4 +37,4 @@ Connect to a Bluetooth device and read it's model number:
     loop.run_until_complete(run(address, loop))
 
 
-See `examples <>`_ folder for more code.
+See `examples <https://github.com/hbldh/bleak/tree/master/examples>`_ folder for more code.

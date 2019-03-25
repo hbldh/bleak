@@ -57,7 +57,11 @@ logger = logging.getLogger(__name__)
 
 
 class BleakClientDotNet(BaseBleakClient):
-    """The .NET Bleak Client."""
+    """The native Windows Bleak Client.
+
+    Implemented using `pythonnet <https://pythonnet.github.io/>`_, a package that provides an integration to the .NET
+    Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
+    """
 
     def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
         super(BleakClientDotNet, self).__init__(address, loop, **kwargs)
@@ -74,10 +78,10 @@ class BleakClientDotNet(BaseBleakClient):
     # Connectivity methods
 
     async def connect(self) -> bool:
-        """Connect the BleakClient to the BLE device.
+        """Connect to the specified GATT server.
 
         Returns:
-            Boolean from :meth:`~is_connected`.
+            Boolean representing connection status.
 
         """
         # Try to find the desired device.
@@ -121,6 +125,12 @@ class BleakClientDotNet(BaseBleakClient):
         return connected
 
     async def disconnect(self) -> bool:
+        """Disconnect from the specified GATT server.
+
+        Returns:
+            Boolean representing connection status.
+
+        """
         logger.debug("Disconnecting from BLE device...")
         # Remove notifications
         # TODO: Make sure all notifications are removed prior to Dispose.
@@ -138,6 +148,12 @@ class BleakClientDotNet(BaseBleakClient):
         return not await self.is_connected()
 
     async def is_connected(self) -> bool:
+        """Check connection status between this client and the server.
+
+        Returns:
+            Boolean representing connection status.
+
+        """
         if self._requester:
             return (
                 self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
@@ -149,6 +165,12 @@ class BleakClientDotNet(BaseBleakClient):
     # GATT services methods
 
     async def get_services(self) -> BleakGATTServiceCollection:
+        """Get all services registered for this GATT server.
+
+        Returns:
+           A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
+
+        """
         # Return the Service Collection.
         if self._services_resolved:
             return self.services
@@ -209,7 +231,7 @@ class BleakClientDotNet(BaseBleakClient):
     # I/O methods
 
     async def read_gatt_char(self, _uuid: str) -> bytearray:
-        """Perform read operation on the specified characteristic.
+        """Perform read operation on the specified GATT characteristic.
 
         Args:
             _uuid (str or UUID): The uuid of the characteristics to read from.
@@ -231,7 +253,6 @@ class BleakClientDotNet(BaseBleakClient):
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
-            # TODO: Find better way of initializing this...
             output = Array[Byte]([0] * reader.UnconsumedBufferLength)
             reader.ReadBytes(output)
             value = bytearray(output)
@@ -245,7 +266,7 @@ class BleakClientDotNet(BaseBleakClient):
         return value
 
     async def read_gatt_descriptor(self, handle: int) -> bytearray:
-        """Perform read operation on the specified descriptor.
+        """Perform read operation on the specified GATT descriptor.
 
         Args:
             handle (int): The handle of the descriptor to read from.
@@ -283,12 +304,12 @@ class BleakClientDotNet(BaseBleakClient):
     async def write_gatt_char(
         self, _uuid: str, data: bytearray, response: bool = False
     ) -> Any:
-        """Perform a write operation of the specified characteristic.
+        """Perform a write operation of the specified GATT characteristic.
 
         Args:
             _uuid (str or UUID): The uuid of the characteristics to write to.
             data (bytes or bytearray): The data to send.
-            response (bool): If write response is desired.
+            response (bool): If write-with-response operation should be done. Defaults to `False`.
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
@@ -326,41 +347,47 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
     async def write_gatt_descriptor(
-        self, _uuid: str, data: bytearray, response: bool = False
+        self, handle: int, data: bytearray
     ) -> Any:
-        """Perform a write operation of the specified descriptor.
+        """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            _uuid (str or UUID): The uuid of the descriptor to write to.
+            handle (int): The handle of the descriptor to read from.
             data (bytes or bytearray): The data to send.
-            response (bool): If write response is desired.
 
         """
-        descriptor = self.services.get_descriptor(str(_uuid))
+        descriptor = self.services.get_descriptor(handle)
         if not descriptor:
-            raise BleakError("Descriptor {0} was not found!".format(_uuid))
+            raise BleakError("Descriptor {0} was not found!".format(handle))
 
         writer = DataWriter()
         writer.WriteBytes(Array[Byte](data))
-        if response:
-
-            write_result = await wrap_IAsyncOperation(
-                IAsyncOperation[GattWriteResult](
-                    descriptor.obj.WriteValueWithResultAsync(writer.DetachBuffer())
-                ),
-                return_type=GattWriteResult,
-                loop=self.loop,
-            )
-        else:
-            write_result = await wrap_IAsyncOperation(
-                IAsyncOperation[GattWriteResult](
-                    descriptor.obj.WriteValueAsync(writer.DetachBuffer())
-                ),
-                return_type=GattWriteResult,
-                loop=self.loop,
-            )
+        # if response:
+        #
+        #     write_result = await wrap_IAsyncOperation(
+        #         IAsyncOperation[GattWriteResult](
+        #             descriptor.obj.WriteValueWithResultAsync(writer.DetachBuffer())
+        #         ),
+        #         return_type=GattWriteResult,
+        #         loop=self.loop,
+        #     )
+        # else:
+        #     write_result = await wrap_IAsyncOperation(
+        #         IAsyncOperation[GattWriteResult](
+        #             descriptor.obj.WriteValueAsync(writer.DetachBuffer())
+        #         ),
+        #         return_type=GattWriteResult,
+        #         loop=self.loop,
+        #     )
+        write_result = await wrap_IAsyncOperation(
+            IAsyncOperation[GattWriteResult](
+                descriptor.obj.WriteValueAsync(writer.DetachBuffer())
+            ),
+            return_type=GattWriteResult,
+            loop=self.loop,
+        )
         if write_result.Status == GattCommunicationStatus.Success:
-            logger.debug("Write Descriptor {0} : {1}".format(_uuid, data))
+            logger.debug("Write Descriptor {0} : {1}".format(handle, data))
         else:
             raise BleakError(
                 "Could not write value {0} to descriptor {1}: {2}".format(
@@ -371,7 +398,7 @@ class BleakClientDotNet(BaseBleakClient):
     async def start_notify(
         self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
-        """Activate notifications on a characteristic.
+        """Activate notifications/indications on a characteristic.
 
         Callbacks must accept two inputs. The first will be a uuid string
         object and the second will be a bytearray.
@@ -383,7 +410,7 @@ class BleakClientDotNet(BaseBleakClient):
             client.start_notify(char_uuid, callback)
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to start notification on.
+            _uuid (str or UUID): The uuid of the characteristics to start notification/indication on.
             callback (function): The function to be called on notification.
 
         """
@@ -404,7 +431,16 @@ class BleakClientDotNet(BaseBleakClient):
         characteristic_obj: GattCharacteristic,
         callback: Callable[[str, Any], Any],
     ):
+        """Internal method performing call to BleakUWPBridge method.
 
+        Args:
+            characteristic_obj: The Managed Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic Object
+            callback: The function to be called on notification.
+
+        Returns:
+            (int) The GattCommunicationStatus of the operation.
+
+        """
         if (
             characteristic_obj.CharacteristicProperties
             & GattCharacteristicProperties.Indicate
@@ -450,10 +486,10 @@ class BleakClientDotNet(BaseBleakClient):
         return status
 
     async def stop_notify(self, _uuid: str) -> None:
-        """Deactivate notification on a specified characteristic.
+        """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            _uuid: The characteristic to stop notifying on.
+            _uuid: The characteristic to stop notifying/indicating on.
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
