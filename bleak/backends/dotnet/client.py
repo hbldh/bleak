@@ -230,11 +230,13 @@ class BleakClientDotNet(BaseBleakClient):
 
     # I/O methods
 
-    async def read_gatt_char(self, _uuid: str) -> bytearray:
+    async def read_gatt_char(self, _uuid: str, use_cached=False, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
             _uuid (str or UUID): The uuid of the characteristics to read from.
+            use_cached (bool): `False` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to `False`.
 
         Returns:
             (bytearray) The read data.
@@ -246,7 +248,9 @@ class BleakClientDotNet(BaseBleakClient):
 
         read_result = await wrap_IAsyncOperation(
             IAsyncOperation[GattReadResult](
-                characteristic.obj.ReadValueAsync(BluetoothCacheMode.Uncached)
+                characteristic.obj.ReadValueAsync(
+                    BluetoothCacheMode.Cached if use_cached else BluetoothCacheMode.Uncached
+                )
             ),
             return_type=GattReadResult,
             loop=self.loop,
@@ -265,11 +269,13 @@ class BleakClientDotNet(BaseBleakClient):
             )
         return value
 
-    async def read_gatt_descriptor(self, handle: int) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, use_cached=False, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             handle (int): The handle of the descriptor to read from.
+            use_cached (bool): `False` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to `False`.
 
         Returns:
             (bytearray) The read data.
@@ -281,7 +287,9 @@ class BleakClientDotNet(BaseBleakClient):
 
         read_result = await wrap_IAsyncOperation(
             IAsyncOperation[GattReadResult](
-                descriptor.obj.ReadValueAsync(BluetoothCacheMode.Uncached)
+                descriptor.obj.ReadValueAsync(
+                    BluetoothCacheMode.Cached if use_cached else BluetoothCacheMode.Uncached
+                )
             ),
             return_type=GattReadResult,
             loop=self.loop,

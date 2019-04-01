@@ -91,7 +91,7 @@ class BaseBleakClient(abc.ABC):
     # I/O methods
 
     @abc.abstractmethod
-    async def read_gatt_char(self, _uuid: str) -> bytearray:
+    async def read_gatt_char(self, _uuid: str, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -104,7 +104,7 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def read_gatt_descriptor(self, handle: int) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:

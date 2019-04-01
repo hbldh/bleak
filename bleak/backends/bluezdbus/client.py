@@ -212,7 +212,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # IO methods
 
-    async def read_gatt_char(self, _uuid: str) -> bytearray:
+    async def read_gatt_char(self, _uuid: str, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -263,7 +263,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return value
 
-    async def read_gatt_descriptor(self, handle: int) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
