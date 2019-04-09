@@ -449,6 +449,7 @@ class BleakClientDotNet(BaseBleakClient):
             (int) The GattCommunicationStatus of the operation.
 
         """
+
         if (
             characteristic_obj.CharacteristicProperties
             & GattCharacteristicProperties.Indicate
@@ -462,10 +463,22 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             cccd = getattr(GattClientCharacteristicConfigurationDescriptorValue, "None")
 
-        # status = await IAsyncOperationAwaitable(
-        #     characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(cccd),
-        #     return_type=GattCommunicationStatus, loop=self.loop
-        # )
+        try:
+            # TODO: Enable adding multiple handlers!
+            self._callbacks[characteristic_obj.Uuid.ToString()] = TypedEventHandler[
+                GattCharacteristic, GattValueChangedEventArgs
+            ](_notification_wrapper(callback))
+            self._bridge.AddValueChangedCallback(
+                characteristic_obj,
+                self._callbacks[characteristic_obj.Uuid.ToString()],
+            )
+        except Exception as e:
+            logger.debug("Start Notify problem: {0}".format(e))
+            if characteristic_obj.Uuid.ToString() in self._callbacks:
+                callback = self._callbacks.pop(characteristic_obj.Uuid.ToString())
+                self._bridge.RemoveValueChangedCallback(characteristic_obj, callback)
+
+            return GattCommunicationStatus.AccessDenied
 
         status = await wrap_IAsyncOperation(
             IAsyncOperation[GattCommunicationStatus](
@@ -476,21 +489,14 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=GattCommunicationStatus,
             loop=self.loop,
         )
-        if status == GattCommunicationStatus.Success:
-            # Server has been informed of clients interest.
-            try:
-                # TODO: Enable adding multiple handlers!
-                self._callbacks[characteristic_obj.Uuid.ToString()] = TypedEventHandler[
-                    GattCharacteristic, GattValueChangedEventArgs
-                ](_notification_wrapper(callback))
-                self._bridge.AddValueChangedCallback(
-                    characteristic_obj,
-                    self._callbacks[characteristic_obj.Uuid.ToString()],
-                )
-            except Exception as e:
-                # This usually happens when a device reports that it support indicate, but it actually doesn't.
-                # TODO: Do not use Indicate? Return with Notify?
-                return GattCommunicationStatus.AccessDenied
+
+        if status != GattCommunicationStatus.Success:
+            # This usually happens when a device reports that it support indicate, but it actually doesn't.
+            if characteristic_obj.Uuid.ToString() in self._callbacks:
+                callback = self._callbacks.pop(characteristic_obj.Uuid.ToString())
+                self._bridge.RemoveValueChangedCallback(characteristic_obj, callback)
+
+            return GattCommunicationStatus.AccessDenied
         return status
 
     async def stop_notify(self, _uuid: str) -> None:
