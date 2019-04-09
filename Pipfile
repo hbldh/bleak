@@ -1,17 +1,15 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
-"-e ." = "*"
-
+txdbus = {version = ">=1.1.0", sys_platform = "== 'linux'"}
+pyobjc = {version = "*", sys_platform = "== 'darwin'"}
+pyobjc-framework-CoreBluetooth = {version = "*", sys_platform = "== 'darwin'"}
+pythonnet = {version = ">=2.3.0", sys_platform = "== 'win32'"}
 
 [dev-packages]
-
 pytest = "*"
 bumpversion = "*"
 tox = "*"
@@ -25,3 +23,7 @@ wheel = "*"
 watchdog = "*"
 coverage = "*"
 pytest-runner = "*"
+
+[pipenv]
+
+allow_prereleases = true

@@ -8,6 +8,7 @@ PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
 BLUEZ_SERVICE = "org.bluez"
 ADAPTER_INTERFACE = "org.bluez.Adapter1"
 DEVICE_INTERFACE = "org.bluez.Device1"
+BATTERY_INTERFACE = "org.bluez.Battery1"
 
 # GATT interfaces
 GATT_MANAGER_INTERFACE = "org.bluez.GattManager1"

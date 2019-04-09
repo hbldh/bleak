@@ -84,7 +84,7 @@ setup(
     author=AUTHOR,
     author_email=EMAIL,
     url=URL,
-    packages=find_packages(exclude=("tests", "examples", "docs")),
+    packages=find_packages(exclude=("tests", "examples", "docs", "BleakUWPBridge")),
     package_data={"bleak.backends.dotnet": ["*.dll"]},
     entry_points={"console_scripts": ["bleak-lescan=bleak:cli"]},
     install_requires=REQUIRED,
