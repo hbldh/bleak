@@ -327,9 +327,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if response:
             return await self.read_gatt_char(_uuid)
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: bytearray
-    ) -> Any:
+    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> Any:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:

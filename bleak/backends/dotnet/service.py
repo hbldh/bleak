@@ -8,6 +8,7 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import GattDeviceService
 
 class BleakGATTServiceDotNet(BleakGATTService):
     """GATT Characteristic implementation for the .NET backend"""
+
     def __init__(self, obj: GattDeviceService):
         super().__init__(obj)
         self.__characteristics = [

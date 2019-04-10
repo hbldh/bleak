@@ -29,12 +29,14 @@ class BLEDevice(object):
         self.metadata = kwargs
 
     def __str__(self):
-        if self.name == 'Unknown':
-            if 'manufacturer_data' in self.metadata:
-                ks = list(self.metadata['manufacturer_data'].keys())
+        if self.name == "Unknown":
+            if "manufacturer_data" in self.metadata:
+                ks = list(self.metadata["manufacturer_data"].keys())
                 if len(ks):
                     mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xffff))
-                    value = self.metadata['manufacturer_data'].get(ks[0], MANUFACTURERS.get(0xffff))
+                    value = self.metadata["manufacturer_data"].get(
+                        ks[0], MANUFACTURERS.get(0xffff)
+                    )
+                    # TODO: Evaluate how to interpret the value of the company identifier...
                     return "{0}: {1} ({2})".format(self.address, mf, value)
         return "{0}: {1}".format(self.address, self.name)
-

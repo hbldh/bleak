@@ -48,13 +48,13 @@ async def discover(
     devices = {}
 
     def _format_bdaddr(a):
-        return ":".join('{:02X}'.format(x) for x in a.to_bytes(6, byteorder='big'))
+        return ":".join("{:02X}".format(x) for x in a.to_bytes(6, byteorder="big"))
 
     def _format_event_args(e):
         try:
             return "{0}: {1}".format(
                 _format_bdaddr(e.BluetoothAddress),
-                e.Advertisement.LocalName or 'Unknown'
+                e.Advertisement.LocalName or "Unknown",
             )
         except Exception:
             return e.BluetoothAddress
@@ -72,6 +72,7 @@ async def discover(
                     len(devices), watcher.Status
                 )
             )
+
     watcher.Received += AdvertisementWatcher_Received
     watcher.Stopped += AdvertisementWatcher_Stopped
 

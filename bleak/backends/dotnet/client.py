@@ -101,7 +101,9 @@ class BleakClientDotNet(BaseBleakClient):
 
         self._requester = await wrap_IAsyncOperation(
             IAsyncOperation[BluetoothLEDevice](
-                BluetoothLEDevice.FromBluetoothAddressAsync(UInt64(self._device_info.BluetoothAddress))
+                BluetoothLEDevice.FromBluetoothAddressAsync(
+                    UInt64(self._device_info.BluetoothAddress)
+                )
             ),
             return_type=BluetoothLEDevice,
             loop=self.loop,
@@ -246,7 +248,9 @@ class BleakClientDotNet(BaseBleakClient):
         read_result = await wrap_IAsyncOperation(
             IAsyncOperation[GattReadResult](
                 characteristic.obj.ReadValueAsync(
-                    BluetoothCacheMode.Cached if use_cached else BluetoothCacheMode.Uncached
+                    BluetoothCacheMode.Cached
+                    if use_cached
+                    else BluetoothCacheMode.Uncached
                 )
             ),
             return_type=GattReadResult,
@@ -266,7 +270,9 @@ class BleakClientDotNet(BaseBleakClient):
             )
         return value
 
-    async def read_gatt_descriptor(self, handle: int, use_cached=False, **kwargs) -> bytearray:
+    async def read_gatt_descriptor(
+        self, handle: int, use_cached=False, **kwargs
+    ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
@@ -285,7 +291,9 @@ class BleakClientDotNet(BaseBleakClient):
         read_result = await wrap_IAsyncOperation(
             IAsyncOperation[GattReadResult](
                 descriptor.obj.ReadValueAsync(
-                    BluetoothCacheMode.Cached if use_cached else BluetoothCacheMode.Uncached
+                    BluetoothCacheMode.Cached
+                    if use_cached
+                    else BluetoothCacheMode.Uncached
                 )
             ),
             return_type=GattReadResult,
@@ -351,9 +359,7 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             )
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: bytearray
-    ) -> Any:
+    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> Any:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
@@ -449,8 +455,7 @@ class BleakClientDotNet(BaseBleakClient):
                 GattCharacteristic, GattValueChangedEventArgs
             ](_notification_wrapper(callback))
             self._bridge.AddValueChangedCallback(
-                characteristic_obj,
-                self._callbacks[characteristic_obj.Uuid.ToString()],
+                characteristic_obj, self._callbacks[characteristic_obj.Uuid.ToString()]
             )
         except Exception as e:
             logger.debug("Start Notify problem: {0}".format(e))
