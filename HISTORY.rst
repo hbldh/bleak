@@ -2,6 +2,14 @@
 History
 =======
 
+0.4.0 (2019-04-10)
+------------------
+
+* Transferred code from the BleakUWPBridge C# support project to pythonnet code
+* Fixed BlueZ >= 5.48 issues regarding Battery Service
+* Fix for issue #55
+
+
 0.3.0 (2019-03-18)
 ------------------
 
