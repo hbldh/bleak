@@ -119,7 +119,7 @@ class BaseBleakClient(abc.ABC):
     @abc.abstractmethod
     async def write_gatt_char(
         self, _uuid: str, data: bytearray, response: bool = False
-    ) -> Any:
+    ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
         Args:
@@ -127,16 +127,11 @@ class BaseBleakClient(abc.ABC):
             data (bytes or bytearray): The data to send.
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
-        Returns:
-            None if not `response=True`, in which case a bytearray is returned.
-
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write_gatt_descriptor(
-        self, handle: int, data: bytearray
-    ) -> Any:
+    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
