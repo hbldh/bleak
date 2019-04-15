@@ -128,9 +128,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         interface="org.freedesktop.DBus.Properties",
         member="PropertiesChanged",
     ).asFuture(loop)
-    await bus.addMatch(
-        parse_msg, interface="org.bluez.Adapter1", member="PropertyChanged"
-    ).asFuture(loop)
 
     # Find the HCI device to use for scanning and get cached device properties
     objects = await bus.callRemote(
