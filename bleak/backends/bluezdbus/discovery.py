@@ -158,5 +158,8 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     discovered_devices = []
     for path, props in devices.items():
         name, address, _, path = _device_info(path, props)
-        discovered_devices.append(BLEDevice(address, name, path))
+        uuids = props.get("UUIDs", [])
+        manufacturer_data = props.get('ManufacturerData', {})
+        discovered_devices.append(BLEDevice(address, name, path, uuids=uuids,
+                                  manufacturer_data=manufacturer_data))
     return discovered_devices
