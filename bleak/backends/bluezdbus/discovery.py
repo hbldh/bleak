@@ -146,6 +146,14 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     # Running Discovery loop.
     await bus.callRemote(
         adapter_path,
+        "SetDiscoveryFilter",
+        interface="org.bluez.Adapter1",
+        destination="org.bluez",
+        signature="a{sv}",
+        body=[{"Transport": "le"}]
+    ).asFuture(loop)
+    await bus.callRemote(
+        adapter_path,
         "StartDiscovery",
         interface="org.bluez.Adapter1",
         destination="org.bluez",
