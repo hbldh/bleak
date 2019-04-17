@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import asyncio
+import os
 import re
 import subprocess
 from functools import wraps
@@ -307,16 +308,34 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
-        # TODO: Add OnValueUpdated handler for response=True?
-        await self._bus.callRemote(
-            characteristic.path,
-            "WriteValue",
-            interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-            signature="aya{sv}",
-            body=[data, {"type": "request" if response else "command"}],
-            returnSignature="",
-        ).asFuture(self.loop)
+        if response or (self._bluez_version[0] == 5 and self._bluez_version[1] > 50):
+            # TODO: Add OnValueUpdated handler for response=True?
+            await self._bus.callRemote(
+                characteristic.path,
+                "WriteValue",
+                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+                signature="aya{sv}",
+                body=[data, {"type": "request" if response else "command"}],
+                returnSignature="",
+            ).asFuture(self.loop)
+        else:
+            # Older versions of BlueZ don't have the "type" option, so we have
+            # to write the hard way. This isn't the most efficient way of doing
+            # things, but it works. Also, watch out for txdbus bug that causes
+            # returned fd to be None. https://github.com/cocagne/txdbus/pull/81
+            fd, _ = await self._bus.callRemote(
+                characteristic.path,
+                "AcquireWrite",
+                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+                signature="a{sv}",
+                body=[{}],
+                returnSignature="hq",
+            ).asFuture(self.loop)
+            os.write(fd, data)
+            os.close(fd)
+
         logger.debug(
             "Write Characteristic {0} | {1}: {2}".format(
                 _uuid, characteristic.path, data
