@@ -26,6 +26,15 @@ def _filter_on_adapter(objs, pattern="hci0"):
     raise Exception("Bluetooth adapter not found")
 
 
+def _filter_on_device(objs):
+    for path, interfaces in objs.items():
+        device = interfaces.get("org.bluez.Device1")
+        if device is None:
+            continue
+
+        yield path, device
+
+
 def _device_info(path, props):
     name = props.get("Name", props.get("Alias", path.split("/")[-1]))
     address = props.get("Address", None)
@@ -57,6 +66,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     """
     device = kwargs.get("device", "hci0")
     loop = loop if loop else asyncio.get_event_loop()
+    cached_devices = {}
     devices = {}
 
     def parse_msg(message):
@@ -77,6 +87,12 @@ async def discover(timeout=5.0, loop=None, **kwargs):
                 return
 
             msg_path = message.path
+            # the PropertiesChanged signal only sends changed properties, so we
+            # need to get remaining properties from cached_devices. However, we
+            # don't want to add all cached_devices to the devices dict since
+            # they may not actually be nearby or powered on.
+            if msg_path not in devices and msg_path in cached_devices:
+                devices[msg_path] = cached_devices[msg_path]
             devices[msg_path] = (
                 {**devices[msg_path], **changed} if msg_path in devices else changed
             )
@@ -94,15 +110,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             )
         )
 
-    # Find the HCI device to use for scanning.
     bus = await client.connect(reactor, "system").asFuture(loop)
-    objects = await bus.callRemote(
-        "/",
-        "GetManagedObjects",
-        interface=defs.OBJECT_MANAGER_INTERFACE,
-        destination=defs.BLUEZ_SERVICE,
-    ).asFuture(loop)
-    adapter_path, interface = _filter_on_adapter(objects, device)
 
     # Add signal listeners
     await bus.addMatch(
@@ -120,15 +128,30 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         interface="org.freedesktop.DBus.Properties",
         member="PropertiesChanged",
     ).asFuture(loop)
-    await bus.addMatch(
-        parse_msg, interface="org.bluez.Adapter1", member="PropertyChanged"
+
+    # Find the HCI device to use for scanning and get cached device properties
+    objects = await bus.callRemote(
+        "/",
+        "GetManagedObjects",
+        interface=defs.OBJECT_MANAGER_INTERFACE,
+        destination=defs.BLUEZ_SERVICE,
     ).asFuture(loop)
+    adapter_path, interface = _filter_on_adapter(objects, device)
+    cached_devices = dict(_filter_on_device(objects))
 
     # dd = {'objectPath': '/org/bluez/hci0', 'methodName': 'StartDiscovery',
     # 'interface': 'org.bluez.Adapter1', 'destination': 'org.bluez',
     # 'signature': '', 'body': (), 'expectReply': True, 'autoStart': True,
     # 'timeout': None, 'returnSignature': ''}
     # Running Discovery loop.
+    await bus.callRemote(
+        adapter_path,
+        "SetDiscoveryFilter",
+        interface="org.bluez.Adapter1",
+        destination="org.bluez",
+        signature="a{sv}",
+        body=[{"Transport": "le"}]
+    ).asFuture(loop)
     await bus.callRemote(
         adapter_path,
         "StartDiscovery",
@@ -158,5 +181,8 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     discovered_devices = []
     for path, props in devices.items():
         name, address, _, path = _device_info(path, props)
-        discovered_devices.append(BLEDevice(address, name, path))
+        uuids = props.get("UUIDs", [])
+        manufacturer_data = props.get('ManufacturerData', {})
+        discovered_devices.append(BLEDevice(address, name, path, uuids=uuids,
+                                  manufacturer_data=manufacturer_data))
     return discovered_devices
