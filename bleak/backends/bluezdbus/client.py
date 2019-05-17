@@ -297,7 +297,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     async def write_gatt_char(
         self, _uuid: str, data: bytearray, response: bool = False
-    ) -> Any:
+    ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
         Args:
@@ -305,18 +305,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
             data (bytes or bytearray): The data to send.
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
-        Returns:
-            None if not `response=True`, in which case a bytearray is returned.
-
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        # TODO: Add OnValueUpdated handler for response=True?
         await self._bus.callRemote(
             characteristic.path,
             "WriteValue",
             interface=defs.GATT_CHARACTERISTIC_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
             signature="aya{sv}",
-            body=[data, {}],
+            body=[data, {"type": "request" if response else "command"}],
             returnSignature="",
         ).asFuture(self.loop)
         logger.debug(
@@ -324,12 +322,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 _uuid, characteristic.path, data
             )
         )
-        if response:
-            return await self.read_gatt_char(_uuid)
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: bytearray
-    ) -> Any:
+    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
