@@ -2,6 +2,14 @@
 History
 =======
 
+0.4.1 (2019-05-17)
+------------------
+
+* Merging of PR #61, improvements and fixes for multiple issues for BlueZ backend
+* Implementation of issue #57
+* Fixing issue #59
+* Documentation fixes.
+
 0.4.0 (2019-04-10)
 ------------------
 
@@ -9,13 +17,11 @@ History
 * Fixed BlueZ >= 5.48 issues regarding Battery Service
 * Fix for issue #55
 
-
 0.3.0 (2019-03-18)
 ------------------
 
 * Fix for issue #53: Windows and Python 3.7 error
 * Azure Pipelines used for CI
-
 
 0.2.4 (2018-11-30)
 ------------------
