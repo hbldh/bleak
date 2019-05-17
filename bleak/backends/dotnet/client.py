@@ -47,6 +47,7 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import (
     GattDescriptorsResult,
     GattCommunicationStatus,
     GattReadResult,
+    GattWriteOption,
     GattWriteResult,
     GattValueChangedEventArgs,
     GattCharacteristicProperties,
@@ -331,32 +332,15 @@ class BleakClientDotNet(BaseBleakClient):
 
         writer = DataWriter()
         writer.WriteBytes(Array[Byte](data))
-        if response:
-            write_result = await wrap_IAsyncOperation(
-                IAsyncOperation[GattWriteResult](
-                    characteristic.obj.WriteValueWithResultAsync(writer.DetachBuffer())
-                ),
-                return_type=GattWriteResult,
-                loop=self.loop,
-            )
-            status = write_result.Status
-            if status != GattCommunicationStatus.Success:
-                logger.error(
-                    "Write-With-Results Protocol Error {0} for characteristic {1} : {2}".format(
-                        int(write_result.ProtocolError), _uuid, data
-                    )
-                )
-                return
-        else:
-            write_result = await wrap_IAsyncOperation(
-                IAsyncOperation[GattCommunicationStatus](
-                    characteristic.obj.WriteValueAsync(writer.DetachBuffer())
-                ),
-                return_type=GattCommunicationStatus,
-                loop=self.loop,
-            )
-            status = write_result
-        if status == GattCommunicationStatus.Success:
+        response = GattWriteOption.WriteWithResponse if response else GattWriteOption.WriteWithoutResponse
+        write_result = await wrap_IAsyncOperation(
+            IAsyncOperation[GattWriteResult](
+                characteristic.obj.WriteValueWithResultAsync(writer.DetachBuffer(), response)
+            ),
+            return_type=GattWriteResult,
+            loop=self.loop,
+        )
+        if write_result.Status == GattCommunicationStatus.Success:
             logger.debug("Write Characteristic {0} : {1}".format(_uuid, data))
         else:
             raise BleakError(
