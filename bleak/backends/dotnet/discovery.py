@@ -90,7 +90,6 @@ async def discover(
     found = []
     for d in devices.values():
         bdaddr = _format_bdaddr(d.BluetoothAddress)
-        name = d.Advertisement.LocalName
         uuids = []
         for u in d.Advertisement.ServiceUuids:
             uuids.append(u.ToString())
@@ -101,6 +100,6 @@ async def discover(
             reader = DataReader.FromBuffer(md)
             reader.ReadBytes(b)
             data[m.CompanyId] = bytes(b)
-        found.append(BLEDevice(bdaddr, name, d, uuids=uuids, manufacturer_data=data))
+        found.append(BLEDevice(bdaddr, d.Advertisement.LocalName, d, uuids=uuids, manufacturer_data=data))
 
     return found
