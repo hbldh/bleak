@@ -176,6 +176,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._bus, self.loop, self._device_path + "/service"
         )
 
+        # no guarantee service listed before charachteristics in objs
+        # need multiple iterations
+
         for object_path, interfaces in objs.items():
             logger.debug(utils.format_GATT_object(object_path, interfaces))
             if defs.GATT_SERVICE_INTERFACE in interfaces:
@@ -183,7 +186,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self.services.add_service(
                     BleakGATTServiceBlueZDBus(service, object_path)
                 )
-            elif defs.GATT_CHARACTERISTIC_INTERFACE in interfaces:
+
+        for object_path, interfaces in objs.items():
+            logger.debug(utils.format_GATT_object(object_path, interfaces))
+            if defs.GATT_CHARACTERISTIC_INTERFACE in interfaces:
                 char = interfaces.get(defs.GATT_CHARACTERISTIC_INTERFACE)
                 _service = list(
                     filter(lambda x: x.path == char["Service"], self.services)
@@ -194,7 +200,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 self._char_path_to_uuid[object_path] = char.get("UUID")
-            elif defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
+
+        for object_path, interfaces in objs.items():
+            logger.debug(utils.format_GATT_object(object_path, interfaces))
+            if defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
                 desc = interfaces.get(defs.GATT_DESCRIPTOR_INTERFACE)
                 _characteristic = list(
                     filter(
