@@ -51,8 +51,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self) -> bool:
+    async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
+
+        Keyword Args:
+            timeout (float): Timeout for required ``discover`` call. Defaults to 0.1.
 
         Returns:
             Boolean representing connection status.
@@ -61,7 +64,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
-        await discover(timeout=0.1, loop=self.loop)
+        await discover(timeout=kwargs.get('timeout', 0.1), loop=self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(

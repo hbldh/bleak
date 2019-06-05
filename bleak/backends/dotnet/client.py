@@ -86,15 +86,18 @@ class BleakClientDotNet(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self) -> bool:
+    async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
+
+        Keyword Args:
+            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
         Returns:
             Boolean representing connection status.
 
         """
         # Try to find the desired device.
-        devices = await discover(2.0, loop=self.loop)
+        devices = await discover(timeout=kwargs.get('timeout', 2.0), loop=self.loop)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )
