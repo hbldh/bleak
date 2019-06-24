@@ -64,7 +64,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
-        await discover(timeout=kwargs.get('timeout', 0.1), loop=self.loop)
+        await discover(timeout=kwargs.get('timeout', 0.1), device=self.device, loop=self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
