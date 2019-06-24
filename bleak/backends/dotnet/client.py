@@ -132,9 +132,19 @@ class BleakClientDotNet(BaseBleakClient):
         self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
 
         # Obtain services, which also leads to connection being established.
-        await self.get_services()
-        await asyncio.sleep(0.2, loop=self.loop)
-        connected = await self.is_connected()
+        services = await self.get_services()
+        connected = False
+        if self._services_resolved:
+            # If services has been resolved, then we assume that we are connected. This is due to
+            # some issues with getting `is_connected` to give correct response here.
+            connected = True
+        else:
+            for _ in range(5):
+                await asyncio.sleep(0.2, loop=self.loop)
+                connected = await self.is_connected()
+                if connected:
+                    break
+
         if connected:
             logger.debug("Connection successful.")
         else:
@@ -174,7 +184,6 @@ class BleakClientDotNet(BaseBleakClient):
             return (
                 self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
             )
-
         else:
             return False
 
