@@ -180,6 +180,9 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     #
     discovered_devices = []
     for path, props in devices.items():
+        if not props:
+            logger.debug("Disregarding %s since no properties could be obtained." % path)
+            continue
         name, address, _, path = _device_info(path, props)
         uuids = props.get("UUIDs", [])
         manufacturer_data = props.get('ManufacturerData', {})
