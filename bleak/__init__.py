@@ -49,6 +49,10 @@ if platform.system() == "Linux":
     )  # noqa
 elif platform.system() == "Darwin":
     # TODO: Check if macOS version has Core Bluetooth, raise error otherwise.
+    from Foundation import NSClassFromString
+    if NSClassFromString("CBPeripheral") is None:
+        raise BleakError("Bleak requires the CoreBluetooth Framework")
+
     from bleak.backends.corebluetooth import (
         BleakClientCoreBluetooth as BleakClient,
         discover,
