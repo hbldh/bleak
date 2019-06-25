@@ -10,12 +10,17 @@ import pytest
 
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
 _IS_AZURE_PIPELINES = os.environ.get("SYSTEM_HOSTTYPE", "") == "build"
-_OS = os.environ.get("AGENT_OS").lower()
+
+if platform.system() == "Windows":
+    _OS = os.environ.get("AGENT_OS").lower()
+else:
+    _OS = platform.system()
 
 
 @pytest.mark.skipif(
-    condition=(_IS_CI or _IS_AZURE_PIPELINES) and (_OS == "linux" or _OS == "darwin"),
-    reason="Cannot run on Azure Pipelines with Ubuntu 16.04 or macOS installed.",
+    condition=(_IS_CI or _IS_AZURE_PIPELINES) and (_OS in ("linux", "darwin")),
+    reason="""Cannot run on Azure Pipelines with
+    Ubuntu 16.04 or macOS installed.""",
 )
 def test_import():
     """Test by importing the client and assert correct client by OS."""
