@@ -14,5 +14,5 @@ class BleakClientCoreBluetooth(object):
         raise NotImplementedError("BleakClientCoreBluetooth not implemented yet.")
 
 
-async def discover(device="hci0", timeout=5.0):
-    raise NotImplementedError("CoreBluetooth discover not implemented yet.")
+# async def discover(device="hci0", timeout=5.0):
+    # raise NotImplementedError("CoreBluetooth discover not implemented yet.")
