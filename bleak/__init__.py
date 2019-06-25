@@ -53,9 +53,9 @@ elif platform.system() == "Darwin":
     if NSClassFromString("CBPeripheral") is None:
         raise BleakError("Bleak requires the CoreBluetooth Framework")
 
+    from bleak.backends.corebluetooth.discovery import discover
     from bleak.backends.corebluetooth import (
         BleakClientCoreBluetooth as BleakClient,
-        discover,
     )  # noqa
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
