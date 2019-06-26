@@ -31,6 +31,7 @@ class CentralManagerDelegate(NSObject):
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(self, None)
         self.ready = False
         self.peripheral_list = []
+        self.advertisement_data_list = []
 
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
@@ -85,10 +86,13 @@ class CentralManagerDelegate(NSObject):
                                                                      peripheral: CBPeripheral,
                                                                      advertisementData: NSDictionary,
                                                                      RSSI: NSNumber):
-        self.peripheral_list.append(peripheral)
         uuid_string = peripheral.identifier().UUIDString()
+        if uuid_string not in list(map(lambda x: x.identifier().UUIDString(), self.peripheral_list)):
+            self.peripheral_list.append(peripheral)
+            self.advertisement_data_list.append(advertisementData)
+
         logger.debug(f"Received {uuid_string}: {peripheral.name() or 'Unknown'}")
-        print("H")
+
 
 def uuidlist2nsarray(uuid_list: List) -> NSArray:
     """Convert array of uuids to NSArray of CBUUIDs"""
