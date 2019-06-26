@@ -7,10 +7,12 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import asyncio
+import logging
 from typing import List
 import objc
 from Foundation import NSObject, CBCentralManager, CBPeripheral, CBUUID, NSArray, NSDictionary, NSNumber
 
+logger = logging.getLogger(__name__)
 
 CBCentralManagerDelegate = objc.protocolNamed('CBCentralManagerDelegate')
 
@@ -31,7 +33,7 @@ class CentralManagerDelegate(NSObject):
         self.peripheral_list = []
 
         if not self.compliant():
-            print("WARNING: CentralManagerDelegate is not compliant")
+            logger.warning("CentralManagerDelegate is not compliant")
 
         return self
 
@@ -85,7 +87,8 @@ class CentralManagerDelegate(NSObject):
                                                                      RSSI: NSNumber):
         self.peripheral_list.append(peripheral)
         uuid_string = peripheral.identifier().UUIDString()
-        print(advertisementData.allKeys())
+        logger.debug(f"Received {uuid_string}: {peripheral.name() or 'Unknown'}")
+        print("H")
 
 def uuidlist2nsarray(uuid_list: List) -> NSArray:
     """Convert array of uuids to NSArray of CBUUIDs"""
