@@ -17,8 +17,8 @@ class BLEDevice(object):
       `Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement` object.
     - When using Linux backend, `details` attribute is a
       string path to the DBus device object.
-    - When using macOS backend, `details` attribute will be
-      something else.
+    - When using macOS backend, `details` attribute will be a CBPeripheral
+      object
 
     """
 
