@@ -42,9 +42,34 @@ async def discover(
         raise BleakError("Bluetooth device is turned off")
 
     scan_options = {
-            'timeout': 5
+            'timeout': timeout
             }
 
     await cbapp.central_manager_delegate.scanForPeripherals_(scan_options)
 
-    return []
+    # CoreBluetooth doesn't explicitly use MAC addresses to identify peripheral
+    # devices because private devices may obscure their MAC addresses. To cope
+    # with this, CoreBluetooth utilizes UUIDs for each peripheral. We'll use
+    # this for the BLEDevice address on macOS
+
+    found = []
+
+    peripherals = cbapp.central_manager_delegate.peripheral_list
+    print(type(peripherals))
+    for i, peripheral in enumerate(peripherals):
+        address = peripheral.identifier().UUIDString()
+        name = peripheral.name() or "Unknown"
+        details = peripheral
+
+        advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
+        manufacturer_binary_data = advertisementData['kCBAdvDataManufacturerData'] if 'kCBAdvDataManufacturerData' in advertisementData.keys() else None
+        if manufacturer_binary_data:
+            manufacturer_id = int.from_bytes(manufacturer_binary_data[0:2], byteorder='little')
+            manufacturer_value = ''.join(list(map(lambda x: format(x, 'x') if len(format(x, 'x')) == 2 else f"0{format(x, 'x')}", list(manufacturer_binary_data)[2:])))
+            manufacturer_data = {
+                    manufacturer_id: manufacturer_value
+                    }
+
+        found.append(BLEDevice(address, name, details, manufacturer_data=manufacturer_data))
+
+    return found
