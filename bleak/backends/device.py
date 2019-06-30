@@ -28,6 +28,12 @@ class BLEDevice(object):
         self.details = details
         self.metadata = kwargs
 
+    @property
+    def rssi(self):
+        """Get the signal strength in DBm"""
+        try:
+            return int(self.details.RawSignalStrengthInDBm)
+
     def __str__(self):
         if self.name == "Unknown":
             if "manufacturer_data" in self.metadata:
