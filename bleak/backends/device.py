@@ -30,9 +30,11 @@ class BLEDevice(object):
 
     @property
     def rssi(self):
-        """Get the signal strength in DBm"""
+        """Get the signal strength in dBm"""
         try:
             return int(self.details.RawSignalStrengthInDBm)
+        except Exception as e:
+            return None
 
     def __str__(self):
         if self.name == "Unknown":
