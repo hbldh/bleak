@@ -11,12 +11,6 @@ import asyncio
 from Foundation import NSDate, NSDefaultRunLoopMode, NSRunLoop
 from .CentralManagerDelegate import CentralManagerDelegate
 
-
-class BleakClientCoreBluetooth(object):
-    def __init__(self, address, hci_device="hci0"):
-        raise NotImplementedError("BleakClientCoreBluetooth not implemented yet.")
-
-
 # async def discover(device="hci0", timeout=5.0):
     # raise NotImplementedError("CoreBluetooth discover not implemented yet.")
 
@@ -38,6 +32,9 @@ class Application():
         
         self.central_manager_delegate = CentralManagerDelegate.alloc().init()
 
+    def __del__(self):
+        self.ns_run_loop_done = True
+
     async def _handle_nsrunloop(self):
         while not self.ns_run_loop_done:
             time_interval = NSDate.alloc().initWithTimeIntervalSinceNow_(self.ns_run_loop_interval)
@@ -47,6 +44,6 @@ class Application():
     async def _central_manager_delegate_ready(self):
         await self.central_manager_delegate.is_ready()
 
-
+# Restructure this later: Global isn't the prettiest way of doing this...
 global CBAPP 
 CBAPP = Application()
