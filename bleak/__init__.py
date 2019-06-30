@@ -54,9 +54,8 @@ elif platform.system() == "Darwin":
         raise BleakError("Bleak requires the CoreBluetooth Framework")
 
     from bleak.backends.corebluetooth.discovery import discover
-    from bleak.backends.corebluetooth import (
-        BleakClientCoreBluetooth as BleakClient,
-    )  # noqa
+    from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth as BleakClient
+
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
