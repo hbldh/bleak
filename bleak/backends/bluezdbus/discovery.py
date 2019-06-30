@@ -36,17 +36,21 @@ def _filter_on_device(objs):
 
 
 def _device_info(path, props):
-    name = props.get("Name", props.get("Alias", path.split("/")[-1]))
-    address = props.get("Address", None)
-    if address is None:
-        try:
-            address = path[-17:].replace("_", ":")
-            if not validate_mac_address(address):
+    try:
+        name = props.get("Name", props.get("Alias", path.split("/")[-1]))
+        address = props.get("Address", None)
+        if address is None:
+            try:
+                address = path[-17:].replace("_", ":")
+                if not validate_mac_address(address):
+                    address = None
+            except Exception:
                 address = None
-        except Exception:
-            address = None
-    rssi = props.get("RSSI", "?")
-    return name, address, rssi, path
+        rssi = props.get("RSSI", "?")
+        return name, address, rssi, path
+    except Exception as e:
+        logger.exception(e, exc_info=True)
+        return None, None, None, None
 
 
 async def discover(timeout=5.0, loop=None, **kwargs):
@@ -96,6 +100,13 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             devices[msg_path] = (
                 {**devices[msg_path], **changed} if msg_path in devices else changed
             )
+        elif message.member == "InterfacesRemoved" and message.body[1][0] == defs.BATTERY_INTERFACE:
+            logger.info(
+                "{0}, {1} ({2}): {3}".format(
+                    message.member, message.interface, message.path, message.body
+                )
+            )
+            return
         else:
             msg_path = message.path
             logger.info(
@@ -186,6 +197,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         name, address, _, path = _device_info(path, props)
         uuids = props.get("UUIDs", [])
         manufacturer_data = props.get('ManufacturerData', {})
-        discovered_devices.append(BLEDevice(address, name, path, uuids=uuids,
+        discovered_devices.append(BLEDevice(address, name, {"path": path, "props": props}, uuids=uuids,
                                   manufacturer_data=manufacturer_data))
     return discovered_devices
