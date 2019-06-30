@@ -31,13 +31,6 @@ async def discover(
 
     devices = {}
 
-    # Need to call search for Peripherals
-    # This should be a function of the CBCentralManager
-    # CentralManager will be maintained by the
-    # CBCentralManagerDelegate
-    # We should only have one instance of CBCentralManagerDelegate
-    # Possibly initialize it on the init and init it if it is not
-
     if not cbapp.central_manager_delegate.enabled:
         raise BleakError("Bluetooth device is turned off")
 
@@ -55,7 +48,7 @@ async def discover(
     found = []
 
     peripherals = cbapp.central_manager_delegate.peripheral_list
-    print(type(peripherals))
+
     for i, peripheral in enumerate(peripherals):
         address = peripheral.identifier().UUIDString()
         name = peripheral.name() or "Unknown"
@@ -63,6 +56,7 @@ async def discover(
 
         advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
         manufacturer_binary_data = advertisementData['kCBAdvDataManufacturerData'] if 'kCBAdvDataManufacturerData' in advertisementData.keys() else None
+        manufacturer_data = {}
         if manufacturer_binary_data:
             manufacturer_id = int.from_bytes(manufacturer_binary_data[0:2], byteorder='little')
             manufacturer_value = ''.join(list(map(lambda x: format(x, 'x') if len(format(x, 'x')) == 2 else f"0{format(x, 'x')}", list(manufacturer_binary_data)[2:])))
