@@ -30,12 +30,13 @@ async def run(address, loop, debug=False):
         log.info("Connected: {0}".format(x))
 
         for service in client.services:
-            # service.obj is instance of 'Windows.Devices.Bluetooth.GenericAttributeProfile.GattDeviceService'
             log.info("[Service] {0}: {1}".format(service.uuid, service.description))
             for char in service.characteristics:
-                # char.obj is instance of 'Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic'
                 if "read" in char.properties:
-                    value = bytes(await client.read_gatt_char(char.uuid))
+                    try:
+                        value = bytes(await client.read_gatt_char(char.uuid))
+                    except Exception as e:
+                        value = str(e).encode()
                 else:
                     value = None
                 log.info(
@@ -44,7 +45,6 @@ async def run(address, loop, debug=False):
                     )
                 )
                 for descriptor in char.descriptors:
-                    # descriptor.obj is instance of 'Windows.Devices.Bluetooth.GenericAttributeProfile.GattDescriptor
                     value = await client.read_gatt_descriptor(descriptor.handle)
                     log.info(
                         "\t\t[Descriptor] {0}: (Handle: {1}) | Value: {2} ".format(
@@ -57,3 +57,5 @@ if __name__ == "__main__":
     address = "24:71:89:cc:09:05"
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))
+
+

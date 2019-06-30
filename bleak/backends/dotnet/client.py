@@ -37,6 +37,7 @@ from Windows.Devices.Bluetooth import (
     BluetoothLEDevice,
     BluetoothConnectionStatus,
     BluetoothCacheMode,
+    BluetoothAddressType,
 )
 from Windows.Devices.Bluetooth.GenericAttributeProfile import (
     GattDeviceService,
@@ -73,20 +74,30 @@ class BleakClientDotNet(BaseBleakClient):
         self._bridge = Bridge()
         self._callbacks = {}
 
+        self._address_type = (
+            kwargs["address_type"]
+            if "address_type" in kwargs
+            and kwargs["address_type"] in ("public", "random")
+            else None
+        )
+
     def __str__(self):
         return "BleakClientDotNet ({0})".format(self.address)
 
     # Connectivity methods
 
-    async def connect(self) -> bool:
+    async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
+
+        Keyword Args:
+            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
         Returns:
             Boolean representing connection status.
 
         """
         # Try to find the desired device.
-        devices = await discover(2.0, loop=self.loop)
+        devices = await discover(timeout=kwargs.get('timeout', 2.0), loop=self.loop)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )
@@ -100,11 +111,16 @@ class BleakClientDotNet(BaseBleakClient):
 
         logger.debug("Connecting to BLE device @ {0}".format(self.address))
 
+        args = [UInt64(self._device_info.BluetoothAddress)]
+        if self._address_type is not None:
+            args.append(
+                BluetoothAddressType.Public
+                if self._address_type == "public"
+                else BluetoothAddressType.Random
+            )
         self._requester = await wrap_IAsyncOperation(
             IAsyncOperation[BluetoothLEDevice](
-                BluetoothLEDevice.FromBluetoothAddressAsync(
-                    UInt64(self._device_info.BluetoothAddress)
-                )
+                BluetoothLEDevice.FromBluetoothAddressAsync(*args)
             ),
             return_type=BluetoothLEDevice,
             loop=self.loop,
@@ -116,9 +132,19 @@ class BleakClientDotNet(BaseBleakClient):
         self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
 
         # Obtain services, which also leads to connection being established.
-        await self.get_services()
-        await asyncio.sleep(0.2, loop=self.loop)
-        connected = await self.is_connected()
+        services = await self.get_services()
+        connected = False
+        if self._services_resolved:
+            # If services has been resolved, then we assume that we are connected. This is due to
+            # some issues with getting `is_connected` to give correct response here.
+            connected = True
+        else:
+            for _ in range(5):
+                await asyncio.sleep(0.2, loop=self.loop)
+                connected = await self.is_connected()
+                if connected:
+                    break
+
         if connected:
             logger.debug("Connection successful.")
         else:
@@ -158,7 +184,6 @@ class BleakClientDotNet(BaseBleakClient):
             return (
                 self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
             )
-
         else:
             return False
 
@@ -332,10 +357,16 @@ class BleakClientDotNet(BaseBleakClient):
 
         writer = DataWriter()
         writer.WriteBytes(Array[Byte](data))
-        response = GattWriteOption.WriteWithResponse if response else GattWriteOption.WriteWithoutResponse
+        response = (
+            GattWriteOption.WriteWithResponse
+            if response
+            else GattWriteOption.WriteWithoutResponse
+        )
         write_result = await wrap_IAsyncOperation(
             IAsyncOperation[GattWriteResult](
-                characteristic.obj.WriteValueWithResultAsync(writer.DetachBuffer(), response)
+                characteristic.obj.WriteValueWithResultAsync(
+                    writer.DetachBuffer(), response
+                )
             ),
             return_type=GattWriteResult,
             loop=self.loop,

@@ -16,7 +16,8 @@ class BLEDevice(object):
     - When using Windows backend, `details` attribute is a
       `Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement` object.
     - When using Linux backend, `details` attribute is a
-      string path to the DBus device object.
+      dict with keys `path` which has the string path to the DBus device object and `props`
+      which houses the properties dictionary of the D-Bus Device.
     - When using macOS backend, `details` attribute will be
       something else.
 
@@ -27,6 +28,17 @@ class BLEDevice(object):
         self.name = name if name else "Unknown"
         self.details = details
         self.metadata = kwargs
+
+    @property
+    def rssi(self):
+        """Get the signal strength in dBm"""
+        if isinstance(self.details, dict) and "props" in self.details:
+            rssi = self.details["props"].get("RSSI", 0)  # Should not be set to 0...
+        elif hasattr(self.details, "RawSignalStrengthInDBm"):
+            rssi = self.details.RawSignalStrengthInDBm
+        else:
+            rssi = None
+        return int(rssi) if rssi is not None else None
 
     def __str__(self):
         if self.name == "Unknown":

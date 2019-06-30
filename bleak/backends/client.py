@@ -47,7 +47,7 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     @abc.abstractmethod
-    async def connect(self) -> bool:
+    async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
         Returns:

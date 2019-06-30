@@ -3,7 +3,7 @@ Bleak backends
 
 Bleak supports the following operating systems:
 
-* Windows 10, version 16299 (Fall Creators Update)
+* Windows 10, version 16299 (Fall Creators Update) and greater
 * Linux distributions with BlueZ >= 5.43
 * Plans on macOS support via Core Bluetooth API
 
