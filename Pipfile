@@ -18,12 +18,8 @@ sphinx = "*"
 pytest-cov = "*"
 cryptography = "*"
 pyyaml = "*"
-black = "*"
 wheel = "*"
 watchdog = "*"
 coverage = "*"
 pytest-runner = "*"
 
-[pipenv]
-
-allow_prereleases = true

@@ -50,8 +50,7 @@ async def wrap_IAsyncOperation(op, return_type, loop):
     """Enables await on .NET Task using asyncio.Event and a lambda callback.
 
     Args:
-        task (System.Threading.Tasks.Task): .NET async task object
-        to await upon.
+        task (System.Threading.Tasks.Task): .NET async task object to await.
         loop (Event Loop): The event loop to await on the Task in.
 
     Returns:

@@ -51,8 +51,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self) -> bool:
+    async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
+
+        Keyword Args:
+            timeout (float): Timeout for required ``discover`` call. Defaults to 0.1.
 
         Returns:
             Boolean representing connection status.
@@ -61,7 +64,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
-        await discover(timeout=0.1, loop=self.loop)
+        await discover(timeout=kwargs.get('timeout', 0.1), device=self.device, loop=self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
@@ -176,6 +179,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._bus, self.loop, self._device_path + "/service"
         )
 
+        # There is no guarantee that services are listed before characteristics
+        # Managed Objects dict.
+        # Need multiple iterations to construct the Service Collection
+
+        _chars, _descs = [], []
+
         for object_path, interfaces in objs.items():
             logger.debug(utils.format_GATT_object(object_path, interfaces))
             if defs.GATT_SERVICE_INTERFACE in interfaces:
@@ -185,28 +194,34 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             elif defs.GATT_CHARACTERISTIC_INTERFACE in interfaces:
                 char = interfaces.get(defs.GATT_CHARACTERISTIC_INTERFACE)
-                _service = list(
-                    filter(lambda x: x.path == char["Service"], self.services)
-                )
-                self.services.add_characteristic(
-                    BleakGATTCharacteristicBlueZDBus(
-                        char, object_path, _service[0].uuid
-                    )
-                )
-                self._char_path_to_uuid[object_path] = char.get("UUID")
+                _chars.append([char, object_path])
             elif defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
                 desc = interfaces.get(defs.GATT_DESCRIPTOR_INTERFACE)
-                _characteristic = list(
-                    filter(
-                        lambda x: x.path == desc["Characteristic"],
-                        self.services.characteristics.values(),
-                    )
+                _descs.append([desc, object_path])
+
+        for char, object_path in _chars:
+            _service = list(
+                filter(lambda x: x.path == char["Service"], self.services)
+            )
+            self.services.add_characteristic(
+                BleakGATTCharacteristicBlueZDBus(
+                    char, object_path, _service[0].uuid
                 )
-                self.services.add_descriptor(
-                    BleakGATTDescriptorBlueZDBus(
-                        desc, object_path, _characteristic[0].uuid
-                    )
+            )
+            self._char_path_to_uuid[object_path] = char.get("UUID")
+
+        for desc, object_path in _descs:
+            _characteristic = list(
+                filter(
+                    lambda x: x.path == desc["Characteristic"],
+                    self.services.characteristics.values(),
                 )
+            )
+            self.services.add_descriptor(
+                BleakGATTDescriptorBlueZDBus(
+                    desc, object_path, _characteristic[0].uuid
+                )
+            )
 
         self._services_resolved = True
         return self.services
