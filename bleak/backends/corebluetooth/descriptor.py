@@ -7,8 +7,6 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 from bleak.backends.descriptor import BleakGATTDescriptor
 
 from Foundation import CBDescriptor
-# from Windows.Devices.Bluetooth.GenericAttributeProfile import GattDescriptor
-
 
 class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     """GATT Descriptor implementation for CoreBluetooth backend"""
@@ -30,9 +28,11 @@ class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     @property
     def uuid(self) -> str:
         """UUID for this descriptor"""
-        return self.obj.UUID.UUIDString
+        return self.obj.UUID().UUIDString()
 
     @property
     def handle(self) -> int:
         """Integer handle for this descriptor"""
-        return self.obj.value
+        data = self.obj.value()
+        ba = data.getBytes_length_(None, len(data))
+        return int.from_bytes(ba, byteorder="little", signed=False)
