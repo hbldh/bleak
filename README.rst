@@ -2,12 +2,12 @@
 bleak
 =====
 
-.. image:: https://www.dropbox.com/s/fm0670e9yrmwr5t/Bleak_logo.png?raw=1
+.. image:: https://raw.githubusercontent.com/hbldh/bleak/master/Bleak_logo.png
     :target: https://github.com/hbldh/bleak
     :alt: Bleak Logo
     :scale: 50%
 
-|
+
 
 .. image:: https://dev.azure.com/hbldh/github/_apis/build/status/hbldh.bleak?branchName=master
     :target: https://dev.azure.com/hbldh/github/_build/latest?definitionId=4&branchName=master

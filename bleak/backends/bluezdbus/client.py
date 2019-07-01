@@ -323,6 +323,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+
+        if ("write" not in characteristic.properties and "write-without-response" not in characteristic.properties):
+            raise BleakError("Characteristic %s does not support write operations!" % str(_uuid))
+        if not response and "write-without-response" not in characteristic.properties:
+            response = True
+            # Force response here, since the device only supports that.
+        if response and "write" not in characteristic.properties and "write-without-response" in characteristic.properties:
+            response = False
+            logger.warning("Characteristic %s does not support Write with response. Trying without..." % str(_uuid))
+
         if response or (self._bluez_version[0] == 5 and self._bluez_version[1] > 50):
             # TODO: Add OnValueUpdated handler for response=True?
             await self._bus.callRemote(
