@@ -53,6 +53,7 @@ class PeripheralDelegate(NSObject):
         self._descriptor_write_log = {}
 
         self._characteristic_notify_log = {}
+        self._characteristic_notify_status = {}
         self._characteristic_notify_callbacks = {}
 
         if not self.compliant():
@@ -164,6 +165,19 @@ class PeripheralDelegate(NSObject):
         while not self._characteristic_notify_log[cUUID]:
             await asyncio.sleep(0.01)
 
+        self._characteristic_notify_status[cUUID] = True
+        return True
+
+    async def stopNotify_(self, characteristic: CBCharacteristic) -> bool:
+        cUUID = characteristic.UUID().UUIDString()
+        self._characteristic_notify_log[cUUID] = False
+
+        self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
+
+        while not self._characteristic_notify_log[cUUID]:
+            await asyncio.sleep(0.01)
+
+        self._characteristic_notify_status = False
         return True
 
     # Protocol Functions
@@ -195,8 +209,8 @@ class PeripheralDelegate(NSObject):
         if error is not None:
             raise BleakError("Failed to read characteristic {}: {}".format(cUUID, error))
 
-        if cUUID in self._characteristic_notify_log and self._characteristic_notify_log[cUUID]:
-            self._characteristic_notify_callbacks[cUUId](cUUID, characteristic.value())
+        if cUUID in self._characteristic_notify_status and self._characteristic_notify_status[cUUID]:
+            self._characteristic_notify_callbacks[cUUID](cUUID, characteristic.value())
 
         logger.debug("Read characteristic value")
         self._characteristic_value_log[cUUID] = True

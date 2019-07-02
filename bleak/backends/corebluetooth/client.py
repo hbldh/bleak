@@ -178,7 +178,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeDescriptor_value_(descriptor.obj, value)
-        raise BleakError("BleakClientCoreBluetooth:write_gatt_descriptor not implemented")
 
     async def start_notify(self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs) -> None:
         """Activate notifications/indications on a characteristic.
@@ -203,10 +202,24 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} not found!".format(_uuid))
 
         success = await cbapp.central_manager_delegate.connected_peripheral_delegate.startNotify_cb_(characteristic.obj, callback)
-        raise BleakError("BleakClientCoreBluetooth:start_notify not implemented")
 
     async def stop_notify(self, _uuid: str) -> None:
-        raise BleakError("BleakClientCoreBluetooth:stop_notify not implemented")
+        """Internal method performing call to BleakUWPBridge method.
+
+        Args:
+            characteristic_obj: The Managed Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic Object
+            callback: The function to be called on notification.
+
+        Returns:
+            (int) The GattCommunicationStatus of the operation.
+
+        """
+        _uuid = self.get_appropriate_uuid(_uuid)
+        characteristic = self.services.get_characteristic(_uuid)
+        if not characteristic:
+            raise BleakError("Characteristic {} not found!".format(_uuid))
+
+        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.stopNotify_(characteristic.obj)
 
     async def get_appropriate_uuid(self, _uuid: str) -> str:
         if len(_uuid) == 4:
