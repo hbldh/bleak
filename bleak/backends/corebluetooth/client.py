@@ -181,10 +181,29 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         raise BleakError("BleakClientCoreBluetooth:write_gatt_descriptor not implemented")
 
     async def start_notify(self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs) -> None:
-        raise BleakError("BleakClientCoreBluetooth:start_notify not implemented")
+        """Activate notifications/indications on a characteristic.
 
-    # async def _start_notify( self, characteristic_obj: GattCharacteristic, callback: Callable[[str, Any], Any]):
-        # raise BleakError("BleakClientCoreBluetooth:_start_notify not implemented")
+        Callbacks must accept two inputs. The first will be a uuid string
+        object and the second will be a bytearray.
+
+        .. code-block:: python
+
+            def callback(sender, data):
+                print(f"{sender}: {data}")
+            client.start_notify(char_uuid, callback)
+
+        Args:
+            _uuid (str or UUID): The uuid of the characteristics to start notification/indication on.
+            callback (function): The function to be called on notification.
+
+        """
+        _uuid = self.get_appropriate_uuid(_uuid)
+        characteristic = self.services.get_characteristic(_uuid)
+        if not characteristic:
+            raise BleakError("Characteristic {} not found!".format(_uuid))
+
+        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.startNotify_(characteristic.obj)
+        raise BleakError("BleakClientCoreBluetooth:start_notify not implemented")
 
     async def stop_notify(self, _uuid: str) -> None:
         raise BleakError("BleakClientCoreBluetooth:stop_notify not implemented")

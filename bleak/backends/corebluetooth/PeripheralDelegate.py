@@ -52,6 +52,8 @@ class PeripheralDelegate(NSObject):
         self._characteristic_write_log = {}
         self._descriptor_write_log = {}
 
+        self._characteristic_notify_log = {}
+
         if not self.compliant():
             logger.warning("PeripheralDelegate is not compliant")
 
@@ -151,6 +153,17 @@ class PeripheralDelegate(NSObject):
 
         return True
 
+    async def startNotify_(self, characteristic: CBCharacteristic) -> bool:
+        cUUID = characteristic.UUID().UUIDString()
+        self._characteristic_notify_log[cUUID] = False
+
+        self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
+
+        while not self._characteristic_notify_log[cUUID]:
+            await asyncio.sleep(0.01)
+
+        return True
+
     # Protocol Functions
     def peripheral_didDiscoverServices_(self, peripheral: CBPeripheral, error: NSError) -> None:
         if error is not None:
@@ -206,3 +219,12 @@ class PeripheralDelegate(NSObject):
 
         logger.debug("Write Descriptor Value")
         self._descriptor_write_log[dUUID] = True
+
+    def peripheral_didUpdateNotificationStateForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+        cUUID = characteristic.UUID().UUIDString()
+        if error is not None:
+            raise BleakError("Failed to update the notification status for characteristic {}: {}".format(cUUID, error))
+
+        logger.deubg("Character Notify Update")
+        self._characteristic_notify_log[cUUID] = True
+
