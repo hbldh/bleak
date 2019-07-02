@@ -9,6 +9,8 @@ import asyncio
 
 from typing import Callable, Any
 
+from Foundation import NSData, CBUUID
+
 from asyncio.events import AbstractEventLoop
 from bleak.exc import BleakError
 
@@ -16,6 +18,10 @@ from ..corebluetooth import CBAPP as cbapp
 from bleak.backends.corebluetooth.discovery import discover
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.service import BleakGATTServiceCollection
+
+from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
+from bleak.backends.corebluetooth.characteristic import BleakGATTCharacteristicCoreBluetooth
+from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +61,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # Now get services
         await self.get_services()
 
+        return True
+
     async def disconnect(self) -> bool:
+        await cbapp.central_manager_delegate.disconnect()
+
+        return True
         raise BleakError("BleakClientCoreBluetooth:disconnect not implemented")
 
     async def is_connected(self) -> bool:
@@ -74,9 +85,27 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         logger.debug("retreiving services...")
         services = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverServices()
 
-        logger.debug(f"retreived {len(services)} services")
+        for service in services:
+            serviceUUID = service.UUID().UUIDString()
+            logger.debug(f"retreiving characteristics for service {serviceUUID}")
+            characteristics = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverCharacteristics_(service)
 
-        raise BleakError("BleakClientCoreBluetooth:get_services not implemented")
+            self.services.add_service(BleakGATTServiceCoreBluetooth(service))
+
+            for characteristic in characteristics:
+                cUUID = characteristic.UUID().UUIDString()
+                logger.debug(f"retreiving descriptors for characteristic {cUUID}")
+                descriptors = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverDescriptors_(characteristic)
+
+                self.services.add_characteristic(BleakGATTCharacteristicCoreBluetooth(characteristic))
+                for descriptor in descriptors:
+                    self.services.add_descriptor(
+                            BleakGATTDescriptorCoreBluetooth(
+                                descriptor, characteristic.UUID().UUIDString()
+                                )
+                            )
+        self._services_resolved = True
+        return self.services
 
     async def read_gatt_char(self, _uuid: str, use_cached=False, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
@@ -90,7 +119,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             (bytearray) The read data.
 
         """
-        raise BleakError("BleakClientCoreBluetooth:read_gatt_char not implemented")
+        _uuid = await self.get_appropriate_uuid(_uuid)
+        characteristic = self.services.get_characteristic(_uuid)
+        if not characteristic:
+            raise BleakError(f"Characteristic {_uuid} was not found!")
+
+        value = await cbapp.central_manager_delegate.connected_peripheral_delegate.readCharacteristic_(characteristic.obj)
+        bytes = value.getBytes_length_(None, len(value))
+        return bytearray(bytes)
 
     async def read_gatt_descriptor(self, handle: int, use_chased=False, **kwargs) -> bytearray:
 
@@ -110,3 +146,32 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     async def stop_notify(self, _uuid: str) -> None:
         raise BleakError("BleakClientCoreBluetooth:stop_notify not implemented")
+
+    async def get_appropriate_uuid(self, _uuid: str) -> str:
+        if len(_uuid) == 4:
+            return _uuid.upper()
+
+        if self.is_uuid_16bit_compatible(_uuid):
+            return _uuid[4:8].upper()
+
+        return _uuid.upper()
+
+    async def is_uuid_16bit_compatible(self, _uuid: str) -> bool:
+        test_uuid = "0000FFFF-0000-1000-8000-00805F9B34FB"
+        test_int = self.convert_uuid_to_int(test_uuid)
+        uuid_int = self.convert_uuid_to_int(_uuid)
+        result_int = uuid_int & test_int
+        return uuid_int == result_int
+
+    async def convert_uuid_to_int(self, _uuid: str) -> int:
+        UUID_cb = CBUUID.alloc().initWithString_(_uuid)
+        UUID_data = UUID_cb.data()
+        UUID_bytes = UUID_data.getBytes_length_(None, len(UUID_data))
+        UUID_int = int.from_bytes(UUID_bytes, byteorder='big')
+        return UUID_int
+
+    async def convert_int_to_uuid(self, i: int) -> str:
+        UUID_bytes = i.to_bytes(length=16, byteorder='big')
+        UUID_data = NSData.alloc().initWithBytes_length_(UUID_bytes, len(UUID_bytes))
+        UUID_cb = CBUUID.alloc().initWithData_(UUID_data)
+        return UUID_cb.UUIDString()
