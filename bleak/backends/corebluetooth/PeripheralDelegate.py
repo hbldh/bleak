@@ -10,7 +10,7 @@ import asyncio
 import logging
 
 from bleak.exc import BleakError
-# from typing import List
+from typing import Callable, Any
 import objc
 from bleak.backends.corebluetooth.corebleak import CoreBleak
 from Foundation import NSObject, \
@@ -53,6 +53,7 @@ class PeripheralDelegate(NSObject):
         self._descriptor_write_log = {}
 
         self._characteristic_notify_log = {}
+        self._characteristic_notify_callbacks = {}
 
         if not self.compliant():
             logger.warning("PeripheralDelegate is not compliant")
@@ -153,10 +154,11 @@ class PeripheralDelegate(NSObject):
 
         return True
 
-    async def startNotify_(self, characteristic: CBCharacteristic) -> bool:
+    async def startNotify_cb_(self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any] ) -> bool:
         cUUID = characteristic.UUID().UUIDString()
         self._characteristic_notify_log[cUUID] = False
-
+        self._characteristic_notify_callbacks[cUUID] = callback
+        
         self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
 
         while not self._characteristic_notify_log[cUUID]:
@@ -185,13 +187,16 @@ class PeripheralDelegate(NSObject):
         if error is not None:
             raise BleakError("Failed to discover descriptors for characteristic {}: {}".format(cUUID, error))
 
-        logger.debug("Descriptor discovered")
+        logger.debug("Descriptor discovered {}".format(cUUID))
         self._characteristic_descriptor_log[cUUID] = True
 
     def peripheral_didUpdateValueForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
             raise BleakError("Failed to read characteristic {}: {}".format(cUUID, error))
+
+        if cUUID in self._characteristic_notify_log and self._characteristic_notify_log[cUUID]:
+            self._characteristic_notify_callbacks[cUUId](cUUID, characteristic.value())
 
         logger.debug("Read characteristic value")
         self._characteristic_value_log[cUUID] = True
