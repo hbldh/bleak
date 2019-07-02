@@ -165,6 +165,19 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeCharacteristic_value_(characteristic.obj, value)
 
     async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+        """Perform a write operation on the specified GATT descriptor.
+
+        Args:
+            handle (int): The handle of the descriptor to read from.
+            data (bytes or bytearray): The data to send.
+
+        """
+        descriptor = self.services.get_descriptor(handle)
+        if not descriptor:
+            raise BleakError("Descriptor {} was not found!".format(handle))
+
+        value = NSData.alloc().initWithBytes_length_(data, len(data))
+        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeDescriptor_value_(descriptor.obj, value)
         raise BleakError("BleakClientCoreBluetooth:write_gatt_descriptor not implemented")
 
     async def start_notify(self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs) -> None:

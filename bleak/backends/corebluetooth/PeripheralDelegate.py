@@ -50,6 +50,7 @@ class PeripheralDelegate(NSObject):
         self._descriptor_value_log = {}
 
         self._characteristic_write_log = {}
+        self._descriptor_write_log = {}
 
         if not self.compliant():
             logger.warning("PeripheralDelegate is not compliant")
@@ -139,6 +140,17 @@ class PeripheralDelegate(NSObject):
 
         return True
 
+    async def writeDescriptor_value_(self, descriptor: CBDescriptor, value: NSData) -> bool:
+        dUUID = descriptor.UUID().UUIDString()
+        self._descriptor_write_log[dUUID] = False
+
+        self.peripheral.writeValue_forDescriptor_(value, descriptor)
+
+        while not self._descriptor_write_log[dUUID]:
+            await asyncio.sleep(0.01)
+
+        return True
+
     # Protocol Functions
     def peripheral_didDiscoverServices_(self, peripheral: CBPeripheral, error: NSError) -> None:
         if error is not None:
@@ -179,10 +191,18 @@ class PeripheralDelegate(NSObject):
         logger.debug("Read descriptor value")
         self._descriptor_value_log[dUUID] = True
 
-    def peripheral_didWriteValueForCharacteristic_error(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+    def peripheral_didWriteValueForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
             raise BleakError("Failed to write characteristic {}: {}".format(cUUID, error))
 
         logger.debug("Write Characteristic Value")
         self._characteristic_write_log[cUUID] = True
+
+    def peripheral_didWriteValueForDescriptor_error_(self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError):
+        dUUID = descriptor.UUID().UUIDString()
+        if error is not None:
+            raise BleakError("Failed to write descriptor {}: {}".format(dUUID, error))
+
+        logger.debug("Write Descriptor Value")
+        self._descriptor_write_log[dUUID] = True
