@@ -26,13 +26,13 @@ class CBChacteristicProperties(Enum):
     INDICATE_ENCRYPTION_REQUIRED = 0x200
 
 
-class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
+class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
     def __init__(self, obj: CBCharacteristic):
         super().__init__(obj)
         self.__descriptors = []
-        self.__props = obj.properties
+        self.__props = obj.properties()
 
     def __str__(self):
         return "{0}: {1}".format(self.uuid, self.description)
@@ -40,17 +40,17 @@ class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
     @property
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
-        return self.obj.service.UUID.UUIDString()
+        return self.obj.service().UUID().UUIDString()
 
     @property
     def uuid(self) -> str:
         """The uuid of this characteristic"""
-        return self.obj.UUID.UUIDString()
+        return self.obj.UUID().UUIDString()
 
     # @property
-    # def description(self) -> str:
-        # """Description for this characteristic"""
-        # return self.obj.UserDescription
+    def description(self) -> str:
+        """Description for this characteristic"""
+        raise NotImplementedError()
 
     @property
     def properties(self) -> List:
