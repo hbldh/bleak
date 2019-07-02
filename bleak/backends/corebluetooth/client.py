@@ -65,12 +65,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     async def disconnect(self) -> bool:
         await cbapp.central_manager_delegate.disconnect()
-
         return True
-        raise BleakError("BleakClientCoreBluetooth:disconnect not implemented")
 
     async def is_connected(self) -> bool:
-        raise BleakError("BleakClientCoreBluetooth:is_connected not implmeneted")
+        return cbapp.central_manager_delegate.isConnected
 
     async def get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
