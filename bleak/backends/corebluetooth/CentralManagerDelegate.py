@@ -22,7 +22,7 @@ from Foundation import NSObject, \
         NSNumber, \
         NSError
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 CBCentralManagerDelegate = objc.protocolNamed('CBCentralManagerDelegate')
@@ -113,7 +113,18 @@ class CentralManagerDelegate(NSObject):
         while self._connection_state == CMDConnectionState.PENDING:
             await asyncio.sleep(0)
 
+        self.connected_peripheral = peripheral
+
         return self._connection_state == CMDConnectionState.CONNECTED
+
+    async def disconnect(self) -> bool:
+        self._connection_state = CMDConnectionState.PENDING
+        self.central_manager.cancelPeripheralConnection_(self.connected_peripheral)
+
+        while self._connection_state == CMDConnectionState.PENDING:
+            await asyncio.sleep(0)
+
+        return self._connection_state == CMDConnectionState.DISCONNECTED
 
     # Protocol Functions
 
@@ -157,6 +168,7 @@ class CentralManagerDelegate(NSObject):
 
     def centralManager_didDisconnectPeripheral_error_(self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError):
         logger.debug("Peripheral Device disconnected!")
+        self._connection_state = CMDConnectionState.DISCONNECTED
 
 def string2uuid(uuid_str: str) -> CBUUID:
     """Convert a string to a uuid"""
