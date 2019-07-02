@@ -45,6 +45,7 @@ class PeripheralDelegate(NSObject):
         self._characteristic_descriptor_log = {}
 
         self._characteristic_value_log = {}
+        self._descriptor_value_log = {}
 
         if not self.compliant():
             logger.warning("PeripheralDelegate is not compliant")
@@ -108,6 +109,18 @@ class PeripheralDelegate(NSObject):
 
         return characteristic.value()
 
+    async def readDescriptor_(self, descriptor: CBDescriptor, use_cached=True) -> NSData:
+        if descriptor.value() is not None and use_cached is True:
+            return descriptor.value()
+
+        dUUID = descriptor.UUID().UUIDString()
+        self._descriptor_value_log[dUUID] = False
+
+        while not self._descriptor_value_log[dUUID]:
+            await asyncio.sleep(0.01)
+
+        return descriptor.value()
+
     # Protocol Functions
     def peripheral_didDiscoverServices_(self, peripheral: CBPeripheral, error: NSError) -> None:
         if error is not None:
@@ -139,3 +152,11 @@ class PeripheralDelegate(NSObject):
 
         logger.debug("Read characteristic value")
         self._characteristic_value_log[cUUID] = True
+
+    def peripheral_didUpdateValueForDescriptor_error_(self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError):
+        dUUID = descriptor.UUID().UUIDString()
+        if error is not None:
+            raise BleakError("Failed to read characteristic {}: {}".format(dUUID, error))
+
+        logger.debug("Read descriptor value")
+        self._descriptor_value_log[dUUID] = True

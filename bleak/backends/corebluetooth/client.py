@@ -139,7 +139,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         Returns:
             (bytearray) The read data.
         """
-        raise BleakError("BleakClientCoreBluetooth:read_gatt_descriptor not implemented")
+        descriptor = self.services.get_descriptor(handle)
+        if not descriptor:
+            raise BleakError("Descriptor {} was not found!".format(handle))
+
+        value = await cbapp.central_manager_delegate.connected_peripheral_delegate.readDescriptor_(descriptor.obj, use_cached=use_cached)
+        bytes = value.getBytes_length_(None, len(value))
+        return bytearray(bytes)
 
     async def write_gatt_char(self, _uuid: str, data: bytearray, response: bool = False) -> None:
         raise BleakError("BleakClientCoreBluetooth:write_gatt_char not implemented")
