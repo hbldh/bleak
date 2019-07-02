@@ -124,7 +124,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError(f"Characteristic {_uuid} was not found!")
 
-        value = await cbapp.central_manager_delegate.connected_peripheral_delegate.readCharacteristic_(characteristic.obj)
+        value = await cbapp.central_manager_delegate.connected_peripheral_delegate.readCharacteristic_(characteristic.obj, use_cached=use_cached)
         bytes = value.getBytes_length_(None, len(value))
         return bytearray(bytes)
 
@@ -151,15 +151,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if len(_uuid) == 4:
             return _uuid.upper()
 
-        if self.is_uuid_16bit_compatible(_uuid):
+        if await self.is_uuid_16bit_compatible(_uuid):
             return _uuid[4:8].upper()
 
         return _uuid.upper()
 
     async def is_uuid_16bit_compatible(self, _uuid: str) -> bool:
         test_uuid = "0000FFFF-0000-1000-8000-00805F9B34FB"
-        test_int = self.convert_uuid_to_int(test_uuid)
-        uuid_int = self.convert_uuid_to_int(_uuid)
+        test_int = await self.convert_uuid_to_int(test_uuid)
+        uuid_int = await self.convert_uuid_to_int(_uuid)
         result_int = uuid_int & test_int
         return uuid_int == result_int
 

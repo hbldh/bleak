@@ -55,8 +55,8 @@ class PeripheralDelegate(NSObject):
         """Determins whether the class adheres to the CBCentralManagerDelegate protocol"""
         return PeripheralDelegate.pyobjc_classMethods.conformsToProtocol_(CBPeripheralDelegate)
 
-    async def discoverServices(self) -> [CBService]:
-        if self._services_discovered:
+    async def discoverServices(self, use_cached=True) -> [CBService]:
+        if self._services_discovered and ( use_cached is True ):
             return self.peripheral.services()
 
         self.peripheral.discoverServices_(None)
@@ -66,8 +66,8 @@ class PeripheralDelegate(NSObject):
 
         return self.peripheral.services()
 
-    async def discoverCharacteristics_(self, service: CBService) -> [CBCharacteristic]:
-        if service.characteristics() is not None:
+    async def discoverCharacteristics_(self, service: CBService, use_cached=True) -> [CBCharacteristic]:
+        if service.characteristics() is not None and use_cached is True:
             return service.characteristics()
 
         serviceUUID = service.UUID().UUIDString()
@@ -80,8 +80,8 @@ class PeripheralDelegate(NSObject):
 
         return service.characteristics()
 
-    async def discoverDescriptors_(self, characteristic: CBCharacteristic) -> [CBDescriptor]:
-        if characteristic.descriptors() is not None:
+    async def discoverDescriptors_(self, characteristic: CBCharacteristic, use_cached=True) -> [CBDescriptor]:
+        if characteristic.descriptors() is not None and use_cached is True:
             return characteristic.descriptors()
         
         cUUID = characteristic.UUID().UUIDString()
@@ -94,8 +94,8 @@ class PeripheralDelegate(NSObject):
 
         return characteristic.descriptors()
 
-    async def readCharacteristic_(self, characteristic: CBCharacteristic) -> NSData:
-        if characteristic.value() is not None:
+    async def readCharacteristic_(self, characteristic: CBCharacteristic, use_cached=True) -> NSData:
+        if characteristic.value() is not None and use_cached is True:
             return characteristic.value()
 
         cUUID = characteristic.UUID().UUIDString()
