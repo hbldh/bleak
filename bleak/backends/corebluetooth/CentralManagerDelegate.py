@@ -154,16 +154,16 @@ class CentralManagerDelegate(NSObject):
         if uuid_string not in list(map(lambda x: x.identifier().UUIDString(), self.peripheral_list)):
             self.peripheral_list.append(peripheral)
             self.advertisement_data_list.append(advertisementData)
-            logger.debug(f"Discovered device {uuid_string}: {peripheral.name() or 'Unknown'} @ RSSI: {RSSI}")
+            logger.debug("Discovered device {}: {} @ RSSI: {}".format(uuid_string, peripheral.nam() or 'Unknown', RSSI))
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
-        logger.debug(f"Successfully connected to device uuid {peripheral.identifier().UUIDString()}")
+        logger.debug("Successfully connected to device uuid {}".format(peripheral.identifier().UUIDString()))
         peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
         self.connected_peripheral_delegate = peripheralDelegate
         self._connection_state = CMDConnectionState.CONNECTED
 
     def centralManager_didFailToConnectPeripheral_error_(self, centralManager: CBCentralManager, peripheral: CBPeripheral, error: NSError):
-        logger.debug(f"Failed to connect to device uuid {peripheral.identifier().UUIDString()}")
+        logger.debug("Failed to connect to device uuid {}".format(peripheral.identifier().UUIDString()))
         self._connection_state = CMDConnectionState.DISCONNECTED
 
     def centralManager_didDisconnectPeripheral_error_(self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError):

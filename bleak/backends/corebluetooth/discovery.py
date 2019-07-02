@@ -59,7 +59,7 @@ async def discover(
         manufacturer_data = {}
         if manufacturer_binary_data:
             manufacturer_id = int.from_bytes(manufacturer_binary_data[0:2], byteorder='little')
-            manufacturer_value = ''.join(list(map(lambda x: format(x, 'x') if len(format(x, 'x')) == 2 else f"0{format(x, 'x')}", list(manufacturer_binary_data)[2:])))
+            manufacturer_value = ''.join(list(map(lambda x: format(x, 'x') if len(format(x, 'x')) == 2 else "0{}".format(format(x, 'x')), list(manufacturer_binary_data)[2:])))
             manufacturer_data = {
                     manufacturer_id: manufacturer_value
                     }

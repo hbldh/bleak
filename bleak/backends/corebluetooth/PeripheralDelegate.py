@@ -111,7 +111,7 @@ class PeripheralDelegate(NSObject):
     # Protocol Functions
     def peripheral_didDiscoverServices_(self, peripheral: CBPeripheral, error: NSError) -> None:
         if error is not None:
-            raise BleakError(f"Failed to discover services {error}")
+            raise BleakError("Failed to discover services {}".format(error))
 
         logger.debug("Serivces Discovered")
         self._services_discovered = True
@@ -119,7 +119,7 @@ class PeripheralDelegate(NSObject):
     def peripheral_didDiscoverCharacteristicsForService_error_(self, peripheral: CBPeripheral, service:CBService, error: NSError):
         serviceUUID = service.UUID().UUIDString()
         if error is not None:
-            raise BleakError(f"Failed to discover services for service {serviceUUID}: {error}")
+            raise BleakError("Failed to discover services for service {}: {}".format(serviceUUID, error))
 
         logger.debug("Characteristics discovrered")
         self._service_characteristic_discovered_log[serviceUUID] = True
@@ -127,7 +127,7 @@ class PeripheralDelegate(NSObject):
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
-            raise BleakError(f"Failed to discover descriptors for characteristic {cUUID}: {error}")
+            raise BleakError("Failed to discover descriptors for characteristic {}: {}".format(cUUID, error))
 
         logger.debug("Descriptor discovered")
         self._characteristic_descriptor_log[cUUID] = True
@@ -135,7 +135,7 @@ class PeripheralDelegate(NSObject):
     def peripheral_didUpdateValueForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
-            raise BleakError(f"Failed to read characteristic {cUUID}: {error}")
+            raise BleakError("Failed to read characteristic {}: {}".format(cUUID, error))
 
         logger.debug("Read characteristic value")
         self._characteristic_value_log[cUUID] = True

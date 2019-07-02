@@ -39,7 +39,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._services = None
 
     def __str__(self):
-        return f"BleakClientCoreBluetooth ({self.address})"
+        return "BleakClientCoreBluetooth ({})".format(self.address)
 
     async def connect(self) -> bool:
         """
@@ -52,9 +52,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if len(sought_device):
             self._device_info = sought_device[0].details
         else:
-            raise BleakError(f"Device with address {self.address} was not found")
+            raise BleakError("Device with address {} was not found").format(self.address)
 
-        logger.debug(f"Connecting to BLE device @ {self.address}")
+        logger.debug("Connecting to BLE device @ {}").format(self.address)
 
         await cbapp.central_manager_delegate.connect_(sought_device[0].details)
         
@@ -87,14 +87,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         for service in services:
             serviceUUID = service.UUID().UUIDString()
-            logger.debug(f"retreiving characteristics for service {serviceUUID}")
+            logger.debug("retreiving characteristics for service {}").format(serviceUUID)
             characteristics = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverCharacteristics_(service)
 
             self.services.add_service(BleakGATTServiceCoreBluetooth(service))
 
             for characteristic in characteristics:
                 cUUID = characteristic.UUID().UUIDString()
-                logger.debug(f"retreiving descriptors for characteristic {cUUID}")
+                logger.debug("retreiving descriptors for characteristic {}").format(cUUID)
                 descriptors = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverDescriptors_(characteristic)
 
                 self.services.add_characteristic(BleakGATTCharacteristicCoreBluetooth(characteristic))
@@ -122,14 +122,23 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         _uuid = await self.get_appropriate_uuid(_uuid)
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
-            raise BleakError(f"Characteristic {_uuid} was not found!")
+            raise BleakError("Characteristic {} was not found!").format(_uuid)
 
         value = await cbapp.central_manager_delegate.connected_peripheral_delegate.readCharacteristic_(characteristic.obj, use_cached=use_cached)
         bytes = value.getBytes_length_(None, len(value))
         return bytearray(bytes)
 
     async def read_gatt_descriptor(self, handle: int, use_chased=False, **kwargs) -> bytearray:
+        """Perform read operation on the specified GATT descriptor.
 
+        Args:
+            handle (int): The handle of the descriptor to read from.
+            use_cached (bool): `False` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to `False`.
+
+        Returns:
+            (bytearray) The read data.
+        """
         raise BleakError("BleakClientCoreBluetooth:read_gatt_descriptor not implemented")
 
     async def write_gatt_char(self, _uuid: str, data: bytearray, response: bool = False) -> None:
