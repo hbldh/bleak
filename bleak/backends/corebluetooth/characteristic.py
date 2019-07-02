@@ -25,6 +25,31 @@ class CBChacteristicProperties(Enum):
     NOTIFY_ENCRYPTION_REQUIRED = 0x100
     INDICATE_ENCRYPTION_REQUIRED = 0x200
 
+_GattCharacteristicsPropertiesEnum = {
+    None: ("None", "The characteristic doesn’t have any properties that apply"),
+    1: ("Broadcast".lower(), "The characteristic supports broadcasting"),
+    2: ("Read".lower(), "The characteristic is readable"),
+    4: (
+        "Write-Without-Response".lower(),
+        "The characteristic supports Write Without Response",
+    ),
+    8: ("Write".lower(), "The characteristic is writable"),
+    16: ("Notify".lower(), "The characteristic is notifiable"),
+    32: ("Indicate".lower(), "The characteristic is indicatable"),
+    64: (
+        "Authenticated-Signed-Writes".lower(),
+        "The characteristic supports signed writes",
+    ),
+    128: (
+        "Extended-Properties".lower(),
+        "The ExtendedProperties Descriptor is present",
+    ),
+    256: ("Reliable-Writes".lower(), "The characteristic supports reliable writes"),
+    512: (
+        "Writable-Auxiliaries".lower(),
+        "The characteristic has writable auxiliaries",
+    ),
+}
 
 class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
@@ -32,7 +57,12 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     def __init__(self, obj: CBCharacteristic):
         super().__init__(obj)
         self.__descriptors = []
-        self.__props = obj.properties()
+        # self.__props = obj.properties()
+        self.__props = [
+            _GattCharacteristicsPropertiesEnum[v][0]
+            for v in [2 ** n for n in range(10)]
+            if (self.obj.properties() & v)
+        ]
 
     def __str__(self):
         return "{0}: {1}".format(self.uuid, self.description)
