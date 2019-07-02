@@ -148,7 +148,21 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return bytearray(bytes)
 
     async def write_gatt_char(self, _uuid: str, data: bytearray, response: bool = False) -> None:
-        raise BleakError("BleakClientCoreBluetooth:write_gatt_char not implemented")
+        """Perform a write operation of the specified GATT characteristic.
+
+        Args:
+            _uuid (str or UUID): The uuid of the characteristics to write to.
+            data (bytes or bytearray): The data to send.
+            response (bool): If write-with-response operation should be done. Defaults to `False`.
+
+        """
+        _uuid = await self.get_appropriate_uuid(_uuid)
+        characteristic = self.services.get_characteristic(_uuid)
+        if not characteristic:
+            raise BleakError("Characteristic {} was not found!").format(_uuid)
+
+        value = NSData.alloc().initWithBytes_length_(data, len(data))
+        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeCharacteristic_value_(characteristic.obj, value)
 
     async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
         raise BleakError("BleakClientCoreBluetooth:write_gatt_descriptor not implemented")

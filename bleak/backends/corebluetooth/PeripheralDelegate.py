@@ -40,12 +40,16 @@ class PeripheralDelegate(NSObject):
 
         self.peripheral = peripheral
         CoreBleak.assignPeripheralDelegate_toPeripheral_(self, self.peripheral)
+
         self._services_discovered = False
+        
         self._service_characteristic_discovered_log = {}
         self._characteristic_descriptor_log = {}
 
         self._characteristic_value_log = {}
         self._descriptor_value_log = {}
+
+        self._characteristic_write_log = {}
 
         if not self.compliant():
             logger.warning("PeripheralDelegate is not compliant")
@@ -116,10 +120,24 @@ class PeripheralDelegate(NSObject):
         dUUID = descriptor.UUID().UUIDString()
         self._descriptor_value_log[dUUID] = False
 
+        self.peripheral.readValueForDescriptor_(descriptor)
+
         while not self._descriptor_value_log[dUUID]:
             await asyncio.sleep(0.01)
 
         return descriptor.value()
+
+    async def writeCharacteristic_value_(self, characteristic: CBCharacteristic, value: NSData) -> bool:
+        
+        cUUID = characteristic.UUID().UUIDString()
+        self._characteristic_write_log[cUUID] = False
+
+        self.peripheral.writeValue_forCharacteristic_type_(value, characteristic, 0)
+
+        while not self._characteristic_write_log[cUUID]:
+            await asyncio.sleep(0.01)
+
+        return True
 
     # Protocol Functions
     def peripheral_didDiscoverServices_(self, peripheral: CBPeripheral, error: NSError) -> None:
@@ -160,3 +178,11 @@ class PeripheralDelegate(NSObject):
 
         logger.debug("Read descriptor value")
         self._descriptor_value_log[dUUID] = True
+
+    def peripheral_didWriteValueForCharacteristic_error(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+        cUUID = characteristic.UUID().UUIDString()
+        if error is not None:
+            raise BleakError("Failed to write characteristic {}: {}".format(cUUID, error))
+
+        logger.debug("Write Characteristic Value")
+        self._characteristic_write_log[cUUID] = True
