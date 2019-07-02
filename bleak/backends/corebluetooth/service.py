@@ -1,37 +1,36 @@
 from typing import List, Union
 
 from bleak.backends.service import BleakGATTService
-# from bleak.backends.dotnet.characteristic import BleakGATTCharacteristicDotNet
+from bleak.backends.corebluetooth.characteristic import BleakGATTCharacteristicCoreBluetooth
 
-# from Windows.Devices.Bluetooth.GenericAttributeProfile import GattDeviceService
+from Foundation import CBService, CBUUID
 
 
-class BleakGATTServiceDotNet(BleakGATTService):
+class BleakGATTServiceCoreBluetooth(BleakGATTService):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
-    def __init__(self, obj: GattDeviceService):
+    def __init__(self, obj: CBService):
         super().__init__(obj)
-        self.__characteristics = [
-            # BleakGATTCharacteristicDotNet(c) for c in obj.GetAllCharacteristics()
-        ]
+        self.__characteristics = [ ]
 
     @property
-    def uuid(self):
-        return self.obj.Uuid.ToString()
+    def uuid(self) -> str:
+        return self.obj.UUID().UUIDString()
 
     @property
-    def characteristics(self) -> List[BleakGATTCharacteristicDotNet]:
+    def characteristics(self) -> List[BleakGATTCharacteristicCoreBluetooth]:
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def get_characteristic(self, _uuid) -> Union[BleakGATTCharacteristicDotNet, None]:
+    def get_characteristic(self, _uuid: CBUUID) -> Union[BleakGATTCharacteristicCoreBluetooth, None]:
         """Get a characteristic by UUID"""
         try:
             return next(filter(lambda x: x.uuid == _uuid, self.characteristics))
         except StopIteration:
             return None
 
-    def add_characteristic(self, characteristic: BleakGATTCharacteristicDotNet):
+
+    def add_characteristic(self, characteristic: BleakGATTCharacteristicCoreBluetooth):
         """Add a :py:class:`~BleakGATTCharacteristicDotNet` to the service.
 
         Should not be used by end user, but rather by `bleak` itself.
