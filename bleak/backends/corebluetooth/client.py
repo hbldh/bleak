@@ -52,9 +52,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if len(sought_device):
             self._device_info = sought_device[0].details
         else:
-            raise BleakError("Device with address {} was not found").format(self.address)
+            raise BleakError("Device with address {} was not found".format(self.address))
 
-        logger.debug("Connecting to BLE device @ {}").format(self.address)
+        logger.debug("Connecting to BLE device @ {}".format(self.address))
 
         await cbapp.central_manager_delegate.connect_(sought_device[0].details)
         
@@ -87,14 +87,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         for service in services:
             serviceUUID = service.UUID().UUIDString()
-            logger.debug("retreiving characteristics for service {}").format(serviceUUID)
+            logger.debug("retreiving characteristics for service {}".format(serviceUUID))
             characteristics = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverCharacteristics_(service)
 
             self.services.add_service(BleakGATTServiceCoreBluetooth(service))
 
             for characteristic in characteristics:
                 cUUID = characteristic.UUID().UUIDString()
-                logger.debug("retreiving descriptors for characteristic {}").format(cUUID)
+                logger.debug("retreiving descriptors for characteristic {}".format(cUUID))
                 descriptors = await cbapp.central_manager_delegate.connected_peripheral_delegate.discoverDescriptors_(characteristic)
 
                 self.services.add_characteristic(BleakGATTCharacteristicCoreBluetooth(characteristic))
@@ -122,13 +122,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         _uuid = await self.get_appropriate_uuid(_uuid)
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
-            raise BleakError("Characteristic {} was not found!").format(_uuid)
+            raise BleakError("Characteristic {} was not found!".format(_uuid))
 
         value = await cbapp.central_manager_delegate.connected_peripheral_delegate.readCharacteristic_(characteristic.obj, use_cached=use_cached)
         bytes = value.getBytes_length_(None, len(value))
         return bytearray(bytes)
 
-    async def read_gatt_descriptor(self, handle: int, use_chased=False, **kwargs) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, use_cached=False, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
@@ -159,7 +159,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         _uuid = await self.get_appropriate_uuid(_uuid)
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
-            raise BleakError("Characteristic {} was not found!").format(_uuid)
+            raise BleakError("Characteristic {} was not found!".format(_uuid))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeCharacteristic_value_(characteristic.obj, value)
@@ -202,7 +202,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(_uuid))
 
-        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.startNotify_(characteristic.obj)
+        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.startNotify_cb_(characteristic.obj, callback)
         raise BleakError("BleakClientCoreBluetooth:start_notify not implemented")
 
     async def stop_notify(self, _uuid: str) -> None:
