@@ -64,10 +64,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return True
 
     async def disconnect(self) -> bool:
+        """Disconnect from the peripheral device"""
         await cbapp.central_manager_delegate.disconnect()
         return True
 
     async def is_connected(self) -> bool:
+        """Checks for current active connection"""
         return cbapp.central_manager_delegate.isConnected
 
     async def get_services(self) -> BleakGATTServiceCollection:
@@ -110,7 +112,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         Args:
             _uuid (str or UUID): The uuid of the characteristics to read from.
-            use_cached (bool): `False` forces Windows to read the value from the
+            use_cached (bool): `False` forces macOS to read the value from the
                 device again and not use its own cached value. Defaults to `False`.
 
         Returns:
