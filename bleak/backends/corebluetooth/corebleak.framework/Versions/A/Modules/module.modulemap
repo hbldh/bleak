@@ -1,0 +1,6 @@
+framework module corebleak {
+  umbrella header "corebleak.h"
+
+  export *
+  module * { export * }
+}
