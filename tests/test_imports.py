@@ -11,7 +11,7 @@ import pytest
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
 _IS_AZURE_PIPELINES = os.environ.get("SYSTEM_HOSTTYPE", "") == "build"
 
-if platform.system() == "Windows":
+if platform.system() != "Darwin":
     _OS = os.environ.get("AGENT_OS").lower()
 else:
     _OS = platform.system()
