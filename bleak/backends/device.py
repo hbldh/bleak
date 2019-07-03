@@ -18,9 +18,8 @@ class BLEDevice(object):
     - When using Linux backend, `details` attribute is a
       dict with keys `path` which has the string path to the DBus device object and `props`
       which houses the properties dictionary of the D-Bus Device.
-    - When using macOS backend, `details` attribute will be
-      something else.
-
+    - When using macOS backend, `details` attribute will be a CBPeripheral
+      object
     """
 
     def __init__(self, address, name, details=None, **kwargs):
