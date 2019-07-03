@@ -4,14 +4,15 @@ Interface class for the Bleak representation of a GATT Characteristic
 Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
-from typing import List, Union
 from enum import Enum
-
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
+from typing import List, Union
 
 from Foundation import CBCharacteristic
+
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
+from bleak.backends.descriptor import BleakGATTDescriptor
+
 
 class CBChacteristicProperties(Enum):
     BROADCAST = 0x1
@@ -51,6 +52,7 @@ _GattCharacteristicsPropertiesEnum = {
     ),
 }
 
+
 class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
@@ -77,10 +79,11 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         """The uuid of this characteristic"""
         return self.obj.UUID().UUIDString()
 
-    # @property
+    @property
     def description(self) -> str:
         """Description for this characteristic"""
-        raise NotImplementedError()
+        # No description available in Core Bluetooth backend.
+        return ""
 
     @property
     def properties(self) -> List:

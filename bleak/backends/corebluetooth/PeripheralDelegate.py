@@ -8,18 +8,19 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 
 import asyncio
 import logging
-
-from bleak.exc import BleakError
 from typing import Callable, Any
+
 import objc
-from bleak.backends.corebluetooth.corebleak import CoreBleak
 from Foundation import NSObject, \
-        CBPeripheral, \
-        CBService, \
-        CBCharacteristic, \
-        CBDescriptor, \
-        NSData, \
-        NSError
+    CBPeripheral, \
+    CBService, \
+    CBCharacteristic, \
+    CBDescriptor, \
+    NSData, \
+    NSError
+
+from bleak.backends.corebluetooth.corebleak import CoreBleak
+from bleak.exc import BleakError
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class PeripheralDelegate(NSObject):
         CoreBleak.assignPeripheralDelegate_toPeripheral_(self, self.peripheral)
 
         self._services_discovered = False
-        
+
         self._service_characteristic_discovered_log = {}
         self._characteristic_descriptor_log = {}
 
@@ -185,7 +186,7 @@ class PeripheralDelegate(NSObject):
         if error is not None:
             raise BleakError("Failed to discover services {}".format(error))
 
-        logger.debug("Serivces Discovered")
+        logger.debug("Services discovered")
         self._services_discovered = True
 
     def peripheral_didDiscoverCharacteristicsForService_error_(self, peripheral: CBPeripheral, service:CBService, error: NSError):
@@ -193,7 +194,7 @@ class PeripheralDelegate(NSObject):
         if error is not None:
             raise BleakError("Failed to discover services for service {}: {}".format(serviceUUID, error))
 
-        logger.debug("Characteristics discovrered")
+        logger.debug("Characteristics discovered")
         self._service_characteristic_discovered_log[serviceUUID] = True
 
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
@@ -246,4 +247,3 @@ class PeripheralDelegate(NSObject):
 
         logger.debug("Character Notify Update")
         self._characteristic_notify_log[cUUID] = True
-

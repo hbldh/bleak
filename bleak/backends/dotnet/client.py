@@ -528,7 +528,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         if status != GattCommunicationStatus.Success:
             raise BleakError(
-                "Could not start notify on {0}: {1}".format(characteristic.uuid, status)
+                "Could not stop notify on {0}: {1}".format(characteristic.uuid, status)
             )
         else:
             callback = self._callbacks.pop(characteristic.uuid)

@@ -4,9 +4,10 @@ Interface class for the Bleak representation of a GATT Descriptor
 Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
+from Foundation import CBDescriptor
+
 from bleak.backends.descriptor import BleakGATTDescriptor
 
-from Foundation import CBDescriptor
 
 class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     """GATT Descriptor implementation for CoreBluetooth backend"""
@@ -33,4 +34,4 @@ class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     @property
     def handle(self) -> int:
         """Integer handle for this descriptor"""
-        return self.obj.handle()
+        return int(self.obj.handle())

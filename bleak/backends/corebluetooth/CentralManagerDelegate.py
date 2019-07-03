@@ -9,18 +9,19 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import logging
 from enum import Enum
-
 from typing import List
+
 import objc
-from .PeripheralDelegate import PeripheralDelegate
 from Foundation import NSObject, \
-        CBCentralManager, \
-        CBPeripheral, \
-        CBUUID, \
-        NSArray, \
-        NSDictionary, \
-        NSNumber, \
-        NSError
+    CBCentralManager, \
+    CBPeripheral, \
+    CBUUID, \
+    NSArray, \
+    NSDictionary, \
+    NSNumber, \
+    NSError
+
+from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
