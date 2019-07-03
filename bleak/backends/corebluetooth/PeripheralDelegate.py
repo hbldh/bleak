@@ -21,7 +21,7 @@ from Foundation import NSObject, \
         NSData, \
         NSError
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 CBPeripheralDelegate = objc.protocolNamed('CBPeripheralDelegate')
