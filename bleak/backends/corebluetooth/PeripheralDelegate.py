@@ -244,6 +244,6 @@ class PeripheralDelegate(NSObject):
         if error is not None:
             raise BleakError("Failed to update the notification status for characteristic {}: {}".format(cUUID, error))
 
-        logger.deubg("Character Notify Update")
+        logger.debug("Character Notify Update")
         self._characteristic_notify_log[cUUID] = True
 

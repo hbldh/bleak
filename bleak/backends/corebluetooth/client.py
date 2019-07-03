@@ -196,7 +196,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
-        _uuid = self.get_appropriate_uuid(_uuid)
+        _uuid = await self.get_appropriate_uuid(_uuid)
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(_uuid))
