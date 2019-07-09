@@ -11,3 +11,6 @@ PyYAML>=3.13
 pytest>=3.9.2
 pytest-runner>=4.2
 pytest-cov>=2.5.1
+# macos reqs
+pyobjc>=5.2; sys_platform == 'darwin'
+pyobjc-framework-CoreBluetooth>=5.2; sys_platform == 'darwin'
