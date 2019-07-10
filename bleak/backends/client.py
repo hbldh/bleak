@@ -47,6 +47,20 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     @abc.abstractmethod
+    async def set_disconnect_callback(
+            self, callback: Callable[['BaseBleakClient'], None], **kwargs
+    ) -> None:
+        """Set the disconnect callback.
+        The callback will only be called on unsolicited disconnect event.
+
+        Args:
+            callback: callback to be called on disconnection.
+
+        """
+
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
