@@ -40,6 +40,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._bus = None
         self._rules = {}
 
+        self._disconnected_callback = None
+
         self._char_path_to_uuid = {}
 
         # We need to know BlueZ version since battery level characteristic
@@ -50,6 +52,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._bluez_version = tuple(map(int, s.groups()))
 
     # Connectivity methods
+
+    def set_disconnected_callback(
+            self, callback: Callable[[BaseBleakClient], None], **kwargs
+    ) -> None:
+        """Set the disconnected callback.
+        The callback will be called on DBus PropChanged event with
+        the 'Connected' key set to False.
+
+        Args:
+            callback: callback to be called on disconnection.
+
+        """
+
+        self._disconnected_callback = callback
 
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
@@ -531,7 +547,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self._notification_callbacks[message.path](
                     message.path, message.body[1]
                 )
-
+        elif message.body[0] == defs.DEVICE_INTERFACE:
+            device_path = '/org/bluez/%s/dev_%s' % (self.device,
+                                        self.address.replace(':', '_'))
+            if message.path == device_path:
+                message_body_map = message.body[1]
+                if 'Connected' in message_body_map and \
+                   not message_body_map['Connected']:
+                    logger.debug("Device {} disconnected."
+                                 .format(self.address))
+                    if self._disconnected_callback is not None:
+                        self._disconnected_callback(self)
 
 def _data_notification_wrapper(func, char_map):
     @wraps(func)
