@@ -537,6 +537,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 the new data on the GATT Characteristic.
 
         """
+
+        logger.debug('DBUS: path: {}, domain: {}, body: {}'
+                     .format(message.path,
+                             message.body[0],
+                             message.body[1]))
+
         if message.body[0] == defs.GATT_CHARACTERISTIC_INTERFACE:
             if message.path in self._notification_callbacks:
                 logger.info(
