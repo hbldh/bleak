@@ -39,6 +39,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._device_path = None
         self._bus = None
         self._rules = {}
+        self._subscriptions = list()
 
         self._disconnected_callback = None
 
@@ -138,6 +139,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
             await self._bus.delMatch(rule_id).asFuture(self.loop)
+
+        await asyncio.gather(
+                *(self.stop_notify(_uuid) for _uuid in self._subscriptions))
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -463,6 +467,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 callback, self._char_path_to_uuid
             )  # noqa | E123 error in flake8...
 
+        self._subscriptions.append(_uuid)
+
     async def stop_notify(self, _uuid: str) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
@@ -481,6 +487,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             returnSignature="",
         ).asFuture(self.loop)
         self._notification_callbacks.pop(characteristic.path, None)
+
+        self._subscriptions.remove(_uuid)
 
     # DBUS introspection method for characteristics.
 
@@ -567,6 +575,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                    not message_body_map['Connected']:
                     logger.debug("Device {} disconnected."
                                  .format(self.address))
+
+                    self.loop.create_task(self._cleanup())
+
                     if self._disconnected_callback is not None:
                         self._disconnected_callback(self)
 
