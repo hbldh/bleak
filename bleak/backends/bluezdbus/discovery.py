@@ -204,4 +204,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     for rule in rules:
         await bus.delMatch(rule).asFuture(loop)
 
+    bus.disconnect()
+
     return discovered_devices
