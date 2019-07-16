@@ -72,6 +72,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     loop = loop if loop else asyncio.get_event_loop()
     cached_devices = {}
     devices = {}
+    rules = list()
 
     def parse_msg(message):
         if message.member == "InterfacesAdded":
@@ -124,21 +125,21 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     bus = await client.connect(reactor, "system").asFuture(loop)
 
     # Add signal listeners
-    await bus.addMatch(
+    rules.append(await bus.addMatch(
         parse_msg,
         interface="org.freedesktop.DBus.ObjectManager",
         member="InterfacesAdded",
-    ).asFuture(loop)
-    await bus.addMatch(
+    ).asFuture(loop))
+    rules.append(await bus.addMatch(
         parse_msg,
         interface="org.freedesktop.DBus.ObjectManager",
         member="InterfacesRemoved",
-    ).asFuture(loop)
-    await bus.addMatch(
+    ).asFuture(loop))
+    rules.append(await bus.addMatch(
         parse_msg,
         interface="org.freedesktop.DBus.Properties",
         member="PropertiesChanged",
-    ).asFuture(loop)
+    ).asFuture(loop))
 
     # Find the HCI device to use for scanning and get cached device properties
     objects = await bus.callRemote(
@@ -199,4 +200,8 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         manufacturer_data = props.get('ManufacturerData', {})
         discovered_devices.append(BLEDevice(address, name, {"path": path, "props": props}, uuids=uuids,
                                   manufacturer_data=manufacturer_data))
+
+    for rule in rules:
+        await bus.delMatch(rule).asFuture(loop)
+
     return discovered_devices
