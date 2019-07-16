@@ -199,4 +199,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         manufacturer_data = props.get('ManufacturerData', {})
         discovered_devices.append(BLEDevice(address, name, {"path": path, "props": props}, uuids=uuids,
                                   manufacturer_data=manufacturer_data))
+
+    bus.disconnect()
+
     return discovered_devices
