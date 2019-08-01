@@ -22,6 +22,10 @@ bleak
      :target: https://pyup.io/repos/github/hbldh/bleak/
      :alt: Updates
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+    :alt: Black
+
 
 Bleak is an acronym for Bluetooth Low Energy platform Agnostic Klient.
 
@@ -32,14 +36,12 @@ Bleak is a GATT client software, capable of connecting to BLE devices
 acting as GATT servers. It is designed to provide a asynchronous,
 cross-platform Python API to connect and communicate with e.g. sensors.
 
-**Be warned: Bleak is still in an early state of implementation.**
-
 Features
 --------
 
 * Supports Windows 10, version 16299 (Fall Creators Update)
 * Supports Linux distributions with BlueZ >= 5.43
-* Plans on macOS support via Core Bluetooth API (see `develop` branch for progress)
+* OS X/macOS support via Core Bluetooth API, from at least OS X version  10.11
 
 Bleak supports reading, writing and getting notifications from
 GATT servers, as well as a function for discovering BLE devices.
