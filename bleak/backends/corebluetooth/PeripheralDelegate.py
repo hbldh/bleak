@@ -19,7 +19,6 @@ from Foundation import NSObject, \
     NSData, \
     NSError
 
-from bleak.backends.corebluetooth.corebleak import CoreBleak
 from bleak.exc import BleakError
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -40,7 +39,7 @@ class PeripheralDelegate(NSObject):
             return None
 
         self.peripheral = peripheral
-        CoreBleak.assignPeripheralDelegate_toPeripheral_(self, self.peripheral)
+        self.peripheral.setDelegate_(self)
 
         self._services_discovered = False
 
