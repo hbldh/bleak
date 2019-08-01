@@ -5,7 +5,9 @@ Bleak supports the following operating systems:
 
 * Windows 10, version 16299 (Fall Creators Update) and greater
 * Linux distributions with BlueZ >= 5.43
-* Plans on macOS support via Core Bluetooth API
+* OS X/macOS support via Core Bluetooth API, from at least version 10.11
+
+These pages document platform specific differences from the interface API.
 
 Contents:
 
@@ -15,5 +17,3 @@ Contents:
    windows
    linux
    macos
-
-

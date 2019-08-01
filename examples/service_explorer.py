@@ -8,8 +8,9 @@ descriptors of a connected GATT server.
 Created on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-import logging
+import platform
 import asyncio
+import logging
 
 from bleak import BleakClient
 
@@ -54,7 +55,7 @@ async def run(address, loop, debug=False):
 
 
 if __name__ == "__main__":
-    address = "24:71:89:cc:09:05"
+    address = "24:71:89:cc:09:05" if platform.system() != "Darwin" else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))
 
