@@ -26,6 +26,7 @@ class CBChacteristicProperties(Enum):
     NOTIFY_ENCRYPTION_REQUIRED = 0x100
     INDICATE_ENCRYPTION_REQUIRED = 0x200
 
+
 _GattCharacteristicsPropertiesEnum = {
     None: ("None", "The characteristic doesn’t have any properties that apply"),
     1: ("Broadcast".lower(), "The characteristic supports broadcasting"),

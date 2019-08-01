@@ -11,24 +11,27 @@ import logging
 from typing import Callable, Any
 
 import objc
-from Foundation import NSObject, \
-    CBPeripheral, \
-    CBService, \
-    CBCharacteristic, \
-    CBDescriptor, \
-    NSData, \
-    NSError
+from Foundation import (
+    NSObject,
+    CBPeripheral,
+    CBService,
+    CBCharacteristic,
+    CBDescriptor,
+    NSData,
+    NSError,
+)
 
 from bleak.exc import BleakError
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-CBPeripheralDelegate = objc.protocolNamed('CBPeripheralDelegate')
+CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
 
 class PeripheralDelegate(NSObject):
     """macOS conforming python class for managing the PeripheralDelegate for BLE"""
+
     ___pyobjc_protocols__ = [CBPeripheralDelegate]
 
     def initWithPeripheral_(self, peripheral: CBPeripheral):
@@ -63,10 +66,12 @@ class PeripheralDelegate(NSObject):
 
     def compliant(self):
         """Determins whether the class adheres to the CBCentralManagerDelegate protocol"""
-        return PeripheralDelegate.pyobjc_classMethods.conformsToProtocol_(CBPeripheralDelegate)
+        return PeripheralDelegate.pyobjc_classMethods.conformsToProtocol_(
+            CBPeripheralDelegate
+        )
 
     async def discoverServices(self, use_cached=True) -> [CBService]:
-        if self._services_discovered and ( use_cached is True ):
+        if self._services_discovered and (use_cached is True):
             return self.peripheral.services()
 
         self.peripheral.discoverServices_(None)
@@ -76,7 +81,9 @@ class PeripheralDelegate(NSObject):
 
         return self.peripheral.services()
 
-    async def discoverCharacteristics_(self, service: CBService, use_cached=True) -> [CBCharacteristic]:
+    async def discoverCharacteristics_(
+        self, service: CBService, use_cached=True
+    ) -> [CBCharacteristic]:
         if service.characteristics() is not None and use_cached is True:
             return service.characteristics()
 
@@ -90,10 +97,12 @@ class PeripheralDelegate(NSObject):
 
         return service.characteristics()
 
-    async def discoverDescriptors_(self, characteristic: CBCharacteristic, use_cached=True) -> [CBDescriptor]:
+    async def discoverDescriptors_(
+        self, characteristic: CBCharacteristic, use_cached=True
+    ) -> [CBDescriptor]:
         if characteristic.descriptors() is not None and use_cached is True:
             return characteristic.descriptors()
-        
+
         cUUID = characteristic.UUID().UUIDString()
         self._characteristic_descriptor_log[cUUID] = False
 
@@ -104,7 +113,9 @@ class PeripheralDelegate(NSObject):
 
         return characteristic.descriptors()
 
-    async def readCharacteristic_(self, characteristic: CBCharacteristic, use_cached=True) -> NSData:
+    async def readCharacteristic_(
+        self, characteristic: CBCharacteristic, use_cached=True
+    ) -> NSData:
         if characteristic.value() is not None and use_cached is True:
             return characteristic.value()
 
@@ -118,7 +129,9 @@ class PeripheralDelegate(NSObject):
 
         return characteristic.value()
 
-    async def readDescriptor_(self, descriptor: CBDescriptor, use_cached=True) -> NSData:
+    async def readDescriptor_(
+        self, descriptor: CBDescriptor, use_cached=True
+    ) -> NSData:
         if descriptor.value() is not None and use_cached is True:
             return descriptor.value()
 
@@ -132,8 +145,10 @@ class PeripheralDelegate(NSObject):
 
         return descriptor.value()
 
-    async def writeCharacteristic_value_(self, characteristic: CBCharacteristic, value: NSData) -> bool:
-        
+    async def writeCharacteristic_value_(
+        self, characteristic: CBCharacteristic, value: NSData
+    ) -> bool:
+
         cUUID = characteristic.UUID().UUIDString()
         self._characteristic_write_log[cUUID] = False
 
@@ -144,7 +159,9 @@ class PeripheralDelegate(NSObject):
 
         return True
 
-    async def writeDescriptor_value_(self, descriptor: CBDescriptor, value: NSData) -> bool:
+    async def writeDescriptor_value_(
+        self, descriptor: CBDescriptor, value: NSData
+    ) -> bool:
         dUUID = descriptor.UUID().UUIDString()
         self._descriptor_write_log[dUUID] = False
 
@@ -155,11 +172,13 @@ class PeripheralDelegate(NSObject):
 
         return True
 
-    async def startNotify_cb_(self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any] ) -> bool:
+    async def startNotify_cb_(
+        self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any]
+    ) -> bool:
         cUUID = characteristic.UUID().UUIDString()
         self._characteristic_notify_log[cUUID] = False
         self._characteristic_notify_callbacks[cUUID] = callback
-        
+
         self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
 
         while not self._characteristic_notify_log[cUUID]:
@@ -181,57 +200,88 @@ class PeripheralDelegate(NSObject):
         return True
 
     # Protocol Functions
-    def peripheral_didDiscoverServices_(self, peripheral: CBPeripheral, error: NSError) -> None:
+    def peripheral_didDiscoverServices_(
+        self, peripheral: CBPeripheral, error: NSError
+    ) -> None:
         if error is not None:
             raise BleakError("Failed to discover services {}".format(error))
 
         logger.debug("Services discovered")
         self._services_discovered = True
 
-    def peripheral_didDiscoverCharacteristicsForService_error_(self, peripheral: CBPeripheral, service:CBService, error: NSError):
+    def peripheral_didDiscoverCharacteristicsForService_error_(
+        self, peripheral: CBPeripheral, service: CBService, error: NSError
+    ):
         serviceUUID = service.UUID().UUIDString()
         if error is not None:
-            raise BleakError("Failed to discover services for service {}: {}".format(serviceUUID, error))
+            raise BleakError(
+                "Failed to discover services for service {}: {}".format(
+                    serviceUUID, error
+                )
+            )
 
         logger.debug("Characteristics discovered")
         self._service_characteristic_discovered_log[serviceUUID] = True
 
-    def peripheral_didDiscoverDescriptorsForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+    def peripheral_didDiscoverDescriptorsForCharacteristic_error_(
+        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+    ):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
-            raise BleakError("Failed to discover descriptors for characteristic {}: {}".format(cUUID, error))
+            raise BleakError(
+                "Failed to discover descriptors for characteristic {}: {}".format(
+                    cUUID, error
+                )
+            )
 
         logger.debug("Descriptor discovered {}".format(cUUID))
         self._characteristic_descriptor_log[cUUID] = True
 
-    def peripheral_didUpdateValueForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+    def peripheral_didUpdateValueForCharacteristic_error_(
+        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+    ):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
-            raise BleakError("Failed to read characteristic {}: {}".format(cUUID, error))
+            raise BleakError(
+                "Failed to read characteristic {}: {}".format(cUUID, error)
+            )
 
-        if cUUID in self._characteristic_notify_status and self._characteristic_notify_status[cUUID]:
+        if (
+            cUUID in self._characteristic_notify_status
+            and self._characteristic_notify_status[cUUID]
+        ):
             self._characteristic_notify_callbacks[cUUID](cUUID, characteristic.value())
 
         logger.debug("Read characteristic value")
         self._characteristic_value_log[cUUID] = True
 
-    def peripheral_didUpdateValueForDescriptor_error_(self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError):
+    def peripheral_didUpdateValueForDescriptor_error_(
+        self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError
+    ):
         dUUID = descriptor.UUID().UUIDString()
         if error is not None:
-            raise BleakError("Failed to read characteristic {}: {}".format(dUUID, error))
+            raise BleakError(
+                "Failed to read characteristic {}: {}".format(dUUID, error)
+            )
 
         logger.debug("Read descriptor value")
         self._descriptor_value_log[dUUID] = True
 
-    def peripheral_didWriteValueForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+    def peripheral_didWriteValueForCharacteristic_error_(
+        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+    ):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
-            raise BleakError("Failed to write characteristic {}: {}".format(cUUID, error))
+            raise BleakError(
+                "Failed to write characteristic {}: {}".format(cUUID, error)
+            )
 
         logger.debug("Write Characteristic Value")
         self._characteristic_write_log[cUUID] = True
 
-    def peripheral_didWriteValueForDescriptor_error_(self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError):
+    def peripheral_didWriteValueForDescriptor_error_(
+        self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError
+    ):
         dUUID = descriptor.UUID().UUIDString()
         if error is not None:
             raise BleakError("Failed to write descriptor {}: {}".format(dUUID, error))
@@ -239,10 +289,16 @@ class PeripheralDelegate(NSObject):
         logger.debug("Write Descriptor Value")
         self._descriptor_write_log[dUUID] = True
 
-    def peripheral_didUpdateNotificationStateForCharacteristic_error_(self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError):
+    def peripheral_didUpdateNotificationStateForCharacteristic_error_(
+        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+    ):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
-            raise BleakError("Failed to update the notification status for characteristic {}: {}".format(cUUID, error))
+            raise BleakError(
+                "Failed to update the notification status for characteristic {}: {}".format(
+                    cUUID, error
+                )
+            )
 
         logger.debug("Character Notify Update")
         self._characteristic_notify_log[cUUID] = True

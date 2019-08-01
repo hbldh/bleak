@@ -18,9 +18,8 @@ from bleak.exc import BleakError
 
 
 async def discover(
-        timeout: float = 5.0,
-        loop: AbstractEventLoop = None,
-        **kwargs) -> List[BLEDevice]:
+    timeout: float = 5.0, loop: AbstractEventLoop = None, **kwargs
+) -> List[BLEDevice]:
     """Perform a Bluetooth LE Scan.
 
     Args:
@@ -35,9 +34,7 @@ async def discover(
     if not cbapp.central_manager_delegate.enabled:
         raise BleakError("Bluetooth device is turned off")
 
-    scan_options = {
-            'timeout': timeout
-            }
+    scan_options = {"timeout": timeout}
 
     await cbapp.central_manager_delegate.scanForPeripherals_(scan_options)
 
@@ -56,15 +53,30 @@ async def discover(
         details = peripheral
 
         advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
-        manufacturer_binary_data = advertisementData['kCBAdvDataManufacturerData'] if 'kCBAdvDataManufacturerData' in advertisementData.keys() else None
+        manufacturer_binary_data = (
+            advertisementData["kCBAdvDataManufacturerData"]
+            if "kCBAdvDataManufacturerData" in advertisementData.keys()
+            else None
+        )
         manufacturer_data = {}
         if manufacturer_binary_data:
-            manufacturer_id = int.from_bytes(manufacturer_binary_data[0:2], byteorder='little')
-            manufacturer_value = ''.join(list(map(lambda x: format(x, 'x') if len(format(x, 'x')) == 2 else "0{}".format(format(x, 'x')), list(manufacturer_binary_data)[2:])))
-            manufacturer_data = {
-                    manufacturer_id: manufacturer_value
-                    }
+            manufacturer_id = int.from_bytes(
+                manufacturer_binary_data[0:2], byteorder="little"
+            )
+            manufacturer_value = "".join(
+                list(
+                    map(
+                        lambda x: format(x, "x")
+                        if len(format(x, "x")) == 2
+                        else "0{}".format(format(x, "x")),
+                        list(manufacturer_binary_data)[2:],
+                    )
+                )
+            )
+            manufacturer_data = {manufacturer_id: manufacturer_value}
 
-        found.append(BLEDevice(address, name, details, manufacturer_data=manufacturer_data))
+        found.append(
+            BLEDevice(address, name, details, manufacturer_data=manufacturer_data)
+        )
 
     return found

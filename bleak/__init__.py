@@ -3,7 +3,7 @@
 """Top-level package for bleak."""
 
 __author__ = """Henrik Blidh"""
-__email__ = "henrik.blidh@nedomkull.com"
+__email__ = "henrik.blidh@gmail.com"
 
 import re
 import os
@@ -48,13 +48,15 @@ if platform.system() == "Linux":
         BleakClientBlueZDBus as BleakClient
     )  # noqa
 elif platform.system() == "Darwin":
-    # TODO: Check if macOS version has Core Bluetooth, raise error otherwise.
     from Foundation import NSClassFromString
+
     if NSClassFromString("CBPeripheral") is None:
         raise BleakError("Bleak requires the CoreBluetooth Framework")
 
     from bleak.backends.corebluetooth.discovery import discover
-    from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth as BleakClient
+    from bleak.backends.corebluetooth.client import (
+        BleakClientCoreBluetooth as BleakClient
+    )
 
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299

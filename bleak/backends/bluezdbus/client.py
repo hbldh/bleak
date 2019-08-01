@@ -55,7 +55,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # Connectivity methods
 
     def set_disconnected_callback(
-            self, callback: Callable[[BaseBleakClient], None], **kwargs
+        self, callback: Callable[[BaseBleakClient], None], **kwargs
     ) -> None:
         """Set the disconnected callback.
         The callback will be called on DBus PropChanged event with
@@ -81,7 +81,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
-        await discover(timeout=kwargs.get('timeout', 0.1), device=self.device, loop=self.loop)
+        await discover(
+            timeout=kwargs.get("timeout", 0.1), device=self.device, loop=self.loop
+        )
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
@@ -141,7 +143,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             await self._bus.delMatch(rule_id).asFuture(self.loop)
 
         await asyncio.gather(
-                *(self.stop_notify(_uuid) for _uuid in self._subscriptions))
+            *(self.stop_notify(_uuid) for _uuid in self._subscriptions)
+        )
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -225,13 +228,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 _descs.append([desc, object_path])
 
         for char, object_path in _chars:
-            _service = list(
-                filter(lambda x: x.path == char["Service"], self.services)
-            )
+            _service = list(filter(lambda x: x.path == char["Service"], self.services))
             self.services.add_characteristic(
-                BleakGATTCharacteristicBlueZDBus(
-                    char, object_path, _service[0].uuid
-                )
+                BleakGATTCharacteristicBlueZDBus(char, object_path, _service[0].uuid)
             )
             self._char_path_to_uuid[object_path] = char.get("UUID")
 
@@ -243,9 +242,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
             self.services.add_descriptor(
-                BleakGATTDescriptorBlueZDBus(
-                    desc, object_path, _characteristic[0].uuid
-                )
+                BleakGATTDescriptorBlueZDBus(desc, object_path, _characteristic[0].uuid)
             )
 
         self._services_resolved = True
@@ -349,14 +346,26 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         characteristic = self.services.get_characteristic(str(_uuid))
 
-        if ("write" not in characteristic.properties and "write-without-response" not in characteristic.properties):
-            raise BleakError("Characteristic %s does not support write operations!" % str(_uuid))
+        if (
+            "write" not in characteristic.properties
+            and "write-without-response" not in characteristic.properties
+        ):
+            raise BleakError(
+                "Characteristic %s does not support write operations!" % str(_uuid)
+            )
         if not response and "write-without-response" not in characteristic.properties:
             response = True
             # Force response here, since the device only supports that.
-        if response and "write" not in characteristic.properties and "write-without-response" in characteristic.properties:
+        if (
+            response
+            and "write" not in characteristic.properties
+            and "write-without-response" in characteristic.properties
+        ):
             response = False
-            logger.warning("Characteristic %s does not support Write with response. Trying without..." % str(_uuid))
+            logger.warning(
+                "Characteristic %s does not support Write with response. Trying without..."
+                % str(_uuid)
+            )
 
         if response or (self._bluez_version[0] == 5 and self._bluez_version[1] > 50):
             # TODO: Add OnValueUpdated handler for response=True?
@@ -551,10 +560,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
 
-        logger.debug('DBUS: path: {}, domain: {}, body: {}'
-                     .format(message.path,
-                             message.body[0],
-                             message.body[1]))
+        logger.debug(
+            "DBUS: path: {}, domain: {}, body: {}".format(
+                message.path, message.body[0], message.body[1]
+            )
+        )
 
         if message.body[0] == defs.GATT_CHARACTERISTIC_INTERFACE:
             if message.path in self._notification_callbacks:
@@ -567,19 +577,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     message.path, message.body[1]
                 )
         elif message.body[0] == defs.DEVICE_INTERFACE:
-            device_path = '/org/bluez/%s/dev_%s' % (self.device,
-                                        self.address.replace(':', '_'))
+            device_path = "/org/bluez/%s/dev_%s" % (
+                self.device,
+                self.address.replace(":", "_"),
+            )
             if message.path == device_path:
                 message_body_map = message.body[1]
-                if 'Connected' in message_body_map and \
-                   not message_body_map['Connected']:
-                    logger.debug("Device {} disconnected."
-                                 .format(self.address))
+                if (
+                    "Connected" in message_body_map
+                    and not message_body_map["Connected"]
+                ):
+                    logger.debug("Device {} disconnected.".format(self.address))
 
                     self.loop.create_task(self._cleanup())
 
                     if self._disconnected_callback is not None:
                         self._disconnected_callback(self)
+
 
 def _data_notification_wrapper(func, char_map):
     @wraps(func)

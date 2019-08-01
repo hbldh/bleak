@@ -152,6 +152,10 @@ if __name__ == "__main__":
     import os
 
     os.environ["PYTHONASYNCIODEBUG"] = str(1)
-    address = "24:71:89:cc:09:05" if platform.system() != "Darwin" else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
+    address = (
+        "24:71:89:cc:09:05"
+        if platform.system() != "Darwin"
+        else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
+    )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))

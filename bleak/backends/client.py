@@ -48,7 +48,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def set_disconnected_callback(
-            self, callback: Callable[['BaseBleakClient'], None], **kwargs
+        self, callback: Callable[["BaseBleakClient"], None], **kwargs
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.

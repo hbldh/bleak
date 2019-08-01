@@ -97,7 +97,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         # Try to find the desired device.
-        devices = await discover(timeout=kwargs.get('timeout', 2.0), loop=self.loop)
+        devices = await discover(timeout=kwargs.get("timeout", 2.0), loop=self.loop)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )

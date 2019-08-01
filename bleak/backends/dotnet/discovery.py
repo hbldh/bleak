@@ -100,6 +100,14 @@ async def discover(
             reader = DataReader.FromBuffer(md)
             reader.ReadBytes(b)
             data[m.CompanyId] = bytes(b)
-        found.append(BLEDevice(bdaddr, d.Advertisement.LocalName, d, uuids=uuids, manufacturer_data=data))
+        found.append(
+            BLEDevice(
+                bdaddr,
+                d.Advertisement.LocalName,
+                d,
+                uuids=uuids,
+                manufacturer_data=data,
+            )
+        )
 
     return found

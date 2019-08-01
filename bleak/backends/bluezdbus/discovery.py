@@ -101,7 +101,10 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             devices[msg_path] = (
                 {**devices[msg_path], **changed} if msg_path in devices else changed
             )
-        elif message.member == "InterfacesRemoved" and message.body[1][0] == defs.BATTERY_INTERFACE:
+        elif (
+            message.member == "InterfacesRemoved"
+            and message.body[1][0] == defs.BATTERY_INTERFACE
+        ):
             logger.info(
                 "{0}, {1} ({2}): {3}".format(
                     message.member, message.interface, message.path, message.body
@@ -125,21 +128,27 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     bus = await client.connect(reactor, "system").asFuture(loop)
 
     # Add signal listeners
-    rules.append(await bus.addMatch(
-        parse_msg,
-        interface="org.freedesktop.DBus.ObjectManager",
-        member="InterfacesAdded",
-    ).asFuture(loop))
-    rules.append(await bus.addMatch(
-        parse_msg,
-        interface="org.freedesktop.DBus.ObjectManager",
-        member="InterfacesRemoved",
-    ).asFuture(loop))
-    rules.append(await bus.addMatch(
-        parse_msg,
-        interface="org.freedesktop.DBus.Properties",
-        member="PropertiesChanged",
-    ).asFuture(loop))
+    rules.append(
+        await bus.addMatch(
+            parse_msg,
+            interface="org.freedesktop.DBus.ObjectManager",
+            member="InterfacesAdded",
+        ).asFuture(loop)
+    )
+    rules.append(
+        await bus.addMatch(
+            parse_msg,
+            interface="org.freedesktop.DBus.ObjectManager",
+            member="InterfacesRemoved",
+        ).asFuture(loop)
+    )
+    rules.append(
+        await bus.addMatch(
+            parse_msg,
+            interface="org.freedesktop.DBus.Properties",
+            member="PropertiesChanged",
+        ).asFuture(loop)
+    )
 
     # Find the HCI device to use for scanning and get cached device properties
     objects = await bus.callRemote(
@@ -162,7 +171,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         interface="org.bluez.Adapter1",
         destination="org.bluez",
         signature="a{sv}",
-        body=[{"Transport": "le"}]
+        body=[{"Transport": "le"}],
     ).asFuture(loop)
     await bus.callRemote(
         adapter_path,
@@ -193,13 +202,22 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     discovered_devices = []
     for path, props in devices.items():
         if not props:
-            logger.debug("Disregarding %s since no properties could be obtained." % path)
+            logger.debug(
+                "Disregarding %s since no properties could be obtained." % path
+            )
             continue
         name, address, _, path = _device_info(path, props)
         uuids = props.get("UUIDs", [])
-        manufacturer_data = props.get('ManufacturerData', {})
-        discovered_devices.append(BLEDevice(address, name, {"path": path, "props": props}, uuids=uuids,
-                                  manufacturer_data=manufacturer_data))
+        manufacturer_data = props.get("ManufacturerData", {})
+        discovered_devices.append(
+            BLEDevice(
+                address,
+                name,
+                {"path": path, "props": props},
+                uuids=uuids,
+                manufacturer_data=manufacturer_data,
+            )
+        )
 
     for rule in rules:
         await bus.delMatch(rule).asFuture(loop)
