@@ -14,12 +14,13 @@ class BLEDevice(object):
     a `discover` call.
 
     - When using Windows backend, `details` attribute is a
-      `Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement` object.
+      `Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement` object, unless
+      it is created with the Windows.Devices.Enumeration discovery method, then is is a
+      `Windows.Devices.Enumeration.DeviceInformation`
     - When using Linux backend, `details` attribute is a
       dict with keys `path` which has the string path to the DBus device object and `props`
       which houses the properties dictionary of the D-Bus Device.
-    - When using macOS backend, `details` attribute will be a CBPeripheral
-      object
+    - When using macOS backend, `details` attribute will be a CBPeripheral object
     """
 
     def __init__(self, address, name, details=None, **kwargs):
@@ -35,6 +36,8 @@ class BLEDevice(object):
             rssi = self.details["props"].get("RSSI", 0)  # Should not be set to 0...
         elif hasattr(self.details, "RawSignalStrengthInDBm"):
             rssi = self.details.RawSignalStrengthInDBm
+        elif hasattr(self.details, "Properties"):
+            rssi = {p.Key: p.Value for p in self.details.Properties}['System.Devices.Aep.SignalStrength']
         else:
             rssi = None
         return int(rssi) if rssi is not None else None
