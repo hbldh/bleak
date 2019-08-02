@@ -8,6 +8,7 @@ An example connecting to a TI CC2650 SensorTag.
 Created on 2018-01-10 by hbldh <henrik.blidh@nedomkull.com>
 
 """
+import platform
 import logging
 import asyncio
 
@@ -93,7 +94,7 @@ async def run(address, loop, debug=False):
     if debug:
         import sys
 
-        # loop.set_debug(True)
+        loop.set_debug(True)
         l = logging.getLogger("asyncio")
         l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
@@ -151,6 +152,10 @@ if __name__ == "__main__":
     import os
 
     os.environ["PYTHONASYNCIODEBUG"] = str(1)
-    address = "24:71:89:cc:09:05"
+    address = (
+        "24:71:89:cc:09:05"
+        if platform.system() != "Darwin"
+        else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
+    )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))

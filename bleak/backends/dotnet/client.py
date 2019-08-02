@@ -97,7 +97,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         # Try to find the desired device.
-        devices = await discover(timeout=kwargs.get('timeout', 2.0), loop=self.loop)
+        devices = await discover(timeout=kwargs.get("timeout", 2.0), loop=self.loop)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )
@@ -186,6 +186,19 @@ class BleakClientDotNet(BaseBleakClient):
             )
         else:
             return False
+
+    def set_disconnected_callback(
+        self, callback: Callable[[BaseBleakClient], None], **kwargs
+    ) -> None:
+        """Set the disconnected callback.
+
+        N.B. This is not implemented in the .NET backend yet.
+
+        Args:
+            callback: callback to be called on disconnection.
+
+        """
+        raise NotImplementedError("This is not implemented in the .NET backend yet")
 
     # GATT services methods
 
@@ -528,7 +541,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         if status != GattCommunicationStatus.Success:
             raise BleakError(
-                "Could not start notify on {0}: {1}".format(characteristic.uuid, status)
+                "Could not stop notify on {0}: {1}".format(characteristic.uuid, status)
             )
         else:
             callback = self._callbacks.pop(characteristic.uuid)

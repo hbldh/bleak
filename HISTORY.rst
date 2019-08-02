@@ -2,7 +2,18 @@
 History
 =======
 
-0.4.2 (2019-06-30)
+0.5.0 (2019-08-02)
+------------------
+
+* macOS support added (thanks to @kevincar)
+* Merged #90 which fixed #89: Leaking callbacks in BlueZ
+* Merged #92 which fixed #91, Prevent leaking of DBus connections on discovery
+* Merged #96: Regex patterns
+* Merged #86 which fixed #83 and #82
+* Recovered old .NET discovery method to try for #95
+* Merged #80: macOS development
+
+0.4.3 (2019-06-30)
 ------------------
 
 * Fix for #76
@@ -10,9 +21,7 @@ History
 * Fix for #74
 * Fix for #68
 * Fix for #70
-* Fix for 
 * Merged #66
-
 
 0.4.2 (2019-05-17)
 ------------------

@@ -71,9 +71,9 @@ Ready to contribute? Here's how to set up `bleak` for local development.
     $ cd bleak/
     $ python setup.py develop
 
-4. Create a branch for local development::
+4. Create a branch for local development, originating from the `develop` branch::
 
-    $ git checkout -b name-of-your-bugfix-or-feature
+    $ git checkout -b name-of-your-bugfix-or-feature develop
 
    Now you can make your changes locally.
 
