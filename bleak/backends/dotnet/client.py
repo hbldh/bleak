@@ -187,6 +187,19 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             return False
 
+    def set_disconnected_callback(
+        self, callback: Callable[[BaseBleakClient], None], **kwargs
+    ) -> None:
+        """Set the disconnected callback.
+
+        N.B. This is not implemented in the .NET backend yet.
+
+        Args:
+            callback: callback to be called on disconnection.
+
+        """
+        raise NotImplementedError("This is not implemented in the .NET backend yet")
+
     # GATT services methods
 
     async def get_services(self) -> BleakGATTServiceCollection:

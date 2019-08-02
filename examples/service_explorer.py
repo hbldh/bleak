@@ -20,7 +20,7 @@ async def run(address, loop, debug=False):
     if debug:
         import sys
 
-        # loop.set_debug(True)
+        loop.set_debug(True)
         log.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
         h.setLevel(logging.DEBUG)

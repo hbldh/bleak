@@ -94,7 +94,7 @@ async def run(address, loop, debug=False):
     if debug:
         import sys
 
-        # loop.set_debug(True)
+        loop.set_debug(True)
         l = logging.getLogger("asyncio")
         l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)

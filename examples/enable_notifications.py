@@ -11,6 +11,7 @@ Updated on 2019-07-03 by hbldh <henrik.blidh@gmail.com>
 
 import logging
 import asyncio
+import platform
 
 from bleak import BleakClient
 from bleak import _logger as logger
@@ -51,6 +52,10 @@ if __name__ == "__main__":
     import os
 
     os.environ["PYTHONASYNCIODEBUG"] = str(1)
-    address = "24:71:89:cc:09:05"  # <--- Change to your device's address
+    address = (
+        "24:71:89:cc:09:05"  # <--- Change to your device's address here if you are using Windows or Linux
+        if platform.system() != "Darwin"
+        else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"  # <--- Change to your device's address here if you are using macOS
+    )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))

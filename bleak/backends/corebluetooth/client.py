@@ -78,6 +78,19 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Checks for current active connection"""
         return cbapp.central_manager_delegate.isConnected
 
+    def set_disconnected_callback(
+        self, callback: Callable[[BaseBleakClient], None], **kwargs
+    ) -> None:
+        """Set the disconnected callback.
+
+        N.B. This is not implemented in the Core Bluetooth backend yet.
+
+        Args:
+            callback: callback to be called on disconnection.
+
+        """
+        raise NotImplementedError("This is not implemented in the Core Bluetooth backend yet")
+
     async def get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
