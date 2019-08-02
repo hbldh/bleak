@@ -19,10 +19,6 @@ bleak
     :target: https://bleak.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/hbldh/bleak/shield.svg
-     :target: https://pyup.io/repos/github/hbldh/bleak/
-     :alt: Updates
-
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
