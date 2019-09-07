@@ -28,6 +28,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
     """A native Linux Bleak Client
 
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
+
+    Args:
+        address (str): The MAC address of the BLE peripheral to connect to.
+        loop (asyncio.events.AbstractEventLoop): The event loop to use.
+
+    Keyword Args:
+        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+
     """
 
     def __init__(self, address, loop=None, **kwargs):
@@ -72,7 +80,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 0.1.
+            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
         Returns:
             Boolean representing connection status.
@@ -81,9 +89,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
-        await discover(
-            timeout=kwargs.get("timeout", 0.1), device=self.device, loop=self.loop
-        )
+        timeout = kwargs.get("timeout", self._timeout)
+        await discover(timeout=timeout, device=self.device, loop=self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
@@ -207,7 +214,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             total_slept_sec += sleep_loop_sec
 
         if not services_resolved:
-            raise BleakError('Services discovery error')
+            raise BleakError("Services discovery error")
 
         logger.debug("Get Services...")
         objs = await get_managed_objects(
