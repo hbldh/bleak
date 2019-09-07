@@ -195,12 +195,19 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._services_resolved:
             return self.services
 
-        while True:
+        sleep_loop_sec = 0.02
+        total_slept_sec = 0
+
+        while total_slept_sec < 5.0:
             properties = await self._get_device_properties()
             services_resolved = properties.get("ServicesResolved", False)
             if services_resolved:
                 break
-            await asyncio.sleep(0.02, loop=self.loop)
+            await asyncio.sleep(sleep_loop_sec, loop=self.loop)
+            total_slept_sec += sleep_loop_sec
+
+        if not services_resolved:
+            raise BleakError('Services discovery error')
 
         logger.debug("Get Services...")
         objs = await get_managed_objects(
