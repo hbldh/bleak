@@ -147,8 +147,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def _cleanup(self) -> None:
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
-            await self._bus.delMatch(rule_id).asFuture(self.loop)
-
+            try:
+                await self._bus.delMatch(rule_id).asFuture(self.loop)
+            except Exception as e:
+                logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
+        self._rules = {}
         await asyncio.gather(
             *(self.stop_notify(_uuid) for _uuid in self._subscriptions)
         )
@@ -595,7 +598,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self.device,
                 self.address.replace(":", "_"),
             )
-            if message.path == device_path:
+            if message.path.lower() == device_path.lower():
                 message_body_map = message.body[1]
                 if (
                     "Connected" in message_body_map
