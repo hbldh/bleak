@@ -295,6 +295,21 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
+            if _uuid == '00002a00-0000-1000-8000-00805f9b34fb' and (
+                self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
+            ):
+                props = await self._get_device_properties(
+                    interface=defs.DEVICE_INTERFACE
+                )
+                # Simulate regular characteristics read to be consistent over all platforms.
+                value = bytearray(props.get("Name", "").encode('ascii'))
+                logger.debug(
+                    "Read Device Name {0} | {1}: {2}".format(
+                        _uuid, self._device_path, value
+                    )
+                )
+                return value
+
             raise BleakError(
                 "Characteristic with UUID {0} could not be found!".format(_uuid)
             )
