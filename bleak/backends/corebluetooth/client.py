@@ -108,7 +108,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
-        if self._services != None:
+        if self._services is not None:
             return self._services
 
         logger.debug("Retrieving services...")
@@ -146,6 +146,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                         )
                     )
         self._services_resolved = True
+        self._services = services
         return self.services
 
     async def read_gatt_char(self, _uuid: str, use_cached=False, **kwargs) -> bytearray:
