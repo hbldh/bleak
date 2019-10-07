@@ -69,6 +69,9 @@ SYSTEM_ID_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
 MODEL_NBR_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
     uuid16_dict.get("Model Number String")
 )
+DEVICE_NAME_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
+    uuid16_dict.get("Device Name")
+)
 FIRMWARE_REV_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
     uuid16_dict.get("Firmware Revision String")
 )
@@ -94,12 +97,12 @@ async def run(address, loop, debug=False):
     if debug:
         import sys
 
-        loop.set_debug(True)
-        l = logging.getLogger("asyncio")
-        l.setLevel(logging.DEBUG)
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(logging.DEBUG)
-        l.addHandler(h)
+        # loop.set_debug(True)
+        # l = logging.getLogger("asyncio")
+        # l.setLevel(logging.DEBUG)
+        # h = logging.StreamHandler(sys.stdout)
+        # h.setLevel(logging.DEBUG)
+        # l.addHandler(h)
 
     async with BleakClient(address, loop=loop) as client:
         x = await client.is_connected()
@@ -114,6 +117,9 @@ async def run(address, loop, debug=False):
 
         model_number = await client.read_gatt_char(MODEL_NBR_UUID)
         print("Model Number: {0}".format("".join(map(chr, model_number))))
+
+        device_name = await client.read_gatt_char(DEVICE_NAME_UUID)
+        print("Device Name: {0}".format("".join(map(chr, device_name))))
 
         manufacturer_name = await client.read_gatt_char(MANUFACTURER_NAME_UUID)
         print("Manufacturer Name: {0}".format("".join(map(chr, manufacturer_name))))

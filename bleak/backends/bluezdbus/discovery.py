@@ -49,7 +49,7 @@ def _device_info(path, props):
         rssi = props.get("RSSI", "?")
         return name, address, rssi, path
     except Exception as e:
-        logger.exception(e, exc_info=True)
+        # logger.exception(e, exc_info=True)
         return None, None, None, None
 
 
@@ -207,6 +207,8 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             )
             continue
         name, address, _, path = _device_info(path, props)
+        if address is None:
+            continue
         uuids = props.get("UUIDs", [])
         manufacturer_data = props.get("ManufacturerData", {})
         discovered_devices.append(

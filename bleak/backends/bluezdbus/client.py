@@ -147,8 +147,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def _cleanup(self) -> None:
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
-            await self._bus.delMatch(rule_id).asFuture(self.loop)
-
+            try:
+                await self._bus.delMatch(rule_id).asFuture(self.loop)
+            except Exception as e:
+                logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
+        self._rules = {}
         await asyncio.gather(
             *(self.stop_notify(_uuid) for _uuid in self._subscriptions)
         )
@@ -292,6 +295,21 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
+            if _uuid == '00002a00-0000-1000-8000-00805f9b34fb' and (
+                self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
+            ):
+                props = await self._get_device_properties(
+                    interface=defs.DEVICE_INTERFACE
+                )
+                # Simulate regular characteristics read to be consistent over all platforms.
+                value = bytearray(props.get("Name", "").encode('ascii'))
+                logger.debug(
+                    "Read Device Name {0} | {1}: {2}".format(
+                        _uuid, self._device_path, value
+                    )
+                )
+                return value
+
             raise BleakError(
                 "Characteristic with UUID {0} could not be found!".format(_uuid)
             )
@@ -595,7 +613,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self.device,
                 self.address.replace(":", "_"),
             )
-            if message.path == device_path:
+            if message.path.lower() == device_path.lower():
                 message_body_map = message.body[1]
                 if (
                     "Connected" in message_body_map
