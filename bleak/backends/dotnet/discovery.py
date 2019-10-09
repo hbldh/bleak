@@ -18,7 +18,8 @@ from BleakBridge import Bridge
 
 from System import Array, Byte
 from Windows.Devices import Enumeration
-from Windows.Devices.Bluetooth.Advertisement import BluetoothLEAdvertisementWatcher
+from Windows.Devices.Bluetooth.Advertisement import \
+    BluetoothLEAdvertisementWatcher, BluetoothLEScanningMode, BluetoothLEAdvertisementType
 from Windows.Storage.Streams import DataReader, IBuffer
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ async def discover(
     watcher = BluetoothLEAdvertisementWatcher()
 
     devices = {}
+    scan_responses = {}
 
     def _format_bdaddr(a):
         return ":".join("{:02X}".format(x) for x in a.to_bytes(6, byteorder="big"))
@@ -63,8 +65,12 @@ async def discover(
     def AdvertisementWatcher_Received(sender, e):
         if sender == watcher:
             logger.debug("Received {0}.".format(_format_event_args(e)))
-            if e.BluetoothAddress not in devices:
-                devices[e.BluetoothAddress] = e
+            if e.AdvertisementType == BluetoothLEAdvertisementType.ScanResponse:
+                if e.BluetoothAddress not in scan_responses:
+                    scan_responses[e.BluetoothAddress] = e
+            else:
+                if e.BluetoothAddress not in devices:
+                    devices[e.BluetoothAddress] = e
 
     def AdvertisementWatcher_Stopped(sender, e):
         if sender == watcher:
@@ -76,6 +82,8 @@ async def discover(
 
     watcher.Received += AdvertisementWatcher_Received
     watcher.Stopped += AdvertisementWatcher_Stopped
+
+    watcher.ScanningMode = BluetoothLEScanningMode.Active
 
     # Watcher works outside of the Python process.
     watcher.Start()
@@ -101,10 +109,13 @@ async def discover(
             reader = DataReader.FromBuffer(md)
             reader.ReadBytes(b)
             data[m.CompanyId] = bytes(b)
+        local_name = d.Advertisement.LocalName
+        if not local_name and d.BluetoothAddress in scan_responses:
+            local_name = scan_responses[d.BluetoothAddress].Advertisement.LocalName
         found.append(
             BLEDevice(
                 bdaddr,
-                d.Advertisement.LocalName,
+                local_name,
                 d,
                 uuids=uuids,
                 manufacturer_data=data,

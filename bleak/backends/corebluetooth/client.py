@@ -25,7 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 class BleakClientCoreBluetooth(BaseBleakClient):
-    """CoreBluetooth class interface for BleakClient"""
+    """CoreBluetooth class interface for BleakClient
+
+    Args:
+        address (str): The uuid of the BLE peripheral to connect to.
+        loop (asyncio.events.AbstractEventLoop): The event loop to use.
+
+    Keyword Args:
+        timeout (float): Timeout for required ``discover`` call during connect. Defaults to 2.0.
+
+    """
 
     def __init__(self, address: str, loop: AbstractEventLoop, **kwargs):
         super(BleakClientCoreBluetooth, self).__init__(address, loop, **kwargs)
@@ -46,9 +55,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         Returns:
             Boolean representing connection status.
-        """
 
-        devices = await discover(timeout=kwargs.get("timeout", 5.0), loop=self.loop)
+        """
+        timeout = kwargs.get("timeout", self._timeout)
+        devices = await discover(timeout=timeout, loop=self.loop)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )
@@ -98,7 +108,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
-        if self._services != None:
+        if self._services is not None:
             return self._services
 
         logger.debug("Retrieving services...")
@@ -136,6 +146,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                         )
                     )
         self._services_resolved = True
+        self._services = services
         return self.services
 
     async def read_gatt_char(self, _uuid: str, use_cached=False, **kwargs) -> bytearray:

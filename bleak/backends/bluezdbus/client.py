@@ -28,6 +28,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
     """A native Linux Bleak Client
 
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
+
+    Args:
+        address (str): The MAC address of the BLE peripheral to connect to.
+        loop (asyncio.events.AbstractEventLoop): The event loop to use.
+
+    Keyword Args:
+        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+
     """
 
     def __init__(self, address, loop=None, **kwargs):
@@ -72,7 +80,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 0.1.
+            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
         Returns:
             Boolean representing connection status.
@@ -81,9 +89,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
-        await discover(
-            timeout=kwargs.get("timeout", 0.1), device=self.device, loop=self.loop
-        )
+        timeout = kwargs.get("timeout", self._timeout)
+        await discover(timeout=timeout, device=self.device, loop=self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
@@ -140,8 +147,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def _cleanup(self) -> None:
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
-            await self._bus.delMatch(rule_id).asFuture(self.loop)
-
+            try:
+                await self._bus.delMatch(rule_id).asFuture(self.loop)
+            except Exception as e:
+                logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
+        self._rules = {}
         await asyncio.gather(
             *(self.stop_notify(_uuid) for _uuid in self._subscriptions)
         )
@@ -195,12 +205,19 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._services_resolved:
             return self.services
 
-        while True:
+        sleep_loop_sec = 0.02
+        total_slept_sec = 0
+
+        while total_slept_sec < 5.0:
             properties = await self._get_device_properties()
             services_resolved = properties.get("ServicesResolved", False)
             if services_resolved:
                 break
-            await asyncio.sleep(0.02, loop=self.loop)
+            await asyncio.sleep(sleep_loop_sec, loop=self.loop)
+            total_slept_sec += sleep_loop_sec
+
+        if not services_resolved:
+            raise BleakError("Services discovery error")
 
         logger.debug("Get Services...")
         objs = await get_managed_objects(
@@ -278,6 +295,21 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
+            if _uuid == '00002a00-0000-1000-8000-00805f9b34fb' and (
+                self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
+            ):
+                props = await self._get_device_properties(
+                    interface=defs.DEVICE_INTERFACE
+                )
+                # Simulate regular characteristics read to be consistent over all platforms.
+                value = bytearray(props.get("Name", "").encode('ascii'))
+                logger.debug(
+                    "Read Device Name {0} | {1}: {2}".format(
+                        _uuid, self._device_path, value
+                    )
+                )
+                return value
+
             raise BleakError(
                 "Characteristic with UUID {0} could not be found!".format(_uuid)
             )
@@ -581,7 +613,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self.device,
                 self.address.replace(":", "_"),
             )
-            if message.path == device_path:
+            if message.path.lower() == device_path.lower():
                 message_body_map = message.body[1]
                 if (
                     "Connected" in message_body_map

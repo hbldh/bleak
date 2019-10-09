@@ -63,6 +63,14 @@ class BleakClientDotNet(BaseBleakClient):
 
     Implemented using `pythonnet <https://pythonnet.github.io/>`_, a package that provides an integration to the .NET
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
+
+    Args:
+        address (str): The MAC address of the BLE peripheral to connect to.
+        loop (asyncio.events.AbstractEventLoop): The event loop to use.
+
+    Keyword Args:
+            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+
     """
 
     def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
@@ -97,7 +105,8 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         # Try to find the desired device.
-        devices = await discover(timeout=kwargs.get("timeout", 2.0), loop=self.loop)
+        timeout = kwargs.get("timeout", self._timeout)
+        devices = await discover(timeout=timeout, loop=self.loop)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )

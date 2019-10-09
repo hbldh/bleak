@@ -27,6 +27,8 @@ class BaseBleakClient(abc.ABC):
         self._services_resolved = False
         self._notification_callbacks = {}
 
+        self._timeout = kwargs.get("timeout", 2.0)
+
     def __str__(self):
         return "{0}, {1}".format(self.__class__.__name__, self.address)
 

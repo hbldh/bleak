@@ -1,6 +1,7 @@
 * bleak version:
 * Python version:
 * Operating System:
+* BlueZ version (`bluetoothctl -v`) in case of Linux: 
 
 ### Description
 
