@@ -2,6 +2,18 @@
 History
 =======
 
+0.5.1 (2019-10-09)
+------------------
+
+* Active Scanning on Windows, #99 potentially solving #95
+* Longer timeout in service discovery on BlueZ
+* Added `timeout` to constructors and connect methods
+* Fix for `get_services` on macOS. Relates to #101
+* Fixes for disconnect callback on BlueZ, #86 and #83
+* Fixed reading of device name in BlueZ. It is not readable as regular characteristic. #104
+* Removed logger feedback in BlueZ discovery method.
+* More verbose exceptions on macOS, #117 and #107
+
 0.5.0 (2019-08-02)
 ------------------
 
