@@ -69,6 +69,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
 
     """
     device = kwargs.get("device", "hci0")
+    uuids = kwargs.get("uuids", [])
     loop = loop if loop else asyncio.get_event_loop()
     cached_devices = {}
     devices = {}
@@ -173,6 +174,15 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         signature="a{sv}",
         body=[{"Transport": "le"}],
     ).asFuture(loop)
+    if uuids:
+        await bus.callRemote(
+            adapter_path,
+            "SetDiscoveryFilter",
+            interface="org.bluez.Adapter1",
+            destination="org.bluez",
+            signature="a{sv}",
+            body=[{"UUIDs": uuids}],
+        ).asFuture(loop)
     await bus.callRemote(
         adapter_path,
         "StartDiscovery",
