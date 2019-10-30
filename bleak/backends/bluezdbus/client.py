@@ -413,8 +413,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         else:
             # Older versions of BlueZ don't have the "type" option, so we have
             # to write the hard way. This isn't the most efficient way of doing
-            # things, but it works. Also, watch out for txdbus bug that causes
-            # returned fd to be None. https://github.com/cocagne/txdbus/pull/81
+            # things, but it works.
             fd, _ = await self._bus.callRemote(
                 characteristic.path,
                 "AcquireWrite",
