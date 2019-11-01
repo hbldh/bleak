@@ -441,7 +441,22 @@ class BleakClientBlueZDBus(BaseBleakClient):
             data (bytes or bytearray): The data to send.
 
         """
-        return await super().write_gatt_descriptor(handle, data)
+        descriptor = self.services.get_descriptor(handle)
+        await self._bus.callRemote(
+            descriptor.path,
+            'WriteValue',
+            interface=defs.GATT_DESCRIPTOR_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature='aya{sv}',
+            body=[data, {'type': 'command'}],
+            returnSignature='',
+        ).asFuture(self.loop)
+
+        logger.debug(
+            "Write Descriptor {0} | {1}: {2}".format(
+                handle, descriptor.path, data
+            )
+        )
 
     async def start_notify(
         self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
