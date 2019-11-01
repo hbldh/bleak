@@ -4,7 +4,9 @@ import asyncio
 import os
 import re
 import subprocess
-from functools import wraps
+from asyncio import Future
+from functools import wraps, partial
+from threading import Event
 from typing import Callable, Any
 
 from bleak.backends.service import BleakGATTServiceCollection
@@ -50,6 +52,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._subscriptions = list()
 
         self._disconnected_callback = None
+        self._cleanup_done_event = None
 
         self._char_path_to_uuid = {}
 
@@ -63,11 +66,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient], None], **kwargs
+        self, callback: Callable[[BaseBleakClient], Future], **kwargs
     ) -> None:
         """Set the disconnected callback.
         The callback will be called on DBus PropChanged event with
         the 'Connected' key set to False.
+
+        Important: A disconnect callback must accept two positional arguments,
+        the BleakClient and the Future that called it.
 
         Args:
             callback: callback to be called on disconnection.
@@ -160,20 +166,22 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Disconnect from the specified GATT server.
 
         Returns:
-            Boolean representing connection status.
+            Boolean representing if device is disconnected.
 
         """
         logger.debug("Disconnecting from BLE device...")
 
         await self._cleanup()
-
-        await self._bus.callRemote(
-            self._device_path,
-            "Disconnect",
-            interface=defs.DEVICE_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-        ).asFuture(self.loop)
-        return not await self.is_connected()
+        if await self.is_connected():
+            await self._bus.callRemote(
+                self._device_path,
+                "Disconnect",
+                interface=defs.DEVICE_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+            ).asFuture(self.loop)
+            return not await self.is_connected()
+        else:
+            return True
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -207,6 +215,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         sleep_loop_sec = 0.02
         total_slept_sec = 0
+        services_resolved = False
 
         while total_slept_sec < 5.0:
             properties = await self._get_device_properties()
@@ -635,10 +644,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 ):
                     logger.debug("Device {} disconnected.".format(self.address))
 
-                    self.loop.create_task(self._cleanup())
-
+                    self._cleanup_done_event = Event()
+                    task = self.loop.create_task(self._cleanup())
                     if self._disconnected_callback is not None:
-                        self._disconnected_callback(self)
+                        task.add_done_callback(partial(self._disconnected_callback, self))
 
 
 def _data_notification_wrapper(func, char_map):
