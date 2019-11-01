@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-txdbus = {version = ">=1.1.0", sys_platform = "== 'linux'"}
+txdbus = {version = ">=1.1.1", sys_platform = "== 'linux'"}
 pyobjc = {version = "*", sys_platform = "== 'darwin'"}
 pyobjc-framework-CoreBluetooth = {version = "*", sys_platform = "== 'darwin'"}
 pythonnet = {version = ">=2.3.0", sys_platform = "== 'win32'"}
