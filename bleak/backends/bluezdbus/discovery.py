@@ -62,6 +62,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
 
     Keyword Args:
         device (str): Bluetooth device to use for discovery.
+        filters (dict): A dict of filters to be applied on discovery.
 
     Returns:
         List of tuples containing name, address and signal strength
@@ -73,6 +74,10 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     cached_devices = {}
     devices = {}
     rules = list()
+
+    # Discovery filters
+    filters = kwargs.get("filters", {})
+    filters["Transport"] = "le"
 
     def parse_msg(message):
         if message.member == "InterfacesAdded":
@@ -171,7 +176,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         interface="org.bluez.Adapter1",
         destination="org.bluez",
         signature="a{sv}",
-        body=[{"Transport": "le"}],
+        body=[filters],
     ).asFuture(loop)
     await bus.callRemote(
         adapter_path,
