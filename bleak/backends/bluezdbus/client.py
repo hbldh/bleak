@@ -52,7 +52,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._subscriptions = list()
 
         self._disconnected_callback = None
-        self._cleanup_done_event = None
 
         self._char_path_to_uuid = {}
 
@@ -66,14 +65,25 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient], Future], **kwargs
+        self, callback: Callable[[BaseBleakClient, Future], None], **kwargs
     ) -> None:
         """Set the disconnected callback.
+
         The callback will be called on DBus PropChanged event with
         the 'Connected' key set to False.
 
-        Important: A disconnect callback must accept two positional arguments,
+        A disconnect callback must accept two positional arguments,
         the BleakClient and the Future that called it.
+
+        Example:
+
+        .. code-block::python
+
+            async with BleakClient(mac_addr, loop=loop) as client:
+                def disconnect_callback(client, future):
+                    print(f"Disconnected callback called on {client}!")
+
+                client.set_disconnected_callback(disconnect_callback)
 
         Args:
             callback: callback to be called on disconnection.
@@ -644,7 +654,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 ):
                     logger.debug("Device {} disconnected.".format(self.address))
 
-                    self._cleanup_done_event = Event()
                     task = self.loop.create_task(self._cleanup())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(partial(self._disconnected_callback, self))

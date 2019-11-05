@@ -2,13 +2,24 @@
 History
 =======
 
+0.5.2a1 (2019-11-10)
+----------------------
+
+* Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
+* Implemented ``write_gatt_descriptor`` for Bluez backend.
+* Modified ``set_disconnect_callback`` to actually call the callback as a callback.
+* Added another required parameter to disconnect callbacks.
+* Added Discovery filter option in BlueZ backend (Merged #124)
+* Documentation fixes.
+
+
 0.5.1 (2019-10-09)
 ------------------
 
 * Active Scanning on Windows, #99 potentially solving #95
 * Longer timeout in service discovery on BlueZ
-* Added `timeout` to constructors and connect methods
-* Fix for `get_services` on macOS. Relates to #101
+* Added ``timeout`` to constructors and connect methods
+* Fix for ``get_services`` on macOS. Relates to #101
 * Fixes for disconnect callback on BlueZ, #86 and #83
 * Fixed reading of device name in BlueZ. It is not readable as regular characteristic. #104
 * Removed logger feedback in BlueZ discovery method.
