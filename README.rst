@@ -43,7 +43,7 @@ Features
 
 * Supports Windows 10, version 16299 (Fall Creators Update) or greater
 * Supports Linux distributions with BlueZ >= 5.43
-* Plans on macOS support via Core Bluetooth API (see `develop` branch for progress)
+* OS X/macOS support via Core Bluetooth API, from at least OS X version 10.11
 
 Bleak supports reading, writing and getting notifications from
 GATT servers, as well as a function for discovering BLE devices.
@@ -86,5 +86,5 @@ Connect to a Bluetooth device and read its model number:
     loop.run_until_complete(run(address, loop))
 
 
-See examples folder for more code, among other example code for connecting to a
+See examples folder for more code, for instance example code for connecting to a
 `TI SensorTag CC2650 <http://www.ti.com/ww/en/wireless_connectivity/sensortag/>`_

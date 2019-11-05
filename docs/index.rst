@@ -32,12 +32,13 @@ Bleak is a GATT client software, capable of connecting to BLE devices
 acting as GATT servers. It is designed to provide a asynchronous,
 cross-platform Python API to connect and communicate with e.g. sensors.
 
+
 Features
 --------
 
-* Supports Windows 10, version 16299 (Fall Creators Update)
+* Supports Windows 10, version 16299 (Fall Creators Update) or greater
 * Supports Linux distributions with BlueZ >= 5.43
-* OS X/macOS support via Core Bluetooth API, from at least OS X version  10.11
+* OS X/macOS support via Core Bluetooth API, from at least OS X version 10.11
 
 Bleak supports reading, writing and getting notifications from
 GATT servers, as well as a function for discovering BLE devices.

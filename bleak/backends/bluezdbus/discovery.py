@@ -56,6 +56,12 @@ def _device_info(path, props):
 async def discover(timeout=5.0, loop=None, **kwargs):
     """Discover nearby Bluetooth Low Energy devices.
 
+    For possible values for `filter`, see the parameters to the
+    ``SetDiscoveryFilter`` method in the `BlueZ docs
+    <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
+
+    The ``Transport`` parameter is always set to ``le`` by default in Bleak.
+
     Args:
         timeout (float): Duration to scan for.
         loop (asyncio.AbstractEventLoop): Optional event loop to use.
@@ -140,6 +146,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             member="InterfacesAdded",
         ).asFuture(loop)
     )
+
     rules.append(
         await bus.addMatch(
             parse_msg,
@@ -147,6 +154,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             member="InterfacesRemoved",
         ).asFuture(loop)
     )
+
     rules.append(
         await bus.addMatch(
             parse_msg,
@@ -165,10 +173,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     adapter_path, interface = _filter_on_adapter(objects, device)
     cached_devices = dict(_filter_on_device(objects))
 
-    # dd = {'objectPath': '/org/bluez/hci0', 'methodName': 'StartDiscovery',
-    # 'interface': 'org.bluez.Adapter1', 'destination': 'org.bluez',
-    # 'signature': '', 'body': (), 'expectReply': True, 'autoStart': True,
-    # 'timeout': None, 'returnSignature': ''}
     # Running Discovery loop.
     await bus.callRemote(
         adapter_path,
@@ -178,13 +182,16 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         signature="a{sv}",
         body=[filters],
     ).asFuture(loop)
+
     await bus.callRemote(
         adapter_path,
         "StartDiscovery",
         interface="org.bluez.Adapter1",
         destination="org.bluez",
     ).asFuture(loop)
+
     await asyncio.sleep(timeout)
+
     await bus.callRemote(
         adapter_path,
         "StopDiscovery",
@@ -193,17 +200,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     ).asFuture(loop)
 
     # Reduce output.
-    # out = []
-    # for path, props in devices.items():
-    #    properties = await cli.callRemote(
-    #        path, 'GetAll',
-    #        interface=defs.PROPERTIES_INTERFACE,
-    #        destination=defs.BLUEZ_SERVICE,
-    #        signature='s',
-    #        body=[defs.DEVICE_INTERFACE, ],
-    #        returnSignature='a{sv}').asFuture(loop)
-    #    print(properties)
-    #
     discovered_devices = []
     for path, props in devices.items():
         if not props:
