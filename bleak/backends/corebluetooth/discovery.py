@@ -52,11 +52,7 @@ async def discover(
         details = peripheral
 
         advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
-        manufacturer_binary_data = (
-            advertisementData["kCBAdvDataManufacturerData"]
-            if "kCBAdvDataManufacturerData" in advertisementData.keys()
-            else None
-        )
+        manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
         manufacturer_data = {}
         if manufacturer_binary_data:
             manufacturer_id = int.from_bytes(
