@@ -1,4 +1,3 @@
-
 """
 Perform Bluetooth LE Scan.
 
@@ -75,8 +74,16 @@ async def discover(
             )
             manufacturer_data = {manufacturer_id: manufacturer_value}
 
+        uuids = [
+            # converting to lower case to match other platforms
+            str(u).lower()
+            for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
+        ]
+
         found.append(
-            BLEDevice(address, name, details, manufacturer_data=manufacturer_data)
+            BLEDevice(
+                address, name, details, uuids=uuids, manufacturer_data=manufacturer_data
+            )
         )
 
     return found
