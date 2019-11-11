@@ -161,7 +161,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             (bytearray) The read data.
 
         """
-        _uuid = await self.get_appropriate_uuid(_uuid)
+        _uuid = await self.get_appropriate_uuid(str(_uuid))
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(_uuid))
@@ -213,7 +213,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
         """
-        _uuid = await self.get_appropriate_uuid(_uuid)
+        _uuid = await self.get_appropriate_uuid(str(_uuid))
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(_uuid))
@@ -275,7 +275,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
-        _uuid = await self.get_appropriate_uuid(_uuid)
+        _uuid = await self.get_appropriate_uuid(str(_uuid))
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(_uuid))
