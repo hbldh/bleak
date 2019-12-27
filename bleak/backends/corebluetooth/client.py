@@ -278,7 +278,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         _uuid = await self.get_appropriate_uuid(str(_uuid))
         characteristic = self.services.get_characteristic(_uuid)
         if not characteristic:
-            raise BleakError("Characteristic {} not found!".format(_uuid))
+            raise BleakError("Characteristic {0} not found!".format(_uuid))
 
         success = await cbapp.central_manager_delegate.connected_peripheral_delegate.startNotify_cb_(
             characteristic.obj, callback
