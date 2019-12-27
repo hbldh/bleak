@@ -4,10 +4,10 @@ import asyncio
 import os
 import re
 import subprocess
+import uuid
 from asyncio import Future
 from functools import wraps, partial
-from threading import Event
-from typing import Callable, Any
+from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
@@ -286,7 +286,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # IO methods
 
-    async def read_gatt_char(self, _uuid: str, **kwargs) -> bytearray:
+    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -314,7 +314,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
-            if _uuid == '00002a00-0000-1000-8000-00805f9b34fb' and (
+            if str(_uuid) == '00002a00-0000-1000-8000-00805f9b34fb' and (
                 self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
             ):
                 props = await self._get_device_properties(
@@ -364,8 +364,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
-            # TODO: Raise error instead?
-            return None
+            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
         value = bytearray(
             await self._bus.callRemote(
@@ -385,7 +384,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return value
 
     async def write_gatt_char(
-        self, _uuid: str, data: bytearray, response: bool = False
+        self, _uuid: Union[str, uuid.UUID], data: bytearray, response: bool = False
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
@@ -405,6 +404,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
 
         if (
             "write" not in characteristic.properties
@@ -464,7 +465,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
     async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
-
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
@@ -473,6 +473,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         descriptor = self.services.get_descriptor(handle)
+        if not descriptor:
+            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
         await self._bus.callRemote(
             descriptor.path,
             'WriteValue',
@@ -490,7 +492,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
     async def start_notify(
-        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
+        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -520,7 +522,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # The org.bluez.Battery1 on the other hand does not provide a notification method, so here we cannot
             # provide this functionality...
             # See https://kernel.googlesource.com/pub/scm/bluetooth/bluez/+/refs/tags/5.48/doc/battery-api.txt
-            if _uuid == "00002a19-0000-1000-8000-00805f9b34fb" and (
+            if str(_uuid) == "00002a19-0000-1000-8000-00805f9b34fb" and (
                 self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
             ):
                 raise BleakError(
@@ -553,9 +555,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 callback, self._char_path_to_uuid
             )  # noqa | E123 error in flake8...
 
-        self._subscriptions.append(_uuid)
+        self._subscriptions.append(str(_uuid))
 
-    async def stop_notify(self, _uuid: str) -> None:
+    async def stop_notify(self, _uuid: Union[str, uuid.UUID]) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
@@ -563,6 +565,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
         await self._bus.callRemote(
             characteristic.path,
             "StopNotify",
@@ -574,11 +578,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         ).asFuture(self.loop)
         self._notification_callbacks.pop(characteristic.path, None)
 
-        self._subscriptions.remove(_uuid)
+        self._subscriptions.remove(str(_uuid))
 
     # DBUS introspection method for characteristics.
 
-    async def get_all_for_characteristic(self, _uuid) -> dict:
+    async def get_all_for_characteristic(self, _uuid: Union[str, uuid.UUID]) -> dict:
         """Get all properties for a characteristic.
 
         This method should generally not be needed by end user, since it is a DBus specific method.
@@ -591,6 +595,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
         out = await self._bus.callRemote(
             characteristic.path,
             "GetAll",
