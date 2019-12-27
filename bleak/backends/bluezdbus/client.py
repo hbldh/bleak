@@ -418,6 +418,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 % str(_uuid)
             )
 
+        # NB: this version check is for the "type" option to the
+        # "Characteristic.WriteValue" method that was added to Bluez in 5.50
+        # https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a
+        # Before that commit, "Characteristic.WriteValue" was only "Write with
+        # response". "Characteristic.AcquireWrite" was added in Bluez 4.46
+        # https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e
+        # which can be used to "Write without response", but for older versions
+        # of Bluez, it is not possible to "Write without response".
+        if not response and self._bluez_version[0] == 5 and self._bluez_version[1] < 46:
+            raise BleakError("Write without response requires at least BlueZ 5.46")
         if response or (self._bluez_version[0] == 5 and self._bluez_version[1] > 50):
             # TODO: Add OnValueUpdated handler for response=True?
             await self._bus.callRemote(
