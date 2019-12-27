@@ -37,7 +37,7 @@ Features
 --------
 
 * Supports Windows 10, version 16299 (Fall Creators Update) or greater
-* Supports Linux distributions with BlueZ >= 5.43
+* Supports Linux distributions with BlueZ >= 5.43 (See :ref:`linux-backend` for more details)
 * OS X/macOS support via Core Bluetooth API, from at least OS X version 10.11
 
 Bleak supports reading, writing and getting notifications from
