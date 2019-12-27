@@ -1,4 +1,3 @@
-
 """
 Perform Bluetooth LE Scan.
 
@@ -53,30 +52,25 @@ async def discover(
         details = peripheral
 
         advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
-        manufacturer_binary_data = (
-            advertisementData["kCBAdvDataManufacturerData"]
-            if "kCBAdvDataManufacturerData" in advertisementData.keys()
-            else None
-        )
+        manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
         manufacturer_data = {}
         if manufacturer_binary_data:
             manufacturer_id = int.from_bytes(
                 manufacturer_binary_data[0:2], byteorder="little"
             )
-            manufacturer_value = "".join(
-                list(
-                    map(
-                        lambda x: format(x, "x")
-                        if len(format(x, "x")) == 2
-                        else "0{}".format(format(x, "x")),
-                        list(manufacturer_binary_data)[2:],
-                    )
-                )
-            )
+            manufacturer_value = bytes(manufacturer_binary_data[2:])
             manufacturer_data = {manufacturer_id: manufacturer_value}
 
+        uuids = [
+            # converting to lower case to match other platforms
+            str(u).lower()
+            for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
+        ]
+
         found.append(
-            BLEDevice(address, name, details, manufacturer_data=manufacturer_data)
+            BLEDevice(
+                address, name, details, uuids=uuids, manufacturer_data=manufacturer_data
+            )
         )
 
     return found
