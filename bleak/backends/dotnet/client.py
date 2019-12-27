@@ -452,6 +452,8 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
 
         if self._notification_callbacks.get(str(_uuid)):
             await self.stop_notify(_uuid)
