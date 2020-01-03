@@ -196,7 +196,7 @@ class PeripheralDelegate(NSObject):
         while not self._characteristic_notify_log[cUUID]:
             await asyncio.sleep(0.01)
 
-        self._characteristic_notify_status = False
+        self._characteristic_notify_status[cUUID] = False
         return True
 
     # Protocol Functions
