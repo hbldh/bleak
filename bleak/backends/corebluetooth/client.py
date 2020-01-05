@@ -221,7 +221,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeCharacteristic_value_(
-            characteristic.obj, value
+            characteristic.obj, value, 1 if response else 0
         )
         if success:
             logger.debug("Write Characteristic {0} : {1}".format(_uuid, data))
