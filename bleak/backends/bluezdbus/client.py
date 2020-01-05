@@ -189,6 +189,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
             ).asFuture(self.loop)
+            self._bus.disconnect()
             return not await self.is_connected()
         else:
             return True
