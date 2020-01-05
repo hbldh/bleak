@@ -15,7 +15,7 @@ class BaseBleakScanner(abc.ABC):
     """
 
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
-        self._loop = loop
+        self.loop = loop if loop else asyncio.get_event_loop()
 
     async def __aenter__(self):
         await self.start()
@@ -46,7 +46,7 @@ class BaseBleakScanner(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def set_scanning_filter(self):
+    async def set_scanning_filter(self, **kwargs):
         raise NotImplementedError()
 
     @abc.abstractmethod
