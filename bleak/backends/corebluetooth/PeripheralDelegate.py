@@ -146,13 +146,13 @@ class PeripheralDelegate(NSObject):
         return descriptor.value()
 
     async def writeCharacteristic_value_(
-        self, characteristic: CBCharacteristic, value: NSData
+        self, characteristic: CBCharacteristic, value: NSData, response: int
     ) -> bool:
 
         cUUID = characteristic.UUID().UUIDString()
         self._characteristic_write_log[cUUID] = False
 
-        self.peripheral.writeValue_forCharacteristic_type_(value, characteristic, 0)
+        self.peripheral.writeValue_forCharacteristic_type_(value, characteristic, response)
 
         while not self._characteristic_write_log[cUUID]:
             await asyncio.sleep(0.01)
