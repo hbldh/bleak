@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Interface class for the Bleak representation of a GATT Descriptor
-
-Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
-
-"""
 from bleak.backends.descriptor import BleakGATTDescriptor
 
 from Windows.Devices.Bluetooth.GenericAttributeProfile import GattDescriptor

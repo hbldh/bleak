@@ -7,7 +7,8 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import asyncio
-from typing import Callable, Any
+import uuid
+from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 
@@ -117,7 +118,7 @@ class BaseBleakClient(abc.ABC):
     # I/O methods
 
     @abc.abstractmethod
-    async def read_gatt_char(self, _uuid: str, **kwargs) -> bytearray:
+    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -144,7 +145,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def write_gatt_char(
-        self, _uuid: str, data: bytearray, response: bool = False
+        self, _uuid: Union[str, uuid.UUID], data: bytearray, response: bool = False
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
@@ -169,7 +170,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def start_notify(
-        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
+        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -190,7 +191,7 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def stop_notify(self, _uuid: str) -> None:
+    async def stop_notify(self, _uuid: Union[str, uuid.UUID]) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:

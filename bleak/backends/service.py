@@ -6,6 +6,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
+from uuid import UUID
 from typing import List, Union, Iterator
 
 from bleak import BleakError
@@ -49,7 +50,7 @@ class BleakGATTService(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_characteristic(self, _uuid) -> Union[BleakGATTCharacteristic, None]:
+    def get_characteristic(self, _uuid: Union[str, UUID]) -> Union[BleakGATTCharacteristic, None]:
         """Get a characteristic by UUID"""
         raise NotImplementedError()
 
@@ -101,9 +102,9 @@ class BleakGATTServiceCollection(object):
                 "This service is already present in this BleakGATTServiceCollection!"
             )
 
-    def get_service(self, _uuid) -> BleakGATTService:
+    def get_service(self, _uuid: Union[str, UUID]) -> BleakGATTService:
         """Get a service by UUID string"""
-        return self.services.get(_uuid, None)
+        return self.services.get(str(_uuid), None)
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
         """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
@@ -120,9 +121,9 @@ class BleakGATTServiceCollection(object):
                 "This characteristic is already present in this BleakGATTServiceCollection!"
             )
 
-    def get_characteristic(self, _uuid) -> BleakGATTCharacteristic:
+    def get_characteristic(self, _uuid: Union[str, UUID]) -> BleakGATTCharacteristic:
         """Get a characteristic by UUID string"""
-        return self.characteristics.get(_uuid, None)
+        return self.characteristics.get(str(_uuid), None)
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
         """Add a :py:class:`~BleakGATTDescriptor` to the service collection.

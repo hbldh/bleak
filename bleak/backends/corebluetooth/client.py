@@ -5,8 +5,9 @@ Created on 2019-6-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import logging
+import uuid
 from asyncio.events import AbstractEventLoop
-from typing import Callable, Any
+from typing import Callable, Any, Union
 
 from Foundation import NSData, CBUUID
 
@@ -149,7 +150,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._services = services
         return self.services
 
-    async def read_gatt_char(self, _uuid: str, use_cached=False, **kwargs) -> bytearray:
+    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], use_cached=False, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -162,7 +163,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         _uuid = await self.get_appropriate_uuid(str(_uuid))
-        characteristic = self.services.get_characteristic(_uuid)
+        characteristic = self.services.get_characteristic(str(_uuid))
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(_uuid))
 
@@ -203,7 +204,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return value
 
     async def write_gatt_char(
-        self, _uuid: str, data: bytearray, response: bool = False
+        self, _uuid: Union[str, uuid.UUID], data: bytearray, response: bool = False
     ) -> None:
         """Perform a write operation of the specified GATT characteristic.
 
@@ -214,7 +215,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         _uuid = await self.get_appropriate_uuid(str(_uuid))
-        characteristic = self.services.get_characteristic(_uuid)
+        characteristic = self.services.get_characteristic(str(_uuid))
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(_uuid))
 
@@ -257,7 +258,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             )
 
     async def start_notify(
-        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
+        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
