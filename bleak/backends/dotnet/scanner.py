@@ -15,8 +15,11 @@ from BleakBridge import Bridge
 
 from System import Array, Byte
 from Windows.Devices import Enumeration
-from Windows.Devices.Bluetooth.Advertisement import \
-    BluetoothLEAdvertisementWatcher, BluetoothLEScanningMode, BluetoothLEAdvertisementType
+from Windows.Devices.Bluetooth.Advertisement import (
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEScanningMode,
+    BluetoothLEAdvertisementType,
+)
 from Windows.Storage.Streams import DataReader, IBuffer
 
 logger = logging.getLogger(__name__)
@@ -30,8 +33,7 @@ def _format_bdaddr(a):
 def _format_event_args(e):
     try:
         return "{0}: {1}".format(
-            _format_bdaddr(e.BluetoothAddress),
-            e.Advertisement.LocalName or "Unknown",
+            _format_bdaddr(e.BluetoothAddress), e.Advertisement.LocalName or "Unknown"
         )
     except Exception:
         return e.BluetoothAddress
@@ -48,12 +50,19 @@ class BleakScannerDotNet(BaseBleakScanner):
 
     Keyword Args:
         scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
+        SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
+          BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+          LE advertisement filtering that uses signal strength-based filtering.
+        AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
+          BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+          advertisement filtering that uses payload section-based filtering.
 
     """
+
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerDotNet, self).__init__(loop, **kwargs)
 
-        self._watcher = None
+        self.watcher = None
         self._devices = {}
         self._scan_responses = {}
 
@@ -64,11 +73,11 @@ class BleakScannerDotNet(BaseBleakScanner):
         else:
             self._scanning_mode = BluetoothLEScanningMode.Active
 
-        self._signal_strength_filter = None
-        self._advertisement_filter = None
+        self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
+        self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
     def AdvertisementWatcher_Received(self, sender, e):
-        if sender == self._watcher:
+        if sender == self.watcher:
             logger.debug("Received {0}.".format(_format_event_args(e)))
             if e.AdvertisementType == BluetoothLEAdvertisementType.ScanResponse:
                 if e.BluetoothAddress not in self._scan_responses:
@@ -76,40 +85,40 @@ class BleakScannerDotNet(BaseBleakScanner):
             else:
                 if e.BluetoothAddress not in self._devices:
                     self._devices[e.BluetoothAddress] = e
+        if self._callback is not None:
+            self._callback(sender, e)
 
     def AdvertisementWatcher_Stopped(self, sender, e):
-        if sender == self._watcher:
+        if sender == self.watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
-                    len(self._devices), self._watcher.Status
+                    len(self._devices), self.watcher.Status
                 )
             )
 
     async def start(self):
-        self._watcher = BluetoothLEAdvertisementWatcher()
-        self._watcher.ScanningMode = self._scanning_mode
+        self.watcher = BluetoothLEAdvertisementWatcher()
+        self.watcher.ScanningMode = self._scanning_mode
 
-        if self._callback:
-            self._watcher.Received += self._callback
-        else:
-            self._watcher.Received += self.AdvertisementWatcher_Received
-        self._watcher.Stopped += self.AdvertisementWatcher_Stopped
+        self.watcher.Received += self.AdvertisementWatcher_Received
+        self.watcher.Stopped += self.AdvertisementWatcher_Stopped
 
-        # TODO: Create and set filters
-        self._watcher.Start()
+        if self._signal_strength_filter is not None:
+            self.watcher.SignalStrengthFilter = self._signal_strength_filter
+        if self._advertisement_filter is not None:
+            self.watcher.AdvertisementFilter = self._advertisement_filter
+
+        self.watcher.Start()
 
     async def stop(self):
-        self._watcher.Stop()
+        self.watcher.Stop()
 
         try:
-            if self._callback:
-                self._watcher.Received -= self._callback
-            else:
-                self._watcher.Received -= self.AdvertisementWatcher_Received
-            self._watcher.Stopped -= self.AdvertisementWatcher_Stopped
+            self.watcher.Received -= self.AdvertisementWatcher_Received
+            self.watcher.Stopped -= self.AdvertisementWatcher_Stopped
         except Exception as e:
             logger.debug("Could not remove event handlers: {0}...".format(e))
-        self._watcher = None
+        self.watcher = None
 
     async def set_scanning_filter(self, **kwargs):
         if "SignalStrengthFilter" in kwargs:
@@ -121,43 +130,42 @@ class BleakScannerDotNet(BaseBleakScanner):
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         found = []
-        for d in list(self._devices.values()):
-            bdaddr = _format_bdaddr(d.BluetoothAddress)
-            uuids = []
-            for u in d.Advertisement.ServiceUuids:
-                uuids.append(u.ToString())
-            data = {}
-            for m in d.Advertisement.ManufacturerData:
-                md = IBuffer(m.Data)
-                b = Array.CreateInstance(Byte, md.Length)
-                reader = DataReader.FromBuffer(md)
-                reader.ReadBytes(b)
-                data[m.CompanyId] = bytes(b)
-            local_name = d.Advertisement.LocalName
-            if not local_name and d.BluetoothAddress in self._scan_responses:
-                local_name = self._scan_responses[d.BluetoothAddress].Advertisement.LocalName
-            found.append(
-                BLEDevice(
-                    bdaddr,
-                    local_name,
-                    d,
-                    uuids=uuids,
-                    manufacturer_data=data,
-                )
-            )
+        for event_args in list(self._devices.values()):
+            new_device = self.parse_eventargs(event_args)
+            if (
+                not new_device.name
+                and event_args.BluetoothAddress in self._scan_responses
+            ):
+                new_device.name = self._scan_responses[
+                    event_args.BluetoothAddress
+                ].Advertisement.LocalName
+            found.append(new_device)
 
         return found
+
+    @staticmethod
+    def parse_eventargs(event_args):
+        bdaddr = _format_bdaddr(event_args.BluetoothAddress)
+        uuids = []
+        for u in event_args.Advertisement.ServiceUuids:
+            uuids.append(u.ToString())
+        data = {}
+        for m in event_args.Advertisement.ManufacturerData:
+            md = IBuffer(m.Data)
+            b = Array.CreateInstance(Byte, md.Length)
+            reader = DataReader.FromBuffer(md)
+            reader.ReadBytes(b)
+            data[m.CompanyId] = bytes(b)
+        local_name = event_args.Advertisement.LocalName
+        return BLEDevice(
+            bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
+        )
 
     def register_detection_callback(self, callback: Callable):
         """Set a function to act as Received Event Handler.
 
         Documentation for the Event Handler:
         https://docs.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher.received
-
-        .. note::
-
-            This replaces the regular discovery handling of this Scanner, so you have to handle storing
-            and managing the returned device data yourself!
 
         Args:
             callback: Function accepting two arguments:
@@ -191,4 +199,4 @@ class BleakScannerDotNet(BaseBleakScanner):
             The watcher stop command was issued.
 
         """
-        return self._watcher.Status if self._watcher else None
+        return self.watcher.Status if self.watcher else None
