@@ -4,12 +4,11 @@ import asyncio
 import logging
 
 from bleak.backends.device import BLEDevice
-from bleak.backends.bluezdbus import reactor, defs
+from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.utils import validate_mac_address
 
-# txdbus.client MUST be imported AFTER bleak.backends.bluezdbus.reactor!
 from txdbus import client
-
+from twisted.internet.asyncioreactor import AsyncioSelectorReactor
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +79,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     cached_devices = {}
     devices = {}
     rules = list()
+    reactor = AsyncioSelectorReactor(loop)
 
     # Discovery filters
     filters = kwargs.get("filters", {})

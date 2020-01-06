@@ -12,14 +12,14 @@ from typing import Callable, Any, Union
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
 from bleak.backends.client import BaseBleakClient
-from bleak.backends.bluezdbus import reactor, defs, signals, utils
+from bleak.backends.bluezdbus import defs, signals, utils
 from bleak.backends.bluezdbus.discovery import discover
 from bleak.backends.bluezdbus.utils import get_device_object_path, get_managed_objects
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 
-# txdbus MUST be imported AFTER bleak.backends.bluezdbus.reactor!
+from twisted.internet.asyncioreactor import AsyncioSelectorReactor
 from txdbus.client import connect as txdbus_connect
 from txdbus.error import RemoteError
 
@@ -107,6 +107,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # to ensure that it has been done.
         timeout = kwargs.get("timeout", self._timeout)
         await discover(timeout=timeout, device=self.device, loop=self.loop)
+
+        reactor = AsyncioSelectorReactor(self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
