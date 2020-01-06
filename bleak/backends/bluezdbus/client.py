@@ -48,6 +48,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Backend specific, TXDBus objects and data
         self._device_path = None
         self._bus = None
+        self._reactor = None
         self._rules = {}
         self._subscriptions = list()
 
@@ -108,10 +109,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         await discover(timeout=timeout, device=self.device, loop=self.loop)
 
-        reactor = AsyncioSelectorReactor(self.loop)
+        self._reactor = AsyncioSelectorReactor(self.loop)
 
         # Create system bus
-        self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
+        self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
             self.loop
         )
         # TODO: Handle path errors from txdbus/dbus
@@ -183,18 +184,39 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         logger.debug("Disconnecting from BLE device...")
 
+        # Remove all residual notifications.
         await self._cleanup()
-        if await self.is_connected():
+
+        # Try to disconnect the actual device/peripheral
+        try:
             await self._bus.callRemote(
                 self._device_path,
                 "Disconnect",
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
             ).asFuture(self.loop)
+        except Exception as e:
+            logger.error("Attempt to disconnect device failed: {0}".format(e))
+
+        # See if it has been disconnected.
+        is_disconnected = not await self.is_connected()
+
+        # Try to disconnect the System Bus. Not sure this is needed.
+        try:
             self._bus.disconnect()
-            return not await self.is_connected()
-        else:
-            return True
+        except Exception as e:
+            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+
+        # Stop the Twisted reactor holding the connection to the DBus system.
+        try:
+            self._reactor.stop()
+        except Exception as e:
+            logger.error("Attempt to stop Twisted reactor failed: {0}".format(e))
+        finally:
+            self._bus = None
+            self._reactor = None
+
+        return is_disconnected
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
