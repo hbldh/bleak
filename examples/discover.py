@@ -9,13 +9,11 @@ Updated on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
-
 from bleak import discover
-from bleak.backends.dotnet.scanner import BleakScannerDotNet
+
 
 async def run():
-    devices = await BleakScannerDotNet.discover()
-    #devices = await discover()
+    devices = await discover()
     for d in devices:
         print(d)
 
