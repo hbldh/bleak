@@ -15,7 +15,6 @@ from bleak.backends.corebluetooth import CBAPP as cbapp
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
-
 async def discover(
     timeout: float = 5.0, loop: AbstractEventLoop = None, **kwargs
 ) -> List[BLEDevice]:
@@ -27,8 +26,6 @@ async def discover(
 
     """
     loop = loop if loop else asyncio.get_event_loop()
-
-    devices = {}
 
     if not cbapp.central_manager_delegate.enabled:
         raise BleakError("Bluetooth device is turned off")
@@ -42,35 +39,7 @@ async def discover(
     # with this, CoreBluetooth utilizes UUIDs for each peripheral. We'll use
     # this for the BLEDevice address on macOS
 
-    found = []
 
-    peripherals = cbapp.central_manager_delegate.peripheral_list
+    devices = cbapp.central_manager_delegate.devices
+    return list(devices.values())
 
-    for i, peripheral in enumerate(peripherals):
-        address = peripheral.identifier().UUIDString()
-        name = peripheral.name() or "Unknown"
-        details = peripheral
-
-        advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
-        manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
-        manufacturer_data = {}
-        if manufacturer_binary_data:
-            manufacturer_id = int.from_bytes(
-                manufacturer_binary_data[0:2], byteorder="little"
-            )
-            manufacturer_value = bytes(manufacturer_binary_data[2:])
-            manufacturer_data = {manufacturer_id: manufacturer_value}
-
-        uuids = [
-            # converting to lower case to match other platforms
-            str(u).lower()
-            for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
-        ]
-
-        found.append(
-            BLEDevice(
-                address, name, details, uuids=uuids, manufacturer_data=manufacturer_data
-            )
-        )
-
-    return found
