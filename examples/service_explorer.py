@@ -56,7 +56,8 @@ async def run(address, loop, debug=False):
 
 if __name__ == "__main__":
     address = (
-        "24:71:89:cc:09:05"
+        #"24:71:89:cc:09:05"
+        "7A:D2:14:6F:5F:5C"
         if platform.system() != "Darwin"
         else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
     )
