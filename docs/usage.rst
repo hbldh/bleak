@@ -2,23 +2,9 @@
 Usage
 =====
 
-To discover Bluetooth devices that can be connected to:
 
-.. code-block:: python
-
-    import asyncio
-    from bleak import discover
-
-    async def run():
-        devices = await discover()
-        for d in devices:
-            print(d)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
-
-
-Connect to a Bluetooth device and read it's model number:
+One can use the ``BleakClient`` to connect to a Bluetooth device and read its model number
+via the asyncronous context manager like this:
 
 .. code-block:: python
 
@@ -36,5 +22,33 @@ Connect to a Bluetooth device and read it's model number:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop))
 
+or one can do it without the context manager like this:
 
-See `examples <https://github.com/hbldh/bleak/tree/master/examples>`_ folder for more code.
+.. code-block:: python
+
+    import asyncio
+    from bleak import BleakClient
+
+    address = "24:71:89:cc:09:05"
+    MODEL_NBR_UUID = "00002a24-0000-1000-8000-00805f9b34fb"
+
+    async def run(address, loop):
+        client = BleakClient(address, loop=loop)
+        try:
+            await client.connect()
+            model_number = await client.read_gatt_char(MODEL_NBR_UUID)
+            print("Model Number: {0}".format("".join(map(chr, model_number))))
+        except Exception as e:
+            print(e)
+        finally:
+            await client.disconnect()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run(address, loop))
+
+Try to make sure you always get to call the disconnect method for a client before discarding it;
+the Bluetooth stack on the OS might need to be cleared of residual data which is cached in the
+``BleakClient``.
+
+See `examples <https://github.com/hbldh/bleak/tree/master/examples>`_ folder for more code, e.g. on how
+to keep a connection alive over a longer duration of time.
