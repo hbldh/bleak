@@ -226,5 +226,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         await bus.delMatch(rule).asFuture(loop)
 
     bus.disconnect()
+    reactor.stop()
 
     return discovered_devices
