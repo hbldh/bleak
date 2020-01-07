@@ -10,6 +10,7 @@ from asyncio.events import AbstractEventLoop
 from typing import Callable, Any, Union
 
 from Foundation import NSData, CBUUID
+from CoreBluetooth import CBCharacteristicWriteWithResponse, CBCharacteristicWriteWithoutResponse
 
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.corebluetooth import CBAPP as cbapp
@@ -220,8 +221,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(_uuid))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeCharacteristic_value_(
-            characteristic.obj, value, 1 if response else 0
+        success = await cbapp.central_manager_delegate.connected_peripheral_delegate.writeCharacteristic_value_type_(
+            characteristic.obj,
+            value,
+            CBCharacteristicWriteWithResponse if response else CBCharacteristicWriteWithoutResponse
         )
         if success:
             logger.debug("Write Characteristic {0} : {1}".format(_uuid, data))
