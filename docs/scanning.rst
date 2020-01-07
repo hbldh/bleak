@@ -34,7 +34,8 @@ the manufacturer of the device respectively.
 BleakScanner
 ------------
 
-A new scanning class is being implemented, and is ready to be used for the .NET backend at least.
+A new scanning class is being implemented, and is ready to be used for the .NET backend,
+and partly for the macOS backend as well.
 It can be used in a fashion similar to the old ``discover`` method, using its class method:
 
 .. code-block:: python
