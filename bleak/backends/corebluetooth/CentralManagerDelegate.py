@@ -10,7 +10,6 @@ import asyncio
 import logging
 from enum import Enum
 from typing import List
-from copy import deepcopy
 
 import objc
 from Foundation import (
@@ -38,58 +37,46 @@ class CMDConnectionState(Enum):
     PENDING = 1
     CONNECTED = 2
 
-class __AdvertisementData():
-    """ compatible wrapper """
-    def __init__(self):
-        self._advertisementData = {}
-        self._d = {
-                "uuids" : self.uuids, 
-                "manufacturer_data": self.manufacturer
-                }
-        #self._uuids_set = set([]) # FIXME only to check if different uuids per update
-    
-    #def _update(self, advertisementData):
-        # if self._uuids_set and set(uuids) != set(self._uuids_set):
-            # logger.debug("different uuids per update")
 
-        # for u in uuids:
-            # self._uuids_set.add(u)
+class BLEDeviceCoreBluetooth(BLEDevice):
+    """
+        
+    """
+    def __init__(self, *args, **kwargs):
+        super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
+        # The metadata keys are more or less part of the crossplattform interface.
+        self.metadata = {}
+        self._rssi = kwargs.get("rssi")
 
-        # self._advertismentData.update(dict(advertisementData).
+    def _update(self, advertisementData):
+        # other fields that might be of interest:
+        #   kCBAdvDataAppleMfgData
+        #   kCBAdvDataChannel
+        #   kCBAdvDataManufacturerData
+        #   kCBAdvDataIsConnectable
+        #   kCBAdvDataChannel
+        #   kCBAdvDataAppleMfgData
+        #   kCBAdvDataTxPowerLevel
+        #   kCBAdvDataLocalName
 
-        # for key, val in advertisementData.items():
-            # if key == "kCBAdvDataServiceUUIDs":
-                # pass 
+        self._update_uuids(advertisementData)
+        self._update_manufacturer(advertisementData)
 
-    def __contains__(self, key):
-        return key in self._d
-
-    def __getitem__(self, key):
-        return self._d[key]()
-
-    def uuids(self):
-        cbuuids = self._advertisementData.get("kCBAdvDataServiceUUIDs", [])
+    def _update_uuids(self, advertisementData):
+        cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
         if not cbuuids:
-            return []
+            return 
         # converting to lower case to match other platforms
-        return [str(u).lower() for u in cbuuids]
+        self.metadata["uuids"] = [str(u).lower() for u in cbuuids]
 
-    def manufacturer(self):
-        mfg_bytes = self._advertisementData.get("kCBAdvDataManufacturerData")
+    def _update_manufacturer(self, advertisementData):
+        mfg_bytes = advertisementData.get("kCBAdvDataManufacturerData")
         if not mfg_bytes:
-            return {}
+            return
 
         mfg_id = int.from_bytes(mfg_bytes[0:2], byteorder="little")
         mfg_val = bytes(mfg_bytes[2:])
-        return {mfg_id: mfg_val}
-
-class BLEDeviceCoreBluetooth(BLEDevice):
-    def __init__(self, *args, **kwargs):
-        super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
-        self._rssi = kwargs.get("rssi")
-        #self._advertisementData = None
-        #self._peripheral = None 
-        self.metadata = __AdvertisementData()
+        self.metadata["manufacturer_data"] = {mfg_id: mfg_val}
 
     @property 
     def rssi(self):
@@ -225,38 +212,33 @@ class CentralManagerDelegate(NSObject):
         RSSI: NSNumber,
     ):
         # Note: this function might be called several times for same device.
-        # Example a first time with kCBAdvDataLocalName etc when device is detected and 
-        # a second time when kCBAdvDataServiceUUIDs are retrived (but kCBAdvDataLocalName 
-        # no longer present in advertisementData)
+        # Example a first time with the following keys in advertisementData:
+        # ['kCBAdvDataLocalName', 'kCBAdvDataIsConnectable', 'kCBAdvDataChannel']
+        # ... and later a second time with other keys (and values) such as:
+        # ['kCBAdvDataServiceUUIDs', 'kCBAdvDataIsConnectable', 'kCBAdvDataChannel']
+        #
+        # i.e it is best not to trust advertisementData for later use and data
+        # from it should be copied.
         # 
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
         uuid_string = peripheral.identifier().UUIDString()
 
-        if not uuid_string in self.devices:
+        if uuid_string in self.devices:
             device = self.devices[uuid_string]
         else:        
             address = uuid_string 
-            name = peripheral.name() #or "Unknown"
+            name = peripheral.name() or None
             details = peripheral
             device = BLEDeviceCoreBluetooth(address, name, details)
             self.devices[uuid_string] = device
 
         device._rssi = float(RSSI)
+        device._update(advertisementData)
 
-        #logger.debug("kCBAdvData {}".format(advertisementData.keys()))
-
-        for key in advertisementData.keys():
-            if not key in device.metadata._advertisementData:
-                device.metadata._advertisementData[key] = deepcopy(advertisementData[key])
-
-        logger.debug(
-            "Discovered device {}: {} @ RSSI: {}".format(
-                uuid_string, peripheral.name() or "Unknown", RSSI
-            )
-        )
-
+        logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
+                uuid_string, device.name, RSSI, advertisementData.keys()))
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
         logger.debug(
