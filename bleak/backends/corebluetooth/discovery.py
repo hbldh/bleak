@@ -22,7 +22,7 @@ async def discover(
     """Perform a Bluetooth LE Scan.
 
     Args:
-        timeout (float): duration of scaning period
+        timeout (float): duration of scanning period
         loop (Event Loop): Event Loop to use
 
     """
