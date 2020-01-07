@@ -280,7 +280,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         _uuid = await self.get_appropriate_uuid(str(_uuid))
-        characteristic = self.services.get_characteristic(_uuid)
+        characteristic = self.services.get_characteristic(str(_uuid))
         if not characteristic:
             raise BleakError("Characteristic {0} not found!".format(_uuid))
 
@@ -294,19 +294,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 )
             )
 
-    async def stop_notify(self, _uuid: str) -> None:
-        """Internal method performing call to BleakUWPBridge method.
+    async def stop_notify(self, _uuid: Union[str, uuid.UUID]) -> None:
+        """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            characteristic_obj: The Managed Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic Object
-            callback: The function to be called on notification.
-
-        Returns:
-            (int) The GattCommunicationStatus of the operation.
+            _uuid: The characteristic to stop notifying/indicating on.
 
         """
-        _uuid = await self.get_appropriate_uuid(_uuid)
-        characteristic = self.services.get_characteristic(_uuid)
+        _uuid = await self.get_appropriate_uuid(str(_uuid))
+        characteristic = self.services.get_characteristic(str(_uuid))
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(_uuid))
 
