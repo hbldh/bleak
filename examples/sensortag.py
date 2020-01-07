@@ -118,8 +118,11 @@ async def run(address, loop, debug=False):
         model_number = await client.read_gatt_char(MODEL_NBR_UUID)
         print("Model Number: {0}".format("".join(map(chr, model_number))))
 
-        device_name = await client.read_gatt_char(DEVICE_NAME_UUID)
-        print("Device Name: {0}".format("".join(map(chr, device_name))))
+        try:
+            device_name = await client.read_gatt_char(DEVICE_NAME_UUID)
+            print("Device Name: {0}".format("".join(map(chr, device_name))))
+        except:
+            pass
 
         manufacturer_name = await client.read_gatt_char(MANUFACTURER_NAME_UUID)
         print("Manufacturer Name: {0}".format("".join(map(chr, manufacturer_name))))

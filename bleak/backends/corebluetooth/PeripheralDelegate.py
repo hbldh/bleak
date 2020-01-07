@@ -145,7 +145,7 @@ class PeripheralDelegate(NSObject):
 
         return descriptor.value()
 
-    async def writeCharacteristic_value_(
+    async def writeCharacteristic_value_type_(
         self, characteristic: CBCharacteristic, value: NSData, response: int
     ) -> bool:
 
