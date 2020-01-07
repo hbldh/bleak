@@ -288,3 +288,4 @@ class CentralManagerDelegate(NSObject):
 def string2uuid(uuid_str: str) -> CBUUID:
     """Convert a string to a uuid"""
     return CBUUID.UUIDWithString_(uuid_str)
+
