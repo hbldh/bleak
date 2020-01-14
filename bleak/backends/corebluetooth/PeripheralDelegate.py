@@ -150,7 +150,7 @@ class PeripheralDelegate(NSObject):
     ) -> bool:
 
         cUUID = characteristic.UUID().UUIDString()
-        self._characteristic_write_log[cUUID] = False
+        self._characteristic_write_log[cUUID] = False if not response else True
 
         self.peripheral.writeValue_forCharacteristic_type_(value, characteristic, response)
 
