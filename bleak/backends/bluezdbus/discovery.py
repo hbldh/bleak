@@ -9,6 +9,7 @@ from bleak.backends.bluezdbus.utils import validate_mac_address
 
 from txdbus import client
 from twisted.internet.asyncioreactor import AsyncioSelectorReactor
+from twisted.internet.error import ReactorNotRunning
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,10 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         await bus.delMatch(rule).asFuture(loop)
 
     bus.disconnect()
-    reactor.stop()
+
+    try:
+        reactor.stop()
+    except ReactorNotRunning:
+        pass
 
     return discovered_devices

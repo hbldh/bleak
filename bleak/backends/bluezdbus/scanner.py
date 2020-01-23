@@ -14,6 +14,7 @@ from bleak.backends.bluezdbus.utils import validate_mac_address
 
 from txdbus import client
 from twisted.internet.asyncioreactor import AsyncioSelectorReactor
+from twisted.internet.error import ReactorNotRunning
 
 logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
@@ -157,7 +158,11 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._rules.clear()
 
         self._bus.disconnect()
-        self._reactor.stop()
+        try:
+            self._reactor.stop()
+        except ReactorNotRunning:
+            pass
+
         self._bus = None
         self._reactor = None
 
