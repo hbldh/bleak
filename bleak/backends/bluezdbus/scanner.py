@@ -157,7 +157,12 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             await self._bus.delMatch(rule).asFuture(self.loop)
         self._rules.clear()
 
-        self._bus.disconnect()
+        # Try to disconnect the System Bus.
+        try:
+            self._bus.disconnect()
+        except Exception as e:
+            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+
         try:
             self._reactor.stop()
         except ReactorNotRunning:

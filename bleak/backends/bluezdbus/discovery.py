@@ -226,11 +226,16 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     for rule in rules:
         await bus.delMatch(rule).asFuture(loop)
 
-    bus.disconnect()
+    # Try to disconnect the System Bus.
+    try:
+        bus.disconnect()
+    except Exception as e:
+        logger.error("Attempt to disconnect system bus failed: {0}".format(e))
 
     try:
         reactor.stop()
     except ReactorNotRunning:
+        # I think Bleak will always end up here, but I want to call stop just in case...
         pass
 
     return discovered_devices

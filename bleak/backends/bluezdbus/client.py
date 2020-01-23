@@ -206,7 +206,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # See if it has been disconnected.
         is_disconnected = not await self.is_connected()
 
-        # Try to disconnect the System Bus. Not sure this is needed.
+        # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
         except Exception as e:
@@ -216,7 +216,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         try:
             self._reactor.stop()
         except Exception as e:
-            logger.error("Attempt to stop Twisted reactor failed: {0}".format(e))
+            # I think Bleak will always end up here, but I want to call stop just in case...
+            logger.debug("Attempt to stop Twisted reactor failed: {0}".format(e))
         finally:
             self._bus = None
             self._reactor = None
