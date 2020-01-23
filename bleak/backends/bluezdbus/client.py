@@ -172,9 +172,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
             except Exception as e:
                 logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
         self._rules = {}
-        await asyncio.gather(
-            *(self.stop_notify(_uuid) for _uuid in self._subscriptions)
-        )
+
+        for _uuid in list(self._subscriptions):
+            try:
+                await self.stop_notify(_uuid)
+            except Exception as e:
+                logger.error("Could not remove notifications on characteristic {0}: {1}".format(_uuid, e))
+        self._subscriptions = []
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
