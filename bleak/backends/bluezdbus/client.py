@@ -20,6 +20,7 @@ from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZ
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 
 from twisted.internet.asyncioreactor import AsyncioSelectorReactor
+from twisted.internet.error import ReactorNotRunning
 from txdbus.client import connect as txdbus_connect
 from txdbus.error import RemoteError
 
