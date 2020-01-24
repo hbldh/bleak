@@ -38,7 +38,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     """
 
-    def __init__(self, address: str, loop: AbstractEventLoop, **kwargs):
+    def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
         super(BleakClientCoreBluetooth, self).__init__(address, loop, **kwargs)
 
         self._device_info = None
