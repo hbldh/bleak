@@ -24,7 +24,7 @@ from Foundation import (
 )
 
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
-from bleak.backends.device import BLEDevice
+from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 
 
 logger = logging.getLogger(__name__)
@@ -37,50 +37,6 @@ class CMDConnectionState(Enum):
     PENDING = 1
     CONNECTED = 2
 
-
-class BLEDeviceCoreBluetooth(BLEDevice):
-    """
-        
-    """
-    def __init__(self, *args, **kwargs):
-        super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
-        # The metadata keys are more or less part of the crossplattform interface.
-        self.metadata = {}
-        self._rssi = kwargs.get("rssi")
-
-    def _update(self, advertisementData):
-        # other fields that might be of interest:
-        #   kCBAdvDataAppleMfgData
-        #   kCBAdvDataChannel
-        #   kCBAdvDataManufacturerData
-        #   kCBAdvDataIsConnectable
-        #   kCBAdvDataChannel
-        #   kCBAdvDataAppleMfgData
-        #   kCBAdvDataTxPowerLevel
-        #   kCBAdvDataLocalName
-
-        self._update_uuids(advertisementData)
-        self._update_manufacturer(advertisementData)
-
-    def _update_uuids(self, advertisementData):
-        cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
-        if not cbuuids:
-            return 
-        # converting to lower case to match other platforms
-        self.metadata["uuids"] = [str(u).lower() for u in cbuuids]
-
-    def _update_manufacturer(self, advertisementData):
-        mfg_bytes = advertisementData.get("kCBAdvDataManufacturerData")
-        if not mfg_bytes:
-            return
-
-        mfg_id = int.from_bytes(mfg_bytes[0:2], byteorder="little")
-        mfg_val = bytes(mfg_bytes[2:])
-        self.metadata["manufacturer_data"] = {mfg_id: mfg_val}
-
-    @property 
-    def rssi(self):
-        return self._rssi
 
 class CentralManagerDelegate(NSObject):
     """macOS conforming python class for managing the CentralManger for BLE"""
