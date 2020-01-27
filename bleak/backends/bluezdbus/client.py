@@ -164,7 +164,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return True
 
-    async def _cleanup(self) -> None:
+    async def _cleanup_notifications(self) -> None:
+        """
+        Remove all pending notifications of the client. This method is used to
+        free the DBus matches that have been established.
+        """
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
             try:
@@ -180,32 +184,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 logger.error("Could not remove notifications on characteristic {0}: {1}".format(_uuid, e))
         self._subscriptions = []
 
-    async def disconnect(self) -> bool:
-        """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing if device is disconnected.
-
+    async def _cleanup_dbus_resources(self) -> None:
         """
-        logger.debug("Disconnecting from BLE device...")
-
-        # Remove all residual notifications.
-        await self._cleanup()
-
-        # Try to disconnect the actual device/peripheral
-        try:
-            await self._bus.callRemote(
-                self._device_path,
-                "Disconnect",
-                interface=defs.DEVICE_INTERFACE,
-                destination=defs.BLUEZ_SERVICE,
-            ).asFuture(self.loop)
-        except Exception as e:
-            logger.error("Attempt to disconnect device failed: {0}".format(e))
-
-        # See if it has been disconnected.
-        is_disconnected = not await self.is_connected()
-
+        Free the resources allocated for both the DBus bus and the Twisted
+        reactor. Use this method upon final disconnection.
+        """
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
@@ -221,6 +204,43 @@ class BleakClientBlueZDBus(BaseBleakClient):
         finally:
             self._bus = None
             self._reactor = None
+
+    async def _cleanup_all(self) -> None:
+        """
+        Free all the allocated resource in DBus and Twisted. Use this method to
+        eventually cleanup all otherwise leaked resources.
+        """
+        await self._cleanup_notifications()
+        await self._cleanup_dbus_resources()
+
+
+    async def disconnect(self) -> bool:
+        """Disconnect from the specified GATT server.
+
+        Returns:
+            Boolean representing if device is disconnected.
+
+        """
+        logger.debug("Disconnecting from BLE device...")
+
+        # Remove all residual notifications.
+        await self._cleanup_notifications()
+
+        # Try to disconnect the actual device/peripheral
+        try:
+            await self._bus.callRemote(
+                self._device_path,
+                "Disconnect",
+                interface=defs.DEVICE_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+            ).asFuture(self.loop)
+        except Exception as e:
+            logger.error("Attempt to disconnect device failed: {0}".format(e))
+
+        # See if it has been disconnected.
+        is_disconnected = not await self.is_connected()
+
+        await self._cleanup_dbus_resources()
 
         return is_disconnected
 
@@ -703,7 +723,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 ):
                     logger.debug("Device {} disconnected.".format(self.address))
 
-                    task = self.loop.create_task(self._cleanup())
+                    task = self.loop.create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(partial(self._disconnected_callback, self))
 
