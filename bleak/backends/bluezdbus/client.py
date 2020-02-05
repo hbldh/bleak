@@ -6,6 +6,7 @@ import re
 import subprocess
 import uuid
 from asyncio import Future
+from asyncio.events import AbstractEventLoop
 from functools import wraps, partial
 from typing import Callable, Any, Union
 
@@ -25,6 +26,29 @@ from txdbus.client import connect as txdbus_connect
 from txdbus.error import RemoteError
 
 logger = logging.getLogger(__name__)
+_reactors = {}
+
+def _get_reactor(loop: AbstractEventLoop):
+    """Helper factory to get a Twisted reactor for the provided loop.
+
+    Since the AsyncioSelectorReactor on POSIX systems leaks file descriptors
+    even if stopped and presumably cleaned up, we lazily initialize them and
+    cache them for each loop. In a normal use case you will only work on one
+    event loop anyway, but in the case someone has different loops, this
+    construct still works without leaking resources.
+
+    Args:
+        loop (asyncio.events.AbstractEventLoop): The event loop to use.
+
+    Returns:
+           A :py:class:`twisted.internet.asnycioreacotr.AsyncioSelectorReactor`
+           running on the provided asyncio event loop.
+
+    """
+    if loop not in _reactors:
+        _reactors[loop] = AsyncioSelectorReactor(loop)
+
+    return _reactors[loop]
 
 
 class BleakClientBlueZDBus(BaseBleakClient):
@@ -110,7 +134,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         await discover(timeout=timeout, device=self.device, loop=self.loop)
 
-        self._reactor = AsyncioSelectorReactor(self.loop)
+        self._reactor = _get_reactor(self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
