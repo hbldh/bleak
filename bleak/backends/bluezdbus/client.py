@@ -224,6 +224,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # Stop the Twisted reactor holding the connection to the DBus system.
         try:
+            self._reactor.disconnectAll()
+            self._reactor.removeAll()
             self._reactor.stop()
         except Exception as e:
             # I think Bleak will always end up here, but I want to call stop just in case...
