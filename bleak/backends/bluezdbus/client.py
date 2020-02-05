@@ -167,11 +167,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 destination="org.bluez",
             ).asFuture(self.loop)
         except RemoteError as e:
+            await self._cleanup_all()
             raise BleakError(str(e))
 
         if await self.is_connected():
             logger.debug("Connection successful.")
         else:
+            await self._cleanup_all()
             raise BleakError(
                 "Connection to {0} was not successful!".format(self.address)
             )
@@ -180,6 +182,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         await self.get_services()
         properties = await self._get_device_properties()
         if not properties.get("Connected"):
+            await self._cleanup_all()
             raise BleakError("Connection failed!")
 
         await self._bus.delMatch(rule_id).asFuture(self.loop)
