@@ -159,7 +159,7 @@ class PeripheralDelegate(NSObject):
             value, characteristic, response
         )
         if response:
-            event.wait()
+            await event.wait()
 
         return True
 
@@ -195,8 +195,7 @@ class PeripheralDelegate(NSObject):
         if cUUID not in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notification never started")
 
-        event = self._characteristic_notify_change_events[cUUID]
-        event.clear()
+        event = self._characteristic_notify_change_events.get_cleared(cUUID)
         self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
         # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
         await event.wait()
