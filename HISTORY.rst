@@ -20,8 +20,8 @@ History
 * Fix for #127, uuid or str on macOS.
 * Handles str/uuid for characteristics better.
 * Merge #148, Run .NET backend notifications on event loop instead of main loop.
-# Merge #146, adapt characteristic write log to account for WriteWithoutResponse on macOS.
-# Fix for #145, Error in cleanup on Bluez backend.
+* Merge #146, adapt characteristic write log to account for WriteWithoutResponse on macOS.
+* Fix for #145, Error in cleanup on Bluez backend.
 * Fix for #151, only subscribe to BlueZ messages on DBus. Merge #152.
 * Fix for #142, Merge #144, Improved scanning for macOS backend.
 * Fix for #155, Merge #156, lost notifications on macOS backend.
