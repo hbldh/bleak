@@ -31,7 +31,7 @@ CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
 class _EventDict(dict):
     def get_cleared(self, xUUID) -> asyncio.Event:
-        """ Convenience method. 
+        """ Convenience method.
         Returns a cleared (False) event. Creates it if doesen't exits.
         """
         if xUUID not in self:
@@ -151,6 +151,7 @@ class PeripheralDelegate(NSObject):
     async def writeCharacteristic_value_type_(
         self, characteristic: CBCharacteristic, value: NSData, response: int
     ) -> bool:
+        # TODO: Is the type hint for response correct? Should it be a NSInteger instead?
 
         cUUID = characteristic.UUID().UUIDString()
 
