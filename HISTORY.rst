@@ -2,8 +2,13 @@
 History
 =======
 
+0.6.1 (2020-03-09)
+------------------
+
+* Including #156, lost notifications on macOS backend, which was accidentally missed on previous release.
+
 0.6.0 (2020-03-09)
-----------------------
+------------------
 
 * New Scanner object to allow for async device scanning.
 * Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
