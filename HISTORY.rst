@@ -2,13 +2,41 @@
 History
 =======
 
+0.6.0 (2020-03-09)
+----------------------
+
+* New Scanner object to allow for async device scanning.
+* Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
+* Implemented ``write_gatt_descriptor`` for Bluez backend.
+* Large change in Bluez backend handling of Twisted reactors. Fixes #143
+* Modified ``set_disconnect_callback`` to actually call the callback as a callback. Fixes #108.
+* Added another required parameter to disconnect callbacks.
+* Added Discovery filter option in BlueZ backend (Merged #124)
+* Merge #138: comments about Bluez version check.
+* Improved scanning data for macOS backend. Merge #126.
+* Merges #141, a critical fix for macOS.
+* Fix for #114, write with response on macOS.
+* Fix for #87, DIctionary changes size on .NET backend.
+* Fix for #127, uuid or str on macOS.
+* Handles str/uuid for characteristics better.
+* Merge #148, Run .NET backend notifications on event loop instead of main loop.
+* Merge #146, adapt characteristic write log to account for WriteWithoutResponse on macOS.
+* Fix for #145, Error in cleanup on Bluez backend.
+* Fix for #151, only subscribe to BlueZ messages on DBus. Merge #152.
+* Fix for #142, Merge #144, Improved scanning for macOS backend.
+* Fix for #155, Merge #156, lost notifications on macOS backend.
+* Improved type hints
+* Improved error handling for .NET backend.
+* Documentation fixes.
+
+
 0.5.1 (2019-10-09)
 ------------------
 
 * Active Scanning on Windows, #99 potentially solving #95
 * Longer timeout in service discovery on BlueZ
-* Added `timeout` to constructors and connect methods
-* Fix for `get_services` on macOS. Relates to #101
+* Added ``timeout`` to constructors and connect methods
+* Fix for ``get_services`` on macOS. Relates to #101
 * Fixes for disconnect callback on BlueZ, #86 and #83
 * Fixed reading of device name in BlueZ. It is not readable as regular characteristic. #104
 * Removed logger feedback in BlueZ discovery method.

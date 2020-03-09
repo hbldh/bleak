@@ -16,7 +16,10 @@ def listen_properties_changed(bus, loop, callback):
 
     """
     return bus.addMatch(
-        callback, interface=PROPERTIES_INTERFACE, member="PropertiesChanged"
+        callback,
+        interface=PROPERTIES_INTERFACE,
+        member="PropertiesChanged",
+        path_namespace="/org/bluez"
     ).asFuture(loop)
 
 
@@ -33,7 +36,10 @@ def listen_interfaces_added(bus, loop, callback):
 
     """
     return bus.addMatch(
-        callback, interface=OBJECT_MANAGER_INTERFACE, member="InterfacesAdded"
+        callback,
+        interface=OBJECT_MANAGER_INTERFACE,
+        member="InterfacesAdded",
+        path_namespace="/org/bluez"
     ).asFuture(loop)
 
 
@@ -50,5 +56,8 @@ def listen_interfaces_removed(bus, loop, callback):
 
     """
     return bus.addMatch(
-        callback, interface=OBJECT_MANAGER_INTERFACE, member="InterfacesRemoved"
+        callback,
+        interface=OBJECT_MANAGER_INTERFACE,
+        member="InterfacesRemoved",
+        path_namespace="/org/bluez"
     ).asFuture(loop)

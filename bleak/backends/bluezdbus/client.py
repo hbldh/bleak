@@ -4,20 +4,23 @@ import asyncio
 import os
 import re
 import subprocess
-from functools import wraps
-from typing import Callable, Any
+import uuid
+from asyncio import Future
+from functools import wraps, partial
+from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
 from bleak.backends.client import BaseBleakClient
-from bleak.backends.bluezdbus import reactor, defs, signals, utils
+from bleak.backends.bluezdbus import defs, signals, utils
 from bleak.backends.bluezdbus.discovery import discover
 from bleak.backends.bluezdbus.utils import get_device_object_path, get_managed_objects
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 
-# txdbus MUST be imported AFTER bleak.backends.bluezdbus.reactor!
+from twisted.internet.asyncioreactor import AsyncioSelectorReactor
+from twisted.internet.error import ReactorNotRunning
 from txdbus.client import connect as txdbus_connect
 from txdbus.error import RemoteError
 
@@ -46,6 +49,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Backend specific, TXDBus objects and data
         self._device_path = None
         self._bus = None
+        self._reactor = None
         self._rules = {}
         self._subscriptions = list()
 
@@ -63,11 +67,25 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient], None], **kwargs
+        self, callback: Callable[[BaseBleakClient, Future], None], **kwargs
     ) -> None:
         """Set the disconnected callback.
+
         The callback will be called on DBus PropChanged event with
         the 'Connected' key set to False.
+
+        A disconnect callback must accept two positional arguments,
+        the BleakClient and the Future that called it.
+
+        Example:
+
+        .. code-block::python
+
+            async with BleakClient(mac_addr, loop=loop) as client:
+                def disconnect_callback(client, future):
+                    print(f"Disconnected callback called on {client}!")
+
+                client.set_disconnected_callback(disconnect_callback)
 
         Args:
             callback: callback to be called on disconnection.
@@ -92,8 +110,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         await discover(timeout=timeout, device=self.device, loop=self.loop)
 
+        self._reactor = AsyncioSelectorReactor(self.loop)
+
         # Create system bus
-        self._bus = await txdbus_connect(reactor, busAddress="system").asFuture(
+        self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
             self.loop
         )
         # TODO: Handle path errors from txdbus/dbus
@@ -152,28 +172,57 @@ class BleakClientBlueZDBus(BaseBleakClient):
             except Exception as e:
                 logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
         self._rules = {}
-        await asyncio.gather(
-            *(self.stop_notify(_uuid) for _uuid in self._subscriptions)
-        )
+
+        for _uuid in list(self._subscriptions):
+            try:
+                await self.stop_notify(_uuid)
+            except Exception as e:
+                logger.error("Could not remove notifications on characteristic {0}: {1}".format(_uuid, e))
+        self._subscriptions = []
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
 
         Returns:
-            Boolean representing connection status.
+            Boolean representing if device is disconnected.
 
         """
         logger.debug("Disconnecting from BLE device...")
 
+        # Remove all residual notifications.
         await self._cleanup()
 
-        await self._bus.callRemote(
-            self._device_path,
-            "Disconnect",
-            interface=defs.DEVICE_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-        ).asFuture(self.loop)
-        return not await self.is_connected()
+        # Try to disconnect the actual device/peripheral
+        try:
+            await self._bus.callRemote(
+                self._device_path,
+                "Disconnect",
+                interface=defs.DEVICE_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+            ).asFuture(self.loop)
+        except Exception as e:
+            logger.error("Attempt to disconnect device failed: {0}".format(e))
+
+        # See if it has been disconnected.
+        is_disconnected = not await self.is_connected()
+
+        # Try to disconnect the System Bus.
+        try:
+            self._bus.disconnect()
+        except Exception as e:
+            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+
+        # Stop the Twisted reactor holding the connection to the DBus system.
+        try:
+            self._reactor.stop()
+        except Exception as e:
+            # I think Bleak will always end up here, but I want to call stop just in case...
+            logger.debug("Attempt to stop Twisted reactor failed: {0}".format(e))
+        finally:
+            self._bus = None
+            self._reactor = None
+
+        return is_disconnected
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -207,6 +256,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         sleep_loop_sec = 0.02
         total_slept_sec = 0
+        services_resolved = False
 
         while total_slept_sec < 5.0:
             properties = await self._get_device_properties()
@@ -267,7 +317,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # IO methods
 
-    async def read_gatt_char(self, _uuid: str, **kwargs) -> bytearray:
+    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -295,7 +345,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
-            if _uuid == '00002a00-0000-1000-8000-00805f9b34fb' and (
+            if str(_uuid) == '00002a00-0000-1000-8000-00805f9b34fb' and (
                 self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
             ):
                 props = await self._get_device_properties(
@@ -345,8 +395,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
-            # TODO: Raise error instead?
-            return None
+            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
         value = bytearray(
             await self._bus.callRemote(
@@ -366,9 +415,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return value
 
     async def write_gatt_char(
-        self, _uuid: str, data: bytearray, response: bool = False
+        self, _uuid: Union[str, uuid.UUID], data: bytearray, response: bool = False
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
+
+        NB: the version check below is for the "type" option to the
+        "Characteristic.WriteValue" method that was added to Bluez in 5.50
+        ttps://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a
+        Before that commit, "Characteristic.WriteValue" was only "Write with
+        response". "Characteristic.AcquireWrite" was added in Bluez 5.46
+        https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e
+        which can be used to "Write without response", but for older versions
+        of Bluez, it is not possible to "Write without response".
 
         Args:
             _uuid (str or UUID): The uuid of the characteristics to write to.
@@ -377,6 +435,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
 
         if (
             "write" not in characteristic.properties
@@ -399,6 +459,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 % str(_uuid)
             )
 
+        # See docstring for details about this handling.
+        if not response and self._bluez_version[0] == 5 and self._bluez_version[1] < 46:
+            raise BleakError("Write without response requires at least BlueZ 5.46")
         if response or (self._bluez_version[0] == 5 and self._bluez_version[1] > 50):
             # TODO: Add OnValueUpdated handler for response=True?
             await self._bus.callRemote(
@@ -413,8 +476,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         else:
             # Older versions of BlueZ don't have the "type" option, so we have
             # to write the hard way. This isn't the most efficient way of doing
-            # things, but it works. Also, watch out for txdbus bug that causes
-            # returned fd to be None. https://github.com/cocagne/txdbus/pull/81
+            # things, but it works.
             fd, _ = await self._bus.callRemote(
                 characteristic.path,
                 "AcquireWrite",
@@ -434,7 +496,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
     async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
-
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
@@ -442,10 +503,27 @@ class BleakClientBlueZDBus(BaseBleakClient):
             data (bytes or bytearray): The data to send.
 
         """
-        return await super().write_gatt_descriptor(handle, data)
+        descriptor = self.services.get_descriptor(handle)
+        if not descriptor:
+            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
+        await self._bus.callRemote(
+            descriptor.path,
+            'WriteValue',
+            interface=defs.GATT_DESCRIPTOR_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature='aya{sv}',
+            body=[data, {'type': 'command'}],
+            returnSignature='',
+        ).asFuture(self.loop)
+
+        logger.debug(
+            "Write Descriptor {0} | {1}: {2}".format(
+                handle, descriptor.path, data
+            )
+        )
 
     async def start_notify(
-        self, _uuid: str, callback: Callable[[str, Any], Any], **kwargs
+        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -475,7 +553,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # The org.bluez.Battery1 on the other hand does not provide a notification method, so here we cannot
             # provide this functionality...
             # See https://kernel.googlesource.com/pub/scm/bluetooth/bluez/+/refs/tags/5.48/doc/battery-api.txt
-            if _uuid == "00002a19-0000-1000-8000-00805f9b34fb" and (
+            if str(_uuid) == "00002a19-0000-1000-8000-00805f9b34fb" and (
                 self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
             ):
                 raise BleakError(
@@ -508,9 +586,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 callback, self._char_path_to_uuid
             )  # noqa | E123 error in flake8...
 
-        self._subscriptions.append(_uuid)
+        self._subscriptions.append(str(_uuid))
 
-    async def stop_notify(self, _uuid: str) -> None:
+    async def stop_notify(self, _uuid: Union[str, uuid.UUID]) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
@@ -518,6 +596,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
         await self._bus.callRemote(
             characteristic.path,
             "StopNotify",
@@ -529,11 +609,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         ).asFuture(self.loop)
         self._notification_callbacks.pop(characteristic.path, None)
 
-        self._subscriptions.remove(_uuid)
+        self._subscriptions.remove(str(_uuid))
 
     # DBUS introspection method for characteristics.
 
-    async def get_all_for_characteristic(self, _uuid) -> dict:
+    async def get_all_for_characteristic(self, _uuid: Union[str, uuid.UUID]) -> dict:
         """Get all properties for a characteristic.
 
         This method should generally not be needed by end user, since it is a DBus specific method.
@@ -546,6 +626,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         characteristic = self.services.get_characteristic(str(_uuid))
+        if not characteristic:
+            raise BleakError("Characteristic {0} was not found!".format(_uuid))
         out = await self._bus.callRemote(
             characteristic.path,
             "GetAll",
@@ -621,10 +703,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 ):
                     logger.debug("Device {} disconnected.".format(self.address))
 
-                    self.loop.create_task(self._cleanup())
-
+                    task = self.loop.create_task(self._cleanup())
                     if self._disconnected_callback is not None:
-                        self._disconnected_callback(self)
+                        task.add_done_callback(partial(self._disconnected_callback, self))
 
 
 def _data_notification_wrapper(func, char_map):

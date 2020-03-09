@@ -97,7 +97,7 @@ async def discover(
         logger.debug("Could not remove event handlers: {0}...".format(e))
 
     found = []
-    for d in devices.values():
+    for d in list(devices.values()):
         bdaddr = _format_bdaddr(d.BluetoothAddress)
         uuids = []
         for u in d.Advertisement.ServiceUuids:

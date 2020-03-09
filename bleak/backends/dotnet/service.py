@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import List, Union
 
 from bleak.backends.service import BleakGATTService
@@ -24,10 +25,10 @@ class BleakGATTServiceDotNet(BleakGATTService):
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def get_characteristic(self, _uuid) -> Union[BleakGATTCharacteristicDotNet, None]:
+    def get_characteristic(self, _uuid: Union[str, UUID]) -> Union[BleakGATTCharacteristicDotNet, None]:
         """Get a characteristic by UUID"""
         try:
-            return next(filter(lambda x: x.uuid == _uuid, self.characteristics))
+            return next(filter(lambda x: x.uuid == str(_uuid), self.characteristics))
         except StopIteration:
             return None
 

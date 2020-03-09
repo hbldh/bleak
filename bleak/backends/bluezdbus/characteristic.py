@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Union, List
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -63,7 +64,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         """List of descriptors for this service"""
         return self.__descriptors
 
-    def get_descriptor(self, _uuid: str) -> Union[BleakGATTDescriptor, None]:
+    def get_descriptor(self, _uuid: Union[str, UUID]) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by UUID"""
         try:
             return next(filter(lambda x: x.uuid == _uuid, self.descriptors))

@@ -145,14 +145,15 @@ class PeripheralDelegate(NSObject):
 
         return descriptor.value()
 
-    async def writeCharacteristic_value_(
-        self, characteristic: CBCharacteristic, value: NSData
+    async def writeCharacteristic_value_type_(
+        self, characteristic: CBCharacteristic, value: NSData, response: int
     ) -> bool:
+        # TODO: Is the type hint for response correct? Should it be a NSInteger instead?
 
         cUUID = characteristic.UUID().UUIDString()
-        self._characteristic_write_log[cUUID] = False
+        self._characteristic_write_log[cUUID] = False if not response else True
 
-        self.peripheral.writeValue_forCharacteristic_type_(value, characteristic, 0)
+        self.peripheral.writeValue_forCharacteristic_type_(value, characteristic, response)
 
         while not self._characteristic_write_log[cUUID]:
             await asyncio.sleep(0.01)
@@ -196,7 +197,7 @@ class PeripheralDelegate(NSObject):
         while not self._characteristic_notify_log[cUUID]:
             await asyncio.sleep(0.01)
 
-        self._characteristic_notify_status = False
+        self._characteristic_notify_status[cUUID] = False
         return True
 
     # Protocol Functions

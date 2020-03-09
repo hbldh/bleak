@@ -17,7 +17,7 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 class CBChacteristicProperties(Enum):
     BROADCAST = 0x1
     READ = 0x2
-    WRITE_WIHTOUT_RESPONSE = 0x4
+    WRITE_WITHOUT_RESPONSE = 0x4
     WRITE = 0x8
     NOTIFY = 0x10
     INDICATE = 0x20

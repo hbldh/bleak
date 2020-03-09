@@ -4,12 +4,12 @@ import asyncio
 import logging
 
 from bleak.backends.device import BLEDevice
-from bleak.backends.bluezdbus import reactor, defs
+from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.utils import validate_mac_address
 
-# txdbus.client MUST be imported AFTER bleak.backends.bluezdbus.reactor!
 from txdbus import client
-
+from twisted.internet.asyncioreactor import AsyncioSelectorReactor
+from twisted.internet.error import ReactorNotRunning
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +56,19 @@ def _device_info(path, props):
 async def discover(timeout=5.0, loop=None, **kwargs):
     """Discover nearby Bluetooth Low Energy devices.
 
+    For possible values for `filter`, see the parameters to the
+    ``SetDiscoveryFilter`` method in the `BlueZ docs
+    <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
+
+    The ``Transport`` parameter is always set to ``le`` by default in Bleak.
+
     Args:
         timeout (float): Duration to scan for.
         loop (asyncio.AbstractEventLoop): Optional event loop to use.
 
     Keyword Args:
         device (str): Bluetooth device to use for discovery.
+        filters (dict): A dict of filters to be applied on discovery.
 
     Returns:
         List of tuples containing name, address and signal strength
@@ -73,6 +80,11 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     cached_devices = {}
     devices = {}
     rules = list()
+    reactor = AsyncioSelectorReactor(loop)
+
+    # Discovery filters
+    filters = kwargs.get("filters", {})
+    filters["Transport"] = "le"
 
     def parse_msg(message):
         if message.member == "InterfacesAdded":
@@ -133,20 +145,25 @@ async def discover(timeout=5.0, loop=None, **kwargs):
             parse_msg,
             interface="org.freedesktop.DBus.ObjectManager",
             member="InterfacesAdded",
+            path_namespace="/org/bluez",
         ).asFuture(loop)
     )
+
     rules.append(
         await bus.addMatch(
             parse_msg,
             interface="org.freedesktop.DBus.ObjectManager",
             member="InterfacesRemoved",
+            path_namespace="/org/bluez",
         ).asFuture(loop)
     )
+
     rules.append(
         await bus.addMatch(
             parse_msg,
             interface="org.freedesktop.DBus.Properties",
             member="PropertiesChanged",
+            path_namespace="/org/bluez",
         ).asFuture(loop)
     )
 
@@ -160,10 +177,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     adapter_path, interface = _filter_on_adapter(objects, device)
     cached_devices = dict(_filter_on_device(objects))
 
-    # dd = {'objectPath': '/org/bluez/hci0', 'methodName': 'StartDiscovery',
-    # 'interface': 'org.bluez.Adapter1', 'destination': 'org.bluez',
-    # 'signature': '', 'body': (), 'expectReply': True, 'autoStart': True,
-    # 'timeout': None, 'returnSignature': ''}
     # Running Discovery loop.
     await bus.callRemote(
         adapter_path,
@@ -171,15 +184,18 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         interface="org.bluez.Adapter1",
         destination="org.bluez",
         signature="a{sv}",
-        body=[{"Transport": "le"}],
+        body=[filters],
     ).asFuture(loop)
+
     await bus.callRemote(
         adapter_path,
         "StartDiscovery",
         interface="org.bluez.Adapter1",
         destination="org.bluez",
     ).asFuture(loop)
+
     await asyncio.sleep(timeout)
+
     await bus.callRemote(
         adapter_path,
         "StopDiscovery",
@@ -188,17 +204,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     ).asFuture(loop)
 
     # Reduce output.
-    # out = []
-    # for path, props in devices.items():
-    #    properties = await cli.callRemote(
-    #        path, 'GetAll',
-    #        interface=defs.PROPERTIES_INTERFACE,
-    #        destination=defs.BLUEZ_SERVICE,
-    #        signature='s',
-    #        body=[defs.DEVICE_INTERFACE, ],
-    #        returnSignature='a{sv}').asFuture(loop)
-    #    print(properties)
-    #
     discovered_devices = []
     for path, props in devices.items():
         if not props:
@@ -224,6 +229,16 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     for rule in rules:
         await bus.delMatch(rule).asFuture(loop)
 
-    bus.disconnect()
+    # Try to disconnect the System Bus.
+    try:
+        bus.disconnect()
+    except Exception as e:
+        logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+
+    try:
+        reactor.stop()
+    except ReactorNotRunning:
+        # I think Bleak will always end up here, but I want to call stop just in case...
+        pass
 
     return discovered_devices

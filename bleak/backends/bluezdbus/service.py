@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Union, List
 
 from bleak.backends.service import BleakGATTService
@@ -23,7 +24,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         return self.__characteristics
 
     def get_characteristic(
-        self, _uuid
+        self, _uuid: Union[str, UUID]
     ) -> Union[BleakGATTCharacteristicBlueZDBus, None]:
         """Get a characteristic by UUID"""
         raise NotImplementedError()

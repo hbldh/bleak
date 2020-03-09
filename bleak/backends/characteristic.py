@@ -6,8 +6,9 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
-from typing import List, Union, Any
 import enum
+from uuid import UUID
+from typing import List, Union, Any
 
 from bleak.backends.descriptor import BleakGATTDescriptor
 
@@ -67,7 +68,7 @@ class BleakGATTCharacteristic(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_descriptor(self, _uuid: str) -> Union[BleakGATTDescriptor, None]:
+    def get_descriptor(self, _uuid: Union[str, UUID]) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by UUID"""
         raise NotImplementedError()
 

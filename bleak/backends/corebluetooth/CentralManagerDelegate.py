@@ -24,8 +24,9 @@ from Foundation import (
 )
 
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
+from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 
-# logging.basicConfig(level=logging.DEBUG)
+
 logger = logging.getLogger(__name__)
 
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
@@ -58,9 +59,7 @@ class CentralManagerDelegate(NSObject):
         self._connection_state = CMDConnectionState.DISCONNECTED
 
         self.ready = False
-        self.peripheral_list = []
-        self.peripheral_delegate_list = []
-        self.advertisement_data_list = []
+        self.devices = {}
 
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
@@ -97,6 +96,8 @@ class CentralManagerDelegate(NSObject):
         Scan for peripheral devices
         scan_options = { service_uuids, timeout }
         """
+        # remove old
+        self.devices = {}
         service_uuids = []
         if "service_uuids" in scan_options:
             service_uuids_str = scan_options["service_uuids"]
@@ -104,19 +105,20 @@ class CentralManagerDelegate(NSObject):
                 list(map(string2uuid, service_uuids_str))
             )
 
-        timeout = None
+        timeout = 0
         if "timeout" in scan_options:
-            timeout = scan_options["timeout"]
+            timeout = float(scan_options["timeout"])
 
         self.central_manager.scanForPeripheralsWithServices_options_(
             service_uuids, None
         )
 
-        if timeout is None or type(timeout) not in (int, float):
-            return
+        if timeout > 0:
+            await asyncio.sleep(timeout)
 
-        await asyncio.sleep(timeout)
         self.central_manager.stopScan()
+        while self.central_manager.isScanning():
+            await asyncio.sleep(0.1)
 
         return []
 
@@ -165,17 +167,34 @@ class CentralManagerDelegate(NSObject):
         advertisementData: NSDictionary,
         RSSI: NSNumber,
     ):
+        # Note: this function might be called several times for same device.
+        # Example a first time with the following keys in advertisementData:
+        # ['kCBAdvDataLocalName', 'kCBAdvDataIsConnectable', 'kCBAdvDataChannel']
+        # ... and later a second time with other keys (and values) such as:
+        # ['kCBAdvDataServiceUUIDs', 'kCBAdvDataIsConnectable', 'kCBAdvDataChannel']
+        #
+        # i.e it is best not to trust advertisementData for later use and data
+        # from it should be copied.
+        # 
+        # This behaviour could be affected by the
+        # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
+
         uuid_string = peripheral.identifier().UUIDString()
-        if uuid_string not in list(
-            map(lambda x: x.identifier().UUIDString(), self.peripheral_list)
-        ):
-            self.peripheral_list.append(peripheral)
-            self.advertisement_data_list.append(advertisementData)
-            logger.debug(
-                "Discovered device {}: {} @ RSSI: {}".format(
-                    uuid_string, peripheral.name() or "Unknown", RSSI
-                )
-            )
+
+        if uuid_string in self.devices:
+            device = self.devices[uuid_string]
+        else:        
+            address = uuid_string 
+            name = peripheral.name() or None
+            details = peripheral
+            device = BLEDeviceCoreBluetooth(address, name, details)
+            self.devices[uuid_string] = device
+
+        device._rssi = float(RSSI)
+        device._update(advertisementData)
+
+        logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
+                uuid_string, device.name, RSSI, advertisementData.keys()))
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
         logger.debug(
@@ -207,3 +226,4 @@ class CentralManagerDelegate(NSObject):
 def string2uuid(uuid_str: str) -> CBUUID:
     """Convert a string to a uuid"""
     return CBUUID.UUIDWithString_(uuid_str)
+

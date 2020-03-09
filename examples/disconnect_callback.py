@@ -17,7 +17,7 @@ async def show_disconnect_handling(mac_addr: str, loop: asyncio.AbstractEventLoo
     async with BleakClient(mac_addr, loop=loop) as client:
         disconnected_event = asyncio.Event()
 
-        def disconnect_callback(client):
+        def disconnect_callback(client, future):
             print("Disconnected callback called!")
             loop.call_soon_threadsafe(disconnected_event.set)
 
