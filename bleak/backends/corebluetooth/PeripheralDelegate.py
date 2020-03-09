@@ -148,6 +148,7 @@ class PeripheralDelegate(NSObject):
     async def writeCharacteristic_value_type_(
         self, characteristic: CBCharacteristic, value: NSData, response: int
     ) -> bool:
+        # TODO: Is the type hint for response correct? Should it be a NSInteger instead?
 
         cUUID = characteristic.UUID().UUIDString()
         self._characteristic_write_log[cUUID] = False if not response else True
