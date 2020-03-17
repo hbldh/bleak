@@ -326,7 +326,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
             self.services.add_descriptor(
-                BleakGATTDescriptorBlueZDBus(desc, object_path, _characteristic[0].uuid)
+                BleakGATTDescriptorBlueZDBus(desc, object_path, _characteristic[0].uuid, int(_characteristic[0].handle))
             )
 
         self._services_resolved = True

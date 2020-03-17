@@ -76,6 +76,11 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         return self.obj.service().UUID().UUIDString()
 
     @property
+    def handle(self) -> int:
+        """Integer handle for this characteristic"""
+        return int(self.obj.handle())
+
+    @property
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return self.obj.UUID().UUIDString()

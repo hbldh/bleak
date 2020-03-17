@@ -41,6 +41,11 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.__service_uuid
 
     @property
+    def handle(self) -> int:
+        """The handle of this characteristic"""
+        return int(self.obj.get("Handle"))
+
+    @property
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return self.obj.get("UUID")

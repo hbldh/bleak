@@ -322,7 +322,7 @@ class BleakClientDotNet(BaseBleakClient):
                     for descriptor in list(descriptors_result.Descriptors):
                         self.services.add_descriptor(
                             BleakGATTDescriptorDotNet(
-                                descriptor, characteristic.Uuid.ToString()
+                                descriptor, characteristic.Uuid.ToString(), int(characteristic.AttributeHandle)
                             )
                         )
 
