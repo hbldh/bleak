@@ -82,7 +82,7 @@ class BleakGATTServiceCollection(object):
 
     @property
     def characteristics(self) -> dict:
-        """Returns dictionary of UUID strings to BleakGATTCharacteristic"""
+        """Returns dictionary of handle strings to BleakGATTCharacteristic"""
         return self.__characteristics
 
     @property
@@ -111,8 +111,8 @@ class BleakGATTServiceCollection(object):
 
         Should not be used by end user, but rather by `bleak` itself.
         """
-        if characteristic.uuid not in self.__characteristics:
-            self.__characteristics[characteristic.uuid] = characteristic
+        if characteristic.handle not in self.__characteristics:
+            self.__characteristics[characteristic.handle] = characteristic
             self.__services[characteristic.service_uuid].add_characteristic(
                 characteristic
             )
@@ -132,7 +132,7 @@ class BleakGATTServiceCollection(object):
          """
         if descriptor.handle not in self.__descriptors:
             self.__descriptors[descriptor.handle] = descriptor
-            self.__characteristics[descriptor.characteristic_uuid].add_descriptor(
+            self.__characteristics[descriptor.characteristic_handle].add_descriptor(
                 descriptor
             )
         else:

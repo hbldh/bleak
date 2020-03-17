@@ -45,9 +45,16 @@ class BleakGATTCharacteristic(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def handle(self) -> int:
+        """The handle for this characteristic"""
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
     def uuid(self) -> str:
         """The UUID for this characteristic"""
         raise NotImplementedError()
+
 
     @property
     @abc.abstractmethod

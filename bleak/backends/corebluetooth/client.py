@@ -144,7 +144,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 for descriptor in descriptors:
                     self.services.add_descriptor(
                         BleakGATTDescriptorCoreBluetooth(
-                            descriptor, characteristic.UUID().UUIDString()
+                            descriptor, characteristic.UUID().UUIDString(), int(characteristic.handle())
                         )
                     )
         self._services_resolved = True

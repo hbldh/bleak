@@ -52,12 +52,17 @@ class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
         ]
 
     def __str__(self):
-        return "{0}: {1}".format(self.uuid, self.description)
+        return "[{0}] {1}: {2}".format(self.handle, self.uuid, self.description)
 
     @property
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return self.obj.Service.Uuid.ToString()
+
+    @property
+    def handle(self) -> int:
+        """The handle of this characteristic"""
+        return int(self.obj.AttributeHandle)
 
     @property
     def uuid(self) -> str:

@@ -48,6 +48,12 @@ class BleakGATTDescriptor(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def characteristic_handle(self) -> int:
+        """handle for the characteristic that this descriptor belongs to"""
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
     def uuid(self) -> str:
         """UUID for this descriptor"""
         raise NotImplementedError()
