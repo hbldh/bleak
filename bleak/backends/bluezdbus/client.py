@@ -6,21 +6,20 @@ import re
 import subprocess
 import uuid
 from asyncio import Future
+from asyncio.events import AbstractEventLoop
 from functools import wraps, partial
 from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
 from bleak.backends.client import BaseBleakClient
-from bleak.backends.bluezdbus import defs, signals, utils
+from bleak.backends.bluezdbus import defs, signals, utils, get_reactor
 from bleak.backends.bluezdbus.discovery import discover
 from bleak.backends.bluezdbus.utils import get_device_object_path, get_managed_objects
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 
-from twisted.internet.asyncioreactor import AsyncioSelectorReactor
-from twisted.internet.error import ReactorNotRunning
 from txdbus.client import connect as txdbus_connect
 from txdbus.error import RemoteError
 
@@ -110,7 +109,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         await discover(timeout=timeout, device=self.device, loop=self.loop)
 
-        self._reactor = AsyncioSelectorReactor(self.loop)
+        self._reactor = get_reactor(self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
@@ -143,11 +142,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 destination="org.bluez",
             ).asFuture(self.loop)
         except RemoteError as e:
+            await self._cleanup_all()
             raise BleakError(str(e))
 
         if await self.is_connected():
             logger.debug("Connection successful.")
         else:
+            await self._cleanup_all()
             raise BleakError(
                 "Connection to {0} was not successful!".format(self.address)
             )
@@ -156,6 +157,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         await self.get_services()
         properties = await self._get_device_properties()
         if not properties.get("Connected"):
+            await self._cleanup_all()
             raise BleakError("Connection failed!")
 
         await self._bus.delMatch(rule_id).asFuture(self.loop)
@@ -164,21 +166,50 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return True
 
-    async def _cleanup(self) -> None:
+    async def _cleanup_notifications(self) -> None:
+        """
+        Remove all pending notifications of the client. This method is used to
+        free the DBus matches that have been established.
+        """
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
             try:
                 await self._bus.delMatch(rule_id).asFuture(self.loop)
             except Exception as e:
-                logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
+                logger.error(
+                    "Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e)
+                )
         self._rules = {}
 
         for _uuid in list(self._subscriptions):
             try:
                 await self.stop_notify(_uuid)
             except Exception as e:
-                logger.error("Could not remove notifications on characteristic {0}: {1}".format(_uuid, e))
+                logger.error(
+                    "Could not remove notifications on characteristic {0}: {1}".format(
+                        _uuid, e
+                    )
+                )
         self._subscriptions = []
+
+    async def _cleanup_dbus_resources(self) -> None:
+        """
+        Free the resources allocated for both the DBus bus and the Twisted
+        reactor. Use this method upon final disconnection.
+        """
+        # Try to disconnect the System Bus.
+        try:
+            self._bus.disconnect()
+        except Exception as e:
+            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+
+    async def _cleanup_all(self) -> None:
+        """
+        Free all the allocated resource in DBus and Twisted. Use this method to
+        eventually cleanup all otherwise leaked resources.
+        """
+        await self._cleanup_notifications()
+        await self._cleanup_dbus_resources()
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -190,7 +221,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         logger.debug("Disconnecting from BLE device...")
 
         # Remove all residual notifications.
-        await self._cleanup()
+        await self._cleanup_notifications()
 
         # Try to disconnect the actual device/peripheral
         try:
@@ -206,21 +237,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # See if it has been disconnected.
         is_disconnected = not await self.is_connected()
 
-        # Try to disconnect the System Bus.
-        try:
-            self._bus.disconnect()
-        except Exception as e:
-            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
-
-        # Stop the Twisted reactor holding the connection to the DBus system.
-        try:
-            self._reactor.stop()
-        except Exception as e:
-            # I think Bleak will always end up here, but I want to call stop just in case...
-            logger.debug("Attempt to stop Twisted reactor failed: {0}".format(e))
-        finally:
-            self._bus = None
-            self._reactor = None
+        await self._cleanup_dbus_resources()
 
         return is_disconnected
 
@@ -345,14 +362,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
-            if str(_uuid) == '00002a00-0000-1000-8000-00805f9b34fb' and (
+            if str(_uuid) == "00002a00-0000-1000-8000-00805f9b34fb" and (
                 self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
             ):
                 props = await self._get_device_properties(
                     interface=defs.DEVICE_INTERFACE
                 )
                 # Simulate regular characteristics read to be consistent over all platforms.
-                value = bytearray(props.get("Name", "").encode('ascii'))
+                value = bytearray(props.get("Name", "").encode("ascii"))
                 logger.debug(
                     "Read Device Name {0} | {1}: {2}".format(
                         _uuid, self._device_path, value
@@ -508,22 +525,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
         await self._bus.callRemote(
             descriptor.path,
-            'WriteValue',
+            "WriteValue",
             interface=defs.GATT_DESCRIPTOR_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
-            signature='aya{sv}',
-            body=[data, {'type': 'command'}],
-            returnSignature='',
+            signature="aya{sv}",
+            body=[data, {"type": "command"}],
+            returnSignature="",
         ).asFuture(self.loop)
 
         logger.debug(
-            "Write Descriptor {0} | {1}: {2}".format(
-                handle, descriptor.path, data
-            )
+            "Write Descriptor {0} | {1}: {2}".format(handle, descriptor.path, data)
         )
 
     async def start_notify(
-        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
+        self,
+        _uuid: Union[str, uuid.UUID],
+        callback: Callable[[str, Any], Any],
+        **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -703,9 +721,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 ):
                     logger.debug("Device {} disconnected.".format(self.address))
 
-                    task = self.loop.create_task(self._cleanup())
+                    task = self.loop.create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
-                        task.add_done_callback(partial(self._disconnected_callback, self))
+                        task.add_done_callback(
+                            partial(self._disconnected_callback, self)
+                        )
 
 
 def _data_notification_wrapper(func, char_map):

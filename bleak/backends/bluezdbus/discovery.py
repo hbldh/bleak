@@ -4,12 +4,10 @@ import asyncio
 import logging
 
 from bleak.backends.device import BLEDevice
-from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus import defs, get_reactor
 from bleak.backends.bluezdbus.utils import validate_mac_address
 
 from txdbus import client
-from twisted.internet.asyncioreactor import AsyncioSelectorReactor
-from twisted.internet.error import ReactorNotRunning
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +78,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
     cached_devices = {}
     devices = {}
     rules = list()
-    reactor = AsyncioSelectorReactor(loop)
+    reactor = get_reactor(loop)
 
     # Discovery filters
     filters = kwargs.get("filters", {})
@@ -234,11 +232,5 @@ async def discover(timeout=5.0, loop=None, **kwargs):
         bus.disconnect()
     except Exception as e:
         logger.error("Attempt to disconnect system bus failed: {0}".format(e))
-
-    try:
-        reactor.stop()
-    except ReactorNotRunning:
-        # I think Bleak will always end up here, but I want to call stop just in case...
-        pass
 
     return discovered_devices
