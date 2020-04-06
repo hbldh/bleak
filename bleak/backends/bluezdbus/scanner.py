@@ -6,15 +6,12 @@ from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any, Union, List
 
-
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.device import BLEDevice
-from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus import defs, get_reactor
 from bleak.backends.bluezdbus.utils import validate_mac_address
 
 from txdbus import client
-from twisted.internet.asyncioreactor import AsyncioSelectorReactor
-from twisted.internet.error import ReactorNotRunning
 
 logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
@@ -89,7 +86,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._callback = None
 
     async def start(self):
-        self._reactor = AsyncioSelectorReactor(self.loop)
+        self._reactor = get_reactor(self.loop)
         self._bus = await client.connect(self._reactor, "system").asFuture(self.loop)
 
         # Add signal listeners
@@ -162,11 +159,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             self._bus.disconnect()
         except Exception as e:
             logger.error("Attempt to disconnect system bus failed: {0}".format(e))
-
-        try:
-            self._reactor.stop()
-        except ReactorNotRunning:
-            pass
 
         self._bus = None
         self._reactor = None
