@@ -176,14 +176,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
             try:
                 await self._bus.delMatch(rule_id).asFuture(self.loop)
             except Exception as e:
-                logger.error("Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e))
+                logger.error(
+                    "Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e)
+                )
         self._rules = {}
 
         for _uuid in list(self._subscriptions):
             try:
                 await self.stop_notify(_uuid)
             except Exception as e:
-                logger.error("Could not remove notifications on characteristic {0}: {1}".format(_uuid, e))
+                logger.error(
+                    "Could not remove notifications on characteristic {0}: {1}".format(
+                        _uuid, e
+                    )
+                )
         self._subscriptions = []
 
     async def _cleanup_dbus_resources(self) -> None:
@@ -356,14 +362,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
-            if str(_uuid) == '00002a00-0000-1000-8000-00805f9b34fb' and (
+            if str(_uuid) == "00002a00-0000-1000-8000-00805f9b34fb" and (
                 self._bluez_version[0] == 5 and self._bluez_version[1] >= 48
             ):
                 props = await self._get_device_properties(
                     interface=defs.DEVICE_INTERFACE
                 )
                 # Simulate regular characteristics read to be consistent over all platforms.
-                value = bytearray(props.get("Name", "").encode('ascii'))
+                value = bytearray(props.get("Name", "").encode("ascii"))
                 logger.debug(
                     "Read Device Name {0} | {1}: {2}".format(
                         _uuid, self._device_path, value
@@ -519,22 +525,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
         await self._bus.callRemote(
             descriptor.path,
-            'WriteValue',
+            "WriteValue",
             interface=defs.GATT_DESCRIPTOR_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
-            signature='aya{sv}',
-            body=[data, {'type': 'command'}],
-            returnSignature='',
+            signature="aya{sv}",
+            body=[data, {"type": "command"}],
+            returnSignature="",
         ).asFuture(self.loop)
 
         logger.debug(
-            "Write Descriptor {0} | {1}: {2}".format(
-                handle, descriptor.path, data
-            )
+            "Write Descriptor {0} | {1}: {2}".format(handle, descriptor.path, data)
         )
 
     async def start_notify(
-        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
+        self,
+        _uuid: Union[str, uuid.UUID],
+        callback: Callable[[str, Any], Any],
+        **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -716,7 +723,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     task = self.loop.create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
-                        task.add_done_callback(partial(self._disconnected_callback, self))
+                        task.add_done_callback(
+                            partial(self._disconnected_callback, self)
+                        )
 
 
 def _data_notification_wrapper(func, char_map):

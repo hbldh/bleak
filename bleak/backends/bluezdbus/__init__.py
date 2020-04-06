@@ -4,6 +4,7 @@ from twisted.internet.asyncioreactor import AsyncioSelectorReactor
 
 _reactors = {}
 
+
 def get_reactor(loop: AbstractEventLoop):
     """Helper factory to get a Twisted reactor for the provided loop.
 

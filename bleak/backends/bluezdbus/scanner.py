@@ -65,6 +65,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     Keyword Args:
 
     """
+
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerBlueZDBus, self).__init__(loop, **kwargs)
 
@@ -230,7 +231,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             if msg_path not in self._devices and msg_path in self._cached_devices:
                 self._devices[msg_path] = self._cached_devices[msg_path]
             self._devices[msg_path] = (
-                {**self._devices[msg_path], **changed} if msg_path in self._devices else changed
+                {**self._devices[msg_path], **changed}
+                if msg_path in self._devices
+                else changed
             )
         elif (
             message.member == "InterfacesRemoved"
