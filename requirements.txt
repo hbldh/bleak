@@ -1,0 +1,4 @@
+txdbus>=1.1.1; sys_platform=="linux"
+pyobjc;sys_platform == 'darwin'
+pyobjc-framework-CoreBluetooth;sys_platform == 'darwin'
+pythonnet>=2.3.0; sys_platform == 'win32'
