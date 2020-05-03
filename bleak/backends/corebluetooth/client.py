@@ -7,6 +7,8 @@ Created on 2019-6-26 by kevincar <kevincarrolldavis@gmail.com>
 import logging
 import uuid
 from asyncio.events import AbstractEventLoop
+from asyncio import coroutine
+from functools import partial
 from typing import Callable, Any, Union
 
 from Foundation import NSData, CBUUID
@@ -23,8 +25,8 @@ from bleak.backends.corebluetooth.discovery import discover
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
-
 from bleak.backends.corebluetooth.CentralManagerDelegate import CMDConnectionState
+
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +107,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             callback: callback to be called on disconnection.
 
         """
-        self._disconnected_callback = callback
+        # Keep same args used w/ BlueZ (i.e., a future)
+        f = self.loop.create_future()  
+        f.set_result(None)
+        self._disconnected_callback = coroutine(partial(callback, self, f))()
 
     async def get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
@@ -340,6 +345,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return UUID_cb.UUIDString()
 
     def did_disconnect(self):
+        logger.debug("Disconnected from device @ {}".format(self.address))
         # Client device disconnected; TODO Call the callback
-        print("Client did_disconnect")
-        pass
+        if self._disconnected_callback == None:
+            return 
+        _ = self.loop.create_task(self._disconnected_callback)
+        
