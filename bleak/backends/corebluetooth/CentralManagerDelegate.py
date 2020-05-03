@@ -24,9 +24,9 @@ from Foundation import (
     NSError,
 )
 
-from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
-
+# Types are nice, but circular import hell is not!
+#from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 
 logger = logging.getLogger(__name__)
 
@@ -55,17 +55,9 @@ class CentralManagerDelegate(NSObject):
             self, None
         )
 
-        self.connected_peripheral_delegate = None
-        self.connected_peripheral = None
-        self._connection_state = CMDConnectionState.DISCONNECTED
-        
-        
-        # TODO:  Weak references to Client objects (and on disconnect, lookup and try to call disconnect)
-        #  Map of Address -> (WeakRef) to client
-        #  weakref.WeakValueDictionary
-        self._disconnected_callback = {}    # Map of Address to callback
-        self.ready = False
-        self.devices = {}
+        self._ready = False
+        # Dictionary of Addresses -> Clients
+        self._clients = weakref.WeakValueDictionary() 
 
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
@@ -85,17 +77,12 @@ class CentralManagerDelegate(NSObject):
         """Check if the bluetooth device is on and running"""
         return self.central_manager.state() == 5
 
-    @property
-    def isConnected(self) -> bool:
-        # Validate this
-        return self.connected_peripheral != None
-
     async def is_ready(self):
         """is_ready allows an asynchronous way to wait and ensure the
         CentralManager has processed it's inputs before moving on"""
-        while not self.ready:
+        while not self._ready:
             await asyncio.sleep(0)
-        return self.ready
+        return self._ready
 
     async def scanForPeripherals_(self, scan_options):
         """
@@ -126,26 +113,25 @@ class CentralManagerDelegate(NSObject):
         while self.central_manager.isScanning():
             await asyncio.sleep(0.1)
 
+    async def connect_(self, client) -> bool:
+        client._connection_state = CMDConnectionState.PENDING
+        # Add client to map (before connect)
+        self._clients[client.address] = client
+        self.central_manager.connectPeripheral_options_(client._peripheral, None)
 
-    async def connect_(self, peripheral: CBPeripheral) -> bool:
-        self._connection_state = CMDConnectionState.PENDING
-        self.central_manager.connectPeripheral_options_(peripheral, None)
-
-        while self._connection_state == CMDConnectionState.PENDING:
+        while client._connection_state == CMDConnectionState.PENDING:
             await asyncio.sleep(0)
 
-        self.connected_peripheral = peripheral
+        return client._connection_state == CMDConnectionState.CONNECTED
 
-        return self._connection_state == CMDConnectionState.CONNECTED
+    async def disconnect_(self, client) -> bool:
+        client._connection_state = CMDConnectionState.PENDING
+        self.central_manager.cancelPeripheralConnection_(client._peripheral)
 
-    async def disconnect(self) -> bool:
-        self._connection_state = CMDConnectionState.PENDING
-        self.central_manager.cancelPeripheralConnection_(self.connected_peripheral)
-
-        while self._connection_state == CMDConnectionState.PENDING:
+        while client._connection_state == CMDConnectionState.PENDING:
             await asyncio.sleep(0)
 
-        return self._connection_state == CMDConnectionState.DISCONNECTED
+        return client._connection_state == CMDConnectionState.DISCONNECTED
 
     # Protocol Functions
 
@@ -163,7 +149,7 @@ class CentralManagerDelegate(NSObject):
         elif centralManager.state() == 5:
             logger.debug("Bluetooth powered on")
 
-        self.ready = True
+        self._ready = True
 
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
         self,
@@ -202,37 +188,46 @@ class CentralManagerDelegate(NSObject):
                 uuid_string, device.name, RSSI, advertisementData.keys()))
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
+        address = peripheral.identifier().UUIDString()
         logger.debug(
             "Successfully connected to device uuid {}".format(
-                peripheral.identifier().UUIDString()
+                address
             )
         )
-        peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
-        self.connected_peripheral_delegate = peripheralDelegate
-        self._connection_state = CMDConnectionState.CONNECTED
+        # If there's a client, update it
+        if address in self._clients:
+            client = self._clients[address]
+            client._connection_state = CMDConnectionState.CONNECTED
 
     def centralManager_didFailToConnectPeripheral_error_(
         self, centralManager: CBCentralManager, peripheral: CBPeripheral, error: NSError
     ):
+        address = peripheral.identifier().UUIDString()
         logger.debug(
             "Failed to connect to device uuid {}".format(
-                peripheral.identifier().UUIDString()
+                address
             )
         )
-        self._connection_state = CMDConnectionState.DISCONNECTED
+        # If there's a client, update it
+        if address in self._clients:
+            client = self._clients[address]
+            client._connection_state = CMDConnectionState.DISCONNECTED
 
     def centralManager_didDisconnectPeripheral_error_(
         self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError
     ):
-        print("Disconnect********")
-        logger.debug("Peripheral Device disconnected!")
-        self._connection_state = CMDConnectionState.DISCONNECTED
-        # See if there's a callback in the dictionary!
         address = peripheral.identifier().UUIDString()
-        if address in self._disconnected_callback:
-            self._disconnected_callback[address]()
+        logger.debug(
+            "Peripheral Device disconnected! {}".format(
+                address
+            )
+        )
+        # If there's a client, update it
+        if address in self._clients:
+            client = self._clients[address]
+            client._connection_state = CMDConnectionState.DISCONNECTED
+            client.did_disconnect()
 
 def string2uuid(uuid_str: str) -> CBUUID:
     """Convert a string to a uuid"""
     return CBUUID.UUIDWithString_(uuid_str)
-
