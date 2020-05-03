@@ -110,7 +110,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # Keep same args used w/ BlueZ (i.e., a future)
         f = self.loop.create_future()  
         f.set_result(None)
-        self._disconnected_callback = coroutine(partial(callback, self, f))()
+        self._disconnected_callback = partial(callback, self, f)
 
     async def get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
@@ -349,5 +349,5 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # Client device disconnected; TODO Call the callback
         if self._disconnected_callback == None:
             return 
-        _ = self.loop.create_task(self._disconnected_callback)
+        self._disconnected_callback()
         
