@@ -47,10 +47,17 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         super(BleakClientCoreBluetooth, self).__init__(address, loop, **kwargs)
         self._services = None
         self._connection_state = CMDConnectionState.DISCONNECTED
-        self._peripheral = None  # TODO: The CBPeripheralDelegate
-        self._peripheral_delegate = None  # TODO: The CBPeripheralDelegate
+        self._peripheral = None  
+        self._peripheral_delegate = None  
         self._disconnected_callback = None
 
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        logger.debug("Exiting Context @ {}".format(self.address))
+        # Remove this from the dictionary of clients
+        cbapp.central_manager_delegate.removeclient_(self)
+        # Call base class to cleanup (disconnect)
+        await super(BleakClientCoreBluetooth, self).__aexit__(exc_type, exc_val, exc_tb)
+        
     def __str__(self):
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
@@ -347,6 +354,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     def did_disconnect(self):
         logger.debug("Disconnected from device @ {}".format(self.address))
         # Client device disconnected; TODO Call the callback
+        self._peripheral = None
+        self._peripheral_delegate = None
         if self._disconnected_callback == None:
             return 
         self._disconnected_callback()

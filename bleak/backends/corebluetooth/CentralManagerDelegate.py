@@ -65,6 +65,11 @@ class CentralManagerDelegate(NSObject):
         return self
 
     # User defined functions
+    def removeclient_(self, client):
+        if client.address in self._clients:
+            otherClient = self._clients[client.address]
+            if id(otherClient) == id(client):
+                del self._clients[client.address]
 
     def compliant(self):
         """Determins whether the class adheres to the CBCentralManagerDelegate protocol"""
