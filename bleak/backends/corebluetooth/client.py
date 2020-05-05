@@ -52,11 +52,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._disconnected_callback = None
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        logger.debug("Exiting Context @ {}".format(self.address))
-        # Remove this from the dictionary of clients
-        cbapp.central_manager_delegate.removeclient_(self)
         # Call base class to cleanup (disconnect)
         await super(BleakClientCoreBluetooth, self).__aexit__(exc_type, exc_val, exc_tb)
+        # Remove this from the dictionary of clients
+        cbapp.central_manager_delegate.removeclient_(self)
         
     def __str__(self):
         return "BleakClientCoreBluetooth ({})".format(self.address)
