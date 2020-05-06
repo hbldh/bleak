@@ -25,8 +25,11 @@ from Foundation import (
 )
 
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
-# Types are nice, but circular import hell is not!
-#from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
+# Problem: Two functions reference the client (BleakClientCoreBluetooth). 
+#          to get type info, they'd have to be imported.  But this file is imported from the package
+#          and the client imports the CBAPP from the pacakge...So this leads to a circuar
+#          import
+#import bleak.backends.corebluetooth.client.BleakClientCoreBluetooth as BleakClientCoreBluetooth
 
 logger = logging.getLogger(__name__)
 
@@ -58,11 +61,22 @@ class CentralManagerDelegate(NSObject):
         self._ready = False
         # Dictionary of Addresses -> Clients
         self._clients = weakref.WeakValueDictionary() 
+        # scanner (did discover) callback
+        self._discovercb = None
+        self.devices = {}
 
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
 
         return self
+
+    # User defined functions
+    def setdiscovercallback_(self, callback):
+        if callback!=None:
+            self._discovercb = weakref.WeakMethod(callback)
+        else:
+            self._discovercb = None
+
 
     # User defined functions
     def removeclient_(self, client):
@@ -72,7 +86,7 @@ class CentralManagerDelegate(NSObject):
                 del self._clients[client.address]
 
     def compliant(self):
-        """Determins whether the class adheres to the CBCentralManagerDelegate protocol"""
+        """Determines whether the class adheres to the CBCentralManagerDelegate protocol"""
         return CentralManagerDelegate.pyobjc_classMethods.conformsToProtocol_(
             CBCentralManagerDelegate
         )
@@ -191,6 +205,11 @@ class CentralManagerDelegate(NSObject):
 
         logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
                 uuid_string, device.name, RSSI, advertisementData.keys()))
+
+        # This is where a scanner callback should happen. 
+        logger.warning("calling discovery callback with: {0}".format(device))
+        if self._discovercb != None:
+            (self._discovercb())(device)
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
         address = peripheral.identifier().UUIDString()

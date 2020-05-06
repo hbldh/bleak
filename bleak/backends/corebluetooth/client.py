@@ -7,7 +7,6 @@ Created on 2019-6-26 by kevincar <kevincarrolldavis@gmail.com>
 import logging
 import uuid
 from asyncio.events import AbstractEventLoop
-from asyncio import coroutine
 from functools import partial
 from typing import Callable, Any, Union
 
