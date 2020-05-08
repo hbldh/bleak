@@ -8,6 +8,7 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 
 import asyncio
 import logging
+import time
 from enum import Enum
 from typing import List
 
@@ -126,8 +127,13 @@ class CentralManagerDelegate(NSObject):
         self._connection_state = CMDConnectionState.PENDING
         self.central_manager.connectPeripheral_options_(peripheral, None)
 
+        timeout = 10.0
+        start = time.time()
         while self._connection_state == CMDConnectionState.PENDING:
             await asyncio.sleep(0)
+            if time.time() - start > timeout:
+                raise TimeoutError("Failed to connect in %d seconds" % timeout)
+                break
 
         self.connected_peripheral = peripheral
 
@@ -175,7 +181,7 @@ class CentralManagerDelegate(NSObject):
         #
         # i.e it is best not to trust advertisementData for later use and data
         # from it should be copied.
-        # 
+        #
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
@@ -183,8 +189,8 @@ class CentralManagerDelegate(NSObject):
 
         if uuid_string in self.devices:
             device = self.devices[uuid_string]
-        else:        
-            address = uuid_string 
+        else:
+            address = uuid_string
             name = peripheral.name() or None
             details = peripheral
             device = BLEDeviceCoreBluetooth(address, name, details)
