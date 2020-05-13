@@ -42,9 +42,11 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             raise BleakError("Bluetooth device is turned off")
 
         self._timeout = kwargs.get("timeout", 5.0)
+        self._filters = kwargs.get("filters", {})
 
         self._callback = None
         self._found = []
+
 
     def discovered(self, device):
         logger.warning("scanner discovered: {0}".format(device))
@@ -57,20 +59,17 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         # TODO: Figure out filtering part
         self._found = []
         cbapp.central_manager_delegate.setdiscovercallback_(self.discovered)
-        service_uuids = []
-        # if "service_uuids" in scan_options:
-        #     service_uuids_str = scan_options["service_uuids"]
+        # Filters based on:
+        # https://github.com/Vudentz/BlueZ/blob/master/doc/adapter-api.txt
+        #  Keys:  UUIDs [string], RSSI (int), Pathloss (int), DuplicateData (bool) 
+
+        # TODO: Complete "filters" work to match BlueZ approach
+        # service_uuids = []
+        # if "UUIDs" in self._filters:
+        #     service_uuids_str = self._filters["UUIDs"]
         #     service_uuids = NSArray.alloc().initWithArray_(
         #         list(map(string2uuid, service_uuids_str))
         #     )
-
-        # timeout = 0
-        # if "timeout" in scan_options:
-        #     timeout = float(scan_options["timeout"])
-
-        # self.central_manager.scanForPeripheralsWithServices_options_(
-        #     service_uuids, None
-        # )
         cbapp.central_manager_delegate.central_manager.scanForPeripheralsWithServices_options_(service_uuids, None)
 
     async def stop(self):
@@ -78,6 +77,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         cbapp.central_manager_delegate.setdiscovercallback_(None)
 
     async def set_scanning_filter(self, **kwargs):
+        self._filters = kwargs.get("filters", {})
         raise NotImplementedError("Need to evaluate which macOS versions to support first...")
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
