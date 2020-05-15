@@ -61,6 +61,8 @@ class CentralManagerDelegate(NSObject):
         self.ready = False
         self.devices = {}
 
+        self.disconnected_callback = None
+
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
 
@@ -220,6 +222,9 @@ class CentralManagerDelegate(NSObject):
     ):
         logger.debug("Peripheral Device disconnected!")
         self._connection_state = CMDConnectionState.DISCONNECTED
+
+        if self.disconnected_callback is not None:
+            self.disconnected_callback()
 
 
 def string2uuid(uuid_str: str) -> CBUUID:
