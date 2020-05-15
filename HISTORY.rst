@@ -2,6 +2,16 @@
 History
 =======
 
+0.6.2 (2020-05-15)
+------------------
+
+* Better cleanup of Bluez notifications (#154)
+* Fix for ``read_gatt_char`` in Core Bluetooth (#177)
+* Fix for ``is_disconnected`` in Core Bluetooth (#187 & #185)
+* Added ``disconnection_callback`` functionality for Core Bluetooth (#184 & #186)
+* Documentation fixes
+* Added ``requirements.txt``
+
 0.6.1 (2020-03-09)
 ------------------
 
