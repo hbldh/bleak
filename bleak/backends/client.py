@@ -17,6 +17,10 @@ class BaseBleakClient(abc.ABC):
     """The Client Interface for Bleak Backend implementations to implement.
 
     The documentation of this interface should thus be safe to use as a reference for your implementation.
+
+    Keyword Args:
+        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+
     """
 
     def __init__(self, address, loop=None, **kwargs):
