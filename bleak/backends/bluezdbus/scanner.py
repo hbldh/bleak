@@ -6,15 +6,12 @@ from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any, Union, List
 
-
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.device import BLEDevice
-from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus import defs, get_reactor
 from bleak.backends.bluezdbus.utils import validate_mac_address
 
 from txdbus import client
-from twisted.internet.asyncioreactor import AsyncioSelectorReactor
-from twisted.internet.error import ReactorNotRunning
 
 logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
@@ -68,6 +65,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     Keyword Args:
 
     """
+
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerBlueZDBus, self).__init__(loop, **kwargs)
 
@@ -89,7 +87,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._callback = None
 
     async def start(self):
-        self._reactor = AsyncioSelectorReactor(self.loop)
+        self._reactor = get_reactor(self.loop)
         self._bus = await client.connect(self._reactor, "system").asFuture(self.loop)
 
         # Add signal listeners
@@ -163,11 +161,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         except Exception as e:
             logger.error("Attempt to disconnect system bus failed: {0}".format(e))
 
-        try:
-            self._reactor.stop()
-        except ReactorNotRunning:
-            pass
-
         self._bus = None
         self._reactor = None
 
@@ -238,7 +231,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             if msg_path not in self._devices and msg_path in self._cached_devices:
                 self._devices[msg_path] = self._cached_devices[msg_path]
             self._devices[msg_path] = (
-                {**self._devices[msg_path], **changed} if msg_path in self._devices else changed
+                {**self._devices[msg_path], **changed}
+                if msg_path in self._devices
+                else changed
             )
         elif (
             message.member == "InterfacesRemoved"

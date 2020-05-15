@@ -61,6 +61,8 @@ class CentralManagerDelegate(NSObject):
         self.ready = False
         self.devices = {}
 
+        self.disconnected_callback = None
+
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
 
@@ -81,8 +83,7 @@ class CentralManagerDelegate(NSObject):
 
     @property
     def isConnected(self) -> bool:
-        # Validate this
-        return self.connected_peripheral != None
+        return self._connection_state == CMDConnectionState.CONNECTED
 
     async def is_ready(self):
         """is_ready allows an asynchronous way to wait and ensure the
@@ -175,7 +176,7 @@ class CentralManagerDelegate(NSObject):
         #
         # i.e it is best not to trust advertisementData for later use and data
         # from it should be copied.
-        # 
+        #
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
@@ -183,8 +184,8 @@ class CentralManagerDelegate(NSObject):
 
         if uuid_string in self.devices:
             device = self.devices[uuid_string]
-        else:        
-            address = uuid_string 
+        else:
+            address = uuid_string
             name = peripheral.name() or None
             details = peripheral
             device = BLEDeviceCoreBluetooth(address, name, details)
@@ -221,6 +222,9 @@ class CentralManagerDelegate(NSObject):
     ):
         logger.debug("Peripheral Device disconnected!")
         self._connection_state = CMDConnectionState.DISCONNECTED
+
+        if self.disconnected_callback is not None:
+            self.disconnected_callback()
 
 
 def string2uuid(uuid_str: str) -> CBUUID:
