@@ -49,9 +49,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
 
     def discovered(self, device):
-        logger.warning("scanner discovered: {0}".format(device))
+        logger.info("scanner discovered: {0}".format(device))
+        # TODO: Check filters as needed
         self._found.append(device)
-        print(device)
         if self._callback != None:
             self._callback(device)
 
@@ -70,6 +70,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         #     service_uuids = NSArray.alloc().initWithArray_(
         #         list(map(string2uuid, service_uuids_str))
         #     )
+        
+        # TODO:Instead call the CMD method (not the CB)
         cbapp.central_manager_delegate.central_manager.scanForPeripheralsWithServices_options_(service_uuids, None)
 
     async def stop(self):

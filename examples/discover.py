@@ -8,6 +8,9 @@ Updated on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 
+import sys
+sys.path.insert(1, '../')  # Use local bleak
+
 import asyncio
 from bleak import discover
 
