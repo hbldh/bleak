@@ -30,10 +30,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     Args:
         loop (asyncio.events.AbstractEventLoop): The event loop to use.
 
-    Keyword Args:
-        timeout (double): The scanning timeout to be used, in case of missing
-          ``stopScan`` metod.
-
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
@@ -41,7 +37,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         if not cbapp.central_manager_delegate.enabled:
             raise BleakError("Bluetooth device is turned off")
 
-        self._timeout = kwargs.get("timeout", 5.0)
         self._filters = kwargs.get("filters", {})
 
         self._callback = None
@@ -58,21 +53,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def start(self):
         # TODO: Figure out filtering part
         self._found = []
-        cbapp.central_manager_delegate.setdiscovercallback_(self.discovered)
-        # Filters based on:
-        # https://github.com/Vudentz/BlueZ/blob/master/doc/adapter-api.txt
-        #  Keys:  UUIDs [string], RSSI (int), Pathloss (int), DuplicateData (bool) 
-
-        # TODO: Complete "filters" work to match BlueZ approach
-        # service_uuids = []
-        # if "UUIDs" in self._filters:
-        #     service_uuids_str = self._filters["UUIDs"]
-        #     service_uuids = NSArray.alloc().initWithArray_(
-        #         list(map(string2uuid, service_uuids_str))
-        #     )
-        
-        # TODO:Instead call the CMD method (not the CB)
-        cbapp.central_manager_delegate.central_manager.scanForPeripheralsWithServices_options_(service_uuids, None)
+        cbapp.central_manager_delegate.setdiscovercallback_(self.discovered)        
+        cbapp.central_manager_delegate.scanForPeripherals_({"timeout":None, "filters":self._filters})
 
     async def stop(self):
         cbapp.central_manager_delegate.central_manager.stopScan()

@@ -63,6 +63,7 @@ class CentralManagerDelegate(NSObject):
         self._clients = weakref.WeakValueDictionary() 
         # scanner (did discover) callback
         self._discovercb = None
+        self._filters = None
         self.devices = {}
 
         if not self.compliant():
@@ -103,34 +104,54 @@ class CentralManagerDelegate(NSObject):
             await asyncio.sleep(0)
         return self._ready
 
-    async def scanForPeripherals_(self, scan_options):
+    async def scanForPeripherals_(self, options):
         """
         Scan for peripheral devices
-        scan_options = { service_uuids, timeout }
+        
+        options dictionary contains one required and one optional value:
+
+        timeout is required
+            If a number, the time in seconds to scan before returning results
+            If None, then continuously scan (scan starts and must be stopped explicitly)
+            
+        filters is optional as are individual keys in filters
+                Follows the filtering key/values used in BlueZ 
+                (https://github.com/RadiusNetworks/bluez/blob/master/doc/adapter-api.txt)
+            filters :{ 
+                  "UUIDs": [  Array of String UUIDs for services of interest. Any device that advertised one of them is included]
+                  "RSSI" : only include devices with a greater RSSI. 
+                  "Pathloss": int minimum path loss;  Only include devices that include TX power and where
+                                 TX power - RSSI > Pathloss value
+            }
         """
-        # remove old
+        logger.debug("Scanning...")
+        # remove old devices
         self.devices = {}
+
+        # Scanning options cover service UUID filtering and removing duplicates
+        # Device discovery will cover RSSI & Pathloss limits
+        # Determine filtering data (used to start scan and validate detected devices)
+        self._filters = options.get("filters",{})
+        allow_duplicates = self._filters.get("DuplicateData", True)
         service_uuids = []
-        if "service_uuids" in scan_options:
-            service_uuids_str = scan_options["service_uuids"]
+        if "UUIDs" in self._filters:
+            service_uuids_str = self._filters["UUIDs"]
             service_uuids = NSArray.alloc().initWithArray_(
                 list(map(string2uuid, service_uuids_str))
             )
 
-        timeout = 0
-        if "timeout" in scan_options:
-            timeout = float(scan_options["timeout"])
-
         self.central_manager.scanForPeripheralsWithServices_options_(
-            service_uuids, None
+            # TODO: Make this a proper NSDictionary???
+            service_uuids, {"CBCentralManagerScanOptionAllowDuplicatesKey":allow_duplicates}
         )
 
-        if timeout > 0:
-            await asyncio.sleep(timeout)
-
-        self.central_manager.stopScan()
-        while self.central_manager.isScanning():
-            await asyncio.sleep(0.1)
+        timeout = options["timeout"]
+        if timeout is not None:
+            await asyncio.sleep(float(timeout))
+            # Request scan stop and wait for confirmation that it's done
+            self.central_manager.stopScan()
+            while self.central_manager.isScanning():
+                await asyncio.sleep(0.1)
 
     async def connect_(self, client) -> bool:
         client._connection_state = CMDConnectionState.PENDING
@@ -190,6 +211,25 @@ class CentralManagerDelegate(NSObject):
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
         uuid_string = peripheral.identifier().UUIDString()
+        logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
+                uuid_string, peripheral.name() or None, RSSI, advertisementData.keys()))
+
+        # Filtering 
+        min_rssi = self._filters.get("RSSI", None)
+        max_pathloss = self._filters.get("Pathloss", None)
+
+        rssi = float(RSSI)
+        if min_rssi is not None and rssi<min_rssi:
+            logger.debug("Device doesn't meet minimum RSSI  ({} < {})".format(rssi, min_rssi))
+            return
+        # Compute path loss if there's a TX 
+
+        if "CBAdvertisementDataTxPowerLevelKey" in advertisementData:
+            tx_power_level = float(advertisementData["CBAdvertisementDataTxPowerLevelKey"])
+            pathloss = tx_power_level - rssi 
+            if pathloss > max_pathloss:
+                logger.debug("Device pathloss too great  (tx ({}) - rssi ({}) > {})".format(tx_power_level, rssi, pathloss))
+                return
 
         if uuid_string in self.devices:
             device = self.devices[uuid_string]
@@ -202,9 +242,6 @@ class CentralManagerDelegate(NSObject):
 
         device._rssi = float(RSSI)
         device._update(advertisementData)
-
-        logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
-                uuid_string, device.name, RSSI, advertisementData.keys()))
 
         # This is where a scanner callback should happen. 
         logger.warning("calling discovery callback with: {0}".format(device))

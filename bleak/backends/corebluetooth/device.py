@@ -37,10 +37,19 @@ class BLEDeviceCoreBluetooth(BLEDevice):
         super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
         self.metadata = {}
         self._rssi = kwargs.get("rssi")
+        self._txpower = None
 
     def _update(self, advertisementData: NSDictionary):
         self._update_uuids(advertisementData)
         self._update_manufacturer(advertisementData)
+        self._update_txpwr(advertisementData)
+
+    def _update_txpwr(self, advertisementData: NSDictionary):
+        tx_power = advertisementData.get("CBAdvertisementDataTxPowerLevelKey", None)
+        if tx_power is not None:
+            tx_power = int(tx_power)
+        self._txpower = tx_power
+
 
     def _update_uuids(self, advertisementData: NSDictionary):
         cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
