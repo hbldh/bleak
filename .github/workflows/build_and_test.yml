@@ -9,6 +9,7 @@ on:
 jobs:
     build_linux:
         name: "Build and test"
+        runs-on: ubuntu-latest
         strategy:
             matrix:
                 os: [ubuntu-latest]
