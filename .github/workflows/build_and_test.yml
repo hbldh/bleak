@@ -21,7 +21,7 @@ jobs:
                     python-version: ${{ matrix.python-version }}
             -   name: Install dependencies
                 run: |
-                    apt install -y bluez
+                    sudo apt install -y bluez
                     python -m pip install --upgrade pip
                     if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
                     if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
