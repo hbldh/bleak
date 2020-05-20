@@ -26,11 +26,12 @@ jobs:
             -   name: Install Bluez on Ubuntu
                 run: sudo apt install -y bluez
                 if: ${{ matrix.os == 'ubuntu-latest'}}
+            -   name: Upgrade pip. setuptools and wheel
+                run: python -m pip install --upgrade pip setuptools wheel
             -   name: Install dependencies
-                run: |
-                    python -m pip install --upgrade pip setuptools wheel
-                    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-                    if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
+                run: pip install -r requirements.txt
+            -   name: Install develoment dependencies
+                run: pip install -r requirements_dev.txti
             -   name: Lint with flake8
                 run: |
                     # stop the build if there are Python syntax errors or undefined names
