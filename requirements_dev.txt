@@ -1,5 +1,5 @@
 pip>=18.0
-bump2version
+bump2version==1.0.0
 wheel>=0.32.2
 watchdog>=0.8.3
 flake8>=3.5.0
