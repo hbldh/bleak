@@ -9,10 +9,9 @@ on:
 jobs:
     build_linux:
         name: "Build and test"
-        runs-on: ubuntu-latest
         strategy:
             matrix:
-                os: [ubuntu-latest, macos-latest, windows-latest]
+                os: [ubuntu-latest]
                 python-version: [3.5, 3.6, 3.7, 3.8]
                 exclude:
                     -   os: windows-latest
