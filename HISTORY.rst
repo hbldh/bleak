@@ -2,6 +2,16 @@
 History
 =======
 
+0.6.4 (2020-05-20)
+------------------
+
+* Fix for bumpversion usage
+
+0.6.3 (2020-05-20)
+------------------
+
+* Building and releasing from Github Actions
+
 0.6.2 (2020-05-15)
 ------------------
 
