@@ -2,6 +2,11 @@
 History
 =======
 
+0.6.3 (2020-05-20)
+------------------
+
+* Building and releasing from Github Actions
+
 0.6.2 (2020-05-15)
 ------------------
 
