@@ -1,4 +1,4 @@
-name: Python package
+name: Build and Test Bleak
 
 on:
     push:
@@ -7,7 +7,8 @@ on:
         branches: [ master, develop ]
 
 jobs:
-    build:
+    build_linux:
+        name: "Ubuntu build and test"
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -33,11 +34,45 @@ jobs:
                     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
             -   name: Test with pytest
                 run: |
-                    pytest tests --junitxml=junit/test-results-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
+                    pytest tests --junitxml=junit/test-results-ubuntu-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
             -   name: Upload pytest test results
                 uses: actions/upload-artifact@v1
                 with:
-                    name: pytest-results-${{ matrix.python-version }}
-                    path: junit/test-results-${{ matrix.python-version }}.xml
+                    name: pytest-results-ubuntu-${{ matrix.python-version }}
+                    path: junit/test-results-ubuntu-${{ matrix.python-version }}.xml
+                # Use always() to always run this step to publish test results when there are test failures
+                if: ${{ always() }}
+    build_win:
+        name: "Windows build and test"
+        runs-on: windows-latest
+        strategy:
+            matrix:
+                python-version: [3.5, 3.6, 3.7, 3.8]
+
+        steps:
+            -   uses: actions/checkout@v2
+            -   name: Set up Python ${{ matrix.python-version }}
+                uses: actions/setup-python@v2
+                with:
+                    python-version: ${{ matrix.python-version }}
+            -   name: Install dependencies
+                run: |
+                    python -m pip install --upgrade pip
+                    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+                    if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
+            -   name: Lint with flake8
+                run: |
+                    # stop the build if there are Python syntax errors or undefined names
+                    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+                    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+                    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+            -   name: Test with pytest
+                run: |
+                    pytest tests --junitxml=junit/test-results-win-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
+            -   name: Upload pytest test results
+                uses: actions/upload-artifact@v1
+                with:
+                    name: pytest-results-win-${{ matrix.python-version }}
+                    path: junit/test-results-win-${{ matrix.python-version }}.xml
                 # Use always() to always run this step to publish test results when there are test failures
                 if: ${{ always() }}
