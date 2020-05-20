@@ -31,7 +31,7 @@ jobs:
             -   name: Install dependencies
                 run: pip install -r requirements.txt
             -   name: Install develoment dependencies
-                run: pip install -r requirements_dev.txti
+                run: pip install -r requirements_dev.txt
             -   name: Lint with flake8
                 run: |
                     # stop the build if there are Python syntax errors or undefined names
