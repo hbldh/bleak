@@ -1,4 +1,4 @@
-name: Build and Test Bleak
+name: Build and Test
 
 on:
     push:
