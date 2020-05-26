@@ -25,6 +25,7 @@ from Foundation import (
 )
 
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
+from time import time
 # Problem: Two functions reference the client (BleakClientCoreBluetooth). 
 #          to get type info, they'd have to be imported.  But this file is imported from the package
 #          and the client imports the CBAPP from the pacakge...So this leads to a circuar
@@ -95,7 +96,6 @@ class CentralManagerDelegate(NSObject):
     @property
     def enabled(self):
         """Check if the bluetooth device is on and running"""
-        logger.warning(f"State: {self.central_manager.state()}")
         return self.central_manager.state() == 5
 
     async def is_ready(self):
@@ -143,7 +143,7 @@ class CentralManagerDelegate(NSObject):
 
         self.central_manager.scanForPeripheralsWithServices_options_(
             # TODO: Make this a proper NSDictionary???
-            service_uuids, {"CBCentralManagerScanOptionAllowDuplicatesKey":allow_duplicates}
+            service_uuids, NSDictionary.dictionaryWithDictionary_({"CBCentralManagerScanOptionAllowDuplicatesKey":allow_duplicates})
         )
 
         timeout = options["timeout"]
@@ -160,7 +160,8 @@ class CentralManagerDelegate(NSObject):
         self._clients[client.address] = client
         self.central_manager.connectPeripheral_options_(client._peripheral, None)
 
-        while client._connection_state == CMDConnectionState.PENDING:
+        start = time()
+        while client._connection_state == CMDConnectionState.PENDING and time()-start<client._timeout:
             await asyncio.sleep(0)
 
         return client._connection_state == CMDConnectionState.CONNECTED

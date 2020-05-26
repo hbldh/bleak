@@ -43,12 +43,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     """
 
     def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakClientCoreBluetooth, self).__init__(address, loop, **kwargs)
+        super(BleakClientCoreBluetooth, self).__init__(address.upper(), loop, **kwargs)
         self._services = None
         self._connection_state = CMDConnectionState.DISCONNECTED
         self._peripheral = None  
         self._peripheral_delegate = None  
         self._disconnected_callback = None
+        self._peripheral = None
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # Call base class to cleanup (disconnect)
@@ -70,22 +71,28 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         timeout = kwargs.get("timeout", self._timeout)
-        devices = await discover(timeout=timeout, loop=self.loop)
-        sought_device = list(
-            filter(lambda x: x.address.upper() == self.address.upper(), devices)
-        )
 
-        # Set the peripheral & delegate before calling connect
-        if len(sought_device):
-            self._peripheral = sought_device[0].details
-            self._peripheral_delegate = PeripheralDelegate.alloc().initWithPeripheral_(self._peripheral)
-        else:
-            raise BleakError(
-                "Device with address {} was not found".format(self.address)
-            )
+        # If the peripheral isn't already known
+        self._peripheral = None # TODO TEST Remove when done!
+        if self._peripheral == None:
+            # Use results from prior scans  
+            known_devices = cbapp.central_manager_delegate.devices
+            # If it's not there, search for it via discovery
+            if self.address not in known_devices:
+                devices = await discover(timeout=timeout, loop=self.loop)
+                # Get the updates
+                known_devices = cbapp.central_manager_delegate.devices
+                if self.address not in known_devices:
+                    raise BleakError(
+                        "Device with address {} was not found".format(self.address)
+                    )
+
+            # We have it in known_devices
+            self._peripheral = known_devices[self.address].details
+
+        self._peripheral_delegate = PeripheralDelegate.alloc().initWithPeripheral_(self._peripheral)
 
         logger.debug("Connecting to BLE device @ {}".format(self.address))
-
         await cbapp.central_manager_delegate.connect_(self)
 
         # Now get services
@@ -105,9 +112,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self, callback: Callable[[BaseBleakClient], None], **kwargs
     ) -> None:
         """Set the disconnected callback.
-
-        N.B. This is not implemented in the Core Bluetooth backend yet.
-
         Args:
             callback: callback to be called on disconnection.
 
@@ -352,7 +356,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     def did_disconnect(self):
         logger.debug("Disconnected from device @ {}".format(self.address))
         # Client device disconnected; TODO Call the callback
-        self._peripheral = None
+        # self._peripheral = None
         self._peripheral_delegate = None
         if self._disconnected_callback == None:
             return 

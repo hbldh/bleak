@@ -18,13 +18,26 @@ import sys
 sys.path.insert(1, '../..')  # Use local bleak
 # Only for local testing (not on cloud)
 import logging
-# logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
 # import bleak
 # logger = logging.getLogger(__name__)
 # logger.warning("Importing Bleak")
 import bleak 
 # logger.warning("DONE Importing Bleak")
+
+import os
+import platform
+
+import pytest
+
+_IS_CI = os.environ.get("CI", "false").lower() == "true"
+_IS_AZURE_PIPELINES = os.environ.get("SYSTEM_HOSTTYPE", "") == "build"
+
+if platform.system() != "Darwin":
+    _OS = os.environ.get("AGENT_OS").lower()
+else:
+    _OS = platform.system()
 
 
 microbit_volume = ''
@@ -69,14 +82,14 @@ async def update_firmware(file: str):
 @pytest.fixture(scope="session")   
 @pytest.mark.async_timeout(30)
 async def configure_firmware():
-    #await update_firmware('testservice.hex')
+    # await update_firmware('testservice.hex')
     return True
 
 @pytest.fixture(scope="session")
-@pytest.mark.async_timeout(30)
+@pytest.mark.async_timeout(10)
 async def discover(configure_firmware):
     # Always takes "timeout" seconds, so timeout should be less than async_timeout
-    devices = await bleak.discover(filters={"UUIDs":["1d93af38-9239-11ea-bb37-0242ac130002"]}, timeout=20)
+    devices = await bleak.discover(filters={"UUIDs":["1d93af38-9239-11ea-bb37-0242ac130002"]}, timeout=5)
     # Make sure there's a least one device
     if len(devices) == 0:
         return None
@@ -95,7 +108,7 @@ async def client(discover, request):
     # Connect to the discovered device
     print(f'Connecting to {discover}')
     client = bleak.BleakClient(discover)
-    await client.connect(timeout=30)
+    await client.connect(timeout=10)
     def disconnect():       
         loop = asyncio.get_event_loop()
         future = loop.create_task(client.disconnect())
@@ -117,9 +130,52 @@ async def test_connect(client):
 
 @pytest.mark.async_timeout(30)
 async def test_services(client):
-    num = 0
+    numServices = 0
     for s in client.services:
         assert s.uuid.lower() in ['180a', '1d93af38-9239-11ea-bb37-0242ac130002']
-        num = num + 1
-    assert num == 2
+        numServices = numServices + 1
+    assert numServices == 2
 
+@pytest.mark.async_timeout(30)
+async def test_short_read(client):
+    # Single, short packet
+    value = await client.read_gatt_char("1d93b2f8-9239-11ea-bb37-0242ac130002") 
+    assert value == bytearray(b'0123456789')
+
+@pytest.mark.async_timeout(30)
+async def test_packet_read(client):
+    # Single packet that uses all available bytes
+    value = await client.read_gatt_char("1d93b488-9239-11ea-bb37-0242ac130002") 
+    assert value == bytearray(b'abcdefghijklmnopqrst')
+
+@pytest.mark.async_timeout(30)
+async def test_long_read(client):
+    # Requires multiple packets
+    value = await client.read_gatt_char("1d93b56e-9239-11ea-bb37-0242ac130002") 
+    assert value == bytearray(b'abcdefghijklmnopqrstuvwzyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_noResp1(client):
+    # Short write without response (then read back to confirm)
+    char = "1d93b636-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'ABCDEF')
+    await client.write_gatt_char(char, toSend, response=True)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+    
+
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_noResp2(client):
+    # Short write without response (then read back to confirm)
+    char = "1d93b636-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'GHIJKL')
+    await client.write_gatt_char(char, toSend, response=True)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+
+# Test the "with" structure
+
+# Test the disconnect callback
