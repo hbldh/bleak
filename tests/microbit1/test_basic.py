@@ -3,6 +3,13 @@
 # Micro:bit:  Be sure they are running a recent version of firmware (0253 or later)
 #       https://microbit.org/get-started/user-guide/firmware/
 
+
+#  pytest  file.py::test     
+#    -o log_cli=true     to log all messages
+# pytest test_basic.py::test_short_writes_resp4 -o log_cli=true
+
+#
+
 import os
 import platform
 import time
@@ -75,9 +82,6 @@ async def update_firmware(file: str):
     print("Microbit ready for testing")
 
 
-
-
-
 # Only needs to be done once (although re-doing it will reset state after failures)
 @pytest.fixture(scope="session")   
 @pytest.mark.async_timeout(30)
@@ -108,7 +112,7 @@ async def client(discover, request):
     # Connect to the discovered device
     print(f'Connecting to {discover}')
     client = bleak.BleakClient(discover)
-    await client.connect(timeout=10)
+    await client.connect(timeout=5)
     def disconnect():       
         loop = asyncio.get_event_loop()
         future = loop.create_task(client.disconnect())
@@ -160,7 +164,7 @@ async def test_short_writes_noResp1(client):
     char = "1d93b636-9239-11ea-bb37-0242ac130002"
 
     toSend = bytearray(B'ABCDEF')
-    await client.write_gatt_char(char, toSend, response=True)
+    await client.write_gatt_char(char, toSend)
     value = await client.read_gatt_char(char) 
     assert value == toSend
     
@@ -172,9 +176,90 @@ async def test_short_writes_noResp2(client):
     char = "1d93b636-9239-11ea-bb37-0242ac130002"
 
     toSend = bytearray(B'GHIJKL')
+    await client.write_gatt_char(char, toSend)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_noResp3(client):
+    # Write a full 20 bytes / packet
+    char = "1d93b636-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'abcdefghijklmnopqrst')
+    await client.write_gatt_char(char, toSend)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_resp1(client):
+    # Write w/ response short
+    char = "1d93b942-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'abcdef')
     await client.write_gatt_char(char, toSend, response=True)
     value = await client.read_gatt_char(char) 
     assert value == toSend
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_resp2(client):
+    # Write w/ response full packet
+    char = "1d93b942-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'01234567890123456789')
+    await client.write_gatt_char(char, toSend, response=True)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_resp3(client):
+    # Write w/ response more than one packet
+    char = "1d93b942-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'abcdefghijklmnopqrstuvwxyz')
+    await client.write_gatt_char(char, toSend, response=True)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+
+
+@pytest.mark.async_timeout(60)
+async def test_short_writes_resp4(client):
+    # Write w/ response 80 bytes (max size)
+    char = "1d93b942-9239-11ea-bb37-0242ac130002"
+
+    toSend = bytearray(B'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()<>:"{}/?')
+    await client.write_gatt_char(char, toSend, response=True)
+    value = await client.read_gatt_char(char) 
+    assert value == toSend
+
+
+# @pytest.mark.skip(reason="Fails on OSX / Python error")
+@pytest.mark.async_timeout(60)
+async def test_short_writes_resp4(client):
+    # Write w/ response 81 bytes (OVER max size)
+    char = "1d93b942-9239-11ea-bb37-0242ac130002"
+
+    small = bytearray(B'data')
+    await client.write_gatt_char(char, small, response=True)
+    value = await client.read_gatt_char(char) 
+    assert value == small
+
+
+    toSend = bytearray(B'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()<>:"{}/?E')
+    # Write should fail / raise exception
+    with pytest.raises(bleak.BleakError) as error:
+        await client.write_gatt_char(char, toSend, response=True)
+    # Value should be unchanged 
+    await asyncio.sleep(0.5)
+    value = await client.read_gatt_char(char) 
+    assert value == small
+
+
+# Test notification
+
+# Test indication
+
 
 # Test the "with" structure
 
