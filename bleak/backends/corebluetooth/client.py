@@ -183,7 +183,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         output = await self._peripheral_delegate.readCharacteristic_(
             characteristic.obj, use_cached=use_cached
         )
-        value = bytearray(output)
+        value = bytearray(output) if output.length() !=0 else bytearray()
         logger.debug("Read Characteristic {0} : {1}".format(_uuid, value))
         return value
 
@@ -241,6 +241,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if success:
             logger.debug("Write Characteristic {0} : {1}".format(_uuid, data))
         else:
+            logger.debug("Write Failed")
             raise BleakError(
                 "Could not write value {0} to characteristic {1}: {2}".format(
                     data, characteristic.uuid, success

@@ -20,6 +20,8 @@ from Foundation import (
     NSData,
     NSError,
 )
+from CoreBluetooth import CBCharacteristicWriteWithResponse
+
 
 from bleak.exc import BleakError
 
@@ -156,13 +158,14 @@ class PeripheralDelegate(NSObject):
         cUUID = characteristic.UUID().UUIDString()
 
         event = self._characteristic_write_events.get_cleared(cUUID)
+        event._success = True  # Default to "success" if not waiting for reply
         self.peripheral.writeValue_forCharacteristic_type_(
             value, characteristic, response
         )
-        if response:
+        if response == CBCharacteristicWriteWithResponse:
             await event.wait()
 
-        return True
+        return event._success
 
     async def writeDescriptor_value_(
         self, descriptor: CBDescriptor, value: NSData
@@ -252,6 +255,7 @@ class PeripheralDelegate(NSObject):
     def peripheral_didUpdateValueForCharacteristic_error_(
         self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
     ):
+
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
             raise BleakError(
@@ -262,7 +266,6 @@ class PeripheralDelegate(NSObject):
         if notify_callback:
             notify_callback(cUUID, characteristic.value())
 
-        logger.debug("Read characteristic value")
         event = self._characteristic_read_events.get(cUUID)
         if event:
             event.set()
@@ -290,13 +293,18 @@ class PeripheralDelegate(NSObject):
         self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
     ):
         cUUID = characteristic.UUID().UUIDString()
-        if error is not None:
-            raise BleakError(
-                "Failed to write characteristic {}: {}".format(cUUID, error)
-            )
 
-        logger.debug("Write Characteristic Value")
+        # Raising an exception causes an error ;  Rejected writes are "valid" and should probably be caught some other way
+        # if error is not None:
+        #     raise BleakError(
+        #         "Failed to write characteristic {}: {}".format(cUUID, error)
+        #     )
+
         event = self._characteristic_write_events.get(cUUID)
+
+        if error is not None:
+            event._success = False
+
         if event:
             event.set()
         else:
