@@ -152,7 +152,6 @@ async def test_short_writes_resp4(client):
 
 # Test indication
 
-
 # Test the "with" structure
 
-# Test the disconnect callback
+# Test authorized / unauthorized writes

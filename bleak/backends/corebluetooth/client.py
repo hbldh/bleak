@@ -49,7 +49,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._peripheral = None  
         self._peripheral_delegate = None  
         self._disconnected_callback = None
-        self._peripheral = None
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # Call base class to cleanup (disconnect)
@@ -73,7 +72,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
 
         # If the peripheral isn't already known
-        self._peripheral = None # TODO TEST Remove when done!
         if self._peripheral == None:
             # Use results from prior scans  
             known_devices = cbapp.central_manager_delegate.devices
@@ -87,10 +85,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                         "Device with address {} was not found".format(self.address)
                     )
 
-            # We have it in known_devices
+            # We have a peripheral in known_devices.  Get it and create a delegate 
             self._peripheral = known_devices[self.address].details
-
-        self._peripheral_delegate = PeripheralDelegate.alloc().initWithPeripheral_(self._peripheral)
+            self._peripheral_delegate = PeripheralDelegate.alloc().initWithPeripheral_(self._peripheral)
 
         logger.debug("Connecting to BLE device @ {}".format(self.address))
         await cbapp.central_manager_delegate.connect_(self)
@@ -128,11 +125,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
+        # Need to re-discover services when reconnecting
         if self._services is not None:
             return self._services
 
         logger.debug("Retrieving services...")
-        services = await self._peripheral_delegate.discoverServices()
+        services = await self._peripheral_delegate.discoverServices(use_cached=False)
 
         for service in services:
             serviceUUID = service.UUID().UUIDString()
@@ -222,7 +220,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Perform a write operation of the specified GATT characteristic.
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to write to.
+            _uuid _peripheral_delegate(str or UUID): The uuid of the characteristics to write to.
             data (bytes or bytearray): The data to send.
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
@@ -356,10 +354,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     def did_disconnect(self):
         logger.debug("Disconnected from device @ {}".format(self.address))
-        # Client device disconnected; TODO Call the callback
-        # self._peripheral = None
-        self._peripheral_delegate = None
-        if self._disconnected_callback == None:
-            return 
-        self._disconnected_callback()
+        self._services = None  # No services when not connected (and need to re-construct on new connection)
+        self.services = BleakGATTServiceCollection()
+        if self._disconnected_callback != None:
+            self._disconnected_callback()
         

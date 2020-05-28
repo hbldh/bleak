@@ -19,6 +19,7 @@ from Foundation import (
     CBDescriptor,
     NSData,
     NSError,
+    NSNumber
 )
 from CoreBluetooth import CBCharacteristicWriteWithResponse
 
@@ -163,6 +164,7 @@ class PeripheralDelegate(NSObject):
             value, characteristic, response
         )
         if response == CBCharacteristicWriteWithResponse:
+            logger.info("Waiting for Write Response")
             await event.wait()
 
         return event._success
@@ -209,6 +211,31 @@ class PeripheralDelegate(NSObject):
         return True
 
     # Protocol Functions
+    def peripheral_didDiscoverIncludedServicesForService_error_(
+            self, peripheral: CBPeripheral, service: CBService, error: NSError
+            ) -> None:
+        pass 
+
+    def peripheralIsReadyToSendWriteWithoutResponse_(
+            self, peripheral: CBPeripheral
+            ) -> None:
+        pass 
+
+    def peripheral_didReadRSSI_error_(
+            self, peripheral: CBPeripheral, rssi: NSNumber, error: NSError
+            ) -> None:
+        pass
+
+    def peripheralDidUpdateName_(
+                self, peripheral: CBPeripheral
+            ) -> None:
+        pass 
+
+    def peripheral_didModifyServices_(
+                self, peripheral: CBPeripheral, services: [CBService]) -> None:
+        pass
+
+
     def peripheral_didDiscoverServices_(
         self, peripheral: CBPeripheral, error: NSError
     ) -> None:
@@ -293,7 +320,7 @@ class PeripheralDelegate(NSObject):
         self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
     ):
         cUUID = characteristic.UUID().UUIDString()
-
+        logger.info("Value Write complete...")
         # Raising an exception causes an error ;  Rejected writes are "valid" and should probably be caught some other way
         # if error is not None:
         #     raise BleakError(

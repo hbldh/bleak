@@ -68,10 +68,10 @@ async def configure_firmware():
     return True
 
 @pytest.fixture(scope="session")
-@pytest.mark.async_timeout(10)
+@pytest.mark.async_timeout(12)
 async def discover(configure_firmware):
     # Always takes "timeout" seconds, so timeout should be less than async_timeout
-    devices = await bleak.discover(filters={"UUIDs":["1d93af38-9239-11ea-bb37-0242ac130002"]}, timeout=5)
+    devices = await bleak.discover(filters={"UUIDs":["1d93af38-9239-11ea-bb37-0242ac130002"]}, timeout=10)
     # Make sure there's a least one device
     if len(devices) == 0:
         return None
@@ -84,7 +84,7 @@ async def discover(configure_firmware):
     return devices[0].address
 
 
-@pytest.fixture(scope="session")  
+@pytest.fixture(scope="module")  
 @pytest.mark.async_timeout(60)
 async def client(discover, request):
     # Connect to the discovered device
