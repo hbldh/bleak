@@ -3,8 +3,8 @@ import pytest
 from common_fixtures import *
 
 
-import logging
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+# import logging
+# logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
 @pytest.mark.async_timeout(30)
 async def test_disconnect_and_reconnect(client):
@@ -38,7 +38,6 @@ async def test_disconnect_callback(client):
         client.connect(timeout=10)
     connected = True
     def callback(client, other):
-        logging.info("Callback 1")
         nonlocal connected
         connected = False
     client.set_disconnected_callback(callback)
@@ -49,13 +48,10 @@ async def test_disconnect_callback(client):
 
 @pytest.mark.async_timeout(30)
 async def test_client_init_disconnect_and_reconnect(client):
-    logging.info("Starting")
     if not await client.is_connected():
-        logging.info("Connecting")
         await client.connect(timeout=10)
     connected = True
     def callback(client, other):
-        logging.info("Callback 2")
         nonlocal connected
         connected = False
     client.set_disconnected_callback(callback)
@@ -63,19 +59,10 @@ async def test_client_init_disconnect_and_reconnect(client):
     char = "1d93c1e4-9239-11ea-bb37-0242ac130002"  # Characteristic for service (peripheral) initiated disconnect
     # Wait 1s (1000ms)
     toSend = bytearray( (1000).to_bytes(4, byteorder='little') )
-    # logging.info("Reading...")
-    # value = await client.read_gatt_char(char)
-    logging.info("Writing")
     await client.write_gatt_char(char, toSend, response=True)
-    # await client.write_gatt_char(char, toSend)
-    logging.info("Sleeping")
 
     await asyncio.sleep(5)
     assert False == connected
-
-    # logging.info("Reconnecting")
-    # await client.connect(timeout=10)
-    # assert await client.is_connected()
 
 
 @pytest.mark.async_timeout(30)
@@ -84,7 +71,6 @@ async def test_client_unexpected_disconnect_and_reconnect(client):
         await client.connect(timeout=10)
     connected = True
     def callback(client, other):
-        logging.info("Callback 3")
         nonlocal connected
         connected = False
     client.set_disconnected_callback(callback)

@@ -12,7 +12,8 @@
 import asyncio
 import pytest
 from common_fixtures import *
-
+from time import time
+from math import floor
 ### Actual Tests! ###
 
 # Returns device address
@@ -60,8 +61,6 @@ async def test_short_writes_noResp1(client):
     value = await client.read_gatt_char(char) 
     assert value == toSend
     
-
-
 @pytest.mark.async_timeout(60)
 async def test_short_writes_noResp2(client):
     # Short write without response (then read back to confirm)
@@ -126,7 +125,6 @@ async def test_short_writes_resp4(client):
     assert value == toSend
 
 
-# @pytest.mark.skip(reason="Fails on OSX / Python error")
 @pytest.mark.async_timeout(60)
 async def test_short_writes_resp4(client):
     # Write w/ response 81 bytes (OVER max size)
@@ -148,10 +146,75 @@ async def test_short_writes_resp4(client):
     assert value == small
 
 
-# Test notification
 
-# Test indication
+@pytest.mark.async_timeout(60)
+async def test_single_notification(client):
+    # Write w/ response more than one packet
+    last_value = None
+    # Setup callback
+    def callback(sender, data):
+        nonlocal last_value
+        last_value = data
+        print(data)
+
+    await client.start_notify("1d93bb2c-9239-11ea-bb37-0242ac130002", callback)
+    # Reset counter and set period to 0.5s (500ms between notifies)
+    await client.write_gatt_char("1d93b6fe-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( (500).to_bytes(4, byteorder='little') ), 
+                                    response=True)
+
+    start_time = time()
+    await asyncio.sleep(4.1)
+    await client.stop_notify("1d93bb2c-9239-11ea-bb37-0242ac130002")
+    stop_time = time()
+
+    stop = int.from_bytes(last_value, byteorder="little", signed=False)
+
+    expected = floor((stop_time-start_time)*2)  # 2x per second
+
+    print(f"stop: {stop}  expected: {expected}")
+    assert stop >= expected-1 and stop <= expected+1
+
+
+
+
+@pytest.mark.async_timeout(60)
+async def test_single_indication(client):
+    # Write w/ response more than one packet
+    last_value = None
+    # Setup callback
+    def callback(sender, data):
+        nonlocal last_value
+        last_value = data
+        print(data)
+
+    await client.start_notify("1d93be06-9239-11ea-bb37-0242ac130002", callback)
+    # Reset counter and set period to 0.5s (500ms between notifies)
+    await client.write_gatt_char("1d93bd52-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( (500).to_bytes(4, byteorder='little') ), 
+                                    response=True)
+
+    start_time = time()
+    await asyncio.sleep(4.1)
+    await client.stop_notify("1d93be06-9239-11ea-bb37-0242ac130002")
+    stop_time = time()
+
+    stop = int.from_bytes(last_value, byteorder="little", signed=False)
+
+    expected = floor((stop_time-start_time)*2)  # 2x per second
+
+    print(f"stop: {stop}  expected: {expected}")
+    assert stop >= expected-1 and stop <= expected+1
+
+
+
+
+# Test multi notification
+
+# Test multi indication
 
 # Test the "with" structure
 
 # Test authorized / unauthorized writes
+
+# Test descriptors 
