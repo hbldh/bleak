@@ -8,6 +8,24 @@
 #    -o log_cli=true     to log all messages
 # pytest test_basic.py::test_short_writes_resp4 -o log_cli=true
 
+
+# TODO: 
+#
+#  These all need a lot of cleanup and decoupling, but they are a good start on proof-of-concept. 
+#  After adding a few more features and corresponding tests it's time for cleanup.
+# 
+#  Probably worth while to separate into more files.
+
+#  More tests to add:
+#      Test the "with" structure and ensuring disconnect (and memory???)
+#      Test scanning behavior and filtering 
+#      Test multiple services/characteristics with the same UUID
+#
+#
+#  General cleanup and improvements for multiple platforms and to avoid conflicts with CI?
+#
+#
+
 import logging
 import os
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -260,7 +278,6 @@ async def test_single_indication(client):
 
     expected = floor((stop_time-start_time)*2)  # 2x per second
 
-    print(f"stop: {stop}  expected: {expected}")
     assert stop >= expected-1 and stop <= expected+1
 
 
@@ -313,8 +330,6 @@ async def test_two_indications(client):
     expected1 = floor((stop_time-start_time)*2)  # 2x per second
     expected2 = floor((stop_time-start_time))  # 1x per second
 
-    print(f"1: stop: {stop1}  expected: {expected1} update_count: {update_count1}")
-    print(f"2: stop: {stop2}  expected: {expected2} update_count: {update_count2}")
     assert stop1 >= expected1-1 and stop1 <= expected1+1
     assert stop2 >= expected2-1 and stop2 <= expected2+1
     assert update_count1 >= expected1-1 and update_count1 <= expected1+1
@@ -325,7 +340,6 @@ async def test_two_indications(client):
 @pytest.mark.async_timeout(60)
 async def test_readwrite_user_desc_descriptor(client):
     descs = [(h,d) for (h, d) in client.services.descriptors.items() if d.characteristic_uuid == "1d93c432-9239-11ea-bb37-0242ac130002".upper()]
-    logger.debug("Got descriptors")
     assert len(descs) == 5
     uuidsToHandles = { d.uuid:h for (h,d) in descs}
 
@@ -360,8 +374,58 @@ async def test_read_descriptors(client):
     assert presFmt ==  bytearray( [0x0e, 0x03, 0x10, 0x27, 0x01, 0x00, 0x00] )
 
 
+@pytest.mark.async_timeout(60)
+async def test_authorized_read_write(client):
+    # Read and write to a characteristic that is authorized 
+
+    # Set it to "authorized" by writting to permission characteristic
+    await client.write_gatt_char("1d93b7c6-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( b'RW' ), 
+                                    response=True)
 
 
-# Test the "with" structure
 
-# Test authorized / unauthorized writes
+    # Write to the characteristic that requires authorization
+    await client.write_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( b'012345' ), 
+                                    response=True)
+    # Verify with a read
+    value = await client.read_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002") 
+    assert value == bytearray(b'012345')
+
+    # Write to the characteristic that requires authorization
+    await client.write_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( b'ABCDEF' ), 
+                                    response=True)
+    # Verify with a read
+    value = await client.read_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002") 
+    assert value == bytearray(b'ABCDEF')
+
+
+@pytest.mark.async_timeout(60)
+async def test_unauthorized_read_write(client):
+    # Read and write to a characteristic that is authorized 
+
+    # Set it to "NOT authorized" by writting to permission characteristic
+    logger.debug("Setting Permissions...")
+    await client.write_gatt_char("1d93b7c6-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( b'Nope' ), 
+                                    response=True)
+
+    logger.debug("Trying Write")
+    # Write to the characteristic that requires authorization
+    with pytest.raises(bleak.BleakError) as error:
+        await client.write_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002", 
+                                        bytearray( b'012345' ), 
+                                        response=True)
+
+    # # Try a read
+    logger.debug("Trying Read")
+    with pytest.raises(bleak.BleakError) as error:
+        value = await client.read_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002") 
+
+    
+    
+
+
+

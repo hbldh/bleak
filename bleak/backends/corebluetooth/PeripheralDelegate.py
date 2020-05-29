@@ -132,8 +132,13 @@ class PeripheralDelegate(NSObject):
         cUUID = characteristic.UUID().UUIDString()
 
         event = self._characteristic_read_events.get_cleared(cUUID)
+        event._success = True
         self.peripheral.readValueForCharacteristic_(characteristic)
         await event.wait()
+        if event._success == False:
+            raise BleakError(
+                "Failed to read characteristic {}: {}".format(cUUID, event._error)
+            )
 
         return characteristic.value()
 
@@ -284,16 +289,15 @@ class PeripheralDelegate(NSObject):
     ):
 
         cUUID = characteristic.UUID().UUIDString()
+        event = self._characteristic_read_events.get(cUUID)
         if error is not None:
-            raise BleakError(
-                "Failed to read characteristic {}: {}".format(cUUID, error)
-            )
+            event._success = False
+            event._error = error
 
         notify_callback = self._characteristic_notify_callbacks.get(cUUID)
-        if notify_callback:
+        if notify_callback and error==None:
             notify_callback(cUUID, characteristic.value())
 
-        event = self._characteristic_read_events.get(cUUID)
         if event:
             event.set()
         else:
