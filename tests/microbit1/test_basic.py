@@ -8,6 +8,10 @@
 #    -o log_cli=true     to log all messages
 # pytest test_basic.py::test_short_writes_resp4 -o log_cli=true
 
+import logging
+import os
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+logger = logging.getLogger(__name__)
 
 import asyncio
 import pytest
@@ -155,7 +159,6 @@ async def test_single_notification(client):
     def callback(sender, data):
         nonlocal last_value
         last_value = data
-        print(data)
 
     await client.start_notify("1d93bb2c-9239-11ea-bb37-0242ac130002", callback)
     # Reset counter and set period to 0.5s (500ms between notifies)
@@ -177,6 +180,61 @@ async def test_single_notification(client):
 
 
 
+@pytest.mark.async_timeout(60)
+async def test_two_notifications(client):
+    # Write w/ response more than one packet
+    last_value1 = None
+    update_count1 = 0
+    # Setup callback
+    def callback1(sender, data):
+        nonlocal last_value1
+        last_value1 = data
+        nonlocal update_count1
+        update_count1 += 1
+    await client.start_notify("1d93bb2c-9239-11ea-bb37-0242ac130002", callback1)
+
+    start_time1 = time()
+
+    last_value2 = None
+    update_count2 = 0
+    # Setup callback
+    def callback2(sender, data):
+        nonlocal last_value2
+        last_value2 = data
+        nonlocal update_count2
+        update_count2 += 1
+    await client.start_notify("1d93bc9e-9239-11ea-bb37-0242ac130002", callback2)
+
+    # Reset counter1 and set period to 0.5s (500ms between notifies)
+    await client.write_gatt_char("1d93b6fe-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( (500).to_bytes(4, byteorder='little') ), 
+                                    response=True)
+
+    # Reset counter2 and set period to 1s (1000ms between notifies)
+    await client.write_gatt_char("1d93bbea-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( (1000).to_bytes(4, byteorder='little') ), 
+                                    response=True)
+
+    start_time = time()
+    await asyncio.sleep(7.1)
+    await client.stop_notify("1d93bb2c-9239-11ea-bb37-0242ac130002")
+    await client.stop_notify("1d93bc9e-9239-11ea-bb37-0242ac130002")
+    stop_time = time()
+
+    stop1 = int.from_bytes(last_value1, byteorder="little", signed=False)
+    stop2 = int.from_bytes(last_value2, byteorder="little", signed=False)
+
+    expected1 = floor((stop_time-start_time)*2)  # 2x per second
+    expected2 = floor((stop_time-start_time))  # 1x per second
+
+    print(f"stop: {stop1}  expected: {expected1}")
+    assert stop1 >= expected1-1 and stop1 <= expected1+1
+    print(f"stop: {stop2}  expected: {expected2}")
+    assert stop2 >= expected2-1 and stop2 <= expected2+1
+    assert update_count1 >= expected1-1 and update_count1 <= expected1+1
+    assert update_count2 >= expected2-1 and update_count2 <= expected2+1
+
+
 
 @pytest.mark.async_timeout(60)
 async def test_single_indication(client):
@@ -186,7 +244,6 @@ async def test_single_indication(client):
     def callback(sender, data):
         nonlocal last_value
         last_value = data
-        print(data)
 
     await client.start_notify("1d93be06-9239-11ea-bb37-0242ac130002", callback)
     # Reset counter and set period to 0.5s (500ms between notifies)
@@ -208,13 +265,103 @@ async def test_single_indication(client):
 
 
 
+@pytest.mark.async_timeout(60)
+async def test_two_indications(client):
+    # Write w/ response more than one packet
+    last_value1 = None
+    update_count1 = 0
+    # Setup callback
+    def callback1(sender, data):
+        nonlocal last_value1
+        last_value1 = data
+        nonlocal update_count1
+        update_count1 += 1
+    await client.start_notify("1d93be06-9239-11ea-bb37-0242ac130002", callback1)
 
-# Test multi notification
+    start_time1 = time()
 
-# Test multi indication
+    last_value2 = None
+    update_count2 = 0
+    # Setup callback
+    def callback2(sender, data):
+        nonlocal last_value2
+        last_value2 = data
+        nonlocal update_count2
+        update_count2 += 1
+    await client.start_notify("1d93bf82-9239-11ea-bb37-0242ac130002", callback2)
+
+    # Reset counter1 and set period to 0.5s (500ms between notifies)
+    await client.write_gatt_char("1d93bd52-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( (500).to_bytes(4, byteorder='little') ), 
+                                    response=True)
+
+    start_time = time()
+
+    # Reset counter2 and set period to 1s (1000ms between notifies)
+    await client.write_gatt_char("1d93bec4-9239-11ea-bb37-0242ac130002", 
+                                    bytearray( (1000).to_bytes(4, byteorder='little') ), 
+                                    response=True)
+
+    await asyncio.sleep(7.1)
+    await client.stop_notify("1d93be06-9239-11ea-bb37-0242ac130002")
+    await client.stop_notify("1d93bf82-9239-11ea-bb37-0242ac130002")
+    stop_time = time()
+
+    stop1 = int.from_bytes(last_value1, byteorder="little", signed=False)
+    stop2 = int.from_bytes(last_value2, byteorder="little", signed=False)
+
+    expected1 = floor((stop_time-start_time)*2)  # 2x per second
+    expected2 = floor((stop_time-start_time))  # 1x per second
+
+    print(f"1: stop: {stop1}  expected: {expected1} update_count: {update_count1}")
+    print(f"2: stop: {stop2}  expected: {expected2} update_count: {update_count2}")
+    assert stop1 >= expected1-1 and stop1 <= expected1+1
+    assert stop2 >= expected2-1 and stop2 <= expected2+1
+    assert update_count1 >= expected1-1 and update_count1 <= expected1+1
+    assert update_count2 >= expected2-1 and update_count2 <= expected2+1
+
+
+
+@pytest.mark.async_timeout(60)
+async def test_readwrite_user_desc_descriptor(client):
+    descs = [(h,d) for (h, d) in client.services.descriptors.items() if d.characteristic_uuid == "1d93c432-9239-11ea-bb37-0242ac130002".upper()]
+    logger.debug("Got descriptors")
+    assert len(descs) == 5
+    uuidsToHandles = { d.uuid:h for (h,d) in descs}
+
+    # extProp = "2900"
+    # userDesc = "2901"
+    # serverConfig = "2903"
+    # misc = "2929"
+    # # 2900, 2901, 2903, 2904, and 2929 
+    await client.write_gatt_descriptor(uuidsToHandles["2901"], bytearray(b'Change 1'))
+    userDesc = await client.read_gatt_descriptor(uuidsToHandles["2901"])
+    assert userDesc == bytearray(b"Change 1")
+    await client.write_gatt_descriptor(uuidsToHandles["2901"], bytearray(b'Change 2'))
+    userDesc = await client.read_gatt_descriptor(uuidsToHandles["2901"])
+    assert userDesc == bytearray(b"Change 2")
+
+@pytest.mark.async_timeout(60)
+async def test_read_descriptors(client):
+    descs = [(h,d) for (h, d) in client.services.descriptors.items() if d.characteristic_uuid == "1d93c432-9239-11ea-bb37-0242ac130002".upper()]
+    assert len(descs) == 5
+    uuidsToHandles = { d.uuid:h for (h,d) in descs}
+
+    extProp = await client.read_gatt_descriptor(uuidsToHandles["2900"])
+    assert extProp == bytearray( (2).to_bytes(2, byteorder="little") )
+
+    serverConfig = await client.read_gatt_descriptor(uuidsToHandles["2903"])
+    assert serverConfig == bytearray( (0).to_bytes(2, byteorder="little") )
+
+    misc = await client.read_gatt_descriptor(uuidsToHandles["2929"])
+    assert misc == bytearray((0).to_bytes(2, byteorder="little") )  # 7 bytes 
+
+    presFmt = await client.read_gatt_descriptor(uuidsToHandles["2904"])
+    assert presFmt ==  bytearray( [0x0e, 0x03, 0x10, 0x27, 0x01, 0x00, 0x00] )
+
+
+
 
 # Test the "with" structure
 
 # Test authorized / unauthorized writes
-
-# Test descriptors 

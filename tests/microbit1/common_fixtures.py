@@ -88,7 +88,9 @@ async def discover(configure_firmware):
 @pytest.mark.async_timeout(60)
 async def client(discover, request):
     # Connect to the discovered device
-    print(f'Connecting to {discover}')
+
+    assert discover!=None
+
     client = bleak.BleakClient(discover)
     await client.connect(timeout=5)
     def disconnect():       
