@@ -64,7 +64,7 @@ async def update_firmware(file: str):
 @pytest.fixture(scope="session")   
 @pytest.mark.async_timeout(30)
 async def configure_firmware():
-    # await update_firmware('testservice.hex')
+    await update_firmware('testservice.hex')
     return True
 
 @pytest.fixture(scope="session")
