@@ -4,6 +4,9 @@
 #       https://microbit.org/get-started/user-guide/firmware/
 
 
+# Tests of basic service interaction and errors. 
+
+
 #  pytest  file.py::test     
 #    -o log_cli=true     to log all messages
 # pytest test_basic.py::test_short_writes_resp4 -o log_cli=true
@@ -312,12 +315,13 @@ async def test_two_indications(client):
                                     bytearray( (500).to_bytes(4, byteorder='little') ), 
                                     response=True)
 
-    start_time = time()
 
     # Reset counter2 and set period to 1s (1000ms between notifies)
     await client.write_gatt_char("1d93bec4-9239-11ea-bb37-0242ac130002", 
                                     bytearray( (1000).to_bytes(4, byteorder='little') ), 
                                     response=True)
+
+    start_time = time()
 
     await asyncio.sleep(7.1)
     await client.stop_notify("1d93be06-9239-11ea-bb37-0242ac130002")
@@ -439,6 +443,3 @@ async def test_write_descriptor_error(client):
 
     currentValue = await client.read_gatt_descriptor(uuidsToHandles["2929"])
     assert origValue == currentValue
-
-
-

@@ -1,3 +1,6 @@
+# Test cases for various connect / disconnet / reconnect and disconnect callbacks
+# (All are single client)
+
 import asyncio
 import pytest
 from common_fixtures import *
