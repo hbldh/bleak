@@ -181,7 +181,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         output = await self._peripheral_delegate.readCharacteristic_(
             characteristic.obj, use_cached=use_cached
         )
-        value = bytearray(output) if output.length() !=0 else bytearray()
+        # Sometimes a `pyobjc_unicode`or `__NSCFString` is returned and they can be used as regular Python strings.
+        if isinstance(output, str):  
+            value = bytearray(output.encode("utf-8"))
+        else:  # _NSInlineData
+            value = bytearray(output)  # value.getBytes_length_(None, len(value))
         logger.debug("Read Characteristic {0} : {1}".format(_uuid, value))
         return value
 

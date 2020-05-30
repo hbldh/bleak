@@ -407,25 +407,38 @@ async def test_unauthorized_read_write(client):
     # Read and write to a characteristic that is authorized 
 
     # Set it to "NOT authorized" by writting to permission characteristic
-    logger.debug("Setting Permissions...")
     await client.write_gatt_char("1d93b7c6-9239-11ea-bb37-0242ac130002", 
                                     bytearray( b'Nope' ), 
                                     response=True)
 
-    logger.debug("Trying Write")
     # Write to the characteristic that requires authorization
     with pytest.raises(bleak.BleakError) as error:
         await client.write_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002", 
                                         bytearray( b'012345' ), 
                                         response=True)
 
-    # # Try a read
-    logger.debug("Trying Read")
+    # Try a read
     with pytest.raises(bleak.BleakError) as error:
         value = await client.read_gatt_char("1d93b884-9239-11ea-bb37-0242ac130002") 
 
     
-    
+
+@pytest.mark.async_timeout(60)
+async def test_write_descriptor_error(client):
+    # Try to write a read-only descriptor 
+    descs = [(h,d) for (h, d) in client.services.descriptors.items() if d.characteristic_uuid == "1d93c432-9239-11ea-bb37-0242ac130002".upper()]
+    assert len(descs) == 5
+    uuidsToHandles = { d.uuid:h for (h,d) in descs}
+
+    # misc = "2929"
+    origValue = await client.read_gatt_descriptor(uuidsToHandles["2929"])
+
+    with pytest.raises(bleak.BleakError) as error:
+        # Only 2 bytes long...This write should fail
+        await client.write_gatt_descriptor(uuidsToHandles["2929"], bytearray(b'Too Long'))
+
+    currentValue = await client.read_gatt_descriptor(uuidsToHandles["2929"])
+    assert origValue == currentValue
 
 
 
