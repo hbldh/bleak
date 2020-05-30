@@ -9,6 +9,7 @@ from bleak.backends.corebluetooth import CBAPP as cbapp
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
+from functools import partial
 
 
 logger = logging.getLogger(__name__)
@@ -29,79 +30,81 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     Args:
         loop (asyncio.events.AbstractEventLoop): The event loop to use.
 
-    Keyword Args:
-        timeout (double): The scanning timeout to be used, in case of missing
-          ``stopScan_`` metod.
-
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
+        logger.info("BleakScannerCoreBluetooth Scanner")
 
         if not cbapp.central_manager_delegate.enabled:
             raise BleakError("Bluetooth device is turned off")
 
-        self._timeout = kwargs.get("timeout", 5.0)
+        self._filters = kwargs.get("filters", {})
+
+        self._callback = None
+        self._found = []
+
+
+    def discovered(self, device):
+        logger.info("scanner discovered: {0}".format(device))
+        self._found.append(device)
+        if self._callback != None:
+            self._callback(device)
 
     async def start(self):
-        # TODO: Evaluate if newer macOS than 10.11 has stopScan.
-        if hasattr(cbapp.central_manager_delegate, "stopScan_"):
-            await cbapp.central_manager_delegate.scanForPeripherals_()
-        else:
-            await cbapp.central_manager_delegate.scanForPeripherals_({"timeout": self._timeout})
+        # Don't reset/restart if already scanning 
+        if await self.is_scanning: 
+            return 
+        self._found = []
+        cbapp.central_manager_delegate.setdiscovercallback_(self.discovered)        
+        await cbapp.central_manager_delegate.scanForPeripherals_({"timeout":None, "filters":self._filters})
 
     async def stop(self):
-        try:
-            await cbapp.central_manager_delegate.stopScan_()
-        except Exception as e:
-            logger.warning("stopScan method could not be called: {0}".format(e))
+        cbapp.central_manager_delegate.central_manager.stopScan()
+        cbapp.central_manager_delegate.setdiscovercallback_(None)
 
     async def set_scanning_filter(self, **kwargs):
-        raise NotImplementedError("Need to evaluate which macOS versions to support first...")
+        self._filters = kwargs.get("filters", {})
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
-        found = []
-        peripherals = cbapp.central_manager_delegate.peripheral_list
+        # TODO: Figure out consistent returned devices
+        # found = []
+        # peripherals = cbapp.central_manager_delegate.devices
 
-        for i, peripheral in enumerate(peripherals):
-            address = peripheral.identifier().UUIDString()
-            name = peripheral.name() or "Unknown"
-            details = peripheral
+        # for i, peripheral in enumerate(peripherals):
+        #     address = peripheral.identifier().UUIDString()
+        #     name = peripheral.name() or "Unknown"
+        #     details = peripheral
 
-            advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
-            manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
-            manufacturer_data = {}
-            if manufacturer_binary_data:
-                manufacturer_id = int.from_bytes(
-                    manufacturer_binary_data[0:2], byteorder="little"
-                )
-                manufacturer_value = bytes(manufacturer_binary_data[2:])
-                manufacturer_data = {manufacturer_id: manufacturer_value}
+        #     advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
+        #     manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
+        #     manufacturer_data = {}
+        #     if manufacturer_binary_data:
+        #         manufacturer_id = int.from_bytes(
+        #             manufacturer_binary_data[0:2], byteorder="little"
+        #         )
+        #         manufacturer_value = bytes(manufacturer_binary_data[2:])
+        #         manufacturer_data = {manufacturer_id: manufacturer_value}
 
-            uuids = [
-                # converting to lower case to match other platforms
-                str(u).lower()
-                for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
-            ]
+        #     uuids = [
+        #         # converting to lower case to match other platforms
+        #         str(u).lower()
+        #         for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
+        #     ]
 
-            found.append(
-                BLEDevice(
-                    address, name, details, uuids=uuids, manufacturer_data=manufacturer_data
-                )
-            )
+        #     found.append(
+        #         BLEDevice(
+        #             address, name, details, uuids=uuids, manufacturer_data=manufacturer_data
+        #         )
+        #     )
 
-        return found
+        return self._found
 
     def register_detection_callback(self, callback: Callable):
-        raise NotImplementedError("This cannot be used in the macOS backend.")
+        self._callback = callback
 
-    # macOS specific methods
 
     @property
-    def is_scanning(self):
-        # TODO: Evaluate if newer macOS than 10.11 has isScanning.
-        try:
-            return cbapp.central_manager_delegate.isScanning_
-        except:
-            return None
+    async def is_scanning(self):
+        return cbapp.central_manager_delegate.central_manager.isScanning()
 
 

@@ -46,7 +46,6 @@ class Application:
     async def _central_manager_delegate_ready(self):
         await self.central_manager_delegate.is_ready()
 
-
 # Restructure this later: Global isn't the prettiest way of doing this...
 global CBAPP
 CBAPP = Application()

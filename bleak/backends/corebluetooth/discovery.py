@@ -30,9 +30,8 @@ async def discover(
     if not cbapp.central_manager_delegate.enabled:
         raise BleakError("Bluetooth device is turned off")
 
-    scan_options = {"timeout": timeout}
-
-    await cbapp.central_manager_delegate.scanForPeripherals_(scan_options)
+    filters = kwargs.get("filters", {})
+    await cbapp.central_manager_delegate.scanForPeripherals_({"timeout":timeout, "filters":filters})
 
     # CoreBluetooth doesn't explicitly use MAC addresses to identify peripheral
     # devices because private devices may obscure their MAC addresses. To cope
