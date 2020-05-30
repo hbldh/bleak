@@ -33,6 +33,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
+        logger.info("BleakScannerCoreBluetooth Scanner")
 
         if not cbapp.central_manager_delegate.enabled:
             raise BleakError("Bluetooth device is turned off")
@@ -45,16 +46,17 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def discovered(self, device):
         logger.info("scanner discovered: {0}".format(device))
-        # TODO: Check filters as needed
         self._found.append(device)
         if self._callback != None:
             self._callback(device)
 
     async def start(self):
-        # TODO: Figure out filtering part
+        # Don't reset/restart if already scanning 
+        if await self.is_scanning: 
+            return 
         self._found = []
         cbapp.central_manager_delegate.setdiscovercallback_(self.discovered)        
-        cbapp.central_manager_delegate.scanForPeripherals_({"timeout":None, "filters":self._filters})
+        await cbapp.central_manager_delegate.scanForPeripherals_({"timeout":None, "filters":self._filters})
 
     async def stop(self):
         cbapp.central_manager_delegate.central_manager.stopScan()
@@ -62,7 +64,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     async def set_scanning_filter(self, **kwargs):
         self._filters = kwargs.get("filters", {})
-        raise NotImplementedError("Need to evaluate which macOS versions to support first...")
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         # TODO: Figure out consistent returned devices
@@ -101,11 +102,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     def register_detection_callback(self, callback: Callable):
         self._callback = callback
 
-    # macOS specific methods
 
     @property
     async def is_scanning(self):
-        # TODO: Fix this???
         return cbapp.central_manager_delegate.central_manager.isScanning()
 
 

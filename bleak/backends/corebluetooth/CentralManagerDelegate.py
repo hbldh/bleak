@@ -24,6 +24,16 @@ from Foundation import (
     NSError,
 )
 
+from CoreBluetooth import (
+    CBManagerStatePoweredOff,
+    CBManagerStatePoweredOn,
+    CBManagerStateResetting,
+    CBManagerStateUnauthorized,
+    CBManagerStateUnknown,
+    CBManagerStateUnsupported, 
+    CBCentralManagerScanOptionAllowDuplicatesKey
+)
+
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 from time import time
 # Problem: Two functions reference the client (BleakClientCoreBluetooth). 
@@ -119,6 +129,7 @@ class CentralManagerDelegate(NSObject):
                 Follows the filtering key/values used in BlueZ 
                 (https://github.com/RadiusNetworks/bluez/blob/master/doc/adapter-api.txt)
             filters :{ 
+                  "DuplicateData": Are duplicate records allowed (default: True)
                   "UUIDs": [  Array of String UUIDs for services of interest. Any device that advertised one of them is included]
                   "RSSI" : only include devices with a greater RSSI. 
                   "Pathloss": int minimum path loss;  Only include devices that include TX power and where
@@ -133,7 +144,8 @@ class CentralManagerDelegate(NSObject):
         # Device discovery will cover RSSI & Pathloss limits
         # Determine filtering data (used to start scan and validate detected devices)
         self._filters = options.get("filters",{})
-        allow_duplicates = self._filters.get("DuplicateData", True)
+        allow_duplicates = 1 if self._filters.get("DuplicateData", False) == True else 0
+
         service_uuids = []
         if "UUIDs" in self._filters:
             service_uuids_str = self._filters["UUIDs"]
@@ -142,9 +154,10 @@ class CentralManagerDelegate(NSObject):
             )
 
         self.central_manager.scanForPeripheralsWithServices_options_(
-            # TODO: Make this a proper NSDictionary???
-            service_uuids, NSDictionary.dictionaryWithDictionary_({"CBCentralManagerScanOptionAllowDuplicatesKey":allow_duplicates})
+            service_uuids, NSDictionary.dictionaryWithDictionary_({CBCentralManagerScanOptionAllowDuplicatesKey:allow_duplicates})
+            # service_uuids, {CBCentralManagerScanOptionAllowDuplicatesKey:allow_duplicates}
         )
+            # service_uuids, NSDictionary.dictionaryWithDictionary_({CBCentralManagerScanOptionAllowDuplicatesKey:allow_duplicates})
 
         timeout = options["timeout"]
         if timeout is not None:
@@ -152,7 +165,7 @@ class CentralManagerDelegate(NSObject):
             # Request scan stop and wait for confirmation that it's done
             self.central_manager.stopScan()
             while self.central_manager.isScanning():
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.05)
 
     async def connect_(self, client) -> bool:
         client._connection_state = CMDConnectionState.PENDING
@@ -177,21 +190,21 @@ class CentralManagerDelegate(NSObject):
 
     # Protocol Functions
 
-    def centralManagerDidUpdateState_(self, centralManager):
-        if centralManager.state() == 0:
+    def centralManagerDidUpdateState_(self, centralManager):    
+        self._ready = False
+        if centralManager.state() == CBManagerStateUnknown:
             logger.debug("Cannot detect bluetooth device")
-        elif centralManager.state() == 1:
+        elif centralManager.state() == CBManagerStateResetting:
             logger.debug("Bluetooth is resetting")
-        elif centralManager.state() == 2:
+        elif centralManager.state() == CBManagerStateUnsupported:
             logger.debug("Bluetooth is unsupported")
-        elif centralManager.state() == 3:
+        elif centralManager.state() == CBManagerStateUnauthorized:
             logger.debug("Bluetooth is unauthorized")
-        elif centralManager.state() == 4:
+        elif centralManager.state() == CBManagerStatePoweredOff:
             logger.debug("Bluetooth powered off")
-        elif centralManager.state() == 5:
+        elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
-
-        self._ready = True
+            self._ready = True
 
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
         self,

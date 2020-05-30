@@ -62,13 +62,27 @@ async def update_firmware(file: str, volume=microbit_volume):
     print("Microbit ready for testing")
 
 
-# TODO: This gets old.  Add a command line arg for "no firmware"
-# Only needs to be done once (although re-doing it will reset state after failures)
 @pytest.fixture(scope="session")   
 @pytest.mark.async_timeout(30)
 async def configure_firmware(request):
     if request.config.getoption("--nofw") == False:
         await update_firmware('testservice.hex')
+    return True
+
+
+# Put firmware on device 2
+@pytest.fixture(scope="session")   
+@pytest.mark.async_timeout(30)
+async def configure_firmware2(request):
+    await update_firmware('testservice.hex', volume=microbit_volume2)
+    return True
+
+
+# Put firmware *B* on device 2
+@pytest.fixture(scope="session")   
+@pytest.mark.async_timeout(30)
+async def configure_firmwareB2(request):
+    await update_firmware('testservice_B.hex', volume=microbit_volume2)
     return True
 
 @pytest.fixture(scope="session")

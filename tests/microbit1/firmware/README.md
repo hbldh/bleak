@@ -1,5 +1,10 @@
 # Overview
 
+
+testservice.hex advertises by service UUID.  The service and UUID are described here: https://github.com/bsiever/microbit-ble-testservice
+
+testservice_B.hex advertises by name and include TX power of -100, but is essentially the same service as above (https://github.com/bsiever/microbit-ble-testservice2)
+
 Use a BBC:microbit as a test device. 
 
 See: https://github.com/bsiever/microbit-ble-testservice to build

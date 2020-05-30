@@ -44,10 +44,9 @@ class BLEDeviceCoreBluetooth(BLEDevice):
         self._update_txpwr(advertisementData)
 
     def _update_txpwr(self, advertisementData: NSDictionary):
-        # TODO: Move to metadata 
         tx_power = advertisementData.get("kCBAdvDataTxPowerLevel", None)
         if tx_power is not None:
-            self.metadata["uuids"] = int(tx_power)
+            self.metadata["txpwr"] = int(tx_power)
 
     def _update_uuids(self, advertisementData: NSDictionary):
         cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
