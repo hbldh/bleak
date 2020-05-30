@@ -26,6 +26,7 @@ import bleak
 
 
 microbit_volume = ''
+microbit_volume2 = ''
 """Setup locations for OS"""
 if platform.system() == "Linux":
     raise Exception('Not implemented for Linux yet')
@@ -33,38 +34,41 @@ elif platform.system() == "Windows":
     raise Exception('Not implemented for Windows yet')
 elif platform.system() == "Darwin":
     microbit_volume = '/Volumes/MICROBIT/'
+    microbit_volume2 = '/Volumes/MICROBIT 1/'
 
-
-async def waitForMicrobitVolume():
-    print(f'Waiting for micro:bit to become available at {microbit_volume}')
-    while not os.path.isdir(microbit_volume):
+        
+async def waitForMicrobitVolume(volume=microbit_volume):
+    print(f'Waiting for micro:bit to become available at {volume}')
+    while not os.path.isdir(volume):
         await asyncio.sleep(0.01)
     print("microbit available")
 
 
 @pytest.mark.async_timeout(30)
-async def update_firmware(file: str):
+async def update_firmware(file: str, volume=microbit_volume):
     """
     Update Micro:bit firmware to specific version.
     file should refer to a .hex file in the ./firmware directory
-    relies on global microbit_volume to be cnofigured
+    relies on global microbit_volume to be configured
     """
-    await waitForMicrobitVolume()
+    await waitForMicrobitVolume(volume=volume)
     # Copy firmware to drive 
-    copyfile("./firmware/"+file, microbit_volume+file)
+    copyfile("./firmware/"+file, volume+file)
     # Will this work on all oses?
     print(f'Waiting for micro:bit to restart / unmount')
-    while os.path.isdir(microbit_volume):
+    while os.path.isdir(volume):
         await asyncio.sleep(0.01)
-    await waitForMicrobitVolume()
+    await waitForMicrobitVolume(volume=volume)
     print("Microbit ready for testing")
 
 
+# TODO: This gets old.  Add a command line arg for "no firmware"
 # Only needs to be done once (although re-doing it will reset state after failures)
 @pytest.fixture(scope="session")   
 @pytest.mark.async_timeout(30)
-async def configure_firmware():
-    await update_firmware('testservice.hex')
+async def configure_firmware(request):
+    if request.config.getoption("--nofw") == False:
+        await update_firmware('testservice.hex')
     return True
 
 @pytest.fixture(scope="session")
