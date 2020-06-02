@@ -58,6 +58,8 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import (
 
 logger = logging.getLogger(__name__)
 
+_communication_statues = {getattr(GattCommunicationStatus, k): k for k in ["Success", "Unreachable", "ProtocolError", "AccessDenied"]}
+
 
 class BleakClientDotNet(BaseBleakClient):
     """The native Windows Bleak Client.
@@ -233,7 +235,8 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
             if services_result.Status != GattCommunicationStatus.Success:
-                raise BleakDotNetTaskError("Could not get GATT services.")
+                raise BleakDotNetTaskError("Could not get GATT services: {0}".format(
+                    _communication_statues.get(services_result.Status, "")))
 
             # TODO: Check if fetching yeilds failures...
             for service in services_result.Services:
@@ -247,7 +250,8 @@ class BleakClientDotNet(BaseBleakClient):
                 self.services.add_service(BleakGATTServiceDotNet(service))
                 if characteristics_result.Status != GattCommunicationStatus.Success:
                     raise BleakDotNetTaskError(
-                        "Could not get GATT characteristics for {0}.".format(service)
+                        "Could not get GATT characteristics for {0}: {1}".format(
+                            service, _communication_statues.get(characteristics_result.Status, ""))
                     )
                 for characteristic in characteristics_result.Characteristics:
                     descriptors_result = await wrap_IAsyncOperation(
@@ -262,8 +266,8 @@ class BleakClientDotNet(BaseBleakClient):
                     )
                     if descriptors_result.Status != GattCommunicationStatus.Success:
                         raise BleakDotNetTaskError(
-                            "Could not get GATT descriptors for {0}.".format(
-                                characteristic
+                            "Could not get GATT descriptors for {0}: {1}".format(
+                                characteristic, _communication_statues.get(descriptors_result.Status, "")
                             )
                         )
                     for descriptor in list(descriptors_result.Descriptors):
@@ -314,7 +318,7 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             raise BleakError(
                 "Could not read characteristic value for {0}: {1}".format(
-                    characteristic.uuid, read_result.Status
+                    characteristic.uuid, _communication_statues.get(read_result.Status, "")
                 )
             )
         return value
@@ -357,7 +361,7 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             raise BleakError(
                 "Could not read Descriptor value for {0}: {1}".format(
-                    descriptor.uuid, read_result.Status
+                    descriptor.uuid, _communication_statues.get(read_result.Status, "")
                 )
             )
 
@@ -399,7 +403,7 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             raise BleakError(
                 "Could not write value {0} to characteristic {1}: {2}".format(
-                    data, characteristic.uuid, write_result.Status
+                    data, characteristic.uuid, _communication_statues.get(write_result.Status, "")
                 )
             )
 
@@ -429,7 +433,7 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             raise BleakError(
                 "Could not write value {0} to descriptor {1}: {2}".format(
-                    data, descriptor.uuid, write_result.Status
+                    data, descriptor.uuid, _communication_statues.get(write_result.Status, "")
                 )
             )
 
@@ -463,7 +467,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         if status != GattCommunicationStatus.Success:
             raise BleakError(
-                "Could not start notify on {0}: {1}".format(characteristic.uuid, status)
+                "Could not start notify on {0}: {1}".format(characteristic.uuid, _communication_statues.get(status, ""))
             )
 
     async def _start_notify(
