@@ -271,6 +271,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         return is_disconnected
 
+    async def pair(self) -> bool:
+        """Pair with the peripheral.
+
+        You can use ConnectDevice method if you already know the MAC address of the device.
+        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+
+        Returns:
+
+        """
+        raise NotImplementedError()
+
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
