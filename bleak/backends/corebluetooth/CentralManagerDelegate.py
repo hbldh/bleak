@@ -108,7 +108,7 @@ class CentralManagerDelegate(NSObject):
     @property
     def enabled(self):
         """Check if the bluetooth device is on and running"""
-        return self.central_manager.state() == 5
+        return self.central_manager.state() not in [CBManagerStateUnsupported, CBManagerStateUnauthorized]
 
     async def is_ready(self):
         """is_ready allows an asynchronous way to wait and ensure the
