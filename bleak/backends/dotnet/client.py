@@ -58,6 +58,11 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import (
 
 logger = logging.getLogger(__name__)
 
+_communication_statues = {
+    getattr(GattCommunicationStatus, k): k
+    for k in ["Success", "Unreachable", "ProtocolError", "AccessDenied"]
+}
+
 
 class BleakClientDotNet(BaseBleakClient):
     """The native Windows Bleak Client.
@@ -233,7 +238,19 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
             if services_result.Status != GattCommunicationStatus.Success:
-                raise BleakDotNetTaskError("Could not get GATT services.")
+                if services_result.Status == GattCommunicationStatus.ProtocolError:
+                    raise BleakDotNetTaskError(
+                        "Could not get GATT services: {0} (Error: 0x{1:02X})".format(
+                            _communication_statues.get(services_result.Status, ""),
+                            services_result.ProtocolError,
+                        )
+                    )
+                else:
+                    raise BleakDotNetTaskError(
+                        "Could not get GATT services: {0}".format(
+                            _communication_statues.get(services_result.Status, "")
+                        )
+                    )
 
             # TODO: Check if fetching yeilds failures...
             for service in services_result.Services:
@@ -246,9 +263,28 @@ class BleakClientDotNet(BaseBleakClient):
                 )
                 self.services.add_service(BleakGATTServiceDotNet(service))
                 if characteristics_result.Status != GattCommunicationStatus.Success:
-                    raise BleakDotNetTaskError(
-                        "Could not get GATT characteristics for {0}.".format(service)
-                    )
+                    if (
+                        characteristics_result.Status
+                        == GattCommunicationStatus.ProtocolError
+                    ):
+                        raise BleakDotNetTaskError(
+                            "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                                service,
+                                _communication_statues.get(
+                                    characteristics_result.Status, ""
+                                ),
+                                characteristics_result.ProtocolError,
+                            )
+                        )
+                    else:
+                        raise BleakDotNetTaskError(
+                            "Could not get GATT characteristics for {0}: {1}".format(
+                                service,
+                                _communication_statues.get(
+                                    characteristics_result.Status, ""
+                                ),
+                            )
+                        )
                 for characteristic in characteristics_result.Characteristics:
                     descriptors_result = await wrap_IAsyncOperation(
                         IAsyncOperation[GattDescriptorsResult](
@@ -261,11 +297,28 @@ class BleakClientDotNet(BaseBleakClient):
                         BleakGATTCharacteristicDotNet(characteristic)
                     )
                     if descriptors_result.Status != GattCommunicationStatus.Success:
-                        raise BleakDotNetTaskError(
-                            "Could not get GATT descriptors for {0}.".format(
-                                characteristic
+                        if (
+                            characteristics_result.Status
+                            == GattCommunicationStatus.ProtocolError
+                        ):
+                            raise BleakDotNetTaskError(
+                                "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X})".format(
+                                    service,
+                                    _communication_statues.get(
+                                        descriptors_result.Status, ""
+                                    ),
+                                    descriptors_result.ProtocolError,
+                                )
                             )
-                        )
+                        else:
+                            raise BleakDotNetTaskError(
+                                "Could not get GATT descriptors for {0}: {1}".format(
+                                    characteristic,
+                                    _communication_statues.get(
+                                        descriptors_result.Status, ""
+                                    ),
+                                )
+                            )
                     for descriptor in list(descriptors_result.Descriptors):
                         self.services.add_descriptor(
                             BleakGATTDescriptorDotNet(
@@ -278,7 +331,9 @@ class BleakClientDotNet(BaseBleakClient):
 
     # I/O methods
 
-    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], use_cached=False, **kwargs) -> bytearray:
+    async def read_gatt_char(
+        self, _uuid: Union[str, uuid.UUID], use_cached=False, **kwargs
+    ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -312,11 +367,21 @@ class BleakClientDotNet(BaseBleakClient):
             value = bytearray(output)
             logger.debug("Read Characteristic {0} : {1}".format(_uuid, value))
         else:
-            raise BleakError(
-                "Could not read characteristic value for {0}: {1}".format(
-                    characteristic.uuid, read_result.Status
+            if read_result.Status == GattCommunicationStatus.ProtocolError:
+                raise BleakDotNetTaskError(
+                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                        characteristic.uuid,
+                        _communication_statues.get(read_result.Status, ""),
+                        read_result.ProtocolError,
+                    )
                 )
-            )
+            else:
+                raise BleakError(
+                    "Could not read characteristic value for {0}: {1}".format(
+                        characteristic.uuid,
+                        _communication_statues.get(read_result.Status, ""),
+                    )
+                )
         return value
 
     async def read_gatt_descriptor(
@@ -355,11 +420,21 @@ class BleakClientDotNet(BaseBleakClient):
             value = bytearray(output)
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
-            raise BleakError(
-                "Could not read Descriptor value for {0}: {1}".format(
-                    descriptor.uuid, read_result.Status
+            if read_result.Status == GattCommunicationStatus.ProtocolError:
+                raise BleakDotNetTaskError(
+                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                        descriptor.uuid,
+                        _communication_statues.get(read_result.Status, ""),
+                        read_result.ProtocolError,
+                    )
                 )
-            )
+            else:
+                raise BleakError(
+                    "Could not read Descriptor value for {0}: {1}".format(
+                        descriptor.uuid,
+                        _communication_statues.get(read_result.Status, ""),
+                    )
+                )
 
         return value
 
@@ -397,11 +472,23 @@ class BleakClientDotNet(BaseBleakClient):
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug("Write Characteristic {0} : {1}".format(_uuid, data))
         else:
-            raise BleakError(
-                "Could not write value {0} to characteristic {1}: {2}".format(
-                    data, characteristic.uuid, write_result.Status
+            if write_result.Status == GattCommunicationStatus.ProtocolError:
+                raise BleakError(
+                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X})".format(
+                        data,
+                        characteristic.uuid,
+                        _communication_statues.get(write_result.Status, ""),
+                        write_result.ProtocolError,
+                    )
                 )
-            )
+            else:
+                raise BleakError(
+                    "Could not write value {0} to characteristic {1}: {2}".format(
+                        data,
+                        characteristic.uuid,
+                        _communication_statues.get(write_result.Status, ""),
+                    )
+                )
 
     async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
         """Perform a write operation on the specified GATT descriptor.
@@ -427,14 +514,29 @@ class BleakClientDotNet(BaseBleakClient):
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
         else:
-            raise BleakError(
-                "Could not write value {0} to descriptor {1}: {2}".format(
-                    data, descriptor.uuid, write_result.Status
+            if write_result.Status == GattCommunicationStatus.ProtocolError:
+                raise BleakError(
+                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X})".format(
+                        data,
+                        descriptor.uuid,
+                        _communication_statues.get(write_result.Status, ""),
+                        write_result.ProtocolError,
+                    )
                 )
-            )
+            else:
+                raise BleakError(
+                    "Could not write value {0} to descriptor {1}: {2}".format(
+                        data,
+                        descriptor.uuid,
+                        _communication_statues.get(write_result.Status, ""),
+                    )
+                )
 
     async def start_notify(
-        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
+        self,
+        _uuid: Union[str, uuid.UUID],
+        callback: Callable[[str, Any], Any],
+        **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -462,8 +564,12 @@ class BleakClientDotNet(BaseBleakClient):
         status = await self._start_notify(characteristic.obj, callback)
 
         if status != GattCommunicationStatus.Success:
+            # TODO: Find out how to get the ProtocolError code that describes a
+            #  potential GattCommunicationStatus.ProtocolError result.
             raise BleakError(
-                "Could not start notify on {0}: {1}".format(characteristic.uuid, status)
+                "Could not start notify on {0}: {1}".format(
+                    characteristic.uuid, _communication_statues.get(status, "")
+                )
             )
 
     async def _start_notify(
@@ -555,7 +661,9 @@ class BleakClientDotNet(BaseBleakClient):
 
         if status != GattCommunicationStatus.Success:
             raise BleakError(
-                "Could not stop notify on {0}: {1}".format(characteristic.uuid, status)
+                "Could not stop notify on {0}: {1}".format(
+                    characteristic.uuid, _communication_statues.get(status, "")
+                )
             )
         else:
             callback = self._callbacks.pop(characteristic.uuid)
@@ -571,6 +679,8 @@ def _notification_wrapper(loop: AbstractEventLoop, func: Callable):
         output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
         reader.ReadBytes(output)
 
-        return loop.call_soon_threadsafe(func, sender.Uuid.ToString(), bytearray(output))
+        return loop.call_soon_threadsafe(
+            func, sender.Uuid.ToString(), bytearray(output)
+        )
 
     return dotnet_notification_parser
