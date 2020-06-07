@@ -203,9 +203,10 @@ class CentralManagerDelegate(NSObject):
                 peripheral.identifier().UUIDString()
             )
         )
-        peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
-        self.connected_peripheral_delegate = peripheralDelegate
-        self._connection_state = CMDConnectionState.CONNECTED
+        if not self.connected_peripheral_delegate:
+            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
+            self.connected_peripheral_delegate = peripheralDelegate
+            self._connection_state = CMDConnectionState.CONNECTED
 
     def centralManager_didFailToConnectPeripheral_error_(
         self, centralManager: CBCentralManager, peripheral: CBPeripheral, error: NSError
