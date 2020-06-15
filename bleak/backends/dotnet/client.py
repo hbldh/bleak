@@ -307,8 +307,7 @@ class BleakClientDotNet(BaseBleakClient):
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
-            output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
-            reader.ReadBytes(output)
+            output = [reader.ReadByte() for _ in range(reader.UnconsumedBufferLength)]
             value = bytearray(output)
             logger.debug("Read Characteristic {0} : {1}".format(_uuid, value))
         else:
@@ -350,8 +349,7 @@ class BleakClientDotNet(BaseBleakClient):
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
-            output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
-            reader.ReadBytes(output)
+            output = [reader.ReadByte() for _ in range(reader.UnconsumedBufferLength)]
             value = bytearray(output)
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
@@ -568,8 +566,7 @@ def _notification_wrapper(loop: AbstractEventLoop, func: Callable):
         # Return only the UUID string representation as sender.
         # Also do a conversion from System.Bytes[] to bytearray.
         reader = DataReader.FromBuffer(args.CharacteristicValue)
-        output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
-        reader.ReadBytes(output)
+        output = [reader.ReadByte() for _ in range(reader.UnconsumedBufferLength)]
 
         return loop.call_soon_threadsafe(func, sender.Uuid.ToString(), bytearray(output))
 
