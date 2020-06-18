@@ -27,7 +27,9 @@ async def discover(
     """
     loop = loop if loop else asyncio.get_event_loop()
 
-    if not cbapp.central_manager_delegate.enabled:
+    try:
+        await cbapp.central_manager_delegate.wait_for_powered_on(0.1)
+    except asyncio.TimeoutError:
         raise BleakError("Bluetooth device is turned off")
 
     scan_options = {"timeout": timeout}

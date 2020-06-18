@@ -36,13 +36,14 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
-
-        if not cbapp.central_manager_delegate.enabled:
-            raise BleakError("Bluetooth device is turned off")
-
         self._timeout = kwargs.get("timeout", 5.0)
 
     async def start(self):
+        try:
+            await cbapp.central_manager_delegate.wait_for_powered_on(0.1)
+        except asyncio.TimeoutError:
+            raise BleakError("Bluetooth device is turned off")
+
         # TODO: Evaluate if newer macOS than 10.11 has stopScan.
         if hasattr(cbapp.central_manager_delegate, "stopScan_"):
             await cbapp.central_manager_delegate.scanForPeripherals_()

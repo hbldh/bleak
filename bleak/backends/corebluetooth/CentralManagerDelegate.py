@@ -66,7 +66,7 @@ class CentralManagerDelegate(NSObject):
         self.connected_peripheral = None
         self._connection_state = CMDConnectionState.DISCONNECTED
 
-        self.ready = False
+        self.powered_on_event = asyncio.Event()
         self.devices = {}
 
         self.disconnected_callback = None
@@ -85,13 +85,18 @@ class CentralManagerDelegate(NSObject):
         )
 
     @property
-    def enabled(self):
-        """Check if the bluetooth device is on and running"""
-        return self.central_manager.state() == CBManagerStatePoweredOn
-
-    @property
     def isConnected(self) -> bool:
         return self._connection_state == CMDConnectionState.CONNECTED
+
+    @objc.python_method
+    async def wait_for_powered_on(self, timeout: float):
+        """
+        Waits for state to be CBManagerStatePoweredOn. This must be done before
+        attempting to do anything else.
+
+        Throws asyncio.TimeoutError if power on is not detected before timeout.
+        """
+        await asyncio.wait_for(self.powered_on_event.wait(), timeout)
 
     async def scanForPeripherals_(self, scan_options) -> List[CBPeripheral]:
         """
@@ -160,7 +165,10 @@ class CentralManagerDelegate(NSObject):
         elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
 
-        self.ready = True
+        if centralManager.state() == CBManagerStatePoweredOn:
+            self.powered_on_event.set()
+        else:
+            self.powered_on_event.clear()
 
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
         self,
