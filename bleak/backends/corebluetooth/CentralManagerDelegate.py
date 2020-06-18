@@ -85,13 +85,6 @@ class CentralManagerDelegate(NSObject):
     def isConnected(self) -> bool:
         return self._connection_state == CMDConnectionState.CONNECTED
 
-    async def is_ready(self):
-        """is_ready allows an asynchronous way to wait and ensure the
-        CentralManager has processed it's inputs before moving on"""
-        while not self.ready:
-            await asyncio.sleep(0)
-        return self.ready
-
     async def scanForPeripherals_(self, scan_options) -> List[CBPeripheral]:
         """
         Scan for peripheral devices
