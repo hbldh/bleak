@@ -12,6 +12,14 @@ from enum import Enum
 from typing import List
 
 import objc
+from CoreBluetooth import (
+    CBManagerStateUnknown,
+    CBManagerStateResetting,
+    CBManagerStateUnsupported,
+    CBManagerStateUnauthorized,
+    CBManagerStatePoweredOff,
+    CBManagerStatePoweredOn,
+)
 from Foundation import (
     NSObject,
     CBCentralManager,
@@ -79,7 +87,7 @@ class CentralManagerDelegate(NSObject):
     @property
     def enabled(self):
         """Check if the bluetooth device is on and running"""
-        return self.central_manager.state() == 5
+        return self.central_manager.state() == CBManagerStatePoweredOn
 
     @property
     def isConnected(self) -> bool:
@@ -139,17 +147,17 @@ class CentralManagerDelegate(NSObject):
     # Protocol Functions
 
     def centralManagerDidUpdateState_(self, centralManager):
-        if centralManager.state() == 0:
+        if centralManager.state() == CBManagerStateUnknown:
             logger.debug("Cannot detect bluetooth device")
-        elif centralManager.state() == 1:
+        elif centralManager.state() == CBManagerStateResetting:
             logger.debug("Bluetooth is resetting")
-        elif centralManager.state() == 2:
+        elif centralManager.state() == CBManagerStateUnsupported:
             logger.debug("Bluetooth is unsupported")
-        elif centralManager.state() == 3:
+        elif centralManager.state() == CBManagerStateUnauthorized:
             logger.debug("Bluetooth is unauthorized")
-        elif centralManager.state() == 4:
+        elif centralManager.state() == CBManagerStatePoweredOff:
             logger.debug("Bluetooth powered off")
-        elif centralManager.state() == 5:
+        elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
 
         self.ready = True
