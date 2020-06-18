@@ -93,18 +93,17 @@ IO_DATA_CHAR_UUID = "f000aa65-0451-4000-b000-000000000000"
 IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 
 
-async def run(address, loop, debug=False):
+async def run(address, debug=False):
     if debug:
         import sys
 
-        # loop.set_debug(True)
         # l = logging.getLogger("asyncio")
         # l.setLevel(logging.DEBUG)
         # h = logging.StreamHandler(sys.stdout)
         # h.setLevel(logging.DEBUG)
         # l.addHandler(h)
 
-    async with BleakClient(address, loop=loop) as client:
+    async with BleakClient(address) as client:
         x = await client.is_connected()
         logger.info("Connected: {0}".format(x))
 
@@ -153,7 +152,7 @@ async def run(address, loop, debug=False):
         assert value == write_value
 
         await client.start_notify(KEY_PRESS_UUID, keypress_handler)
-        await asyncio.sleep(5.0, loop=loop)
+        await asyncio.sleep(5.0)
         await client.stop_notify(KEY_PRESS_UUID)
 
 
@@ -167,4 +166,5 @@ if __name__ == "__main__":
         else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
     )
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address, loop, True))
+    # loop.set_debug(True)
+    loop.run_until_complete(run(address, True))

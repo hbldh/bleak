@@ -2,7 +2,6 @@ import logging
 import asyncio
 import pathlib
 import uuid
-from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any, Union, List
 
@@ -57,17 +56,10 @@ def _device_info(path, props):
 
 
 class BleakScannerBlueZDBus(BaseBleakScanner):
-    """The native Linux Bleak BLE Scanner.
+    """The native Linux Bleak BLE Scanner."""
 
-    Args:
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
-
-    Keyword Args:
-
-    """
-
-    def __init__(self, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__(loop, **kwargs)
+    def __init__(self, **kwargs):
+        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
 
         self._device = kwargs.get("device", "hci0")
         self._reactor = None
@@ -87,8 +79,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._callback = None
 
     async def start(self):
-        self._reactor = get_reactor(self.loop)
-        self._bus = await client.connect(self._reactor, "system").asFuture(self.loop)
+        loop = asyncio.get_event_loop()
+        self._reactor = get_reactor(loop)
+        self._bus = await client.connect(self._reactor, "system").asFuture(loop)
 
         # Add signal listeners
         self._rules.append(
@@ -96,7 +89,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self.parse_msg,
                 interface="org.freedesktop.DBus.ObjectManager",
                 member="InterfacesAdded",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         )
 
         self._rules.append(
@@ -104,7 +97,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self.parse_msg,
                 interface="org.freedesktop.DBus.ObjectManager",
                 member="InterfacesRemoved",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         )
 
         self._rules.append(
@@ -112,7 +105,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self.parse_msg,
                 interface="org.freedesktop.DBus.Properties",
                 member="PropertiesChanged",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         )
 
         # Find the HCI device to use for scanning and get cached device properties
@@ -121,7 +114,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             "GetManagedObjects",
             interface=defs.OBJECT_MANAGER_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
-        ).asFuture(self.loop)
+        ).asFuture(loop)
         self._adapter_path, self._interface = _filter_on_adapter(objects, self._device)
         self._cached_devices = dict(_filter_on_device(objects))
 
@@ -133,7 +126,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             destination="org.bluez",
             signature="a{sv}",
             body=[self._filters],
-        ).asFuture(self.loop)
+        ).asFuture(loop)
 
         # Start scanning
         await self._bus.callRemote(
@@ -141,18 +134,19 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             "StartDiscovery",
             interface="org.bluez.Adapter1",
             destination="org.bluez",
-        ).asFuture(self.loop)
+        ).asFuture(loop)
 
     async def stop(self):
+        loop = asyncio.get_event_loop()
         await self._bus.callRemote(
             self._adapter_path,
             "StopDiscovery",
             interface="org.bluez.Adapter1",
             destination="org.bluez",
-        ).asFuture(self.loop)
+        ).asFuture(loop)
 
         for rule in self._rules:
-            await self._bus.delMatch(rule).asFuture(self.loop)
+            await self._bus.delMatch(rule).asFuture(loop)
         self._rules.clear()
 
         # Try to disconnect the System Bus.

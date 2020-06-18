@@ -2,7 +2,6 @@ import logging
 import asyncio
 import pathlib
 import uuid
-from asyncio.events import AbstractEventLoop
 from typing import Callable, Any, Union, List
 
 from bleak.backends.corebluetooth import CBAPP as cbapp
@@ -26,16 +25,14 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
     this for the BLEDevice address on macOS.
 
-    Args:
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
-
     Keyword Args:
         timeout (double): The scanning timeout to be used, in case of missing
           ``stopScan_`` metod.
 
     """
-    def __init__(self, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
+
+    def __init__(self, **kwargs):
+        super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
 
         if not cbapp.central_manager_delegate.enabled:
             raise BleakError("Bluetooth device is turned off")
@@ -103,5 +100,4 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             return cbapp.central_manager_delegate.isScanning_
         except:
             return None
-
 

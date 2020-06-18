@@ -51,7 +51,7 @@ def _device_info(path, props):
         return None, None, None, None
 
 
-async def discover(timeout=5.0, loop=None, **kwargs):
+async def discover(timeout=5.0, **kwargs):
     """Discover nearby Bluetooth Low Energy devices.
 
     For possible values for `filter`, see the parameters to the
@@ -62,7 +62,6 @@ async def discover(timeout=5.0, loop=None, **kwargs):
 
     Args:
         timeout (float): Duration to scan for.
-        loop (asyncio.AbstractEventLoop): Optional event loop to use.
 
     Keyword Args:
         device (str): Bluetooth device to use for discovery.
@@ -74,7 +73,7 @@ async def discover(timeout=5.0, loop=None, **kwargs):
 
     """
     device = kwargs.get("device", "hci0")
-    loop = loop if loop else asyncio.get_event_loop()
+    loop = asyncio.get_event_loop()
     cached_devices = {}
     devices = {}
     rules = list()

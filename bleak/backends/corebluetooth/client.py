@@ -6,7 +6,6 @@ Created on 2019-6-26 by kevincar <kevincarrolldavis@gmail.com>
 
 import logging
 import uuid
-from asyncio.events import AbstractEventLoop
 from typing import Callable, Any, Union
 
 from Foundation import NSData, CBUUID
@@ -31,15 +30,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     Args:
         address (str): The uuid of the BLE peripheral to connect to.
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call during connect. Defaults to 2.0.
 
     """
 
-    def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakClientCoreBluetooth, self).__init__(address, loop, **kwargs)
+    def __init__(self, address: str, **kwargs):
+        super(BleakClientCoreBluetooth, self).__init__(address, **kwargs)
 
         self._device_info = None
         self._requester = None
@@ -62,7 +60,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         timeout = kwargs.get("timeout", self._timeout)
-        devices = await discover(timeout=timeout, loop=self.loop)
+        devices = await discover(timeout=timeout)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )
@@ -101,7 +99,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         self._disconnected_callback = callback
-        cbapp.central_manager_delegate.disconnected_callback = self._disconnect_callback_client
+        cbapp.central_manager_delegate.disconnected_callback = (
+            self._disconnect_callback_client
+        )
 
     def _disconnect_callback_client(self):
         """
@@ -161,7 +161,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._services = services
         return self.services
 
-    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], use_cached=False, **kwargs) -> bytearray:
+    async def read_gatt_char(
+        self, _uuid: Union[str, uuid.UUID], use_cached=False, **kwargs
+    ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:

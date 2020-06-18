@@ -6,7 +6,6 @@ import re
 import subprocess
 import uuid
 from asyncio import Future
-from asyncio.events import AbstractEventLoop
 from functools import wraps, partial
 from typing import Callable, Any, Union
 
@@ -33,15 +32,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     Args:
         address (str): The MAC address of the BLE peripheral to connect to.
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
     """
 
-    def __init__(self, address, loop=None, **kwargs):
-        super(BleakClientBlueZDBus, self).__init__(address, loop, **kwargs)
+    def __init__(self, address, **kwargs):
+        super(BleakClientBlueZDBus, self).__init__(address, **kwargs)
         self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
         self.address = address
 
@@ -80,7 +78,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         .. code-block::python
 
-            async with BleakClient(mac_addr, loop=loop) as client:
+            async with BleakClient(mac_addr) as client:
                 def disconnect_callback(client, future):
                     print(f"Disconnected callback called on {client}!")
 
@@ -107,13 +105,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
         timeout = kwargs.get("timeout", self._timeout)
-        await discover(timeout=timeout, device=self.device, loop=self.loop)
+        await discover(timeout=timeout, device=self.device)
 
-        self._reactor = get_reactor(self.loop)
+        loop = asyncio.get_event_loop()
+        self._reactor = get_reactor(loop)
 
         # Create system bus
         self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
-            self.loop
+            loop
         )
         # TODO: Handle path errors from txdbus/dbus
         self._device_path = get_device_object_path(self.device, self.address)
@@ -128,7 +127,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self.services_resolved = True
 
         rule_id = await signals.listen_properties_changed(
-            self._bus, self.loop, _services_resolved_callback
+            self._bus, _services_resolved_callback
         )
 
         logger.debug(
@@ -140,7 +139,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 "Connect",
                 interface="org.bluez.Device1",
                 destination="org.bluez",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         except RemoteError as e:
             await self._cleanup_all()
             raise BleakError(str(e))
@@ -160,9 +159,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             await self._cleanup_all()
             raise BleakError("Connection failed!")
 
-        await self._bus.delMatch(rule_id).asFuture(self.loop)
+        await self._bus.delMatch(rule_id).asFuture(loop)
         self._rules["PropChanged"] = await signals.listen_properties_changed(
-            self._bus, self.loop, self._properties_changed_callback
+            self._bus, self._properties_changed_callback
         )
         return True
 
@@ -171,10 +170,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Remove all pending notifications of the client. This method is used to
         free the DBus matches that have been established.
         """
+        loop = asyncio.get_event_loop()
         for rule_name, rule_id in self._rules.items():
             logger.debug("Removing rule {0}, ID: {1}".format(rule_name, rule_id))
             try:
-                await self._bus.delMatch(rule_id).asFuture(self.loop)
+                await self._bus.delMatch(rule_id).asFuture(loop)
             except Exception as e:
                 logger.error(
                     "Could not remove rule {0} ({1}): {2}".format(rule_id, rule_name, e)
@@ -230,7 +230,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 "Disconnect",
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
-            ).asFuture(self.loop)
+            ).asFuture(asyncio.get_event_loop())
         except Exception as e:
             logger.error("Attempt to disconnect device failed: {0}".format(e))
 
@@ -257,7 +257,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="ss",
             body=[defs.DEVICE_INTERFACE, "Connected"],
             returnSignature="v",
-        ).asFuture(self.loop)
+        ).asFuture(asyncio.get_event_loop())
 
     # GATT services methods
 
@@ -280,7 +280,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             services_resolved = properties.get("ServicesResolved", False)
             if services_resolved:
                 break
-            await asyncio.sleep(sleep_loop_sec, loop=self.loop)
+            await asyncio.sleep(sleep_loop_sec)
             total_slept_sec += sleep_loop_sec
 
         if not services_resolved:
@@ -288,7 +288,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         logger.debug("Get Services...")
         objs = await get_managed_objects(
-            self._bus, self.loop, self._device_path + "/service"
+            self._bus, self._device_path + "/service"
         )
 
         # There is no guarantee that services are listed before characteristics
@@ -390,7 +390,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 signature="a{sv}",
                 body=[{}],
                 returnSignature="ay",
-            ).asFuture(self.loop)
+            ).asFuture(asyncio.get_event_loop())
         )
 
         logger.debug(
@@ -423,7 +423,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 signature="a{sv}",
                 body=[{}],
                 returnSignature="ay",
-            ).asFuture(self.loop)
+            ).asFuture(asyncio.get_event_loop())
         )
 
         logger.debug(
@@ -489,7 +489,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 signature="aya{sv}",
                 body=[data, {"type": "request" if response else "command"}],
                 returnSignature="",
-            ).asFuture(self.loop)
+            ).asFuture(asyncio.get_event_loop())
         else:
             # Older versions of BlueZ don't have the "type" option, so we have
             # to write the hard way. This isn't the most efficient way of doing
@@ -502,7 +502,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 signature="a{sv}",
                 body=[{}],
                 returnSignature="hq",
-            ).asFuture(self.loop)
+            ).asFuture(asyncio.get_event_loop())
             os.write(fd, data)
             os.close(fd)
 
@@ -531,7 +531,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="aya{sv}",
             body=[data, {"type": "command"}],
             returnSignature="",
-        ).asFuture(self.loop)
+        ).asFuture(asyncio.get_event_loop())
 
         logger.debug(
             "Write Descriptor {0} | {1}: {2}".format(handle, descriptor.path, data)
@@ -589,7 +589,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="",
             body=[],
             returnSignature="",
-        ).asFuture(self.loop)
+        ).asFuture(asyncio.get_event_loop())
 
         if _wrap:
             self._notification_callbacks[
@@ -624,7 +624,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="",
             body=[],
             returnSignature="",
-        ).asFuture(self.loop)
+        ).asFuture(asyncio.get_event_loop())
         self._notification_callbacks.pop(characteristic.path, None)
 
         self._subscriptions.remove(str(_uuid))
@@ -654,7 +654,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="s",
             body=[defs.GATT_CHARACTERISTIC_INTERFACE],
             returnSignature="a{sv}",
-        ).asFuture(self.loop)
+        ).asFuture(asyncio.get_event_loop())
         return out
 
     async def _get_device_properties(self, interface=defs.DEVICE_INTERFACE) -> dict:
@@ -675,7 +675,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             signature="s",
             body=[interface],
             returnSignature="a{sv}",
-        ).asFuture(self.loop)
+        ).asFuture(asyncio.get_event_loop())
 
     # Internal Callbacks
 
@@ -721,7 +721,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 ):
                     logger.debug("Device {} disconnected.".format(self.address))
 
-                    task = self.loop.create_task(self._cleanup_all())
+                    task = asyncio.get_event_loop().create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
                             partial(self._disconnected_callback, self)

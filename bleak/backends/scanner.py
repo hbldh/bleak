@@ -1,21 +1,12 @@
 import abc
 import asyncio
-from asyncio import AbstractEventLoop
 from typing import Callable, List
 
 from bleak.backends.device import BLEDevice
 
 
 class BaseBleakScanner(abc.ABC):
-    """Interface for Bleak Bluetooth LE Scanners
-
-    Args:
-        loop (Event Loop): The event loop to use.
-
-    """
-
-    def __init__(self, loop: AbstractEventLoop = None, **kwargs):
-        self.loop = loop if loop else asyncio.get_event_loop()
+    """Interface for Bleak Bluetooth LE Scanners"""
 
     async def __aenter__(self):
         await self.start()
@@ -25,11 +16,9 @@ class BaseBleakScanner(abc.ABC):
         await self.stop()
 
     @classmethod
-    async def discover(
-        cls, timeout=5.0, loop: AbstractEventLoop = None, **kwargs
-    ) -> List[BLEDevice]:
-        async with cls(loop, **kwargs) as scanner:
-            await asyncio.sleep(timeout if timeout > 0.0 else 0.1, loop=loop)
+    async def discover(cls, timeout=5.0, **kwargs) -> List[BLEDevice]:
+        async with cls(**kwargs) as scanner:
+            await asyncio.sleep(timeout if timeout > 0.0 else 0.1)
             devices = await scanner.get_discovered_devices()
         return devices
 

@@ -15,18 +15,17 @@ import logging
 from bleak import BleakClient
 
 
-async def run(address, loop, debug=False):
+async def run(address, debug=False):
     log = logging.getLogger(__name__)
     if debug:
         import sys
 
-        loop.set_debug(True)
         log.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
         h.setLevel(logging.DEBUG)
         log.addHandler(h)
 
-    async with BleakClient(address, loop=loop) as client:
+    async with BleakClient(address) as client:
         x = await client.is_connected()
         log.info("Connected: {0}".format(x))
 
@@ -61,4 +60,5 @@ if __name__ == "__main__":
         else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
     )
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address, loop, True))
+    loop.set_debug(True)
+    loop.run_until_complete(run(address, True))
