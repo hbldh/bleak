@@ -31,7 +31,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     Keyword Args:
         timeout (double): The scanning timeout to be used, in case of missing
-          ``stopScan_`` metod.
+          ``stopScan_`` method.
 
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):

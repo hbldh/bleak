@@ -1,6 +1,6 @@
 """
 CentralManagerDelegate will implement the CBCentralManagerDelegate protocol to
-manage CoreBluetooth serivces and resources on the Central End
+manage CoreBluetooth services and resources on the Central End
 
 Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 
@@ -71,7 +71,7 @@ class CentralManagerDelegate(NSObject):
     # User defined functions
 
     def compliant(self):
-        """Determins whether the class adheres to the CBCentralManagerDelegate protocol"""
+        """Determines whether the class adheres to the CBCentralManagerDelegate protocol"""
         return CentralManagerDelegate.pyobjc_classMethods.conformsToProtocol_(
             CBCentralManagerDelegate
         )

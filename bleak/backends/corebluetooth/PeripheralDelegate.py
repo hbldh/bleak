@@ -78,7 +78,7 @@ class PeripheralDelegate(NSObject):
         return self
 
     def compliant(self):
-        """Determins whether the class adheres to the CBCentralManagerDelegate protocol"""
+        """Determines whether the class adheres to the CBPeripheralDelegate protocol"""
         return PeripheralDelegate.pyobjc_classMethods.conformsToProtocol_(
             CBPeripheralDelegate
         )
