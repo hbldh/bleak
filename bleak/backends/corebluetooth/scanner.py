@@ -36,6 +36,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
+        self._callback = None
         self._identifiers = None
         self._timeout = kwargs.get("timeout", 5.0)
 
@@ -49,6 +50,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
         def callback(p, a, r):
             self._identifiers[p.identifier()] = a
+            if self._callback:
+                self._callback((p, a, r))
 
         cbapp.central_manager_delegate.callbacks[id(self)] = callback
 
@@ -104,7 +107,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         return found
 
     def register_detection_callback(self, callback: Callable):
-        raise NotImplementedError("This cannot be used in the macOS backend.")
+        self._callback = callback
 
     # macOS specific methods
 
