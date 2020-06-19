@@ -36,6 +36,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     """
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
+        self._identifiers = None
         self._timeout = kwargs.get("timeout", 5.0)
 
     async def start(self):
@@ -44,6 +45,13 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         except asyncio.TimeoutError:
             raise BleakError("Bluetooth device is turned off")
 
+        self._identifiers = {}
+
+        def callback(p, a, r):
+            self._identifiers[p.identifier()] = a
+
+        cbapp.central_manager_delegate.callbacks[id(self)] = callback
+
         # TODO: Evaluate if newer macOS than 10.11 has stopScan.
         if hasattr(cbapp.central_manager_delegate, "stopScan_"):
             await cbapp.central_manager_delegate.scanForPeripherals_()
@@ -51,6 +59,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             await cbapp.central_manager_delegate.scanForPeripherals_({"timeout": self._timeout})
 
     async def stop(self):
+        del cbapp.central_manager_delegate.callbacks[id(self)]
         try:
             await cbapp.central_manager_delegate.stopScan_()
         except Exception as e:
@@ -61,14 +70,16 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         found = []
-        peripherals = cbapp.central_manager_delegate.peripheral_list
+        peripherals = cbapp.central_manager_delegate.central_manager.retrievePeripheralsWithIdentifiers_(
+            self._identifiers.keys(),
+        )
 
         for i, peripheral in enumerate(peripherals):
             address = peripheral.identifier().UUIDString()
             name = peripheral.name() or "Unknown"
             details = peripheral
 
-            advertisementData = cbapp.central_manager_delegate.advertisement_data_list[i]
+            advertisementData = self._identifiers[peripheral.identifier()]
             manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
             manufacturer_data = {}
             if manufacturer_binary_data:

@@ -69,6 +69,7 @@ class CentralManagerDelegate(NSObject):
         self.powered_on_event = asyncio.Event()
         self.devices = {}
 
+        self.callbacks = {}
         self.disconnected_callback = None
 
         if not self.compliant():
@@ -202,6 +203,10 @@ class CentralManagerDelegate(NSObject):
 
         device._rssi = float(RSSI)
         device._update(advertisementData)
+
+        for callback in self.callbacks.values():
+            if callback:
+                callback(peripheral, advertisementData, RSSI)
 
         logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
                 uuid_string, device.name, RSSI, advertisementData.keys()))
