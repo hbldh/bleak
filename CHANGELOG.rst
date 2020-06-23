@@ -1,34 +1,80 @@
-=======
-History
-=======
+=========
+Changelog
+=========
 
-0.6.4 (2020-05-20)
-------------------
+All notable changes to this project will be documented in this file.
+
+The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
+and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
+
+
+`Unreleased`_
+-------------
+
+Added
+~~~~~
+
+* Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
+
+Changed
+~~~~~~~
+
+* In ``requirements.txt`` and ``Pipfile``, the requirement on ``pythonnet``
+  was bumped to version 2.5.1, which seems to solve issues described in #217 and #225.
+* Renamed ``HISTORY.rst`` to ``CHANGELOG.rst`` and adopted
+  the `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_ format.
+* Python 3.5 support from macOS is officially removed since pyobjc>6 requires 3.6+
+* Pin pyobjc to version 6.2. (PR #194)
+* Pin pyobjc-framework-corebluetooth to version 6.2.
+* Pin development requirement on `bump2version` to version 1.0.0
+* Added ``.pyup.yml`` for Pyup
+
+`0.6.4`_ (2020-05-20)
+---------------------
+
+Fixed
+~~~~~
 
 * Fix for bumpversion usage
 
-0.6.3 (2020-05-20)
-------------------
+`0.6.3`_ (2020-05-20)
+---------------------
+
+Added
+~~~~~
 
 * Building and releasing from Github Actions
 
-0.6.2 (2020-05-15)
-------------------
+Removed
+~~~~~~~
 
+* Building and releasing on Azure Pipelines
+
+`0.6.2`_ (2020-05-15)
+---------------------
+
+Added
+~~~~~
+* Added ``disconnection_callback`` functionality for Core Bluetooth (#184 & #186)
+* Added ``requirements.txt``
+
+Fixed
+~~~~~
 * Better cleanup of Bluez notifications (#154)
 * Fix for ``read_gatt_char`` in Core Bluetooth (#177)
 * Fix for ``is_disconnected`` in Core Bluetooth (#187 & #185)
-* Added ``disconnection_callback`` functionality for Core Bluetooth (#184 & #186)
 * Documentation fixes
-* Added ``requirements.txt``
 
-0.6.1 (2020-03-09)
-------------------
+`0.6.1`_ (2020-03-09)
+---------------------
+
+Fixed
+~~~~~
 
 * Including #156, lost notifications on macOS backend, which was accidentally missed on previous release.
 
-0.6.0 (2020-03-09)
-------------------
+`0.6.0`_ (2020-03-09)
+---------------------
 
 * New Scanner object to allow for async device scanning.
 * Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
@@ -149,3 +195,11 @@ History
 ------------------
 
 * Bleak created.
+
+
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.6.4...develop
+.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
+.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.3
+.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.2
+.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.0...v0.6.1
+.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.5.1...v0.6.0

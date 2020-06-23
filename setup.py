@@ -33,7 +33,7 @@ TEST_REQUIRED = ["pytest", "pytest-cov"]
 here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = "\n" + f.read()
-with io.open(os.path.join(here, "HISTORY.rst"), encoding="utf-8") as f:
+with io.open(os.path.join(here, "CHANGELOG.rst"), encoding="utf-8") as f:
     long_description += "\n\n" + f.read()
 
 # Load the package's __version__.py module as a dictionary.
@@ -103,11 +103,13 @@ setup(
         "Natural Language :: English",
         "Operating System :: Microsoft :: Windows :: Windows 10",
         "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS :: MacOS X",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     # $ setup.py publish support.
