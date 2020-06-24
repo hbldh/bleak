@@ -29,6 +29,11 @@ Changed
 * Pin development requirement on `bump2version` to version 1.0.0
 * Added ``.pyup.yml`` for Pyup
 
+Removed
+~~~~~~~
+
+* Removed documentation note about not using new event loops in Linux. This was fixed by #143.
+
 `0.6.4`_ (2020-05-20)
 ---------------------
 
