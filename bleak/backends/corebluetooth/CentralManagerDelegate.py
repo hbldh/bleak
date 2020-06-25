@@ -30,6 +30,7 @@ from Foundation import (
     NSNumber,
     NSError,
 )
+from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
@@ -58,10 +59,7 @@ class CentralManagerDelegate(NSObject):
         if self is None:
             return None
 
-        self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
-            self, None
-        )
-
+        self.event_loop = asyncio.get_event_loop()
         self.connected_peripheral_delegate = None
         self.connected_peripheral = None
         self._connection_state = CMDConnectionState.DISCONNECTED
@@ -74,6 +72,10 @@ class CentralManagerDelegate(NSObject):
 
         if not self.compliant():
             logger.warning("CentralManagerDelegate is not compliant")
+
+        self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
+            self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
+        )
 
         return self
 
@@ -152,7 +154,8 @@ class CentralManagerDelegate(NSObject):
 
     # Protocol Functions
 
-    def centralManagerDidUpdateState_(self, centralManager):
+    @objc.python_method
+    def did_update_state(self, centralManager):
         if centralManager.state() == CBManagerStateUnknown:
             logger.debug("Cannot detect bluetooth device")
         elif centralManager.state() == CBManagerStateResetting:
@@ -171,7 +174,15 @@ class CentralManagerDelegate(NSObject):
         else:
             self.powered_on_event.clear()
 
-    def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
+    def centralManagerDidUpdateState_(self, centralManager):
+        logger.debug("centralManagerDidUpdateState_")
+        self.event_loop.call_soon_threadsafe(
+            self.did_update_state,
+            centralManager,
+        )
+
+    @objc.python_method
+    def did_discover_peripheral(
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
@@ -211,7 +222,24 @@ class CentralManagerDelegate(NSObject):
         logger.debug("Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
                 uuid_string, device.name, RSSI, advertisementData.keys()))
 
-    def centralManager_didConnectPeripheral_(self, central, peripheral):
+    def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
+        self,
+        central: CBCentralManager,
+        peripheral: CBPeripheral,
+        advertisementData: NSDictionary,
+        RSSI: NSNumber,
+    ):
+        logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
+        self.event_loop.call_soon_threadsafe(
+            self.did_discover_peripheral,
+            central,
+            peripheral,
+            advertisementData,
+            RSSI,
+        )
+
+    @objc.python_method
+    def did_connect_peripheral(self, central, peripheral):
         logger.debug(
             "Successfully connected to device uuid {}".format(
                 peripheral.identifier().UUIDString()
@@ -221,7 +249,16 @@ class CentralManagerDelegate(NSObject):
         self.connected_peripheral_delegate = peripheralDelegate
         self._connection_state = CMDConnectionState.CONNECTED
 
-    def centralManager_didFailToConnectPeripheral_error_(
+    def centralManager_didConnectPeripheral_(self, central, peripheral):
+        logger.debug("centralManager_didConnectPeripheral_")
+        self.event_loop.call_soon_threadsafe(
+            self.did_connect_peripheral,
+            central,
+            peripheral,
+        )
+
+    @objc.python_method
+    def did_fail_to_connect_peripheral(
         self, centralManager: CBCentralManager, peripheral: CBPeripheral, error: NSError
     ):
         logger.debug(
@@ -231,7 +268,19 @@ class CentralManagerDelegate(NSObject):
         )
         self._connection_state = CMDConnectionState.DISCONNECTED
 
-    def centralManager_didDisconnectPeripheral_error_(
+    def centralManager_didFailToConnectPeripheral_error_(
+        self, centralManager: CBCentralManager, peripheral: CBPeripheral, error: NSError
+    ):
+        logger.debug("centralManager_didFailToConnectPeripheral_error_")
+        self.event_loop.call_soon_threadsafe(
+            self.did_fail_to_connect_peripheral,
+            centralManager,
+            peripheral,
+            error,
+        )
+
+    @objc.python_method
+    def did_disconnect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError
     ):
         logger.debug("Peripheral Device disconnected!")
@@ -240,8 +289,18 @@ class CentralManagerDelegate(NSObject):
         if self.disconnected_callback is not None:
             self.disconnected_callback()
 
+    def centralManager_didDisconnectPeripheral_error_(
+        self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError
+    ):
+        logger.debug("centralManager_didDisconnectPeripheral_error_")
+        self.event_loop.call_soon_threadsafe(
+            self.did_disconnect_peripheral,
+            central,
+            peripheral,
+            error,
+        )
+
 
 def string2uuid(uuid_str: str) -> CBUUID:
     """Convert a string to a uuid"""
     return CBUUID.UUIDWithString_(uuid_str)
-
