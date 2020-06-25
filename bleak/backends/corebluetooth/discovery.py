@@ -11,7 +11,7 @@ import asyncio
 from asyncio.events import AbstractEventLoop
 from typing import List
 
-from bleak.backends.corebluetooth import CBAPP as cbapp
+from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
@@ -27,21 +27,21 @@ async def discover(
     """
     loop = loop if loop else asyncio.get_event_loop()
 
+    manager = CentralManagerDelegate.alloc().init()
     try:
-        await cbapp.central_manager_delegate.wait_for_powered_on(0.1)
+        await manager.wait_for_powered_on(0.1)
     except asyncio.TimeoutError:
         raise BleakError("Bluetooth device is turned off")
 
     scan_options = {"timeout": timeout}
 
-    await cbapp.central_manager_delegate.scanForPeripherals_(scan_options)
+    await manager.scanForPeripherals_(scan_options)
 
     # CoreBluetooth doesn't explicitly use MAC addresses to identify peripheral
     # devices because private devices may obscure their MAC addresses. To cope
     # with this, CoreBluetooth utilizes UUIDs for each peripheral. We'll use
     # this for the BLEDevice address on macOS
 
-
-    devices = cbapp.central_manager_delegate.devices
+    devices = manager.devices
     return list(devices.values())
 
