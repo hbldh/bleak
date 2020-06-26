@@ -22,8 +22,9 @@ REQUIRED = [
     # Linux reqs
     'txdbus;platform_system=="Linux"',
     # macOS reqs
-    'pyobjc;platform_system=="Darwin"',
+    'pyobjc-core;platform_system=="Darwin"',
     'pyobjc-framework-CoreBluetooth;platform_system=="Darwin"',
+    'pyobjc-framework-libdispatch;platform_system=="Darwin"',
     # Windows reqs
     'pythonnet;platform_system=="Windows"',
 ]
