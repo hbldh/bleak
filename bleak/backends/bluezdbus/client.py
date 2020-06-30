@@ -108,14 +108,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         discovered = await discover(timeout=timeout, device=self.device, loop=self.loop)
 
+        # Issue 150 hints at the device path not being possible to create as
+        # is done in the `get_device_object_path` method. Try to get it from
+        # BlueZ instead.
+        # Otherwise, use the old fallback and hope for the best.
+        bluez_devices = list(filter(lambda d: d.address.lower() == self.address.lower(), discovered))
+        if bluez_devices:
+            self._device_path = bluez_devices[0].details["path"]
+        else:
+            # TODO: Better to always get path from BlueZ backend...
+            self._device_path = get_device_object_path(self.device, self.address)
+
         self._reactor = get_reactor(self.loop)
 
         # Create system bus
         self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
             self.loop
         )
-        # TODO: Build this device path differently. Need to get it from BlueZ backend for proper path...
-        self._device_path = get_device_object_path(self.device, self.address)
 
         def _services_resolved_callback(message):
             iface, changed, invalidated = message.body

@@ -43,6 +43,8 @@ Changed
 * Using CBManagerState constants from pyobj instead of integers.
 * Improved handling of the txdbus connection to avoid hanging of disconnection
   clients in BlueZ backend. Fixes #216, #219 & #221.
+* #150 hints at the device path not being possible to create as is done in the `get_device_object_path` method.
+  Now, we try to get it from BlueZ first. Otherwise, use the old fallback.
 
 Removed
 ~~~~~~~
