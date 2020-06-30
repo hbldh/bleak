@@ -70,11 +70,14 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.__descriptors
 
     def get_descriptor(
-        self, _uuid: Union[str, UUID]
+        self, specifier: Union[int, str, UUID]
     ) -> Union[BleakGATTDescriptor, None]:
-        """Get a descriptor by UUID"""
+        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
-            return next(filter(lambda x: x.uuid == _uuid, self.descriptors))
+            if isinstance(specifier, int):
+                return next(filter(lambda x: x.handle == specifier, self.descriptors))
+            else:
+                return next(filter(lambda x: x.uuid == str(specifier), self.descriptors))
         except StopIteration:
             return None
 
