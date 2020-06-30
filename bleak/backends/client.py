@@ -11,6 +11,7 @@ import uuid
 from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.characteristic import BleakGATTCharacteristic
 
 
 class BaseBleakClient(abc.ABC):
@@ -122,11 +123,13 @@ class BaseBleakClient(abc.ABC):
     # I/O methods
 
     @abc.abstractmethod
-    async def read_gatt_char(self, _uuid: Union[str, uuid.UUID], **kwargs) -> bytearray:
+    async def read_gatt_char(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], **kwargs) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to read from.
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
+                specified by either integer handle, UUID or directly by the
+                BleakGATTCharacteristic object representing it.
 
         Returns:
             (bytearray) The read data.
@@ -149,12 +152,14 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def write_gatt_char(
-        self, _uuid: Union[str, uuid.UUID], data: bytearray, response: bool = False
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], data: bytearray, response: bool = False
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to write to.
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to write
+                to, specified by either integer handle, UUID or directly by the
+                BleakGATTCharacteristic object representing it.
             data (bytes or bytearray): The data to send.
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
@@ -174,7 +179,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def start_notify(
-        self, _uuid: Union[str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -188,18 +193,22 @@ class BaseBleakClient(abc.ABC):
             client.start_notify(char_uuid, callback)
 
         Args:
-            _uuid (str or UUID): The uuid of the characteristics to start notification/indication on.
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to activate
+                notifications/indications on a characteristic, specified by either integer handle,
+                UUID or directly by the BleakGATTCharacteristic object representing it.
             callback (function): The function to be called on notification.
 
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def stop_notify(self, _uuid: Union[str, uuid.UUID]) -> None:
+    async def stop_notify(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            _uuid: The characteristic to stop notifying/indicating on.
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
+                notification/indication on, specified by either integer handle, UUID or
+                directly by the BleakGATTCharacteristic object representing it.
 
         """
         raise NotImplementedError()

@@ -17,6 +17,7 @@ Added
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
 * Two devices example file to use for e.g. debugging.
 * Detection/discovery callbacks in Core Bluetooth backend ```Scanner`` implemented.
+* Characteristic handle printout in ``service_explorer.py``.
 
 Changed
 ~~~~~~~
@@ -26,6 +27,10 @@ Changed
   with the event loop where the central manager was created. Fixes #111.
 * The Central Manager is no longer global in the Core Bluetooth backend. A new one is created for each
   ``BleakClient`` and ``BleakScanner``. Fixes #206 and #105.
+* Merged #167 and reworked characteristics handling in Bleak. Implemented in all backends;
+  bleak now uses the characteristics' handle to identify and keep track of them.
+  Fixes #139 and #159 and allows connection for devices with multiple instances
+  of the same characteristic UUIDs.
 * In ``requirements.txt`` and ``Pipfile``, the requirement on ``pythonnet``
   was bumped to version 2.5.1, which seems to solve issues described in #217 and #225.
 * Renamed ``HISTORY.rst`` to ``CHANGELOG.rst`` and adopted
@@ -42,6 +47,9 @@ Removed
 
 * Removed documentation note about not using new event loops in Linux. This was fixed by #143.
 * ``_central_manager_delegate_ready`` was removed in macOS backend.
+* Removed the ``bleak.backends.bluez.utils.get_gatt_service_path`` method. It is not used by
+  bleak and possibly generates errors.
+
 
 Fixed
 ~~~~~

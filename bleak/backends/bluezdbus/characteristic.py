@@ -1,3 +1,4 @@
+import re
 from uuid import UUID
 from typing import Union, List
 
@@ -25,6 +26,8 @@ _GattCharacteristicsFlagsEnum = {
     # "authorize"
 }
 
+_handle_regex = re.compile('/char([0-9a-fA-F]*)')
+
 
 class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the BlueZ DBus backend"""
@@ -35,10 +38,27 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         self.__path = object_path
         self.__service_uuid = service_uuid
 
+        # The `Handle` attribute is added in BlueZ Release 5.51. Empirically,
+        # it seems to hold true that the "/charYYYY" that is at the end of the
+        # DBUS path actually is the desired handle. Using regex to extract
+        # that and using as handle, since handle is mostly used for keeping
+        # track of characteristics (internally in bleak anyway).
+        self._handle = self.obj.get("Handle")
+        if not self._handle:
+            _handle_from_path = _handle_regex.search(self.path)
+            if _handle_from_path:
+                self._handle = int(_handle_from_path.groups()[0], 16)
+        self._handle = int(self._handle)
+
     @property
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return self.__service_uuid
+
+    @property
+    def handle(self) -> int:
+        """The handle of this characteristic"""
+        return self._handle
 
     @property
     def uuid(self) -> str:
@@ -65,11 +85,14 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.__descriptors
 
     def get_descriptor(
-        self, _uuid: Union[str, UUID]
+        self, specifier: Union[int, str, UUID]
     ) -> Union[BleakGATTDescriptor, None]:
-        """Get a descriptor by UUID"""
+        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
-            return next(filter(lambda x: x.uuid == _uuid, self.descriptors))
+            if isinstance(specifier, int):
+                return next(filter(lambda x: x.handle == specifier, self.descriptors))
+            else:
+                return next(filter(lambda x: x.uuid == str(specifier), self.descriptors))
         except StopIteration:
             return None
 

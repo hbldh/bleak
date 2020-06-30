@@ -55,7 +55,7 @@ if __name__ == "__main__":
     address = (
         "24:71:89:cc:09:05"  # <--- Change to your device's address here if you are using Windows or Linux
         if platform.system() != "Darwin"
-        else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"  # <--- Change to your device's address here if you are using macOS
+        else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"  # <--- Change to your device's address here if you are using macOS
     )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))

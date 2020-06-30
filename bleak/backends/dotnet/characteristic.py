@@ -52,12 +52,17 @@ class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
         ]
 
     def __str__(self):
-        return "{0}: {1}".format(self.uuid, self.description)
+        return "[{0}] {1}: {2}".format(self.handle, self.uuid, self.description)
 
     @property
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return self.obj.Service.Uuid.ToString()
+
+    @property
+    def handle(self) -> int:
+        """The handle of this characteristic"""
+        return int(self.obj.AttributeHandle)
 
     @property
     def uuid(self) -> str:
@@ -79,10 +84,13 @@ class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
         """List of descriptors for this service"""
         return self.__descriptors
 
-    def get_descriptor(self, _uuid: Union[str, UUID]) -> Union[BleakGATTDescriptorDotNet, None]:
-        """Get a descriptor by UUID"""
+    def get_descriptor(self, specifier: Union[int, str, UUID]) -> Union[BleakGATTDescriptorDotNet, None]:
+        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
-            return next(filter(lambda x: x.uuid == str(_uuid), self.descriptors))
+            if isinstance(specifier, int):
+                return next(filter(lambda x: x.handle == specifier, self.descriptors))
+            else:
+                return next(filter(lambda x: x.uuid == str(specifier), self.descriptors))
         except StopIteration:
             return None
 
