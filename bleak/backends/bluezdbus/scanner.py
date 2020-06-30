@@ -59,10 +59,16 @@ def _device_info(path, props):
 class BleakScannerBlueZDBus(BaseBleakScanner):
     """The native Linux Bleak BLE Scanner.
 
+    For possible values for `filters`, see the parameters to the
+    ``SetDiscoveryFilter`` method in the `BlueZ docs
+    <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
+
     Args:
         loop (asyncio.events.AbstractEventLoop): The event loop to use.
 
     Keyword Args:
+        device (str): Bluetooth device to use for discovery.
+        filters (dict): A dict of filters to be applied on discovery.
 
     """
 
@@ -165,6 +171,16 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._reactor = None
 
     async def set_scanning_filter(self, **kwargs):
+        """Sets OS level scanning filters for the BleakScanner.
+
+        For possible values for `filters`, see the parameters to the
+        ``SetDiscoveryFilter`` method in the `BlueZ docs
+        <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
+
+        Keyword Args:
+            filters (dict): A dict of filters to be applied on discovery.
+
+        """
         self._filters = kwargs.get("filters", {})
         self._filters["Transport"] = "le"
 
