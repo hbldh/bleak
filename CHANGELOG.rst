@@ -17,6 +17,7 @@ Added
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
 * Two devices example file to use for e.g. debugging.
 * Detection/discovery callbacks in Core Bluetooth backend ```Scanner`` implemented.
+* Characteristic handle printout in ``service_explorer.py``.
 
 Changed
 ~~~~~~~

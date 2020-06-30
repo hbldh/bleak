@@ -6,7 +6,6 @@ import re
 import subprocess
 import uuid
 from asyncio import Future
-from asyncio.events import AbstractEventLoop
 from functools import wraps, partial
 from typing import Callable, Any, Union
 
@@ -104,7 +103,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean representing connection status.
 
         """
-
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
         timeout = kwargs.get("timeout", self._timeout)
