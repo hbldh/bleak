@@ -15,6 +15,7 @@ Added
 ~~~~~
 
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
+* Two devices example file to use for e.g. debugging.
 
 Changed
 ~~~~~~~
@@ -33,6 +34,10 @@ Removed
 ~~~~~~~
 
 * Removed documentation note about not using new event loops in Linux. This was fixed by #143.
+
+Fixed
+~~~~~
+
 
 `0.6.4`_ (2020-05-20)
 ---------------------
