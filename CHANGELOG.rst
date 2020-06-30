@@ -15,10 +15,17 @@ Added
 ~~~~~
 
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
+* Two devices example file to use for e.g. debugging.
+* Detection/discovery callbacks in Core Bluetooth backend ```Scanner`` implemented.
 
 Changed
 ~~~~~~~
 
+* Replace ``NSRunLoop` with dispatch queue in Core Bluetooth backend. This causes callbacks to be dispatched on a
+  background thread instead of on the main dispatch queue on the main thread. `call_soon_threadsafe()` is used to synchronize the events
+  with the event loop where the central manager was created. Fixes #111.
+* The Central Manager is no longer global in the Core Bluetooth backend. A new one is created for each
+  ``BleakClient`` and ``BleakScanner``. Fixes #206 and #105.
 * In ``requirements.txt`` and ``Pipfile``, the requirement on ``pythonnet``
   was bumped to version 2.5.1, which seems to solve issues described in #217 and #225.
 * Renamed ``HISTORY.rst`` to ``CHANGELOG.rst`` and adopted
@@ -28,11 +35,20 @@ Changed
 * Pin pyobjc-framework-corebluetooth to version 6.2.
 * Pin development requirement on `bump2version` to version 1.0.0
 * Added ``.pyup.yml`` for Pyup
+* Using CBManagerState constants from pyobj instead of integers.
 
 Removed
 ~~~~~~~
 
 * Removed documentation note about not using new event loops in Linux. This was fixed by #143.
+* ``_central_manager_delegate_ready`` was removed in macOS backend.
+
+Fixed
+~~~~~
+
+* Minor documentation errors corrected.
+* ``CBManagerStatePoweredOn`` is now properly handled in Core Bluetooth.
+* Device enumeration in ``discover``and ``Scanner`` corrected. Fixes #211
 
 `0.6.4`_ (2020-05-20)
 ---------------------
