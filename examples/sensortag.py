@@ -104,7 +104,7 @@ async def run(address, loop, debug=False):
         # h.setLevel(logging.DEBUG)
         # l.addHandler(h)
 
-    async with BleakClient(address, loop=loop) as client:
+    async with BleakClient(address, timeout=1.0, loop=loop) as client:
         x = await client.is_connected()
         logger.info("Connected: {0}".format(x))
 

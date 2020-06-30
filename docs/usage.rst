@@ -2,6 +2,14 @@
 Usage
 =====
 
+.. note::
+
+    A Bluetooth peripheral may have several characteristics with the same UUID, so
+    the means of specifying characteristics by UUID or string representation of it
+    might not always work in bleak version > 0.7.0. One can now also use the characteristic's
+    handle or even the ``BleakGATTCharacteristic`` object itself in
+    ``read_gatt_char``, ``write_gatt_char``, ``start_notify``, and ``stop_notify``.
+
 
 One can use the ``BleakClient`` to connect to a Bluetooth device and read its model number
 via the asyncronous context manager like this:
@@ -46,7 +54,7 @@ or one can do it without the context manager like this:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop))
 
-Try to make sure you always get to call the disconnect method for a client before discarding it;
+Make sure you always get to call the disconnect method for a client before discarding it;
 the Bluetooth stack on the OS might need to be cleared of residual data which is cached in the
 ``BleakClient``.
 

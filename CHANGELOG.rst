@@ -18,6 +18,7 @@ Added
 * Two devices example file to use for e.g. debugging.
 * Detection/discovery callbacks in Core Bluetooth backend ```Scanner`` implemented.
 * Characteristic handle printout in ``service_explorer.py``.
+* Added scanning filters to .NET backend's ``discover`` method.
 
 Changed
 ~~~~~~~
@@ -36,15 +37,10 @@ Changed
 * Renamed ``HISTORY.rst`` to ``CHANGELOG.rst`` and adopted
   the `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_ format.
 * Python 3.5 support from macOS is officially removed since pyobjc>6 requires 3.6+
-* Pin pyobjc to version 6.2. (PR #194)
-* Pin pyobjc-framework-corebluetooth to version 6.2.
+* Pin ``pyobjc`` dependencies to use at least version 6.2. (PR #194)
 * Pin development requirement on `bump2version` to version 1.0.0
 * Added ``.pyup.yml`` for Pyup
 * Using CBManagerState constants from pyobj instead of integers.
-* Improved handling of the txdbus connection to avoid hanging of disconnection
-  clients in BlueZ backend. Fixes #216, #219 & #221.
-* #150 hints at the device path not being possible to create as is done in the `get_device_object_path` method.
-  Now, we try to get it from BlueZ first. Otherwise, use the old fallback.
 
 Removed
 ~~~~~~~
@@ -54,13 +50,17 @@ Removed
 * Removed the ``bleak.backends.bluez.utils.get_gatt_service_path`` method. It is not used by
   bleak and possibly generates errors.
 
-
 Fixed
 ~~~~~
 
+* Improved handling of the txdbus connection to avoid hanging of disconnection
+  clients in BlueZ backend. Fixes #216, #219 & #221.
+* #150 hints at the device path not being possible to create as is done in the `get_device_object_path` method.
+  Now, we try to get it from BlueZ first. Otherwise, use the old fallback.
 * Minor documentation errors corrected.
 * ``CBManagerStatePoweredOn`` is now properly handled in Core Bluetooth.
 * Device enumeration in ``discover``and ``Scanner`` corrected. Fixes #211
+* Updated documentation about scanning filters.
 
 `0.6.4`_ (2020-05-20)
 ---------------------

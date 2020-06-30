@@ -7,7 +7,7 @@ from bleak.backends.device import BLEDevice
 
 
 class BaseBleakScanner(abc.ABC):
-    """Interface for Bleak Bluetooth LE Scanners
+    """Interface for Bleak Bluetooth LE Scanners.
 
     Args:
         loop (Event Loop): The event loop to use.
