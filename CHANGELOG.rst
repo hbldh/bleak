@@ -42,6 +42,9 @@ Removed
 
 * Removed documentation note about not using new event loops in Linux. This was fixed by #143.
 * ``_central_manager_delegate_ready`` was removed in macOS backend.
+* Removed the ``bleak.backends.bluez.utils.get_gatt_service_path`` method. It is not used by
+  bleak and possibly generates errors.
+
 
 Fixed
 ~~~~~

@@ -108,7 +108,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # A Discover must have been run before connecting to any devices. Do a quick one here
         # to ensure that it has been done.
         timeout = kwargs.get("timeout", self._timeout)
-        await discover(timeout=timeout, device=self.device, loop=self.loop)
+        discovered = await discover(timeout=timeout, device=self.device, loop=self.loop)
 
         self._reactor = get_reactor(self.loop)
 
@@ -116,7 +116,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._bus = await txdbus_connect(self._reactor, busAddress="system").asFuture(
             self.loop
         )
-        # TODO: Handle path errors from txdbus/dbus
+        # TODO: Build this device path differently. Need to get it from BlueZ backend for proper path...
         self._device_path = get_device_object_path(self.device, self.address)
 
         def _services_resolved_callback(message):
