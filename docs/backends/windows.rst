@@ -9,7 +9,7 @@ The Windows backend implements a ``BleakClient`` in the module ``bleak.backends.
 method in the ``bleak.backends.dotnet.discovery`` module. There are also backend-specific implementations of the
 ``BleakGATTService``, ``BleakGATTCharacteristic`` and ``BleakGATTDescriptor`` classes.
 
-FInally, some .NET/``asyncio``-connectivity methods are available in the ``bleak.backends.dotnet.utils`` module.
+Finally, some .NET/``asyncio``-connectivity methods are available in the ``bleak.backends.dotnet.utils`` module.
 
 Specific features for the Windows backend
 -----------------------------------------
@@ -17,5 +17,5 @@ Specific features for the Windows backend
 Client
 ~~~~~~
  - The constructor keyword ``address_type`` which can have the values ``"public"`` or ``"random"``. This value
-   makes sure that the connect
+   makes sure that the connection is made in a fashion that suits the peripheral.
 

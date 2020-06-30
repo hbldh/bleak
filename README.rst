@@ -13,9 +13,6 @@ bleak
     :target: https://github.com/hbldh/bleak/actions?query=workflow%3A%22Build+and+Test%22
     :alt: Build and Test
 
-.. image:: https://dev.azure.com/hbldh/github/_apis/build/status/hbldh.bleak?branchName=master
-    :target: https://dev.azure.com/hbldh/github/_build/latest?definitionId=4&branchName=master
-
 .. image:: https://img.shields.io/pypi/v/bleak.svg
     :target: https://pypi.python.org/pypi/bleak
 

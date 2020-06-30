@@ -31,6 +31,7 @@ and ``rssi`` attributes, as well as a ``metadata`` attribute, a dict with keys `
 which potentially contains a list of all service UUIDs on the device and a binary string of data from
 the manufacturer of the device respectively.
 
+
 BleakScanner
 ------------
 
@@ -95,3 +96,19 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
 In the manual mode, it is possible to add an own callback that you want to call upon each
 scanner detection, as can be seen above. There is also possibilities of adding scanning filters,
 but these differ so widely between implementations, so these details are recorded there instead.
+
+Scanning Filters
+----------------
+
+There are some scanning filters that can be applied, that will reduce your scanning
+results prior to them getting to bleak. These are pretty quite backend specific, but
+they are generally used like this:
+
+- On the `discover` method, send in keyword arguments according to what is
+  described in the docstring of the method.
+- On the backend's `BleakScanner` implementation, either send in keyword arguments
+  according to what is described in the docstring of the class or use the
+  ``set_scanning_filter`` method to set them after the instance has been created.
+
+Scanning filters are currently implemented in Windows and BlueZ backends, but not yet
+in the macOS backend.

@@ -1,0 +1,8 @@
+update: all
+pin: True
+branch: develop
+schedule: "every day"
+search: True
+assignees:
+ - hbldh
+branch_prefix: pyup/

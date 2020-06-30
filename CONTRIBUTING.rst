@@ -102,12 +102,9 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.5+.
-
-Tips
-----
-
-To run a subset of tests::
-
-    $ py.test tests.test_bleak
+3. The pull request should work for Python 3.5+ on the following platforms:
+    - Windows 10, version 16299 (Fall Creators Update) and greater
+    - Linux distributions with BlueZ >= 5.43
+    - OS X / macOS >= 10.11
+4. Feel free to add your name to the ``AUTHORS.rst`` in the root of the project!
 

@@ -36,6 +36,12 @@ async def discover(
         loop (Event Loop): The event loop to use.
 
     Keyword Args:
+        SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
+          BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+          LE advertisement filtering that uses signal strength-based filtering.
+        AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
+          BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+          advertisement filtering that uses payload section-based filtering.
         string_output (bool): If set to false, ``discover`` returns .NET
             device objects instead.
 
@@ -43,6 +49,9 @@ async def discover(
         List of strings or objects found.
 
     """
+    signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
+    advertisement_filter = kwargs.get("AdvertisementFilter", None)
+
     loop = loop if loop else asyncio.get_event_loop()
 
     watcher = BluetoothLEAdvertisementWatcher()
@@ -84,6 +93,11 @@ async def discover(
     watcher.Stopped += AdvertisementWatcher_Stopped
 
     watcher.ScanningMode = BluetoothLEScanningMode.Active
+
+    if signal_strength_filter is not None:
+        watcher.SignalStrengthFilter = signal_strength_filter
+    if advertisement_filter is not None:
+        watcher.AdvertisementFilter = advertisement_filter
 
     # Watcher works outside of the Python process.
     watcher.Start()

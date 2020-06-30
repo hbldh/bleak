@@ -8,9 +8,9 @@ Connection Client Interface
     :members:
 
 Scanning Client Interface
----------------------------
+-------------------------
 
-.. automodule:: bleak.backends.scanning
+.. automodule:: bleak.backends.scanner
     :members:
 
 Interface for BLE devices

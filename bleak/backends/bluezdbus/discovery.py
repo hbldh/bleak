@@ -54,7 +54,7 @@ def _device_info(path, props):
 async def discover(timeout=5.0, loop=None, **kwargs):
     """Discover nearby Bluetooth Low Energy devices.
 
-    For possible values for `filter`, see the parameters to the
+    For possible values for `filters`, see the parameters to the
     ``SetDiscoveryFilter`` method in the `BlueZ docs
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 

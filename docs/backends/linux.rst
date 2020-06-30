@@ -8,17 +8,7 @@ The Linux backend of Bleak is written using the
 package. It is written for
 `Twisted <https://twistedmatrix.com/trac/>`_, but by using the
 `twisted.internet.asyncioreactor <https://twistedmatrix.com/documents/current/api/twisted.internet.asyncioreactor.html>`_
-one can use it in the `asyncio` way.
-
-.. note::
-
-    You should not create any new event loops when using Bleak with the BlueZ backend, only use the
-    ``asyncio.get_event_loop``. This is due to the way that the
-    `asyncioreactor <https://twistedmatrix.com/documents/current/api/twisted.internet.asyncioreactor.html>`_
-    is used right now.
-
-    If more clients are needed, run these in separate processes right now, until a better recommendation
-    is available.
+one can use it with `asyncio`.
 
 
 Special handling for ``write_gatt_char``

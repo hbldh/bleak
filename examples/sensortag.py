@@ -104,7 +104,7 @@ async def run(address, loop, debug=False):
         # h.setLevel(logging.DEBUG)
         # l.addHandler(h)
 
-    async with BleakClient(address, loop=loop) as client:
+    async with BleakClient(address, timeout=1.0, loop=loop) as client:
         x = await client.is_connected()
         logger.info("Connected: {0}".format(x))
 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     address = (
         "24:71:89:cc:09:05"
         if platform.system() != "Darwin"
-        else "243E23AE-4A99-406C-B317-18F1BD7B4CBE"
+        else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
     )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(address, loop, True))
