@@ -9,3 +9,5 @@ Development Lead
 
 Contributors
 ------------
+
+* David Lechner <david@pybricks.com>
