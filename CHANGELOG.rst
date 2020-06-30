@@ -16,15 +16,15 @@ Added
 
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
 * Two devices example file to use for e.g. debugging.
-* Detection/discovery callbacks in Core Bluetooth backend ```Scanner`` implemented.
+* Detection/discovery callbacks in Core Bluetooth backend ``Scanner`` implemented.
 * Characteristic handle printout in ``service_explorer.py``.
 * Added scanning filters to .NET backend's ``discover`` method.
 
 Changed
 ~~~~~~~
 
-* Replace ``NSRunLoop` with dispatch queue in Core Bluetooth backend. This causes callbacks to be dispatched on a
-  background thread instead of on the main dispatch queue on the main thread. `call_soon_threadsafe()` is used to synchronize the events
+* Replace ``NSRunLoop`` with dispatch queue in Core Bluetooth backend. This causes callbacks to be dispatched on a
+  background thread instead of on the main dispatch queue on the main thread. ``call_soon_threadsafe()`` is used to synchronize the events
   with the event loop where the central manager was created. Fixes #111.
 * The Central Manager is no longer global in the Core Bluetooth backend. A new one is created for each
   ``BleakClient`` and ``BleakScanner``. Fixes #206 and #105.
