@@ -201,6 +201,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._bus.disconnect()
         except Exception as e:
             logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+        else:
+            # Critical to remove the `self._bus` object here to since it was
+            # closed above. If not, calls made to it later could lead to
+            # a stuck client.
+            self._bus = None
 
     async def _cleanup_all(self) -> None:
         """
@@ -218,6 +223,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         logger.debug("Disconnecting from BLE device...")
+        if self._bus is None:
+            # No connection exists. Either one hasn't been created or
+            # we have already called disconnect and closed the txdbus
+            # connection.
+            return True
 
         # Remove all residual notifications.
         await self._cleanup_notifications()
@@ -233,11 +243,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except Exception as e:
             logger.error("Attempt to disconnect device failed: {0}".format(e))
 
-        # See if it has been disconnected.
         is_disconnected = not await self.is_connected()
 
         await self._cleanup_dbus_resources()
 
+        # Reset all stored services.
         self.services = BleakGATTServiceCollection()
 
         return is_disconnected

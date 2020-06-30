@@ -41,6 +41,8 @@ Changed
 * Pin development requirement on `bump2version` to version 1.0.0
 * Added ``.pyup.yml`` for Pyup
 * Using CBManagerState constants from pyobj instead of integers.
+* Improved handling of the txdbus connection to avoid hanging of disconnection
+  clients in BlueZ backend. Fixes #216, #219 & #221.
 
 Removed
 ~~~~~~~
