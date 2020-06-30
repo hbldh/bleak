@@ -6,6 +6,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
+import uuid
 from uuid import UUID
 from typing import List, Union, Iterator
 
@@ -64,11 +65,11 @@ class BleakGATTServiceCollection(object):
         self.__descriptors = {}
 
     def __getitem__(
-        self, item: Union[str, int]
+        self, item: Union[str, int, uuid.UUID]
     ) -> Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor]:
         """Get a service, characteristic or descriptor from uuid or handle"""
         return self.services.get(
-            item, self.characteristics.get(item, self.descriptors.get(item, None))
+            str(item), self.characteristics.get(item, self.descriptors.get(item, None))
         )
 
     def __iter__(self) -> Iterator[BleakGATTService]:
@@ -82,7 +83,7 @@ class BleakGATTServiceCollection(object):
 
     @property
     def characteristics(self) -> dict:
-        """Returns dictionary of handle strings to BleakGATTCharacteristic"""
+        """Returns dictionary of handles to BleakGATTCharacteristic"""
         return self.__characteristics
 
     @property
@@ -121,9 +122,17 @@ class BleakGATTServiceCollection(object):
                 "This characteristic is already present in this BleakGATTServiceCollection!"
             )
 
-    def get_characteristic(self, _uuid: Union[str, UUID]) -> BleakGATTCharacteristic:
-        """Get a characteristic by UUID string"""
-        return self.characteristics.get(str(_uuid), None)
+    def get_characteristic(self, specifier: Union[int, str, UUID]) -> BleakGATTCharacteristic:
+        """Get a characteristic by handle (int) or UUID (str or uuid.UUID)"""
+        if isinstance(specifier, int):
+            return self.characteristics.get(specifier, None)
+        else:
+            # Assume uuid usage.
+            x = list(filter(lambda x: x.uuid == str(specifier), self.characteristics.values()))
+            if len(x) > 1:
+                raise BleakError("Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead.")
+            else:
+                return x[0] if x else None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
         """Add a :py:class:`~BleakGATTDescriptor` to the service collection.
