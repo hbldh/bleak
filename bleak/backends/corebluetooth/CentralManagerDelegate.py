@@ -8,6 +8,7 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 
 import asyncio
 import logging
+import platform
 from enum import Enum
 from typing import List
 
@@ -39,6 +40,9 @@ from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 logger = logging.getLogger(__name__)
 
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
+
+_mac_version = list(map(int, platform.mac_ver()[0].split('.')))
+_IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
 
 
 class CMDConnectionState(Enum):
@@ -127,8 +131,16 @@ class CentralManagerDelegate(NSObject):
             await asyncio.sleep(timeout)
 
         self.central_manager.stopScan()
-        while self.central_manager.isScanning():
+
+        # Wait a while to allow central manager to stop scanning.
+        # The `isScanning` attribute is added in macOS 10.13, so before that
+        # just waiting some will have to do. In 10.13+ I have never seen
+        # bleak enter the while-loop, so this fix is most probably safe.
+        if _IS_PRE_10_13:
             await asyncio.sleep(0.1)
+        else:
+            while self.central_manager.isScanning():
+                await asyncio.sleep(0.1)
 
         return []
 

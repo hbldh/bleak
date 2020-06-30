@@ -61,6 +61,7 @@ Fixed
 * ``CBManagerStatePoweredOn`` is now properly handled in Core Bluetooth.
 * Device enumeration in ``discover``and ``Scanner`` corrected. Fixes #211
 * Updated documentation about scanning filters.
+* Added workaround for ``isScanning`` attribute added in macOS 10.13. Fixes #234.
 
 `0.6.4`_ (2020-05-20)
 ---------------------
