@@ -8,23 +8,23 @@ The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
 
-`Unreleased`_
--------------
+`0.7.0`_ (2020-06-30)
+---------------------
 
 Added
 ~~~~~
 
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
 * Two devices example file to use for e.g. debugging.
-* Detection/discovery callbacks in Core Bluetooth backend ```Scanner`` implemented.
+* Detection/discovery callbacks in Core Bluetooth backend ``Scanner`` implemented.
 * Characteristic handle printout in ``service_explorer.py``.
 * Added scanning filters to .NET backend's ``discover`` method.
 
 Changed
 ~~~~~~~
 
-* Replace ``NSRunLoop` with dispatch queue in Core Bluetooth backend. This causes callbacks to be dispatched on a
-  background thread instead of on the main dispatch queue on the main thread. `call_soon_threadsafe()` is used to synchronize the events
+* Replace ``NSRunLoop`` with dispatch queue in Core Bluetooth backend. This causes callbacks to be dispatched on a
+  background thread instead of on the main dispatch queue on the main thread. ``call_soon_threadsafe()`` is used to synchronize the events
   with the event loop where the central manager was created. Fixes #111.
 * The Central Manager is no longer global in the Core Bluetooth backend. A new one is created for each
   ``BleakClient`` and ``BleakScanner``. Fixes #206 and #105.
@@ -61,6 +61,7 @@ Fixed
 * ``CBManagerStatePoweredOn`` is now properly handled in Core Bluetooth.
 * Device enumeration in ``discover``and ``Scanner`` corrected. Fixes #211
 * Updated documentation about scanning filters.
+* Added workaround for ``isScanning`` attribute added in macOS 10.13. Fixes #234.
 
 `0.6.4`_ (2020-05-20)
 ---------------------
@@ -230,7 +231,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.6.4...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.7.0...develop
+.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
 .. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
 .. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.3
 .. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.2
