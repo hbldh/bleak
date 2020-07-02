@@ -13,7 +13,8 @@ _IS_AZURE_PIPELINES = os.environ.get("SYSTEM_HOSTTYPE", "") == "build"
 
 
 @pytest.mark.skipif(
-    condition=_IS_AZURE_PIPELINES and (platform.system().lower() in ("linux", "darwin")),
+    condition=_IS_AZURE_PIPELINES
+    and (platform.system().lower() in ("linux", "darwin")),
     reason="""Cannot run on Azure Pipelines with
     Ubuntu 16.04 or macOS installed.""",
 )

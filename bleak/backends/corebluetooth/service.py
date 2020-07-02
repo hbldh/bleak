@@ -3,7 +3,7 @@ from typing import List, Union
 from Foundation import CBService, CBUUID
 
 from bleak.backends.corebluetooth.characteristic import (
-    BleakGATTCharacteristicCoreBluetooth
+    BleakGATTCharacteristicCoreBluetooth,
 )
 from bleak.backends.service import BleakGATTService
 

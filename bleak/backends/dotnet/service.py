@@ -25,7 +25,9 @@ class BleakGATTServiceDotNet(BleakGATTService):
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def get_characteristic(self, _uuid: Union[str, UUID]) -> Union[BleakGATTCharacteristicDotNet, None]:
+    def get_characteristic(
+        self, _uuid: Union[str, UUID]
+    ) -> Union[BleakGATTCharacteristicDotNet, None]:
         """Get a characteristic by UUID"""
         try:
             return next(filter(lambda x: x.uuid == str(_uuid), self.characteristics))

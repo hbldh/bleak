@@ -42,7 +42,11 @@ async def run(address, loop, debug=False):
                     value = None
                 log.info(
                     "\t[Characteristic] {0}: (Handle: {1}) ({2}) | Name: {3}, Value: {4} ".format(
-                        char.uuid, char.handle, ",".join(char.properties), char.description, value
+                        char.uuid,
+                        char.handle,
+                        ",".join(char.properties),
+                        char.description,
+                        value,
                     )
                 )
                 for descriptor in char.descriptors:

@@ -7,7 +7,9 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import GattDescriptor
 class BleakGATTDescriptorDotNet(BleakGATTDescriptor):
     """GATT Descriptor implementation for .NET backend"""
 
-    def __init__(self, obj: GattDescriptor, characteristic_uuid: str, characteristic_handle: int):
+    def __init__(
+        self, obj: GattDescriptor, characteristic_uuid: str, characteristic_handle: int
+    ):
         super(BleakGATTDescriptorDotNet, self).__init__(obj)
         self.obj = obj
         self.__characteristic_uuid = characteristic_uuid

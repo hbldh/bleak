@@ -74,7 +74,9 @@ class BleakGATTCharacteristic(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_descriptor(self, specifier: Union[int, str, UUID]) -> Union[BleakGATTDescriptor, None]:
+    def get_descriptor(
+        self, specifier: Union[int, str, UUID]
+    ) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         raise NotImplementedError()
 

@@ -3,7 +3,7 @@ from Foundation import NSData, CBUUID
 
 def cb_uuid_to_str(_uuid: str) -> str:
     if len(_uuid) == 4:
-        return '0000{0}-0000-1000-8000-00805f9b34fb'.format(_uuid.lower())
+        return "0000{0}-0000-1000-8000-00805f9b34fb".format(_uuid.lower())
     # TODO: Evaluate if this is a necessary method...
     # elif _is_uuid_16bit_compatible(_uuid):
     #    return _uuid[4:8].lower()

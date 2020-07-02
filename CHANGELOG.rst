@@ -7,6 +7,22 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`0.7.1`_ (2020-07-02)
+---------------------
+
+Changed
+~~~~~~~
+
+* Improved, more explantory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
+* Better-than-nothing documentation about scanning filters added (#230).
+* Ran black on code which was forgotten in 0.7.0. Large diffs due to that.
+* Re-adding Python 3.8 CI "tests" on Windows again.
+
+Fixed
+~~~~~
+
+* Fix when characteristic updates value faster than asyncio schedule (#240 & #241)
+
 
 `0.7.0`_ (2020-06-30)
 ---------------------
@@ -231,7 +247,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.7.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.7.1...develop
+.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
 .. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
 .. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
 .. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.3

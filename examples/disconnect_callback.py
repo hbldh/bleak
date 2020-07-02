@@ -25,7 +25,9 @@ async def show_disconnect_handling(mac_addr: str, loop: asyncio.AbstractEventLoo
         print("Sleeping until device disconnects according to BlueZ...")
         await disconnected_event.wait()
         print("Connected: {0}".format(await client.is_connected()))
-        await asyncio.sleep(0.5)  # Sleep a bit longer to allow _cleanup to remove all BlueZ notifications nicely...
+        await asyncio.sleep(
+            0.5
+        )  # Sleep a bit longer to allow _cleanup to remove all BlueZ notifications nicely...
 
 
 mac_addr = "24:71:89:cc:09:05"
