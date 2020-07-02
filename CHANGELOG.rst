@@ -22,6 +22,7 @@ Fixed
 ~~~~~
 
 * Fix when characteristic updates value faster than asyncio schedule (#240 & #241)
+* Incorrect ``MANIFEST.in`` corrected. (#244)
 
 
 `0.7.0`_ (2020-06-30)
