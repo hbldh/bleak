@@ -151,7 +151,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             ).asFuture(self.loop)
         except RemoteError as e:
             await self._cleanup_all()
-            raise BleakError(str(e))
+            if 'Method "Connect" with signature "" on interface' in str(e):
+                raise BleakError("Device with address {0} could not be found. "
+                                 "Try increasing `timeout` value or moving the device closer.".format(self.address))
+            else:
+                raise BleakError(str(e))
 
         if await self.is_connected():
             logger.debug("Connection successful.")

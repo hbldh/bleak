@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Changed
+~~~~~~~
+
+* Improved, more explantory error on BlueZ backend when ``BleakClient`` cannot find the desired device. (#238)
+
 Fixed
 ~~~~~
 
