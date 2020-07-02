@@ -290,7 +290,7 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     def did_update_value_for_characteristic(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, value: bytes, error: NSError
     ):
         cUUID = characteristic.UUID().UUIDString()
         if error is not None:
@@ -300,7 +300,7 @@ class PeripheralDelegate(NSObject):
 
         notify_callback = self._characteristic_notify_callbacks.get(cUUID)
         if notify_callback:
-            notify_callback(cUUID, characteristic.value())
+            notify_callback(cUUID, value)
 
         logger.debug("Read characteristic value")
         event = self._characteristic_read_events.get(cUUID)
@@ -318,6 +318,7 @@ class PeripheralDelegate(NSObject):
             self.did_update_value_for_characteristic,
             peripheral,
             characteristic,
+            characteristic.value(),
             error,
         )
 
