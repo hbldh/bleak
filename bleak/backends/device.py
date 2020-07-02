@@ -37,7 +37,9 @@ class BLEDevice(object):
         elif hasattr(self.details, "RawSignalStrengthInDBm"):
             rssi = self.details.RawSignalStrengthInDBm
         elif hasattr(self.details, "Properties"):
-            rssi = {p.Key: p.Value for p in self.details.Properties}['System.Devices.Aep.SignalStrength']
+            rssi = {p.Key: p.Value for p in self.details.Properties}[
+                "System.Devices.Aep.SignalStrength"
+            ]
         else:
             rssi = None
         return int(rssi) if rssi is not None else None
@@ -47,9 +49,9 @@ class BLEDevice(object):
             if "manufacturer_data" in self.metadata:
                 ks = list(self.metadata["manufacturer_data"].keys())
                 if len(ks):
-                    mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xffff))
+                    mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF))
                     value = self.metadata["manufacturer_data"].get(
-                        ks[0], MANUFACTURERS.get(0xffff)
+                        ks[0], MANUFACTURERS.get(0xFFFF)
                     )
                     # TODO: Evaluate how to interpret the value of the company identifier...
                     return "{0}: {1} ({2})".format(self.address, mf, value)

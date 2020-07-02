@@ -51,7 +51,9 @@ class BleakGATTService(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_characteristic(self, _uuid: Union[str, UUID]) -> Union[BleakGATTCharacteristic, None]:
+    def get_characteristic(
+        self, _uuid: Union[str, UUID]
+    ) -> Union[BleakGATTCharacteristic, None]:
         """Get a characteristic by UUID"""
         raise NotImplementedError()
 
@@ -122,15 +124,23 @@ class BleakGATTServiceCollection(object):
                 "This characteristic is already present in this BleakGATTServiceCollection!"
             )
 
-    def get_characteristic(self, specifier: Union[int, str, UUID]) -> BleakGATTCharacteristic:
+    def get_characteristic(
+        self, specifier: Union[int, str, UUID]
+    ) -> BleakGATTCharacteristic:
         """Get a characteristic by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
             return self.characteristics.get(specifier, None)
         else:
             # Assume uuid usage.
-            x = list(filter(lambda x: x.uuid == str(specifier), self.characteristics.values()))
+            x = list(
+                filter(
+                    lambda x: x.uuid == str(specifier), self.characteristics.values()
+                )
+            )
             if len(x) > 1:
-                raise BleakError("Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead.")
+                raise BleakError(
+                    "Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead."
+                )
             else:
                 return x[0] if x else None
 

@@ -110,4 +110,3 @@ class BLEDevice(object):
                     # TODO: Evaluate how to interpret the value of the company identifier...
                     return "{0}: {1} ({2})".format(self.address, mf, value)
         return "{0}: {1}".format(self.address, self.name)
-

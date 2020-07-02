@@ -15,6 +15,7 @@ Changed
 
 * Improved, more explantory error on BlueZ backend when ``BleakClient`` cannot find the desired device. (#238)
 * Better-than-nothing documentation about scanning filters added (#230).
+* Ran black on code which was forgotten in 0.7.0. Large diffs due to that.
 
 Fixed
 ~~~~~

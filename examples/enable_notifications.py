@@ -17,9 +17,7 @@ from bleak import BleakClient
 from bleak import _logger as logger
 
 
-CHARACTERISTIC_UUID = (
-    "f000aa65-0451-4000-b000-000000000000"
-)  # <--- Change to the characteristic you want to enable notifications from.
+CHARACTERISTIC_UUID = "f000aa65-0451-4000-b000-000000000000"  # <--- Change to the characteristic you want to enable notifications from.
 
 
 def notification_handler(sender, data):

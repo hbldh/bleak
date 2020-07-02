@@ -87,7 +87,7 @@ MANUFACTURER_NAME_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
 BATTERY_LEVEL_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
     uuid16_dict.get("Battery Level")
 )
-KEY_PRESS_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(0xffe1)
+KEY_PRESS_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(0xFFE1)
 # I/O test points on SensorTag.
 IO_DATA_CHAR_UUID = "f000aa65-0451-4000-b000-000000000000"
 IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
@@ -142,7 +142,7 @@ async def run(address, loop, debug=False):
         def keypress_handler(sender, data):
             print("{0}: {1}".format(sender, data))
 
-        write_value = bytearray([0xa0])
+        write_value = bytearray([0xA0])
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
         print("I/O Data Pre-Write Value: {0}".format(value))
 

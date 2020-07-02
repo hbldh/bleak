@@ -123,7 +123,11 @@ class BaseBleakClient(abc.ABC):
     # I/O methods
 
     @abc.abstractmethod
-    async def read_gatt_char(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], **kwargs) -> bytearray:
+    async def read_gatt_char(
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        **kwargs
+    ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
@@ -152,7 +156,10 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def write_gatt_char(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], data: bytearray, response: bool = False
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        data: bytearray,
+        response: bool = False,
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
@@ -179,7 +186,10 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def start_notify(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], callback: Callable[[str, Any], Any], **kwargs
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        callback: Callable[[str, Any], Any],
+        **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -202,7 +212,9 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def stop_notify(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]) -> None:
+    async def stop_notify(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:

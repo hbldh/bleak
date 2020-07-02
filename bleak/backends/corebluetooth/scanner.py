@@ -34,6 +34,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
           ``stopScan_`` method.
 
     """
+
     def __init__(self, loop: AbstractEventLoop = None, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
         self._callback = None
@@ -70,7 +71,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             logger.warning("stopScan method could not be called: {0}".format(e))
 
     async def set_scanning_filter(self, **kwargs):
-        raise NotImplementedError("Need to evaluate which macOS versions to support first...")
+        raise NotImplementedError(
+            "Need to evaluate which macOS versions to support first..."
+        )
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         found = []
@@ -84,7 +87,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             details = peripheral
 
             advertisementData = self._identifiers[peripheral.identifier()]
-            manufacturer_binary_data = advertisementData.get("kCBAdvDataManufacturerData")
+            manufacturer_binary_data = advertisementData.get(
+                "kCBAdvDataManufacturerData"
+            )
             manufacturer_data = {}
             if manufacturer_binary_data:
                 manufacturer_id = int.from_bytes(
@@ -101,7 +106,11 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             found.append(
                 BLEDevice(
-                    address, name, details, uuids=uuids, manufacturer_data=manufacturer_data
+                    address,
+                    name,
+                    details,
+                    uuids=uuids,
+                    manufacturer_data=manufacturer_data,
                 )
             )
 
@@ -119,5 +128,3 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             return self._manager.isScanning_
         except:
             return None
-
-

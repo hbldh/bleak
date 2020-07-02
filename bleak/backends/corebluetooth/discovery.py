@@ -15,6 +15,7 @@ from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDe
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
+
 async def discover(
     timeout: float = 5.0, loop: AbstractEventLoop = None, **kwargs
 ) -> List[BLEDevice]:
@@ -44,4 +45,3 @@ async def discover(
 
     devices = manager.devices
     return list(devices.values())
-

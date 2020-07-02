@@ -14,6 +14,7 @@ from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluet
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 
+
 class CBChacteristicProperties(Enum):
     BROADCAST = 0x1
     READ = 0x2
@@ -103,13 +104,17 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         """List of descriptors for this service"""
         return self.__descriptors
 
-    def get_descriptor(self, specifier) -> Union[BleakGATTDescriptorCoreBluetooth, None]:
+    def get_descriptor(
+        self, specifier
+    ) -> Union[BleakGATTDescriptorCoreBluetooth, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):
                 return next(filter(lambda x: x.handle == specifier, self.descriptors))
             else:
-                return next(filter(lambda x: x.uuid == str(specifier), self.descriptors))
+                return next(
+                    filter(lambda x: x.uuid == str(specifier), self.descriptors)
+                )
         except StopIteration:
             return None
 

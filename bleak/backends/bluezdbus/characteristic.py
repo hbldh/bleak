@@ -26,7 +26,7 @@ _GattCharacteristicsFlagsEnum = {
     # "authorize"
 }
 
-_handle_regex = re.compile('/char([0-9a-fA-F]*)')
+_handle_regex = re.compile("/char([0-9a-fA-F]*)")
 
 
 class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
@@ -92,7 +92,9 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
             if isinstance(specifier, int):
                 return next(filter(lambda x: x.handle == specifier, self.descriptors))
             else:
-                return next(filter(lambda x: x.uuid == str(specifier), self.descriptors))
+                return next(
+                    filter(lambda x: x.uuid == str(specifier), self.descriptors)
+                )
         except StopIteration:
             return None
 

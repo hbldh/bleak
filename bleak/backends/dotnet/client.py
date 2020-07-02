@@ -322,7 +322,9 @@ class BleakClientDotNet(BaseBleakClient):
                     for descriptor in list(descriptors_result.Descriptors):
                         self.services.add_descriptor(
                             BleakGATTDescriptorDotNet(
-                                descriptor, characteristic.Uuid.ToString(), int(characteristic.AttributeHandle)
+                                descriptor,
+                                characteristic.Uuid.ToString(),
+                                int(characteristic.AttributeHandle),
                             )
                         )
 
@@ -332,7 +334,10 @@ class BleakClientDotNet(BaseBleakClient):
     # I/O methods
 
     async def read_gatt_char(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], use_cached=False, **kwargs
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        use_cached=False,
+        **kwargs
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -370,7 +375,9 @@ class BleakClientDotNet(BaseBleakClient):
             output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
             reader.ReadBytes(output)
             value = bytearray(output)
-            logger.debug("Read Characteristic {0} : {1}".format(characteristic.uuid, value))
+            logger.debug(
+                "Read Characteristic {0} : {1}".format(characteristic.uuid, value)
+            )
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakDotNetTaskError(
@@ -444,7 +451,10 @@ class BleakClientDotNet(BaseBleakClient):
         return value
 
     async def write_gatt_char(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID], data: bytearray, response: bool = False
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        data: bytearray,
+        response: bool = False,
     ) -> None:
         """Perform a write operation of the specified GATT characteristic.
 
@@ -480,7 +490,9 @@ class BleakClientDotNet(BaseBleakClient):
             loop=self.loop,
         )
         if write_result.Status == GattCommunicationStatus.Success:
-            logger.debug("Write Characteristic {0} : {1}".format(characteristic.uuid, data))
+            logger.debug(
+                "Write Characteristic {0} : {1}".format(characteristic.uuid, data)
+            )
         else:
             if write_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakError(
@@ -652,7 +664,9 @@ class BleakClientDotNet(BaseBleakClient):
             return GattCommunicationStatus.AccessDenied
         return status
 
-    async def stop_notify(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]) -> None:
+    async def stop_notify(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:

@@ -18,8 +18,11 @@ from BleakBridge import Bridge
 
 from System import Array, Byte
 from Windows.Devices import Enumeration
-from Windows.Devices.Bluetooth.Advertisement import \
-    BluetoothLEAdvertisementWatcher, BluetoothLEScanningMode, BluetoothLEAdvertisementType
+from Windows.Devices.Bluetooth.Advertisement import (
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEScanningMode,
+    BluetoothLEAdvertisementType,
+)
 from Windows.Storage.Streams import DataReader, IBuffer
 
 logger = logging.getLogger(__name__)
@@ -127,13 +130,7 @@ async def discover(
         if not local_name and d.BluetoothAddress in scan_responses:
             local_name = scan_responses[d.BluetoothAddress].Advertisement.LocalName
         found.append(
-            BLEDevice(
-                bdaddr,
-                local_name,
-                d,
-                uuids=uuids,
-                manufacturer_data=data,
-            )
+            BLEDevice(bdaddr, local_name, d, uuids=uuids, manufacturer_data=data,)
         )
 
     return found
@@ -171,7 +168,9 @@ async def discover_by_enumeration(
             "System.Devices.Aep.SignalStrength",
         ]
     )
-    aqs_all_bluetooth_le_devices = '(System.Devices.Aep.ProtocolId:="' '{bb7bb05e-5972-42b5-94fc-76eaa7084d49}")'
+    aqs_all_bluetooth_le_devices = (
+        '(System.Devices.Aep.ProtocolId:="' '{bb7bb05e-5972-42b5-94fc-76eaa7084d49}")'
+    )
     watcher = Enumeration.DeviceInformation.CreateWatcher(
         aqs_all_bluetooth_le_devices,
         requested_properties,
@@ -251,7 +250,13 @@ async def discover_by_enumeration(
     for d in devices.values():
         properties = {p.Key: p.Value for p in d.Properties}
         found.append(
-            BLEDevice(properties["System.Devices.Aep.DeviceAddress"], d.Name, d, uuids=[], manufacturer_data=b'')
+            BLEDevice(
+                properties["System.Devices.Aep.DeviceAddress"],
+                d.Name,
+                d,
+                uuids=[],
+                manufacturer_data=b"",
+            )
         )
 
     return found

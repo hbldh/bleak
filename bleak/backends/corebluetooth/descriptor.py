@@ -12,7 +12,9 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     """GATT Descriptor implementation for CoreBluetooth backend"""
 
-    def __init__(self, obj: CBDescriptor, characteristic_uuid: str, characteristic_handle: int):
+    def __init__(
+        self, obj: CBDescriptor, characteristic_uuid: str, characteristic_handle: int
+    ):
         super(BleakGATTDescriptorCoreBluetooth, self).__init__(obj)
         self.obj = obj
         self.__characteristic_uuid = characteristic_uuid
