@@ -35,9 +35,8 @@ the manufacturer of the device respectively.
 BleakScanner
 ------------
 
-A new scanning class is being implemented, and is ready to be used for the .NET backend,
-and partly for the macOS backend as well.
-It can be used in a fashion similar to the old ``discover`` method, using its class method:
+A new scanning class has being implemented. It can be used in a fashion similar to the
+old ``discover`` method, using its class method:
 
 .. code-block:: python
 
@@ -52,7 +51,7 @@ It can be used in a fashion similar to the old ``discover`` method, using its cl
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
 
-But it can also be used as a separate object, either in a synchronous context manager way:
+But it can also be used as a separate object, either in a asynchronous context manager way:
 
 .. code-block:: python
 
@@ -94,14 +93,14 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
     loop.run_until_complete(run())
 
 In the manual mode, it is possible to add an own callback that you want to call upon each
-scanner detection, as can be seen above. There is also possibilities of adding scanning filters,
-but these differ so widely between implementations, so these details are recorded there instead.
+scanner detection, as can be seen above. There are also possibilities of adding scanning filters,
+which differ widely between OS backend implementations, so the instructions merit careful reading.
 
 Scanning Filters
 ----------------
 
 There are some scanning filters that can be applied, that will reduce your scanning
-results prior to them getting to bleak. These are pretty quite backend specific, but
+results prior to them getting to bleak. These are quite backend specific, but
 they are generally used like this:
 
 - On the `discover` method, send in keyword arguments according to what is
@@ -112,3 +111,23 @@ they are generally used like this:
 
 Scanning filters are currently implemented in Windows and BlueZ backends, but not yet
 in the macOS backend.
+
+Scanning filter examples in .NET backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To be written. In the meantime, check docstrings
+`here <https://github.com/hbldh/bleak/blob/master/bleak/backends/dotnet/scanner.py#L43-L60>`_
+and check out issue `#230 <https://github.com/hbldh/bleak/issues/230>`_.
+
+
+Scanning filter examples in BlueZ backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To be written. In the meantime, check
+`docstrings <https://github.com/hbldh/bleak/blob/master/bleak/backends/bluezdbus/scanner.py#L174-L183>`_.
+
+
+Scanning filter examples in Core Bluetooth backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To be implemented. Exists in a draft in `PR #209 <https://github.com/hbldh/bleak/pull/209>`_.
