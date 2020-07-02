@@ -16,6 +16,7 @@ Changed
 * Improved, more explantory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
 * Better-than-nothing documentation about scanning filters added (#230).
 * Ran black on code which was forgotten in 0.7.0. Large diffs due to that.
+* Re-adding Python 3.8 CI "tests" on Windows again.
 
 Fixed
 ~~~~~
