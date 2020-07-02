@@ -329,7 +329,7 @@ class PeripheralDelegate(NSObject):
         dUUID = descriptor.UUID().UUIDString()
         if error is not None:
             raise BleakError(
-                "Failed to read characteristic {}: {}".format(dUUID, error)
+                "Failed to read descriptor {}: {}".format(dUUID, error)
             )
 
         logger.debug("Read descriptor value")
