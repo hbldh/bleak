@@ -318,9 +318,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             raise BleakError("Services discovery error")
 
         logger.debug("Get Services...")
-        objs = await get_managed_objects(
-            self._bus, self._device_path + "/service"
-        )
+        objs = await get_managed_objects(self._bus, self._device_path + "/service")
 
         # There is no guarantee that services are listed before characteristics
         # Managed Objects dict.
