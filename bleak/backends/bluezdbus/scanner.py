@@ -1,8 +1,6 @@
 import logging
 import asyncio
 import pathlib
-import uuid
-from functools import wraps
 from typing import Callable, Any, Union, List
 
 from bleak.backends.scanner import BaseBleakScanner
@@ -69,7 +67,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__(loop, **kwargs)
+        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
 
         self._device = kwargs.get("device", "hci0")
         self._reactor = None

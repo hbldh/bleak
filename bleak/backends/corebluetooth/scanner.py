@@ -32,7 +32,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerCoreBluetooth, self).__init__(loop, **kwargs)
+        super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
         self._callback = None
         self._identifiers = None
         self._manager = CentralManagerDelegate.alloc().init()
