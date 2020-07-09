@@ -8,7 +8,6 @@ Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 import logging
 import asyncio
 import uuid
-from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any, Union
 
@@ -73,15 +72,14 @@ class BleakClientDotNet(BaseBleakClient):
 
     Args:
         address (str): The MAC address of the BLE peripheral to connect to.
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
 
     Keyword Args:
             timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
     """
 
-    def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakClientDotNet, self).__init__(address, loop, **kwargs)
+    def __init__(self, address: str, **kwargs):
+        super(BleakClientDotNet, self).__init__(address, **kwargs)
 
         # Backend specific. Python.NET objects.
         self._device_info = None
@@ -112,7 +110,7 @@ class BleakClientDotNet(BaseBleakClient):
         """
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
-        devices = await discover(timeout=timeout, loop=self.loop)
+        devices = await discover(timeout=timeout)
         sought_device = list(
             filter(lambda x: x.address.upper() == self.address.upper(), devices)
         )
@@ -138,7 +136,6 @@ class BleakClientDotNet(BaseBleakClient):
                 BluetoothLEDevice.FromBluetoothAddressAsync(*args)
             ),
             return_type=BluetoothLEDevice,
-            loop=self.loop,
         )
 
         def _ConnectionStatusChanged_Handler(sender, args):
@@ -155,7 +152,7 @@ class BleakClientDotNet(BaseBleakClient):
             connected = True
         else:
             for _ in range(5):
-                await asyncio.sleep(0.2, loop=self.loop)
+                await asyncio.sleep(0.2)
                 connected = await self.is_connected()
                 if connected:
                     break
@@ -234,7 +231,6 @@ class BleakClientDotNet(BaseBleakClient):
                     self._requester.GetGattServicesAsync()
                 ),
                 return_type=GattDeviceServicesResult,
-                loop=self.loop,
             )
 
             if services_result.Status != GattCommunicationStatus.Success:
@@ -259,7 +255,6 @@ class BleakClientDotNet(BaseBleakClient):
                         service.GetCharacteristicsAsync()
                     ),
                     return_type=GattCharacteristicsResult,
-                    loop=self.loop,
                 )
                 self.services.add_service(BleakGATTServiceDotNet(service))
                 if characteristics_result.Status != GattCommunicationStatus.Success:
@@ -291,7 +286,6 @@ class BleakClientDotNet(BaseBleakClient):
                             characteristic.GetDescriptorsAsync()
                         ),
                         return_type=GattDescriptorsResult,
-                        loop=self.loop,
                     )
                     self.services.add_characteristic(
                         BleakGATTCharacteristicDotNet(characteristic)
@@ -368,7 +362,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattReadResult,
-            loop=self.loop,
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
@@ -423,7 +416,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattReadResult,
-            loop=self.loop,
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
@@ -487,7 +479,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattWriteResult,
-            loop=self.loop,
         )
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug(
@@ -531,7 +522,6 @@ class BleakClientDotNet(BaseBleakClient):
                 descriptor.obj.WriteValueAsync(writer.DetachBuffer())
             ),
             return_type=GattWriteResult,
-            loop=self.loop,
         )
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
@@ -632,7 +622,7 @@ class BleakClientDotNet(BaseBleakClient):
             # TODO: Enable adding multiple handlers!
             self._notification_callbacks[characteristic.handle] = TypedEventHandler[
                 GattCharacteristic, GattValueChangedEventArgs
-            ](_notification_wrapper(self.loop, callback))
+            ](_notification_wrapper(callback))
             self._bridge.AddValueChangedCallback(
                 characteristic_obj, self._notification_callbacks[characteristic.handle]
             )
@@ -651,7 +641,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattCommunicationStatus,
-            loop=self.loop,
         )
 
         if status != GattCommunicationStatus.Success:
@@ -691,7 +680,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattCommunicationStatus,
-            loop=self.loop,
         )
 
         if status != GattCommunicationStatus.Success:
@@ -705,7 +693,7 @@ class BleakClientDotNet(BaseBleakClient):
             self._bridge.RemoveValueChangedCallback(characteristic.obj, callback)
 
 
-def _notification_wrapper(loop: AbstractEventLoop, func: Callable):
+def _notification_wrapper(func: Callable):
     @wraps(func)
     def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
@@ -714,7 +702,7 @@ def _notification_wrapper(loop: AbstractEventLoop, func: Callable):
         output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
         reader.ReadBytes(output)
 
-        return loop.call_soon_threadsafe(
+        return asyncio.get_event_loop().call_soon_threadsafe(
             func, sender.Uuid.ToString(), bytearray(output)
         )
 

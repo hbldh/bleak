@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`Unreleased`_
+-------------
+
+Changed
+~~~~~~~
+* Merged #224. All storing and passing of event loops in bleak is removed.
+
 `0.7.1`_ (2020-07-02)
 ---------------------
 

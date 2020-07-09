@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import re
 
 from bleak.uuids import uuidstr_to_str
@@ -68,13 +69,13 @@ def get_gatt_service_path(hci_device, address, service_id):
     return base + "{0}/service{1:02d}".format(base, service_id)
 
 
-async def get_managed_objects(bus, loop, object_path_filter=None):
+async def get_managed_objects(bus, object_path_filter=None):
     objects = await bus.callRemote(
         "/",
         "GetManagedObjects",
         interface="org.freedesktop.DBus.ObjectManager",
         destination="org.bluez",
-    ).asFuture(loop)
+    ).asFuture(asyncio.get_event_loop())
     if object_path_filter:
         return dict(
             filter(lambda i: i[0].startswith(object_path_filter), objects.items())

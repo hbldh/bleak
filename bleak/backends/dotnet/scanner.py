@@ -2,7 +2,6 @@ import logging
 import asyncio
 import pathlib
 import uuid
-from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any, Union, List
 
@@ -45,9 +44,6 @@ class BleakScannerDotNet(BaseBleakScanner):
     Implemented using `pythonnet <https://pythonnet.github.io/>`_, a package that provides an integration to the .NET
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
-    Args:
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
-
     Keyword Args:
         scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
         SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
@@ -59,8 +55,8 @@ class BleakScannerDotNet(BaseBleakScanner):
 
     """
 
-    def __init__(self, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakScannerDotNet, self).__init__(loop, **kwargs)
+    def __init__(self, **kwargs):
+        super(BleakScannerDotNet, self).__init__(**kwargs)
 
         self.watcher = None
         self._devices = {}
