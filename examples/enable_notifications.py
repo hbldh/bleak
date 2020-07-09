@@ -25,11 +25,10 @@ def notification_handler(sender, data):
     print("{0}: {1}".format(sender, data))
 
 
-async def run(address, loop, debug=False):
+async def run(address, debug=False):
     if debug:
         import sys
 
-        # loop.set_debug(True)
         l = logging.getLogger("asyncio")
         l.setLevel(logging.DEBUG)
         h = logging.StreamHandler(sys.stdout)
@@ -37,12 +36,12 @@ async def run(address, loop, debug=False):
         l.addHandler(h)
         logger.addHandler(h)
 
-    async with BleakClient(address, loop=loop) as client:
+    async with BleakClient(address) as client:
         x = await client.is_connected()
         logger.info("Connected: {0}".format(x))
 
         await client.start_notify(CHARACTERISTIC_UUID, notification_handler)
-        await asyncio.sleep(5.0, loop=loop)
+        await asyncio.sleep(5.0)
         await client.stop_notify(CHARACTERISTIC_UUID)
 
 
@@ -56,4 +55,5 @@ if __name__ == "__main__":
         else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"  # <--- Change to your device's address here if you are using macOS
     )
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address, loop, True))
+    # loop.set_debug(True)
+    loop.run_until_complete(run(address, True))

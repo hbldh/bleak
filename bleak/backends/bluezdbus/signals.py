@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
+
 from bleak.backends.bluezdbus.defs import PROPERTIES_INTERFACE, OBJECT_MANAGER_INTERFACE
 
 
-def listen_properties_changed(bus, loop, callback):
+def listen_properties_changed(bus, callback):
     """Create a future for a PropertiesChanged signal listener.
 
     Args:
         bus: The system bus object to use.
-        loop: The asyncio loop to use for adding the future to.
         callback: The callback function to run when signal is received.
 
     Returns:
@@ -20,15 +21,14 @@ def listen_properties_changed(bus, loop, callback):
         interface=PROPERTIES_INTERFACE,
         member="PropertiesChanged",
         path_namespace="/org/bluez",
-    ).asFuture(loop)
+    ).asFuture(asyncio.get_event_loop())
 
 
-def listen_interfaces_added(bus, loop, callback):
+def listen_interfaces_added(bus, callback):
     """Create a future for a InterfacesAdded signal listener.
 
     Args:
         bus: The system bus object to use.
-        loop: The asyncio loop to use for adding the future to.
         callback: The callback function to run when signal is received.
 
     Returns:
@@ -40,15 +40,14 @@ def listen_interfaces_added(bus, loop, callback):
         interface=OBJECT_MANAGER_INTERFACE,
         member="InterfacesAdded",
         path_namespace="/org/bluez",
-    ).asFuture(loop)
+    ).asFuture(asyncio.get_event_loop())
 
 
-def listen_interfaces_removed(bus, loop, callback):
+def listen_interfaces_removed(bus, callback):
     """Create a future for a InterfacesAdded signal listener.
 
     Args:
         bus: The system bus object to use.
-        loop: The asyncio loop to use for adding the future to.
         callback: The callback function to run when signal is received.
 
     Returns:
@@ -60,4 +59,4 @@ def listen_interfaces_removed(bus, loop, callback):
         interface=OBJECT_MANAGER_INTERFACE,
         member="InterfacesRemoved",
         path_namespace="/org/bluez",
-    ).asFuture(loop)
+    ).asFuture(asyncio.get_event_loop())

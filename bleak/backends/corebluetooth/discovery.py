@@ -8,7 +8,6 @@ Created on 2019-06-24 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import asyncio
-from asyncio.events import AbstractEventLoop
 from typing import List
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -16,18 +15,13 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 
-async def discover(
-    timeout: float = 5.0, loop: AbstractEventLoop = None, **kwargs
-) -> List[BLEDevice]:
+async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
     """Perform a Bluetooth LE Scan.
 
     Args:
         timeout (float): duration of scanning period
-        loop (Event Loop): Event Loop to use
 
     """
-    loop = loop if loop else asyncio.get_event_loop()
-
     manager = CentralManagerDelegate.alloc().init()
     try:
         await manager.wait_for_powered_on(0.1)

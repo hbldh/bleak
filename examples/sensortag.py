@@ -87,24 +87,23 @@ MANUFACTURER_NAME_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
 BATTERY_LEVEL_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
     uuid16_dict.get("Battery Level")
 )
-KEY_PRESS_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(0xFFE1)
+KEY_PRESS_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(0xffe1)
 # I/O test points on SensorTag.
 IO_DATA_CHAR_UUID = "f000aa65-0451-4000-b000-000000000000"
 IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 
 
-async def run(address, loop, debug=False):
+async def run(address, debug=False):
     if debug:
         import sys
 
-        # loop.set_debug(True)
         # l = logging.getLogger("asyncio")
         # l.setLevel(logging.DEBUG)
         # h = logging.StreamHandler(sys.stdout)
         # h.setLevel(logging.DEBUG)
         # l.addHandler(h)
 
-    async with BleakClient(address, timeout=1.0, loop=loop) as client:
+    async with BleakClient(address) as client:
         x = await client.is_connected()
         logger.info("Connected: {0}".format(x))
 
@@ -142,7 +141,7 @@ async def run(address, loop, debug=False):
         def keypress_handler(sender, data):
             print("{0}: {1}".format(sender, data))
 
-        write_value = bytearray([0xA0])
+        write_value = bytearray([0xa0])
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
         print("I/O Data Pre-Write Value: {0}".format(value))
 
@@ -153,7 +152,7 @@ async def run(address, loop, debug=False):
         assert value == write_value
 
         await client.start_notify(KEY_PRESS_UUID, keypress_handler)
-        await asyncio.sleep(5.0, loop=loop)
+        await asyncio.sleep(5.0)
         await client.stop_notify(KEY_PRESS_UUID)
 
 
@@ -167,4 +166,5 @@ if __name__ == "__main__":
         else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
     )
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address, loop, True))
+    # loop.set_debug(True)
+    loop.run_until_complete(run(address, True))

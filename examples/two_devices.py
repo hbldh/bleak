@@ -14,19 +14,19 @@ def callback(sender, data):
 def run(addresses):
     loop = asyncio.get_event_loop()
 
-    tasks = asyncio.gather(*(connect_to_device(address, loop) for address in addresses))
+    tasks = asyncio.gather(*(connect_to_device(address) for address in addresses))
 
     loop.run_until_complete(tasks)
 
 
 async def connect_to_device(address, loop):
     print("starting", address, "loop")
-    async with BleakClient(address, loop=loop, timeout=5.0) as client:
+    async with BleakClient(address, timeout=5.0) as client:
 
         print("connect to", address)
         try:
             await client.start_notify(notify_uuid, callback)
-            await asyncio.sleep(10.0, loop=loop)
+            await asyncio.sleep(10.0)
             await client.stop_notify(notify_uuid)
         except Exception as e:
             print(e)
