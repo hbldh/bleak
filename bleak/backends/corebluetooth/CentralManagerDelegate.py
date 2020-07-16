@@ -74,9 +74,6 @@ class CentralManagerDelegate(NSObject):
         self.callbacks = {}
         self.disconnected_callback = None
 
-        if not self.compliant():
-            logger.warning("CentralManagerDelegate is not compliant")
-
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
             self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
         )
@@ -84,12 +81,6 @@ class CentralManagerDelegate(NSObject):
         return self
 
     # User defined functions
-
-    def compliant(self):
-        """Determines whether the class adheres to the CBCentralManagerDelegate protocol"""
-        return CentralManagerDelegate.pyobjc_classMethods.conformsToProtocol_(
-            CBCentralManagerDelegate
-        )
 
     @property
     def isConnected(self) -> bool:

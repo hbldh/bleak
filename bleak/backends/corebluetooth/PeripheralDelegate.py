@@ -76,16 +76,7 @@ class PeripheralDelegate(NSObject):
         self._characteristic_notify_change_events = _EventDict()
         self._characteristic_notify_callbacks = {}
 
-        if not self.compliant():
-            logger.warning("PeripheralDelegate is not compliant")
-
         return self
-
-    def compliant(self):
-        """Determines whether the class adheres to the CBPeripheralDelegate protocol"""
-        return PeripheralDelegate.pyobjc_classMethods.conformsToProtocol_(
-            CBPeripheralDelegate
-        )
 
     async def discoverServices(self, use_cached=True) -> [CBService]:
         event = self._services_discovered_event
