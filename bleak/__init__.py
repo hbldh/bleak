@@ -20,13 +20,13 @@ _on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
-_logger.setLevel(logging.DEBUG)
 if bool(os.environ.get("BLEAK_LOGGING", False)):
     FORMAT = "%(asctime)-15s %(name)-8s %(levelname)s: %(message)s"
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(logging.Formatter(fmt=FORMAT))
     _logger.addHandler(handler)
+    _logger.setLevel(logging.DEBUG)
 
 if platform.system() == "Linux":
     if not _on_rtd:
