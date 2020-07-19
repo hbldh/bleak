@@ -55,10 +55,11 @@ async def wrap_IAsyncOperation(op, return_type):
         The results of the the .NET Task.
 
     """
+    loop = asyncio.get_event_loop()
     done = asyncio.Event()
     # Register AsyncOperationCompletedHandler callback that triggers the above asyncio.Event.
     op.Completed = AsyncOperationCompletedHandler[return_type](
-        lambda x, y: asyncio.get_event_loop().call_soon_threadsafe(done.set)
+        lambda x, y: loop.call_soon_threadsafe(done.set)
     )
     # Wait for callback.
     await done.wait()
@@ -82,8 +83,11 @@ class TaskWrapper(Awaitable):
         self.done = asyncio.Event()
 
     def __await__(self):
+        loop = asyncio.get_event_loop()
+        self.done = asyncio.Event()
+
         def callback(task):
-            asyncio.get_event_loop().call_soon_threadsafe(self.done.set)
+            loop.call_soon_threadsafe(self.done.set)
 
         self.task.ContinueWith(Action[Task](callback))
         yield from self.done.wait()
@@ -107,13 +111,15 @@ class IAsyncOperationAwaitable(Awaitable):
 
     def __init__(self, operation, return_type):
         self.operation = IAsyncOperation[return_type](operation)
-        self.done = asyncio.Event()
+        self.done = None
         self.return_type = return_type
 
     def __await__(self):
         # Register AsyncOperationCompletedHandler callback that triggers the above asyncio.Event.
+        loop = asyncio.get_event_loop()
+        self.done = asyncio.Event()
         self.operation.Completed = AsyncOperationCompletedHandler[self.return_type](
-            lambda x, y: asyncio.get_event_loop().call_soon_threadsafe(self.done.set)
+            lambda x, y: loop.call_soon_threadsafe(self.done.set)
         )
         yield from self.done.wait()
         return self

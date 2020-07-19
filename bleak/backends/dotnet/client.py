@@ -622,7 +622,7 @@ class BleakClientDotNet(BaseBleakClient):
             # TODO: Enable adding multiple handlers!
             self._notification_callbacks[characteristic.handle] = TypedEventHandler[
                 GattCharacteristic, GattValueChangedEventArgs
-            ](_notification_wrapper(callback))
+            ](_notification_wrapper(callback, asyncio.get_event_loop()))
             self._bridge.AddValueChangedCallback(
                 characteristic_obj, self._notification_callbacks[characteristic.handle]
             )
@@ -693,7 +693,7 @@ class BleakClientDotNet(BaseBleakClient):
             self._bridge.RemoveValueChangedCallback(characteristic.obj, callback)
 
 
-def _notification_wrapper(func: Callable):
+def _notification_wrapper(func: Callable, loop):
     @wraps(func)
     def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
@@ -702,7 +702,7 @@ def _notification_wrapper(func: Callable):
         output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
         reader.ReadBytes(output)
 
-        return asyncio.get_event_loop().call_soon_threadsafe(
+        return loop.call_soon_threadsafe(
             func, sender.Uuid.ToString(), bytearray(output)
         )
 
