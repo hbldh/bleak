@@ -38,7 +38,7 @@ class BaseBleakClient(abc.ABC):
         return "{0}, {1}".format(self.__class__.__name__, self.address)
 
     def __repr__(self):
-        return "<{0}, {1}, {2}>".format(self.__class__.__name__, self.address)
+        return "<{0}, {1}, {2}>".format(self.__class__.__name__, self.address, super(BaseBleakClient, self).__repr__())
 
     # Async Context managers
 
