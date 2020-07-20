@@ -6,28 +6,36 @@ using Windows.Foundation;
 
 namespace BleakBridge
 {
-    public class Bridge
+    public class Bridge: IDisposable
     {
-        public Dictionary<Guid, TypedEventHandler<GattCharacteristic, GattValueChangedEventArgs>> callbacks;
+        public Dictionary<ushort, TypedEventHandler<GattCharacteristic, GattValueChangedEventArgs>> callbacks;
         
         public Bridge()
         {
-            callbacks = new Dictionary<Guid, TypedEventHandler<GattCharacteristic, GattValueChangedEventArgs>>();
+            callbacks = new Dictionary<ushort, TypedEventHandler<GattCharacteristic, GattValueChangedEventArgs>>();
+        }
+
+        public void Dispose()
+        {
+            callbacks.Clear();
         }
 
         #region Notifications
 
         public void AddValueChangedCallback(GattCharacteristic characteristic, TypedEventHandler<GattCharacteristic, GattValueChangedEventArgs> callback)
         {
-            this.callbacks[characteristic.Uuid] = callback;
+            this.callbacks[characteristic.AttributeHandle] = callback;
             characteristic.ValueChanged += callback;
         }
 
-        public void RemoveValueChangedCallback(GattCharacteristic characteristic, TypedEventHandler<GattCharacteristic, GattValueChangedEventArgs> callback)
+        public void RemoveValueChangedCallback(GattCharacteristic characteristic)
         {
-            var stored_callback = this.callbacks[characteristic.Uuid];
-            this.callbacks.Remove(characteristic.Uuid);
-            characteristic.ValueChanged -= stored_callback;
+            if (this.callbacks.ContainsKey(characteristic.AttributeHandle))
+            {
+                var stored_callback = this.callbacks[characteristic.AttributeHandle];
+                this.callbacks.Remove(characteristic.AttributeHandle);
+                characteristic.ValueChanged -= stored_callback;
+            }
         }
 
         #endregion

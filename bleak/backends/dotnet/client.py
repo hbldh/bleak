@@ -14,11 +14,8 @@ from typing import Callable, Any, Union
 from bleak.exc import BleakError, BleakDotNetTaskError
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.dotnet.discovery import discover
-from bleak.backends.dotnet.utils import (
-    wrap_Task,
-    wrap_IAsyncOperation,
-    IAsyncOperationAwaitable,
-)
+from bleak.backends.dotnet.utils import wrap_IAsyncOperation
+
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.dotnet.service import BleakGATTServiceDotNet
@@ -84,7 +81,7 @@ class BleakClientDotNet(BaseBleakClient):
         # Backend specific. Python.NET objects.
         self._device_info = None
         self._requester = None
-        self._bridge = Bridge()
+        self._bridge = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -108,6 +105,9 @@ class BleakClientDotNet(BaseBleakClient):
             Boolean representing connection status.
 
         """
+        # Create a new BleakBridge here.
+        self._bridge = Bridge()
+
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
         devices = await discover(timeout=timeout)
@@ -174,17 +174,31 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         logger.debug("Disconnecting from BLE device...")
-        # Remove notifications
-        # TODO: Make sure all notifications are removed prior to Dispose.
+        # Remove notifications (Remove them )
+        for characteristic in self.services.characteristics.values():
+            self._bridge.RemoveValueChangedCallback(characteristic.obj)
+        for notification in self._notification_callbacks.values():
+            del notification
+        self._notification_callbacks.clear()
+
         # Dispose all components that we have requested and created.
         for service in self.services:
             service.obj.Dispose()
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
+        try:
+            self._requester.Close()
+        except Exception as e:
+            logger.error(e)
+        finally:
+            status = self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
         self._requester.Dispose()
         self._requester = None
 
-        return not await self.is_connected()
+        self._bridge.Dispose()
+        self._bridge = None
+
+        return status
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -370,6 +384,7 @@ class BleakClientDotNet(BaseBleakClient):
             output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
             reader.ReadBytes(output)
             value = bytearray(output)
+            reader.Dispose()
             logger.debug(
                 "Read Characteristic {0} : {1}".format(characteristic.uuid, value)
             )
@@ -424,6 +439,7 @@ class BleakClientDotNet(BaseBleakClient):
             output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
             reader.ReadBytes(output)
             value = bytearray(output)
+            reader.Dispose()
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
@@ -632,7 +648,8 @@ class BleakClientDotNet(BaseBleakClient):
             logger.debug("Start Notify problem: {0}".format(e))
             if characteristic_obj.Uuid.ToString() in self._notification_callbacks:
                 callback = self._notification_callbacks.pop(characteristic.handle)
-                self._bridge.RemoveValueChangedCallback(characteristic_obj, callback)
+                self._bridge.RemoveValueChangedCallback(characteristic_obj)
+                del callback
 
             return GattCommunicationStatus.AccessDenied
 
@@ -650,7 +667,8 @@ class BleakClientDotNet(BaseBleakClient):
             # but it actually doesn't.
             if characteristic.handle in self._notification_callbacks:
                 callback = self._notification_callbacks.pop(characteristic.handle)
-                self._bridge.RemoveValueChangedCallback(characteristic_obj, callback)
+                self._bridge.RemoveValueChangedCallback(characteristic_obj)
+                del callback
 
             return GattCommunicationStatus.AccessDenied
         return status
@@ -692,7 +710,8 @@ class BleakClientDotNet(BaseBleakClient):
             )
         else:
             callback = self._notification_callbacks.pop(characteristic.handle)
-            self._bridge.RemoveValueChangedCallback(characteristic.obj, callback)
+            self._bridge.RemoveValueChangedCallback(characteristic.obj)
+            del callback
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
@@ -703,6 +722,7 @@ def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
         reader = DataReader.FromBuffer(args.CharacteristicValue)
         output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
         reader.ReadBytes(output)
+        reader.Dispose()
 
         return loop.call_soon_threadsafe(
             func, sender.Uuid.ToString(), bytearray(output)

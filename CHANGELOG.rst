@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 ~~~~~~~
 
+* Version 0.5.0 of BleakUWPBridge, with some modified methods and implementing ``IDisposable``.
 * Merged #224. All storing and passing of event loops in bleak is removed.
 * Removed Objective C delegate compliance checks. Merged #253.
 
@@ -21,6 +22,9 @@ Fixed
 
 * .NET backend loop handling bug entered by #224 fixed.
 * Removed default ``DEBUG`` level set to bleak logger. Fixes #251.
+* More coherency in logger uses over all backends. Fixes #258
+* Attempted fix of #255 and #133: cleanups, disposing of objects and creating new ``BleakBridge`` instances each disconnect.
+* Fixed some type hints and docstrings.
 
 `0.7.1`_ (2020-07-02)
 ---------------------

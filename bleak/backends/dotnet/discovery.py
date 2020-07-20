@@ -121,6 +121,7 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
             reader = DataReader.FromBuffer(md)
             reader.ReadBytes(b)
             data[m.CompanyId] = bytes(b)
+            reader.Dispose()
         local_name = d.Advertisement.LocalName
         if not local_name and d.BluetoothAddress in scan_responses:
             local_name = scan_responses[d.BluetoothAddress].Advertisement.LocalName
