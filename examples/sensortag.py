@@ -150,7 +150,7 @@ async def run(address, debug=False):
         print("I/O Data Post-Write Value: {0}".format(value))
         assert value == write_value
 
-        await client.start_notify(KEY_PRESS_UUID, keypress_handler)
+        await client.start_notify(KEY_PRESS_UUID, keypress_handler, mtu=50)
         await asyncio.sleep(5.0)
         await client.stop_notify(KEY_PRESS_UUID)
 

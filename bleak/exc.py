@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 class BleakError(Exception):
     """Base Exception for bleak."""
 
