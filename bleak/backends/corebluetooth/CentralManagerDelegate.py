@@ -246,9 +246,10 @@ class CentralManagerDelegate(NSObject):
                 peripheral.identifier().UUIDString()
             )
         )
-        peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
-        self.connected_peripheral_delegate = peripheralDelegate
-        self._connection_state = CMDConnectionState.CONNECTED
+        if self._connection_state != CMDConnectionState.CONNECTED:
+            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
+            self.connected_peripheral_delegate = peripheralDelegate
+            self._connection_state = CMDConnectionState.CONNECTED
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
         logger.debug("centralManager_didConnectPeripheral_")
@@ -280,6 +281,8 @@ class CentralManagerDelegate(NSObject):
         self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError
     ):
         logger.debug("Peripheral Device disconnected!")
+        self.connected_peripheral_delegate = None
+        self.connected_peripheral = None
         self._connection_state = CMDConnectionState.DISCONNECTED
 
         if self.disconnected_callback is not None:

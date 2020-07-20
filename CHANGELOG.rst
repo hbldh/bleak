@@ -25,6 +25,7 @@ Fixed
 * More coherency in logger uses over all backends. Fixes #258
 * Attempted fix of #255 and #133: cleanups, disposing of objects and creating new ``BleakBridge`` instances each disconnect.
 * Fixed some type hints and docstrings.
+* Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
 
 `0.7.1`_ (2020-07-02)
 ---------------------
