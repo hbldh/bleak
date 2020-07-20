@@ -180,6 +180,7 @@ class BleakClientDotNet(BaseBleakClient):
         for service in self.services:
             service.obj.Dispose()
         self.services = BleakGATTServiceCollection()
+        self._services_resolved = False
         self._requester.Dispose()
         self._requester = None
 
@@ -322,6 +323,7 @@ class BleakClientDotNet(BaseBleakClient):
                             )
                         )
 
+            logger.info("Services resolved for %s", str(self))
             self._services_resolved = True
             return self.services
 
@@ -693,7 +695,7 @@ class BleakClientDotNet(BaseBleakClient):
             self._bridge.RemoveValueChangedCallback(characteristic.obj, callback)
 
 
-def _notification_wrapper(func: Callable, loop):
+def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     @wraps(func)
     def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.

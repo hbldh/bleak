@@ -114,7 +114,7 @@ async def discover(timeout=5.0, **kwargs):
             message.member == "InterfacesRemoved"
             and message.body[1][0] == defs.BATTERY_INTERFACE
         ):
-            logger.info(
+            logger.debug(
                 "{0}, {1} ({2}): {3}".format(
                     message.member, message.interface, message.path, message.body
                 )
@@ -122,13 +122,13 @@ async def discover(timeout=5.0, **kwargs):
             return
         else:
             msg_path = message.path
-            logger.info(
+            logger.debug(
                 "{0}, {1} ({2}): {3}".format(
                     message.member, message.interface, message.path, message.body
                 )
             )
 
-        logger.info(
+        logger.debug(
             "{0}, {1} ({2} dBm), Object Path: {3}".format(
                 *_device_info(msg_path, devices.get(msg_path))
             )

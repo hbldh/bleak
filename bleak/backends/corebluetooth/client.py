@@ -165,6 +165,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                             int(characteristic.handle()),
                         )
                     )
+        logger.info("Services resolved for %s", str(self))
         self._services_resolved = True
         self._services = services
         return self.services
