@@ -116,7 +116,7 @@ class BleakClientDotNet(BaseBleakClient):
         )
 
         if len(sought_device):
-            self._device_info = sought_device[0].details
+            self._device_info = sought_device[0].details.BluetoothAddress
         else:
             raise BleakError(
                 "Device with address {0} was " "not found.".format(self.address)
@@ -124,7 +124,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         logger.debug("Connecting to BLE device @ {0}".format(self.address))
 
-        args = [UInt64(self._device_info.BluetoothAddress)]
+        args = [UInt64(self._device_info)]
         if self._address_type is not None:
             args.append(
                 BluetoothAddressType.Public
@@ -170,35 +170,35 @@ class BleakClientDotNet(BaseBleakClient):
         """Disconnect from the specified GATT server.
 
         Returns:
-            Boolean representing connection status.
+            Boolean representing if device is disconnected.
 
         """
         logger.debug("Disconnecting from BLE device...")
-        # Remove notifications (Remove them )
+        # Remove notifications. Remove them first in the BleakBridge and then clear
+        # remaining notifications in Python as well.
         for characteristic in self.services.characteristics.values():
             self._bridge.RemoveValueChangedCallback(characteristic.obj)
-        for notification in self._notification_callbacks.values():
-            del notification
         self._notification_callbacks.clear()
 
-        # Dispose all components that we have requested and created.
+        # Dispose all service components that we have requested and created.
         for service in self.services:
             service.obj.Dispose()
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
-        try:
-            self._requester.Close()
-        except Exception as e:
-            logger.error(e)
-        finally:
-            status = self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
+
+        # Dispose of the BluetoothLEDevice and see that the connection status is now Disconnected.
         self._requester.Dispose()
+        is_disconnected = self._requester.ConnectionStatus == BluetoothConnectionStatus.Disconnected
         self._requester = None
 
+        # Set device info to None as well.
+        self._device_info = None
+
+        # Finally, dispose of the Bleak Bridge as well.
         self._bridge.Dispose()
         self._bridge = None
 
-        return status
+        return is_disconnected
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -263,7 +263,6 @@ class BleakClientDotNet(BaseBleakClient):
                         )
                     )
 
-            # TODO: Check if fetching yeilds failures...
             for service in services_result.Services:
                 characteristics_result = await wrap_IAsyncOperation(
                     IAsyncOperation[GattCharacteristicsResult](
