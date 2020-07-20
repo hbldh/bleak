@@ -11,7 +11,7 @@ import uuid
 from functools import wraps
 from typing import Callable, Any, Union
 
-from bleak.exc import BleakError, BleakDotNetTaskError
+from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.dotnet.discovery import discover
 from bleak.backends.dotnet.utils import wrap_IAsyncOperation
@@ -251,9 +251,10 @@ class BleakClientDotNet(BaseBleakClient):
             if services_result.Status != GattCommunicationStatus.Success:
                 if services_result.Status == GattCommunicationStatus.ProtocolError:
                     raise BleakDotNetTaskError(
-                        "Could not get GATT services: {0} (Error: 0x{1:02X})".format(
+                        "Could not get GATT services: {0} (Error: 0x{1:02X}: {2})".format(
                             _communication_statues.get(services_result.Status, ""),
                             services_result.ProtocolError,
+                            CONTROLLER_ERROR_CODES.get(services_result.ProtocolError, "Unknown")
                         )
                     )
                 else:
@@ -277,12 +278,13 @@ class BleakClientDotNet(BaseBleakClient):
                         == GattCommunicationStatus.ProtocolError
                     ):
                         raise BleakDotNetTaskError(
-                            "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                            "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                                 service,
                                 _communication_statues.get(
                                     characteristics_result.Status, ""
                                 ),
                                 characteristics_result.ProtocolError,
+                                CONTROLLER_ERROR_CODES.get(characteristics_result.ProtocolError, "Unknown")
                             )
                         )
                     else:
@@ -310,12 +312,15 @@ class BleakClientDotNet(BaseBleakClient):
                             == GattCommunicationStatus.ProtocolError
                         ):
                             raise BleakDotNetTaskError(
-                                "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X})".format(
+                                "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                                     service,
                                     _communication_statues.get(
                                         descriptors_result.Status, ""
                                     ),
                                     descriptors_result.ProtocolError,
+                                    CONTROLLER_ERROR_CODES.get(
+                                        descriptors_result.ProtocolError,
+                                        "Unknown")
                                 )
                             )
                         else:
@@ -390,10 +395,13 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakDotNetTaskError(
-                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                         characteristic.uuid,
                         _communication_statues.get(read_result.Status, ""),
                         read_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            read_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -443,10 +451,13 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakDotNetTaskError(
-                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                         descriptor.uuid,
                         _communication_statues.get(read_result.Status, ""),
                         read_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            read_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -504,11 +515,14 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             if write_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X})".format(
+                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X}: {4})".format(
                         data,
                         characteristic.uuid,
                         _communication_statues.get(write_result.Status, ""),
                         write_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            write_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -545,11 +559,14 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             if write_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X})".format(
+                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X}: {4})".format(
                         data,
                         descriptor.uuid,
                         _communication_statues.get(write_result.Status, ""),
                         write_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            write_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -598,8 +615,7 @@ class BleakClientDotNet(BaseBleakClient):
         status = await self._start_notify(characteristic, callback)
 
         if status != GattCommunicationStatus.Success:
-            # TODO: Find out how to get the ProtocolError code that describes a
-            #  potential GattCommunicationStatus.ProtocolError result.
+            # TODO: Find out how to get the ProtocolError code that describes a potential GattCommunicationStatus.ProtocolError result.
             raise BleakError(
                 "Could not start notify on {0}: {1}".format(
                     characteristic.uuid, _communication_statues.get(status, "")
