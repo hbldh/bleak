@@ -27,6 +27,11 @@ Fixed
 * Fixed some type hints and docstrings.
 * Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
 
+Added
+~~~~~
+
+* Added text representations of Protocol Errors that are visible in the .NET backend. Added these texts to errors raised.
+
 `0.7.1`_ (2020-07-02)
 ---------------------
 
