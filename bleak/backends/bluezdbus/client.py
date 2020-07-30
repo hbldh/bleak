@@ -535,7 +535,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # See docstring for details about this handling.
         if not response and self._bluez_version[0] == 5 and self._bluez_version[1] < 46:
             raise BleakError("Write without response requires at least BlueZ 5.46")
-        if response or (self._bluez_version[0] == 5 and self._bluez_version[1] > 50):
+        if response or (self._bluez_version[0] == 5 and self._bluez_version[1] >= 50):
             # TODO: Add OnValueUpdated handler for response=True?
             await self._bus.callRemote(
                 characteristic.path,
