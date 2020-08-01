@@ -101,7 +101,7 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def unpair(self, *args, **kwargs) -> bool:
+    async def unpair(self) -> bool:
         """Unpair with the peripheral."""
         raise NotImplementedError()
 

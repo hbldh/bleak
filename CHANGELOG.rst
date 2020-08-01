@@ -28,6 +28,7 @@ Added
 
 * Pairing in .NET backend.
 * Pairing in the BlueZ backend.
+* Added stumps and ``NotImplementedError``s on pairing in macOS backend.
 
 Changed
 ~~~~~~~

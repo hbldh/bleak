@@ -41,7 +41,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         timeout (float): Timeout for required ``discover`` call during connect. Defaults to 10.0.
 
     """
-
     def __init__(self, address: str, **kwargs):
         super(BleakClientCoreBluetooth, self).__init__(address, **kwargs)
 
@@ -122,6 +121,36 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         if self._disconnected_callback is not None:
             self._disconnected_callback(self)
+
+    async def pair(self, *args, **kwargs) -> bool:
+        """Attempt to pair with a peripheral.
+
+        .. note::
+
+            This is not available on macOS since there is not explicit method to do a pairing, Instead the docs
+            state that it "auto-pairs" when trying to read a characteristic that requires encryption, something
+            Bleak cannot do apparently.
+
+        Reference:
+
+            - https://stackoverflow.com/questions/25254932/can-you-pair-a-bluetooth-le-device-in-an-ios-app
+            - https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral.html#//apple_ref/doc/uid/TP40013257-CH5-SW1
+            - https://stackoverflow.com/questions/47546690/ios-bluetooth-pairing-request-dialog-can-i-know-the-users-choice
+
+
+        Returns:
+            Boolean regarding success of pairing.
+
+        """
+        raise NotImplementedError("Pairing is not available in Core Bluetooth.")
+
+    async def unpair(self) -> bool:
+        """
+
+        Returns:
+
+        """
+        raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
     async def get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
