@@ -251,7 +251,7 @@ class BleakClientDotNet(BaseBleakClient):
         """
         raise NotImplementedError("This is not implemented in the .NET backend yet")
 
-    async def pair(self, protection_level=None) -> bool:
+    async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:

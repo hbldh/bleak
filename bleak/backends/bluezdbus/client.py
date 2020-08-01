@@ -272,7 +272,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         return is_disconnected
 
-    async def pair(self) -> bool:
+    async def pair(self, *args, **kwargs) -> bool:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
