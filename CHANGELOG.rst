@@ -26,7 +26,8 @@ Added
 Added
 ~~~~~
 
-- Pairing in .NET backend.
+* Pairing in .NET backend.
+* Pairing in the BlueZ backend.
 
 Changed
 ~~~~~~~

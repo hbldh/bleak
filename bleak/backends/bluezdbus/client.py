@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import uuid
+import warnings
 from asyncio import Future
 from functools import wraps, partial
 from typing import Callable, Any, Union
@@ -147,8 +148,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             await self._bus.callRemote(
                 self._device_path,
                 "Connect",
-                interface="org.bluez.Device1",
-                destination="org.bluez",
+                interface=defs.DEVICE_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
             ).asFuture(loop)
         except RemoteError as e:
             await self._cleanup_all()
@@ -278,9 +279,70 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
 
         Returns:
+            Boolean regarding success of pairing.
 
         """
-        raise NotImplementedError()
+        loop = asyncio.get_event_loop()
+
+        # See if it is already paired.
+        is_paired = await self._bus.callRemote(
+            self._device_path,
+            "Get",
+            interface=defs.PROPERTIES_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature="ss",
+            body=[defs.DEVICE_INTERFACE, "Paired"],
+            returnSignature="v",
+        ).asFuture(asyncio.get_event_loop())
+        if is_paired:
+            return is_paired
+
+        # Set device as trusted.
+        await self._bus.callRemote(
+            self._device_path,
+            "Set",
+            interface=defs.PROPERTIES_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature="ssv",
+            body=[defs.DEVICE_INTERFACE, "Trusted", True],
+            returnSignature="",
+        ).asFuture(asyncio.get_event_loop())
+
+        logger.debug(
+            "Pairing to BLE device @ {0} with {1}".format(self.address, self.device)
+        )
+        try:
+            await self._bus.callRemote(
+                self._device_path,
+                "Pair",
+                interface=defs.DEVICE_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+            ).asFuture(loop)
+        except RemoteError as e:
+            await self._cleanup_all()
+            raise BleakError(
+                "Device with address {0} could not be paired with.".format(self.address)
+            )
+
+        return await self._bus.callRemote(
+            self._device_path,
+            "Get",
+            interface=defs.PROPERTIES_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature="ss",
+            body=[defs.DEVICE_INTERFACE, "Paired"],
+            returnSignature="v",
+        ).asFuture(asyncio.get_event_loop())
+
+    async def unpair(self) -> bool:
+        """Unpair with the peripheral.
+
+        Returns:
+            Boolean regarding success of unpairing.
+
+        """
+        warnings.warn("Unpairing is seemingly unavailable in the BlueZ DBus API at the moment.")
+        return False
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -694,7 +756,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._subscriptions.append(characteristic.handle)
 
     async def stop_notify(
-        self, char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, uuid.UUID]
+        self,
+        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, uuid.UUID],
     ) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
@@ -727,7 +790,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # DBUS introspection method for characteristics.
 
     async def get_all_for_characteristic(
-        self, char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, uuid.UUID]
+        self,
+        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, uuid.UUID],
     ) -> dict:
         """Get all properties for a characteristic.
 
