@@ -23,6 +23,11 @@ Added
   and switched its ``BleakClient`` implementation to use that method in ``connect``.
 * Added text representations of Protocol Errors that are visible in the .NET backend. Added these texts to errors raised.
 
+Added
+~~~~~
+
+- Pairing in .NET backend.
+
 Changed
 ~~~~~~~
 * **BREAKING CHANGE** All notifications now have the characteristic's integer **handle** instead of its UUID as a

@@ -32,6 +32,16 @@ from BleakBridge import Bridge
 from System import Array, Byte, UInt64
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
 from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
+from Windows.Devices.Enumeration import (
+    DevicePairingResult,
+    DevicePairingResultStatus,
+    DeviceUnpairingResult,
+    DeviceUnpairingResultStatus,
+    DevicePairingKinds,
+    DevicePairingProtectionLevel,
+    DeviceInformationCustomPairing,
+    DevicePairingRequestedEventArgs,
+)
 from Windows.Devices.Bluetooth import (
     BluetoothLEDevice,
     BluetoothConnectionStatus,
@@ -59,6 +69,18 @@ logger = logging.getLogger(__name__)
 _communication_statues = {
     getattr(GattCommunicationStatus, k): k
     for k in ["Success", "Unreachable", "ProtocolError", "AccessDenied"]
+}
+
+_pairing_statuses = {
+    getattr(DevicePairingResultStatus, v): v
+    for v in dir(DevicePairingResultStatus)
+    if "_" not in v and isinstance(getattr(DevicePairingResultStatus, v), int)
+}
+
+_unpairing_statuses = {
+    getattr(DeviceUnpairingResultStatus, v): v
+    for v in dir(DeviceUnpairingResultStatus)
+    if "_" not in v and isinstance(getattr(DeviceUnpairingResultStatus, v), int)
 }
 
 
@@ -185,9 +207,12 @@ class BleakClientDotNet(BaseBleakClient):
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
 
-        # Dispose of the BluetoothLEDevice and see that the connection status is now Disconnected.
+        # Dispose of the BluetoothLEDevice and see that the connection
+        # status is now Disconnected.
         self._requester.Dispose()
-        is_disconnected = self._requester.ConnectionStatus == BluetoothConnectionStatus.Disconnected
+        is_disconnected = (
+            self._requester.ConnectionStatus == BluetoothConnectionStatus.Disconnected
+        )
         self._requester = None
 
         # Set device info to None as well.
@@ -225,6 +250,104 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         raise NotImplementedError("This is not implemented in the .NET backend yet")
+
+    async def pair(self, protection_level=None) -> bool:
+        """Attempts to pair with the device.
+
+        Keyword Args:
+            protection_level:
+                    DevicePairingProtectionLevel
+                        1: None - Pair the device using no levels of protection.
+                        2: Encryption - Pair the device using encryption.
+                        3: EncryptionAndAuthentication - Pair the device using encryption and authentication.
+
+        Returns:
+            Boolean regarding success of pairing.
+
+        """
+        if (
+            self._requester.DeviceInformation.Pairing.CanPair
+            and not self._requester.DeviceInformation.Pairing.IsPaired
+        ):
+
+            # Currently only supporting Just Works solutions...
+            ceremony = DevicePairingKinds.ConfirmOnly
+            custom_pairing = self._requester.DeviceInformation.Pairing.Custom
+
+            def handler(sender, args):
+                args.Accept()
+
+            custom_pairing.PairingRequested += handler
+
+            if protection_level:
+                raise NotImplementedError(
+                    "Cannot set minimally required protection level yet..."
+                )
+            else:
+                pairing_result = await wrap_IAsyncOperation(
+                    IAsyncOperation[DevicePairingResult](
+                        custom_pairing.PairAsync.Overloads[DevicePairingKinds](ceremony)
+                    ),
+                    return_type=DevicePairingResult,
+                )
+
+            try:
+                custom_pairing.PairingRequested -= handler
+            except Exception as e:
+                # TODO: Find a way to remove WinRT events...
+                pass
+            finally:
+                del handler
+
+            if pairing_result.Status not in (
+                DevicePairingResultStatus.Paired,
+                DevicePairingResultStatus.AlreadyPaired,
+            ):
+                raise BleakError(
+                    "Could not pair with device: {0}: {1}".format(
+                        pairing_result.Status,
+                        _pairing_statuses.get(pairing_result.Status),
+                    )
+                )
+            else:
+                logger.info(
+                    "Paired to device with protection level {0}.".format(
+                        pairing_result.ProtectionLevelUsed
+                    )
+                )
+
+        return self._requester.DeviceInformation.Pairing.IsPaired
+
+    async def unpair(self) -> bool:
+        """Attempts to unpair from the device.
+
+        Returns:
+            Boolean on whether the unparing was successful.
+
+        """
+
+        if self._requester.DeviceInformation.Pairing.IsPaired:
+            unpairing_result = await wrap_IAsyncOperation(
+                IAsyncOperation[DeviceUnpairingResult](
+                    self._requester.DeviceInformation.Pairing.UnpairAsync()
+                ),
+                return_type=DeviceUnpairingResult,
+            )
+
+            if unpairing_result.Status not in (
+                DevicePairingResultStatus.Paired,
+                DevicePairingResultStatus.AlreadyPaired,
+            ):
+                raise BleakError(
+                    "Could not unpair with device: {0}: {1}".format(
+                        unpairing_result.Status,
+                        _unpairing_statuses.get(unpairing_result.Status),
+                    )
+                )
+            else:
+                logger.info("Unpaired with device.")
+
+        return not self._requester.DeviceInformation.Pairing.IsPaired
 
     # GATT services methods
 
