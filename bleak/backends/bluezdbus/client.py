@@ -486,7 +486,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Perform a write operation on the specified GATT characteristic.
 
         NB: the version check below is for the "type" option to the
-        "Characteristic.WriteValue" method that was added to Bluez in 5.50
+        "Characteristic.WriteValue" method that was added to Bluez in 5.51
         https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a
         Before that commit, "Characteristic.WriteValue" was only "Write with
         response". "Characteristic.AcquireWrite" was added in Bluez 5.46
