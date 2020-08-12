@@ -196,3 +196,45 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         """
         return self.watcher.Status if self.watcher else None
+
+    @classmethod
+    async def find_specific_device(
+        cls, device_identifier: str, timeout: float = 20.0
+    ) -> Union[BLEDevice, None]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address.
+
+        Args:
+            device_identifier (str): The MAC address of the Bluetooth peripheral.
+            timeout (float): Optional timeout to
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+
+        ulong_id = int(device_identifier.replace(":", ""), 16)
+        loop = asyncio.get_event_loop()
+        stop_scanning_event = asyncio.Event(loop=loop)
+
+        def stop_if_detected(sender, event_args):
+            if event_args.BluetoothAddress == ulong_id:
+                loop.call_soon_threadsafe(stop_scanning_event.set)
+
+        scanner = cls()
+        scanner.register_detection_callback(stop_if_detected)
+
+        await scanner.start()
+        try:
+            await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            device = None
+        else:
+            device = next(
+                d
+                for d in await scanner.get_discovered_devices()
+                if d.address.lower() == device_identifier.lower()
+            )
+        finally:
+            await scanner.stop()
+
+        return device

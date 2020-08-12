@@ -41,3 +41,8 @@ class BaseBleakScanner(abc.ABC):
     @abc.abstractmethod
     async def get_discovered_devices(self) -> List[BLEDevice]:
         raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    async def find_specific_device(cls, device_identifier: str) -> BLEDevice:
+        raise NotImplementedError()
