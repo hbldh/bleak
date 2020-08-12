@@ -10,6 +10,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Added
+~~~~
+
+* Added ``find_specific_device`` method to the ``BleakScanner`` interface, for stopping scanning when a desired address is found.
+* Implemented ``find_specific_device`` in the .NET backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Implemented ``find_specific_device`` in the BlueZ backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
+
 Changed
 ~~~~~~~
 

@@ -67,7 +67,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
+        super(BleakScannerBlueZDBus, self).__init__()
 
         self._device = kwargs.get("device", "hci0")
         self._reactor = None
@@ -79,7 +79,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         # Discovery filters
         self._filters = kwargs.get("filters", {})
-        self._filters["Transport"] = "le"
+        if "Transport" not in self._filters:
+            self._filters["Transport"] = "le"
 
         self._adapter_path = None
         self._interface = None
@@ -178,7 +179,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         """
         self._filters = kwargs.get("filters", {})
-        self._filters["Transport"] = "le"
+        if "Transport" not in self._filters:
+            self._filters["Transport"] = "le"
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         # Reduce output.
@@ -216,13 +218,55 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         """
         self._callback = callback
 
+    @classmethod
+    async def find_specific_device(cls, device_identifier: str, timeout: float = 10.0, **kwargs) -> BLEDevice:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address.
+
+        Args:
+            device_identifier (str): The MAC address of the Bluetooth peripheral.
+            timeout (float): Optional timeout to wait for detection of specified peripheral.
+
+        Keyword Args:
+            device (str): Bluetooth device to use for discovery.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        device_identifier = device_identifier.lower()
+        loop = asyncio.get_event_loop()
+        stop_scanning_event = asyncio.Event(loop=loop)
+
+        def stop_if_detected(message):
+            if any(device.get("Address", "").lower() == device_identifier for device in scanner._devices.values()):
+                loop.call_soon_threadsafe(stop_scanning_event.set)
+
+        scanner = cls(**kwargs)
+        scanner.register_detection_callback(stop_if_detected)
+
+        await scanner.start()
+        try:
+            await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            device = None
+        else:
+            device = next(
+                d
+                for d in await scanner.get_discovered_devices()
+                if d.address.lower() == device_identifier.lower()
+            )
+        finally:
+            await scanner.stop()
+
+        return device
+
     # Helper methods
 
     def parse_msg(self, message):
         if message.member == "InterfacesAdded":
             msg_path = message.body[0]
             try:
-                device_interface = message.body[1].get("org.bluez.Device1", {})
+                device_interface = message.body[1].get(defs.DEVICE_INTERFACE, {})
             except Exception as e:
                 raise e
             self._devices[msg_path] = (

@@ -56,7 +56,7 @@ class BleakScannerDotNet(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerDotNet, self).__init__(**kwargs)
+        super(BleakScannerDotNet, self).__init__()
 
         self.watcher = None
         self._devices = {}
@@ -199,13 +199,22 @@ class BleakScannerDotNet(BaseBleakScanner):
 
     @classmethod
     async def find_specific_device(
-        cls, device_identifier: str, timeout: float = 20.0
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Union[BLEDevice, None]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address.
 
         Args:
             device_identifier (str): The MAC address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to
+            timeout (float): Optional timeout to wait for detection of specified peripheral.
+
+        Keyword Args:
+            scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
+            SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
+              BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+              LE advertisement filtering that uses signal strength-based filtering.
+            AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
+              BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+              advertisement filtering that uses payload section-based filtering.
 
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.
@@ -220,7 +229,7 @@ class BleakScannerDotNet(BaseBleakScanner):
             if event_args.BluetoothAddress == ulong_id:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        scanner = cls()
+        scanner = cls(**kwargs)
         scanner.register_detection_callback(stop_if_detected)
 
         await scanner.start()
