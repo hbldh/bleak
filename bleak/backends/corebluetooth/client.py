@@ -130,7 +130,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         if self._services is not None:
-            return self._services
+            return self.services
 
         logger.debug("Retrieving services...")
         manager = self._device_info.manager().delegate()
