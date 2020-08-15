@@ -20,6 +20,7 @@ from bleak.backends.corebluetooth.characteristic import (
 )
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.corebluetooth.discovery import discover
+from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -57,20 +58,18 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Connect to a specified Peripheral
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+            timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
 
         Returns:
             Boolean representing connection status.
 
         """
         timeout = kwargs.get("timeout", self._timeout)
-        devices = await discover(timeout=timeout)
-        sought_device = list(
-            filter(lambda x: x.address.upper() == self.address.upper(), devices)
-        )
+        device = await BleakScannerCoreBluetooth.find_specific_device(
+            self.address, timeout=timeout)
 
-        if len(sought_device):
-            self._device_info = sought_device[0].details
+        if device:
+            self._device_info = device.details
         else:
             raise BleakError(
                 "Device with address {} was not found".format(self.address)
@@ -79,7 +78,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         logger.debug("Connecting to BLE device @ {}".format(self.address))
 
         manager = self._device_info.manager().delegate()
-        await manager.connect_(sought_device[0].details)
+        await manager.connect_(self._device_info)
 
         # Now get services
         await self.get_services()

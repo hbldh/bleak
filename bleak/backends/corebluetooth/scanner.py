@@ -115,6 +115,47 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     def register_detection_callback(self, callback: Callable):
         self._callback = callback
 
+    @classmethod
+    async def find_specific_device(
+        cls, device_identifier: str, timeout: float = 10.0
+    ) -> Union[BLEDevice, None]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address.
+
+        Args:
+            device_identifier (str): The MAC address of the Bluetooth peripheral.
+            timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        loop = asyncio.get_event_loop()
+        stop_scanning_event = asyncio.Event()
+        device_identifier = device_identifier.lower()
+
+        def stop_if_detected(peripheral, advertisementData, RSSI):
+            if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
+                loop.call_soon_threadsafe(stop_scanning_event.set)
+
+        scanner = cls()
+        scanner.register_detection_callback(stop_if_detected)
+
+        await scanner.start()
+        try:
+            await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            device = None
+        else:
+            device = next(
+                d
+                for d in await scanner.get_discovered_devices()
+                if d.address.lower() == device_identifier.lower()
+            )
+        finally:
+            await scanner.stop()
+
+        return device
+
     # macOS specific methods
 
     @property

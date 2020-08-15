@@ -205,7 +205,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         Args:
             device_identifier (str): The MAC address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral.
+            timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
 
         Keyword Args:
             scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
@@ -223,7 +223,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         ulong_id = int(device_identifier.replace(":", ""), 16)
         loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event(loop=loop)
+        stop_scanning_event = asyncio.Event()
 
         def stop_if_detected(sender, event_args):
             if event_args.BluetoothAddress == ulong_id:

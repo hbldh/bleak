@@ -224,7 +224,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         Args:
             device_identifier (str): The MAC address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral.
+            timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
 
         Keyword Args:
             device (str): Bluetooth device to use for discovery.
@@ -235,7 +235,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         """
         device_identifier = device_identifier.lower()
         loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event(loop=loop)
+        stop_scanning_event = asyncio.Event()
 
         def stop_if_detected(message):
             if any(device.get("Address", "").lower() == device_identifier for device in scanner._devices.values()):
