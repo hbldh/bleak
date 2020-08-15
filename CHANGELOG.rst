@@ -26,6 +26,7 @@ Fixed
 * Attempted fix of #255 and #133: cleanups, disposing of objects and creating new ``BleakBridge`` instances each disconnect.
 * Fixed some type hints and docstrings.
 * Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
+* Merged #270, fixing a critical bug in ``get_services`` method in Core Bluetooth backend.
 
 Added
 ~~~~~
