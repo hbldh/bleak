@@ -91,6 +91,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         manager = self._device_info.manager().delegate()
         await manager.disconnect()
         self.services = BleakGATTServiceCollection()
+        # Ensure that `get_services` retrieves services again, rather than using the cached object
+        self._services_resolved = False
+        self._services = None 
         return True
 
     async def is_connected(self) -> bool:
@@ -128,7 +131,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         if self._services is not None:
-            return self._services
+            return self.services
 
         logger.debug("Retrieving services...")
         manager = self._device_info.manager().delegate()
