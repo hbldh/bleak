@@ -32,7 +32,6 @@ Bleak is a GATT client software, capable of connecting to BLE devices
 acting as GATT servers. It is designed to provide a asynchronous,
 cross-platform Python API to connect and communicate with e.g. sensors.
 
-
 Features
 --------
 
@@ -40,23 +39,31 @@ Features
 * Supports Linux distributions with BlueZ >= 5.43 (See :ref:`linux-backend` for more details)
 * OS X/macOS support via Core Bluetooth API, from at least OS X version 10.11
 
-Bleak supports reading, writing and getting notifications from
-GATT servers, as well as a function for discovering BLE devices.
+Bleak supports scanning for BLE devices, connecting to BLE devices and reading, writing and getting notifications from them.
 
-Contents:
+The code examples in this documentation can all be found in the
+`examples <https://github.com/hbldh/bleak/tree/master/examples>`_ folder of the
+`Bleak repository <https://github.com/hbldh/bleak>`_.
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
 
+   nutshell
    installation
-   scanning
-   usage
+   usage/index
    backends/index
-   api
    troubleshooting
    contributing
    authors
+   api
    history
+
+
+
+
 
 Indices and tables
 ==================
