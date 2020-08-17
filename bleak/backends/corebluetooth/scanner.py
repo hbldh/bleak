@@ -20,8 +20,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     Documentation:
     https://developer.apple.com/documentation/corebluetooth/cbcentralmanager
 
-    CoreBluetooth doesn't explicitly use MAC addresses to identify peripheral
-    devices because private devices may obscure their MAC addresses. To cope
+    CoreBluetooth doesn't explicitly use Bluetooth addresses to identify peripheral
+    devices because private devices may obscure their Bluetooth addresses. To cope
     with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
     this for the BLEDevice address on macOS.
 
@@ -117,7 +117,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         """A convenience method for obtaining a ``BLEDevice`` object specified by macOS UUID address.
 
         Args:
-            device_identifier (str): The MAC address of the Bluetooth peripheral.
+            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
             timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
 
         Returns:

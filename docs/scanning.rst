@@ -24,7 +24,7 @@ This will produce a printed list of detected devices:
     24:71:89:CC:09:05: CC2650 SensorTag
     4D:41:D5:8C:7A:0B: Apple, Inc. (b'\x10\x06\x11\x1a\xb2\x9b\x9c\xe3')
 
-The first part, a MAC address in Windows and Linux and a UUID in macOS, is what is
+The first part, a Bluetooth address in Windows and Linux and a UUID in macOS, is what is
 used for connecting to a device using Bleak. The list of objects returned by the `discover`
 method are instances of :py:class:`bleak.backends.device.BLEDevice` and has ``name``, ``address``
 and ``rssi`` attributes, as well as a ``metadata`` attribute, a dict with keys ``uuids`` and ``manufacturer_data``

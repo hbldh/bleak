@@ -28,7 +28,7 @@ def get_device_object_path(hci_device, address):
 
     Args:
         hci_device (str): Which bluetooth adapter to connect with.
-        address (str): The MAC adress of the bluetooth device.
+        address (str): The Bluetooth address of the bluetooth device.
 
     Returns:
         String representation of device object path on format
@@ -36,7 +36,7 @@ def get_device_object_path(hci_device, address):
 
     """
     if not validate_mac_address(address):
-        raise BleakError("{0} is not a valid MAC adrdess.".format(address))
+        raise BleakError("{0} is not a valid Bluetooth address.".format(address))
 
     if not validate_hci_device(hci_device):
         raise BleakError("{0} is not a valid HCI device.".format(hci_device))
@@ -57,7 +57,7 @@ def get_gatt_service_path(hci_device, address, service_id):
 
         Args:
             hci_device (str): Which bluetooth adapter to connect with.
-            address (str): The MAC adress of the bluetooth device.
+            address (str): The Bluetooth address of the bluetooth device.
             service_id (int):
 
         Returns:

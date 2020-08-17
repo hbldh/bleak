@@ -69,7 +69,7 @@ class BleakClientDotNet(BaseBleakClient):
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
     Args:
-        address (str): The MAC address of the BLE peripheral to connect to.
+        address (str): The Bluetooth address of the BLE peripheral to connect to.
 
     Keyword Args:
             timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.

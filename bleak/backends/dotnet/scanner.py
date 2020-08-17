@@ -201,10 +201,10 @@ class BleakScannerDotNet(BaseBleakScanner):
     async def find_specific_device(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Union[BLEDevice, None]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address.
+        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
 
         Args:
-            device_identifier (str): The MAC address of the Bluetooth peripheral.
+            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
             timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
 
         Keyword Args:

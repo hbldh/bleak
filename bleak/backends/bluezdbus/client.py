@@ -32,7 +32,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
 
     Args:
-        address (str): The MAC address of the BLE peripheral to connect to.
+        address (str): The  address of the BLE peripheral to connect to.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.

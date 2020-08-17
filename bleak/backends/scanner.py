@@ -48,10 +48,10 @@ class BaseBleakScanner(abc.ABC):
     @classmethod
     @abc.abstractmethod
     async def find_specific_device(cls, device_identifier: str, timeout: float = 10.0) -> BLEDevice:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address or (macOS) UUID address.
+        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
 
         Args:
-            device_identifier (str): The MAC/UUID address of the Bluetooth peripheral sought.
+            device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
             timeout (float): Optional timeout to maximally wait for detection of specified peripheral. Defaults to 10.0 seconds.
 
         Returns:
