@@ -111,6 +111,7 @@ class CentralManagerDelegate(NSObject):
             service_uuids, None
         )
 
+    @objc.python_method
     async def stop_scan(self) -> List[CBPeripheral]:
         self.central_manager.stopScan()
 
@@ -126,6 +127,7 @@ class CentralManagerDelegate(NSObject):
 
         return []
 
+    @objc.python_method
     async def scanForPeripherals_(self, scan_options) -> List[CBPeripheral]:
         """
         Scan for peripheral devices
