@@ -9,6 +9,8 @@ from asyncio import Future
 from functools import wraps, partial
 from typing import Callable, Any, Union
 
+from twisted.internet.error import ConnectionDone
+
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -22,6 +24,7 @@ from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 
 from txdbus.client import connect as txdbus_connect
 from txdbus.error import RemoteError
+
 
 logger = logging.getLogger(__name__)
 
@@ -280,15 +283,28 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         """
         # TODO: Listen to connected property changes.
-        return await self._bus.callRemote(
-            self._device_path,
-            "Get",
-            interface=defs.PROPERTIES_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-            signature="ss",
-            body=[defs.DEVICE_INTERFACE, "Connected"],
-            returnSignature="v",
-        ).asFuture(asyncio.get_event_loop())
+        is_connected = False
+        try:
+            is_connected = await self._bus.callRemote(
+                self._device_path,
+                "Get",
+                interface=defs.PROPERTIES_INTERFACE,
+                destination=defs.BLUEZ_SERVICE,
+                signature="ss",
+                body=[defs.DEVICE_INTERFACE, "Connected"],
+                returnSignature="v",
+            ).asFuture(asyncio.get_event_loop())
+        except AttributeError:
+            # The `self._bus` object had already been cleaned up due to disconnect...
+            pass
+        except ConnectionDone:
+            # Twisted error stating that "Connection was closed cleanly."
+            pass
+        except Exception as e:
+            # Do not want to silence unknown errors. Send this upwards.
+            raise
+        return is_connected
+
 
     # GATT services methods
 

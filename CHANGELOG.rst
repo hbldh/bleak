@@ -27,6 +27,7 @@ Fixed
 * Fixed some type hints and docstrings.
 * Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
 * Merged #270, fixing a critical bug in ``get_services`` method in Core Bluetooth backend.
+* Improved handling of disconnections and ``is_connected`` in BlueZ backend to fix #259.
 
 Added
 ~~~~~
