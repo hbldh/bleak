@@ -224,7 +224,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         Args:
             device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
 
         Keyword Args:
             device (str): Bluetooth device to use for discovery.

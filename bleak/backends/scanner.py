@@ -52,7 +52,7 @@ class BaseBleakScanner(abc.ABC):
 
         Args:
             device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
-            timeout (float): Optional timeout to maximally wait for detection of specified peripheral. Defaults to 10.0 seconds.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
 
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.

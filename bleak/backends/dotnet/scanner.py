@@ -205,7 +205,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         Args:
             device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral. Defaults to 10.0 seconds.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
 
         Keyword Args:
             scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
