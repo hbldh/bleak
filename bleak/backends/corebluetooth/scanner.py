@@ -49,20 +49,15 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         def callback(p, a, r):
             self._identifiers[p.identifier()] = a
             if self._callback:
-                self._callback((p, a, r))
+                self._callback(p, a, r)
 
         self._manager.callbacks[id(self)] = callback
-
-        # TODO: Evaluate if newer macOS than 10.11 has stopScan.
-        if hasattr(self._manager, "stopScan_"):
-            await self._manager.scanForPeripherals_()
-        else:
-            await self._manager.scanForPeripherals_({"timeout": self._timeout})
+        self._manager.start_scan({})
 
     async def stop(self):
         del self._manager.callbacks[id(self)]
         try:
-            await self._manager.stopScan_()
+            await self._manager.stop_scan()
         except Exception as e:
             logger.warning("stopScan method could not be called: {0}".format(e))
 
@@ -117,9 +112,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     @classmethod
     async def find_specific_device(
-        cls, device_identifier: str, timeout: float = 10.0
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Union[BLEDevice, None]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by MAC address.
+        """A convenience method for obtaining a ``BLEDevice`` object specified by macOS UUID address.
 
         Args:
             device_identifier (str): The MAC address of the Bluetooth peripheral.
@@ -137,7 +132,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        scanner = cls()
+        scanner = cls(timeout=timeout)
         scanner.register_detection_callback(stop_if_detected)
 
         await scanner.start()

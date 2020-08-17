@@ -37,7 +37,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         address (str): The uuid of the BLE peripheral to connect to.
 
     Keyword Args:
-        timeout (float): Timeout for required ``discover`` call during connect. Defaults to 2.0.
+        timeout (float): Timeout for required ``discover`` call during connect. Defaults to 10.0.
 
     """
 
