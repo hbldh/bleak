@@ -208,18 +208,16 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         return discovered_devices
 
     def register_detection_callback(self, callback: Callable):
-        """Set a function to be called on each Scanner discovery.
-
-        Documentation for the Event Handler:
-        https://docs.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher.received
+        """Set a function to be called on each device discovery by scanner and when a discovered device has a changed property.
 
         Args:
-            callback: Function accepting one argument of type ?
+            callback: Function accepting one argument of type ``txdbus.message.SignalMessage``
+
         """
         self._callback = callback
 
     @classmethod
-    async def find_specific_device(cls, device_identifier: str, timeout: float = 10.0, **kwargs) -> BLEDevice:
+    async def find_device_by_address(cls, device_identifier: str, timeout: float = 10.0, **kwargs) -> BLEDevice:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
 
         Args:

@@ -117,6 +117,17 @@ class BleakScannerDotNet(BaseBleakScanner):
         self.watcher = None
 
     async def set_scanning_filter(self, **kwargs):
+        """Set a scanning filter for the BleakScanner.
+
+        Keyword Args:
+            SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
+              BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+              LE advertisement filtering that uses signal strength-based filtering.
+            AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
+              BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+              advertisement filtering that uses payload section-based filtering.
+
+        """
         if "SignalStrengthFilter" in kwargs:
             # TODO: Handle SignalStrengthFilter parameters
             self._signal_strength_filter = kwargs["SignalStrengthFilter"]
@@ -198,7 +209,7 @@ class BleakScannerDotNet(BaseBleakScanner):
         return self.watcher.Status if self.watcher else None
 
     @classmethod
-    async def find_specific_device(
+    async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Union[BLEDevice, None]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.

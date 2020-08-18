@@ -13,10 +13,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
-* Added ``find_specific_device`` method to the ``BleakScanner`` interface, for stopping scanning when a desired address is found.
-* Implemented ``find_specific_device`` in the .NET backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
-* Implemented ``find_specific_device`` in the BlueZ backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
-* Implemented ``find_specific_device`` in the Core Bluetooth backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Added ``find_device_by_address`` method to the ``BleakScanner`` interface, for stopping scanning when a desired address is found.
+* Implemented ``find_device_by_address`` in the .NET backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Implemented ``find_device_by_address`` in the BlueZ backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Implemented ``find_device_by_address`` in the Core Bluetooth backend ``BleakScanner`` implementation and switched its ``BleakClient`` implementation to use that method in ``connect``.
 * Added text representations of Protocol Errors that are visible in the .NET backend. Added these texts to errors raised.
 
 Changed

@@ -22,7 +22,7 @@ address = (
 
 
 async def run():
-    device = await BleakScanner.find_specific_device(address)
+    device = await BleakScanner.find_device_by_address(address)
     print(device)
 
 

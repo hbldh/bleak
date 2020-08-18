@@ -65,7 +65,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerCoreBluetooth.find_specific_device(
+        device = await BleakScannerCoreBluetooth.find_device_by_address(
             self.address, timeout=timeout)
 
         if device:

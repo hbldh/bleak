@@ -100,7 +100,7 @@ class BleakClientDotNet(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``find_specific_device`` call. Defaults to maximally 10.0 seconds.
+            timeout (float): Timeout for required ``find_device_by_address`` call. Defaults to maximally 10.0 seconds.
 
         Returns:
             Boolean representing connection status.
@@ -111,7 +111,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerDotNet.find_specific_device(
+        device = await BleakScannerDotNet.find_device_by_address(
             self.address, timeout=timeout)
 
         if device:

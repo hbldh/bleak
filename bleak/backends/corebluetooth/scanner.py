@@ -108,10 +108,19 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         return found
 
     def register_detection_callback(self, callback: Callable):
+        """Set a function to act as callback on discovered devices or devices with changed properties.
+
+        Args:
+            callback: Function accepting three arguments:
+             peripheral
+             advertisementData
+             rssi
+
+        """
         self._callback = callback
 
     @classmethod
-    async def find_specific_device(
+    async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Union[BLEDevice, None]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by macOS UUID address.
@@ -128,7 +137,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         stop_scanning_event = asyncio.Event()
         device_identifier = device_identifier.lower()
 
-        def stop_if_detected(peripheral, advertisementData, RSSI):
+        def stop_if_detected(peripheral, advertisement_data, rssi):
             if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 

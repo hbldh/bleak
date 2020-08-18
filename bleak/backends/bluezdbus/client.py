@@ -35,7 +35,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         address (str): The  address of the BLE peripheral to connect to.
 
     Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
@@ -96,7 +96,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``find_specific_device`` call. Defaults to maximally 10.0 seconds.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
         Returns:
             Boolean representing connection status.
@@ -105,7 +105,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerBlueZDBus.find_specific_device(
+        device = await BleakScannerBlueZDBus.find_device_by_address(
             self.address, timeout=timeout, device=self.device)
 
         if device:
