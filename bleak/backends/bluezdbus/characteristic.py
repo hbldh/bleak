@@ -4,6 +4,7 @@ from typing import Union, List
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.uuids import uuidstr_to_str
 
 
 _GattCharacteristicsFlagsEnum = {
@@ -68,8 +69,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     @property
     def description(self) -> str:
         """Description for this characteristic"""
-        # No description available in DBus backend.
-        return ""
+        return uuidstr_to_str(self._uuid)
 
     @property
     def properties(self) -> List:
