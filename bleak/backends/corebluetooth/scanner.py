@@ -136,29 +136,13 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         loop = asyncio.get_event_loop()
         stop_scanning_event = asyncio.Event()
         device_identifier = device_identifier.lower()
+        scanner = cls(timeout=timeout)
 
         def stop_if_detected(peripheral, advertisement_data, rssi):
             if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        scanner = cls(timeout=timeout)
-        scanner.register_detection_callback(stop_if_detected)
-
-        await scanner.start()
-        try:
-            await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
-        except asyncio.TimeoutError:
-            device = None
-        else:
-            device = next(
-                d
-                for d in await scanner.get_discovered_devices()
-                if d.address.lower() == device_identifier.lower()
-            )
-        finally:
-            await scanner.stop()
-
-        return device
+        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
 
     # macOS specific methods
 

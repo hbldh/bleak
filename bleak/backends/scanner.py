@@ -86,3 +86,25 @@ class BaseBleakScanner(abc.ABC):
 
         """
         raise NotImplementedError()
+
+    async def _find_device_by_address(self, device_identifier, stop_scanning_event, stop_if_detected_callback, timeout):
+        """Internal method for performing find by address work."""
+
+        self.register_detection_callback(stop_if_detected_callback)
+
+        await self.start()
+        try:
+            await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            device = None
+        else:
+            device = next(
+                d
+                for d in await self.get_discovered_devices()
+                if d.address.lower() == device_identifier.lower()
+            )
+        finally:
+            await self.stop()
+
+        return device
+
