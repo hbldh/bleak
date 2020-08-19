@@ -7,6 +7,7 @@ Created on 2019-6-26 by kevincar <kevincarrolldavis@gmail.com>
 import logging
 import uuid
 from typing import Callable, Any, Union
+import asyncio
 
 from Foundation import NSData, CBUUID
 from CoreBluetooth import (
@@ -93,7 +94,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self.services = BleakGATTServiceCollection()
         # Ensure that `get_services` retrieves services again, rather than using the cached object
         self._services_resolved = False
-        self._services = None 
+        self._services = None
         return True
 
     async def is_connected(self) -> bool:
@@ -381,3 +382,19 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError(
                 "Could not stop notify on {0}: {1}".format(characteristic.uuid, success)
             )
+
+    async def get_rssi(self) -> int:
+        """To get RSSI value in dBm of the connected Peripheral"""
+
+        self._device_info.readRSSI()
+        manager = self._device_info.manager().delegate()
+        RSSI = manager.connected_peripheral.RSSI()
+        for i in range(20):  # First time takes a little otherwise returns None
+            RSSI = manager.connected_peripheral.RSSI()
+            if not RSSI:
+                await asyncio.sleep(0.1)
+            else:
+                return int(RSSI)
+
+        if not RSSI:
+            return None
