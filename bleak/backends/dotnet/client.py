@@ -11,6 +11,7 @@ import uuid
 from functools import wraps
 from typing import Callable, Any, Union
 
+from bleak.backends.dotnet.scanner import BleakScannerDotNet
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.dotnet.discovery import discover
@@ -68,7 +69,7 @@ class BleakClientDotNet(BaseBleakClient):
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
     Args:
-        address (str): The MAC address of the BLE peripheral to connect to.
+        address (str): The Bluetooth address of the BLE peripheral to connect to.
 
     Keyword Args:
             timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
@@ -99,7 +100,7 @@ class BleakClientDotNet(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+            timeout (float): Timeout for required ``find_device_by_address`` call. Defaults to maximally 10.0 seconds.
 
         Returns:
             Boolean representing connection status.
@@ -110,16 +111,14 @@ class BleakClientDotNet(BaseBleakClient):
 
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
-        devices = await discover(timeout=timeout)
-        sought_device = list(
-            filter(lambda x: x.address.upper() == self.address.upper(), devices)
-        )
+        device = await BleakScannerDotNet.find_device_by_address(
+            self.address, timeout=timeout)
 
-        if len(sought_device):
-            self._device_info = sought_device[0].details.BluetoothAddress
+        if device:
+            self._device_info = device.details.BluetoothAddress
         else:
             raise BleakError(
-                "Device with address {0} was " "not found.".format(self.address)
+                "Device with address {0} was not found.".format(self.address)
             )
 
         logger.debug("Connecting to BLE device @ {0}".format(self.address))

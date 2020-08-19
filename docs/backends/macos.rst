@@ -11,7 +11,7 @@ Specific features for the macOS backend
 
 The most noticeable difference between the other
 backends of bleak and this backend, is that CoreBluetooth doesn't scan for
-other devices via MAC address. Instead, UUIDs are utilized that are often
+other devices via Bluetooth address. Instead, UUIDs are utilized that are often
 unique between the device that is scanning and the device that is being scanned.
 
 In the example files, this is handled in this fashion:

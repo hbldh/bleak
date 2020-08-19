@@ -20,8 +20,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     Documentation:
     https://developer.apple.com/documentation/corebluetooth/cbcentralmanager
 
-    CoreBluetooth doesn't explicitly use MAC addresses to identify peripheral
-    devices because private devices may obscure their MAC addresses. To cope
+    CoreBluetooth doesn't explicitly use Bluetooth addresses to identify peripheral
+    devices because private devices may obscure their Bluetooth addresses. To cope
     with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
     this for the BLEDevice address on macOS.
 
@@ -49,20 +49,15 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         def callback(p, a, r):
             self._identifiers[p.identifier()] = a
             if self._callback:
-                self._callback((p, a, r))
+                self._callback(p, a, r)
 
         self._manager.callbacks[id(self)] = callback
-
-        # TODO: Evaluate if newer macOS than 10.11 has stopScan.
-        if hasattr(self._manager, "stopScan_"):
-            await self._manager.scanForPeripherals_()
-        else:
-            await self._manager.scanForPeripherals_({"timeout": self._timeout})
+        self._manager.start_scan({})
 
     async def stop(self):
         del self._manager.callbacks[id(self)]
         try:
-            await self._manager.stopScan_()
+            await self._manager.stop_scan()
         except Exception as e:
             logger.warning("stopScan method could not be called: {0}".format(e))
 
@@ -113,7 +108,41 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         return found
 
     def register_detection_callback(self, callback: Callable):
+        """Set a function to act as callback on discovered devices or devices with changed properties.
+
+        Args:
+            callback: Function accepting three arguments:
+             peripheral
+             advertisementData
+             rssi
+
+        """
         self._callback = callback
+
+    @classmethod
+    async def find_device_by_address(
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs
+    ) -> Union[BLEDevice, None]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by macOS UUID address.
+
+        Args:
+            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        loop = asyncio.get_event_loop()
+        stop_scanning_event = asyncio.Event()
+        device_identifier = device_identifier.lower()
+        scanner = cls(timeout=timeout)
+
+        def stop_if_detected(peripheral, advertisement_data, rssi):
+            if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
+                loop.call_soon_threadsafe(stop_scanning_event.set)
+
+        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
 
     # macOS specific methods
 

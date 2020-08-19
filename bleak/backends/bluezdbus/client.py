@@ -16,7 +16,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.bluezdbus import defs, signals, utils, get_reactor
-from bleak.backends.bluezdbus.discovery import discover
+from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 from bleak.backends.bluezdbus.utils import get_device_object_path, get_managed_objects
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
@@ -35,10 +35,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
 
     Args:
-        address (str): The MAC address of the BLE peripheral to connect to.
+        address (str): The  address of the BLE peripheral to connect to.
 
     Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
@@ -99,30 +99,24 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
         Returns:
             Boolean representing connection status.
 
         """
-        # A Discover must have been run before connecting to any devices. Do a quick one here
-        # to ensure that it has been done.
+        # A Discover must have been run before connecting to any devices.
+        # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
-        await discover(timeout=timeout, device=self.device)
-        discovered = await discover(timeout=timeout, device=self.device)
+        device = await BleakScannerBlueZDBus.find_device_by_address(
+            self.address, timeout=timeout, device=self.device)
 
-        # Issue 150 hints at the device path not being possible to create as
-        # is done in the `get_device_object_path` method. Try to get it from
-        # BlueZ instead.
-        # Otherwise, use the old fallback and hope for the best.
-        bluez_devices = list(
-            filter(lambda d: d.address.lower() == self.address.lower(), discovered)
-        )
-        if bluez_devices:
-            self._device_path = bluez_devices[0].details["path"]
+        if device:
+            self._device_path = device.details["path"]
         else:
-            # TODO: Better to always get path from BlueZ backend...
-            self._device_path = get_device_object_path(self.device, self.address)
+            raise BleakError(
+                "Device with address {0} was not found.".format(self.address)
+            )
 
         loop = asyncio.get_event_loop()
         self._reactor = get_reactor(loop)
