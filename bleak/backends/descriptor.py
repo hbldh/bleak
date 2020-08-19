@@ -39,19 +39,19 @@ _descriptor_descriptions = {
         "0x2902",
         "GSS",
     ],
-    "0000290B-0000-1000-8000-00805f9b34fb": [
+    "0000290b-0000-1000-8000-00805f9b34fb": [
         "Environmental Sensing Configuration",
         "org.bluetooth.descriptor.es_configuration",
         "0x290B",
         "GSS",
     ],
-    "0000290C-0000-1000-8000-00805f9b34fb": [
+    "0000290c-0000-1000-8000-00805f9b34fb": [
         "Environmental Sensing Measurement",
         "org.bluetooth.descriptor.es_measurement",
         "0x290C",
         "GSS",
     ],
-    "0000290D-0000-1000-8000-00805f9b34fb": [
+    "0000290d-0000-1000-8000-00805f9b34fb": [
         "Environmental Sensing Trigger Setting",
         "org.bluetooth.descriptor.es_trigger_setting",
         "0x290D",
@@ -81,7 +81,7 @@ _descriptor_descriptions = {
         "0x2903",
         "GSS",
     ],
-    "0000290E-0000-1000-8000-00805f9b34fb": [
+    "0000290e-0000-1000-8000-00805f9b34fb": [
         "Time Trigger Setting",
         "org.bluetooth.descriptor.time_trigger_setting",
         "0x290E",
@@ -93,7 +93,7 @@ _descriptor_descriptions = {
         "0x2906",
         "GSS",
     ],
-    "0000290A-0000-1000-8000-00805f9b34fb": [
+    "0000290a-0000-1000-8000-00805f9b34fb": [
         "Value Trigger Setting",
         "org.bluetooth.descriptor.value_trigger_setting",
         "0x290A",
@@ -138,4 +138,4 @@ class BleakGATTDescriptor(abc.ABC):
     @property
     def description(self):
         """A text description of what this descriptor represents"""
-        return _descriptor_descriptions.get(self.uuid, ["None"])[0]
+        return _descriptor_descriptions.get(self.uuid.lower(), ["None"])[0]
