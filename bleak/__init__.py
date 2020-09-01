@@ -12,6 +12,7 @@ import logging
 import platform
 import subprocess
 import asyncio
+import ctypes
 
 from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
@@ -53,7 +54,9 @@ if platform.system() == "Linux":
 elif platform.system() == "Darwin":
     from Foundation import NSClassFromString
 
-    if NSClassFromString("CBPeripheral") is None:
+    try:
+        ctypes.cdll.LoadLibrary("CoreBluetooth.framework/CoreBluetooth")
+    except OSError:
         raise BleakError("Bleak requires the CoreBluetooth Framework")
 
     from bleak.backends.corebluetooth.discovery import discover  # noqa
