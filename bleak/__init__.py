@@ -52,8 +52,6 @@ if platform.system() == "Linux":
         BleakClientBlueZDBus as BleakClient,
     )  # noqa
 elif platform.system() == "Darwin":
-    from Foundation import NSClassFromString
-
     try:
         ctypes.cdll.LoadLibrary("CoreBluetooth.framework/CoreBluetooth")
     except OSError:
