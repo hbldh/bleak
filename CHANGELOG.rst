@@ -47,8 +47,8 @@ Fixed
 * Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
 * Merged #270, fixing a critical bug in ``get_services`` method in Core Bluetooth backend.
 * Improved handling of disconnections and ``is_connected`` in BlueZ backend to fix #259.
-* Fix for `set_disconnected_callback` on Core Bluetooth. Fixes #276.
-
+* Fix for ``set_disconnected_callback`` on Core Bluetooth. Fixes #276.
+* Safer `Core Bluetooth` presence check. Merged #280.
 
 `0.7.1`_ (2020-07-02)
 ---------------------
