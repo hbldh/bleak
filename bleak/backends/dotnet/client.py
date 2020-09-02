@@ -586,7 +586,7 @@ class BleakClientDotNet(BaseBleakClient):
         """Activate notifications/indications on a characteristic.
 
         Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
-        data and the second will be a ``bytearray``.
+        data and the second will be a ``bytearray`` containing the data sent from the connected server.
 
         .. code-block:: python
 
@@ -739,7 +739,7 @@ def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
         reader.Dispose()
 
         return loop.call_soon_threadsafe(
-            func, int(sender.AttributeHandle), bytearray(output)
+            func, sender.AttributeHandle, bytearray(output)
         )
 
     return dotnet_notification_parser
