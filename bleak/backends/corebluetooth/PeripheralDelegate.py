@@ -294,7 +294,7 @@ class PeripheralDelegate(NSObject):
 
         notify_callback = self._characteristic_notify_callbacks.get(c_handle)
         if notify_callback:
-            notify_callback(c_handle, value, cUUID)
+            notify_callback(c_handle, value)
 
         logger.debug("Read characteristic value")
         event = self._characteristic_read_events.get(cUUID)
