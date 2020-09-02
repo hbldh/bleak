@@ -53,8 +53,8 @@ if platform.system() == "Linux":
 elif platform.system() == "Darwin":
     try:
         from CoreBluetooth import CBPeripheral
-    except:
-        raise BleakError("Bleak requires the CoreBluetooth Framework")
+    except Exception as ex:
+        raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
     from bleak.backends.corebluetooth.discovery import discover  # noqa
     from bleak.backends.corebluetooth.scanner import (
