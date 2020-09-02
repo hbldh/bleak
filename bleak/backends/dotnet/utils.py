@@ -6,13 +6,13 @@ Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
-from collections import Awaitable
 
 from bleak.exc import BleakDotNetTaskError
 
-# Pythonf for .NET CLR imports
+# Python for .NET CLR imports
 from System import Action
 from System.Threading.Tasks import Task
+
 from Windows.Foundation import (
     AsyncOperationCompletedHandler,
     IAsyncOperation,
@@ -31,9 +31,10 @@ async def wrap_Task(task):
         The results of the the .NET Task.
 
     """
+    loop = asyncio.get_event_loop()
     done = asyncio.Event()
     # Register Action<Task> callback that triggers the above asyncio.Event.
-    task.ContinueWith(Action[Task]())
+    task.ContinueWith(Action[Task](lambda x: loop.call_soon_threadsafe(done.set)))
     # Wait for callback.
     await done.wait()
     # TODO: Handle IsCancelled.
@@ -73,67 +74,3 @@ async def wrap_IAsyncOperation(op, return_type):
     else:
         # TODO: Handle IsCancelled.
         raise BleakDotNetTaskError("IAsyncOperation Status: {0}".format(op.Status))
-
-
-class TaskWrapper(Awaitable):
-    """An awaitable wrapper class for .NET Tasks."""
-
-    def __init__(self, task):
-        self.task = task
-        self.done = asyncio.Event()
-
-    def __await__(self):
-        loop = asyncio.get_event_loop()
-        self.done = asyncio.Event()
-
-        def callback(task):
-            loop.call_soon_threadsafe(self.done.set)
-
-        self.task.ContinueWith(Action[Task](callback))
-        yield from self.done.wait()
-        return self
-
-    @property
-    def result(self):
-        # TODO: Handle IsCancelled.
-        if self.task.IsFaulted:
-            # Exception occurred. Wrap it in BleakDotNetTaskError
-            # to make it catchable.
-            raise BleakDotNetTaskError(self.task.Exception.ToString())
-
-        return self.task.Result
-
-
-class IAsyncOperationAwaitable(Awaitable):
-    """Does not work yet... Do not use..."""
-
-    __slots__ = ["operation", "done", "return_type"]
-
-    def __init__(self, operation, return_type):
-        self.operation = IAsyncOperation[return_type](operation)
-        self.done = None
-        self.return_type = return_type
-
-    def __await__(self):
-        # Register AsyncOperationCompletedHandler callback that triggers the above asyncio.Event.
-        loop = asyncio.get_event_loop()
-        self.done = asyncio.Event()
-        self.operation.Completed = AsyncOperationCompletedHandler[self.return_type](
-            lambda x, y: loop.call_soon_threadsafe(self.done.set)
-        )
-        yield from self.done.wait()
-        return self
-
-    @property
-    def result(self):
-        if self.operation.Status == AsyncStatus.Completed:
-            return self.operation.GetResults()
-        elif self.operation.Status == AsyncStatus.Error:
-            # Exception occurred. Wrap it in BleakDotNetTaskError
-            # to make it catchable.
-            raise BleakDotNetTaskError(self.operation.ErrorCode.ToString())
-        else:
-            # TODO: Handle IsCancelled.
-            raise BleakDotNetTaskError(
-                "IAsyncOperation Status: {0}".format(self.operation.Status)
-            )

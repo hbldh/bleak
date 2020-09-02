@@ -27,3 +27,5 @@ In the example files, this is handled in this fashion:
 As stated above, this will however only work the macOS machine that performed
 the scan and thus cached the device as ``243E23AE-4A99-406C-B317-18F1BD7B4CBE``.
 
+There is also no pairing functionality implemented in macOS right now, since it does not seem
+to be any explicit pairing methods in the COre Bluetooth.
