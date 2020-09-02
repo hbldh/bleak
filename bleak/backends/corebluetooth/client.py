@@ -79,6 +79,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         manager = self._device_info.manager().delegate()
         await manager.connect_(self._device_info)
+        manager.disconnected_callback = self._disconnect_callback_client
 
         # Now get services
         await self.get_services()
@@ -108,9 +109,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             callback: callback to be called on disconnection.
 
         """
-        manager = self._device_info.manager().delegate()
         self._disconnected_callback = callback
-        manager.disconnected_callback = self._disconnect_callback_client
 
     def _disconnect_callback_client(self):
         """
