@@ -51,10 +51,10 @@ if platform.system() == "Linux":
         BleakClientBlueZDBus as BleakClient,
     )  # noqa
 elif platform.system() == "Darwin":
-    from Foundation import NSClassFromString
-
-    if NSClassFromString("CBPeripheral") is None:
-        raise BleakError("Bleak requires the CoreBluetooth Framework")
+    try:
+        from CoreBluetooth import CBPeripheral
+    except Exception as ex:
+        raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
     from bleak.backends.corebluetooth.discovery import discover  # noqa
     from bleak.backends.corebluetooth.scanner import (
