@@ -11,6 +11,7 @@ import uuid
 from functools import wraps
 from typing import Callable, Any, Union
 
+from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.scanner import BleakScannerDotNet
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
@@ -91,18 +92,21 @@ class BleakClientDotNet(BaseBleakClient):
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
     Args:
-        address (str): The Bluetooth address of the BLE peripheral to connect to.
+        address_or_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
     """
 
-    def __init__(self, address: str, **kwargs):
-        super(BleakClientDotNet, self).__init__(address, **kwargs)
+    def __init__(self, address_or_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientDotNet, self).__init__(address_or_device, **kwargs)
 
         # Backend specific. Python.NET objects.
-        self._device_info = None
+        if isinstance(address_or_device, BLEDevice):
+            self._device_info = address_or_device.details.BluetoothAddress
+        else:
+            self._device_info = None
         self._requester = None
         self._bridge = None
 
@@ -132,16 +136,17 @@ class BleakClientDotNet(BaseBleakClient):
         self._bridge = Bridge()
 
         # Try to find the desired device.
-        timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerDotNet.find_device_by_address(
-            self.address, timeout=timeout)
+        if self._device_info is not None:
+            timeout = kwargs.get("timeout", self._timeout)
+            device = await BleakScannerDotNet.find_device_by_address(
+                self.address, timeout=timeout)
 
-        if device:
-            self._device_info = device.details.BluetoothAddress
-        else:
-            raise BleakError(
-                "Device with address {0} was not found.".format(self.address)
-            )
+            if device:
+                self._device_info = device.details.BluetoothAddress
+            else:
+                raise BleakError(
+                    "Device with address {0} was not found.".format(self.address)
+                )
 
         logger.debug("Connecting to BLE device @ {0}".format(self.address))
 
