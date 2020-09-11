@@ -195,6 +195,8 @@ class CentralManagerDelegate(NSObject):
         RSSI: NSNumber,
     ):
         # Note: this function might be called several times for same device.
+        # This can happen for instance when an active scan is done, and the
+        # second call with contain the data from the BLE scan response.
         # Example a first time with the following keys in advertisementData:
         # ['kCBAdvDataLocalName', 'kCBAdvDataIsConnectable', 'kCBAdvDataChannel']
         # ... and later a second time with other keys (and values) such as:
@@ -210,6 +212,9 @@ class CentralManagerDelegate(NSObject):
 
         if uuid_string in self.devices:
             device = self.devices[uuid_string]
+            # It could be the device did not have a name previously but now it does.
+            if peripheral.name():
+                device.name = peripheral.name()
         else:
             address = uuid_string
             name = peripheral.name() or None
