@@ -22,13 +22,13 @@ via the asyncronous context manager like this:
     address = "24:71:89:cc:09:05"
     MODEL_NBR_UUID = "00002a24-0000-1000-8000-00805f9b34fb"
 
-    async def run(address, loop):
-        async with BleakClient(address, loop=loop) as client:
+    async def run(address):
+        async with BleakClient(address) as client:
             model_number = await client.read_gatt_char(MODEL_NBR_UUID)
             print("Model Number: {0}".format("".join(map(chr, model_number))))
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address, loop))
+    loop.run_until_complete(run(address))
 
 or one can do it without the context manager like this:
 
@@ -40,8 +40,8 @@ or one can do it without the context manager like this:
     address = "24:71:89:cc:09:05"
     MODEL_NBR_UUID = "00002a24-0000-1000-8000-00805f9b34fb"
 
-    async def run(address, loop):
-        client = BleakClient(address, loop=loop)
+    async def run(address):
+        client = BleakClient(address)
         try:
             await client.connect()
             model_number = await client.read_gatt_char(MODEL_NBR_UUID)
@@ -52,7 +52,7 @@ or one can do it without the context manager like this:
             await client.disconnect()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address, loop))
+    loop.run_until_complete(run(address))
 
 Make sure you always get to call the disconnect method for a client before discarding it;
 the Bluetooth stack on the OS might need to be cleared of residual data which is cached in the

@@ -14,8 +14,8 @@ import platform
 from bleak import BleakClient
 
 
-async def print_services(mac_addr: str, loop: asyncio.AbstractEventLoop):
-    async with BleakClient(mac_addr, loop=loop) as client:
+async def print_services(mac_addr: str):
+    async with BleakClient(mac_addr) as client:
         svcs = await client.get_services()
         print("Services:", svcs)
 
@@ -26,4 +26,4 @@ mac_addr = (
     else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
 )
 loop = asyncio.get_event_loop()
-loop.run_until_complete(print_services(mac_addr, loop))
+loop.run_until_complete(print_services(mac_addr))

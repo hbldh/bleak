@@ -24,24 +24,21 @@ class BaseBleakClient(abc.ABC):
 
     """
 
-    def __init__(self, address, loop=None, **kwargs):
+    def __init__(self, address, **kwargs):
         self.address = address
-        self.loop = loop if loop else asyncio.get_event_loop()
 
         self.services = BleakGATTServiceCollection()
 
         self._services_resolved = False
         self._notification_callbacks = {}
 
-        self._timeout = kwargs.get("timeout", 2.0)
+        self._timeout = kwargs.get("timeout", 10.0)
 
     def __str__(self):
         return "{0}, {1}".format(self.__class__.__name__, self.address)
 
     def __repr__(self):
-        return "<{0}, {1}, {2}>".format(
-            self.__class__.__name__, self.address, self.loop
-        )
+        return "<{0}, {1}, {2}>".format(self.__class__.__name__, self.address, super(BaseBleakClient, self).__repr__())
 
     # Async Context managers
 
@@ -96,6 +93,16 @@ class BaseBleakClient(abc.ABC):
             Boolean representing connection status.
 
         """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def pair(self, *args, **kwargs) -> bool:
+        """Pair with the peripheral."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def unpair(self) -> bool:
+        """Unpair with the peripheral."""
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -188,17 +195,17 @@ class BaseBleakClient(abc.ABC):
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[str, Any], Any],
+        callback: Callable[[int, bytearray], None],
         **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
-        Callbacks must accept two inputs. The first will be a uuid string
-        object and the second will be a bytearray.
+        Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
+        data and the second will be a ``bytearray``.
 
         .. code-block:: python
 
-            def callback(sender, data):
+            def callback(sender: int, data: bytearray):
                 print(f"{sender}: {data}")
             client.start_notify(char_uuid, callback)
 

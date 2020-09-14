@@ -7,6 +7,49 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`0.8.0`_ (2020-09-02)
+---------------------
+
+Added
+~~~~~
+
+* Added ``find_device_by_address`` method to the ``BleakScanner`` interface, for stopping scanning
+  when a desired address is found.
+* Implemented ``find_device_by_address`` in the .NET backend ``BleakScanner`` implementation and
+  switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Implemented ``find_device_by_address`` in the BlueZ backend ``BleakScanner`` implementation and
+  switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Implemented ``find_device_by_address`` in the Core Bluetooth backend ``BleakScanner`` implementation
+  and switched its ``BleakClient`` implementation to use that method in ``connect``.
+* Added text representations of Protocol Errors that are visible in the .NET backend. Added these texts to errors raised.
+* Added pairing method in ``BleakClient`` interface.
+* Implemented pairing method in .NET backend.
+* Implemented pairing method in the BlueZ backend.
+* Added stumps and ``NotImplementedError`` on pairing in macOS backend.
+
+Changed
+~~~~~~~
+* **BREAKING CHANGE** All notifications now have the characteristic's integer **handle** instead of its UUID as a
+  string as the first argument ``sender`` sent to notification callbacks. This provides the uniqueness of
+  sender in notifications as well.
+* Version 0.5.0 of BleakUWPBridge, with some modified methods and implementing ``IDisposable``.
+* Merged #224. All storing and passing of event loops in bleak is removed.
+* Removed Objective C delegate compliance checks. Merged #253.
+
+Fixed
+~~~~~
+
+* .NET backend loop handling bug entered by #224 fixed.
+* Removed default ``DEBUG`` level set to bleak logger. Fixes #251.
+* More coherency in logger uses over all backends. Fixes #258
+* Attempted fix of #255 and #133: cleanups, disposing of objects and creating new ``BleakBridge`` instances each disconnect.
+* Fixed some type hints and docstrings.
+* Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
+* Merged #270, fixing a critical bug in ``get_services`` method in Core Bluetooth backend.
+* Improved handling of disconnections and ``is_connected`` in BlueZ backend to fix #259.
+* Fix for ``set_disconnected_callback`` on Core Bluetooth. Fixes #276.
+* Safer `Core Bluetooth` presence check. Merged #280.
+
 `0.7.1`_ (2020-07-02)
 ---------------------
 
@@ -22,6 +65,7 @@ Fixed
 ~~~~~
 
 * Fix when characteristic updates value faster than asyncio schedule (#240 & #241)
+* Incorrect ``MANIFEST.in`` corrected. (#244)
 
 
 `0.7.0`_ (2020-06-30)
@@ -247,7 +291,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.7.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.8.0...develop
+.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1
 .. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
 .. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
 .. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4

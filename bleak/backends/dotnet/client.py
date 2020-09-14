@@ -8,18 +8,15 @@ Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 import logging
 import asyncio
 import uuid
-from asyncio.events import AbstractEventLoop
 from functools import wraps
 from typing import Callable, Any, Union
 
-from bleak.exc import BleakError, BleakDotNetTaskError
+from bleak.backends.dotnet.scanner import BleakScannerDotNet
+from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.dotnet.discovery import discover
-from bleak.backends.dotnet.utils import (
-    wrap_Task,
-    wrap_IAsyncOperation,
-    IAsyncOperationAwaitable,
-)
+from bleak.backends.dotnet.utils import wrap_IAsyncOperation
+
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.dotnet.service import BleakGATTServiceDotNet
@@ -35,6 +32,16 @@ from BleakBridge import Bridge
 from System import Array, Byte, UInt64
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
 from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
+from Windows.Devices.Enumeration import (
+    DevicePairingResult,
+    DevicePairingResultStatus,
+    DeviceUnpairingResult,
+    DeviceUnpairingResultStatus,
+    DevicePairingKinds,
+    DevicePairingProtectionLevel,
+    DeviceInformationCustomPairing,
+    DevicePairingRequestedEventArgs,
+)
 from Windows.Devices.Bluetooth import (
     BluetoothLEDevice,
     BluetoothConnectionStatus,
@@ -64,6 +71,18 @@ _communication_statues = {
     for k in ["Success", "Unreachable", "ProtocolError", "AccessDenied"]
 }
 
+_pairing_statuses = {
+    getattr(DevicePairingResultStatus, v): v
+    for v in dir(DevicePairingResultStatus)
+    if "_" not in v and isinstance(getattr(DevicePairingResultStatus, v), int)
+}
+
+_unpairing_statuses = {
+    getattr(DeviceUnpairingResultStatus, v): v
+    for v in dir(DeviceUnpairingResultStatus)
+    if "_" not in v and isinstance(getattr(DeviceUnpairingResultStatus, v), int)
+}
+
 
 class BleakClientDotNet(BaseBleakClient):
     """The native Windows Bleak Client.
@@ -72,21 +91,20 @@ class BleakClientDotNet(BaseBleakClient):
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
     Args:
-        address (str): The MAC address of the BLE peripheral to connect to.
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
+        address (str): The Bluetooth address of the BLE peripheral to connect to.
 
     Keyword Args:
             timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
     """
 
-    def __init__(self, address: str, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakClientDotNet, self).__init__(address, loop, **kwargs)
+    def __init__(self, address: str, **kwargs):
+        super(BleakClientDotNet, self).__init__(address, **kwargs)
 
         # Backend specific. Python.NET objects.
         self._device_info = None
         self._requester = None
-        self._bridge = Bridge()
+        self._bridge = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -104,29 +122,30 @@ class BleakClientDotNet(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+            timeout (float): Timeout for required ``find_device_by_address`` call. Defaults to maximally 10.0 seconds.
 
         Returns:
             Boolean representing connection status.
 
         """
+        # Create a new BleakBridge here.
+        self._bridge = Bridge()
+
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
-        devices = await discover(timeout=timeout, loop=self.loop)
-        sought_device = list(
-            filter(lambda x: x.address.upper() == self.address.upper(), devices)
-        )
+        device = await BleakScannerDotNet.find_device_by_address(
+            self.address, timeout=timeout)
 
-        if len(sought_device):
-            self._device_info = sought_device[0].details
+        if device:
+            self._device_info = device.details.BluetoothAddress
         else:
             raise BleakError(
-                "Device with address {0} was " "not found.".format(self.address)
+                "Device with address {0} was not found.".format(self.address)
             )
 
         logger.debug("Connecting to BLE device @ {0}".format(self.address))
 
-        args = [UInt64(self._device_info.BluetoothAddress)]
+        args = [UInt64(self._device_info)]
         if self._address_type is not None:
             args.append(
                 BluetoothAddressType.Public
@@ -138,7 +157,6 @@ class BleakClientDotNet(BaseBleakClient):
                 BluetoothLEDevice.FromBluetoothAddressAsync(*args)
             ),
             return_type=BluetoothLEDevice,
-            loop=self.loop,
         )
 
         def _ConnectionStatusChanged_Handler(sender, args):
@@ -155,7 +173,7 @@ class BleakClientDotNet(BaseBleakClient):
             connected = True
         else:
             for _ in range(5):
-                await asyncio.sleep(0.2, loop=self.loop)
+                await asyncio.sleep(0.2)
                 connected = await self.is_connected()
                 if connected:
                     break
@@ -173,20 +191,38 @@ class BleakClientDotNet(BaseBleakClient):
         """Disconnect from the specified GATT server.
 
         Returns:
-            Boolean representing connection status.
+            Boolean representing if device is disconnected.
 
         """
         logger.debug("Disconnecting from BLE device...")
-        # Remove notifications
-        # TODO: Make sure all notifications are removed prior to Dispose.
-        # Dispose all components that we have requested and created.
+        # Remove notifications. Remove them first in the BleakBridge and then clear
+        # remaining notifications in Python as well.
+        for characteristic in self.services.characteristics.values():
+            self._bridge.RemoveValueChangedCallback(characteristic.obj)
+        self._notification_callbacks.clear()
+
+        # Dispose all service components that we have requested and created.
         for service in self.services:
             service.obj.Dispose()
         self.services = BleakGATTServiceCollection()
+        self._services_resolved = False
+
+        # Dispose of the BluetoothLEDevice and see that the connection
+        # status is now Disconnected.
         self._requester.Dispose()
+        is_disconnected = (
+            self._requester.ConnectionStatus == BluetoothConnectionStatus.Disconnected
+        )
         self._requester = None
 
-        return not await self.is_connected()
+        # Set device info to None as well.
+        self._device_info = None
+
+        # Finally, dispose of the Bleak Bridge as well.
+        self._bridge.Dispose()
+        self._bridge = None
+
+        return is_disconnected
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -215,6 +251,104 @@ class BleakClientDotNet(BaseBleakClient):
         """
         raise NotImplementedError("This is not implemented in the .NET backend yet")
 
+    async def pair(self, protection_level=None, **kwargs) -> bool:
+        """Attempts to pair with the device.
+
+        Keyword Args:
+            protection_level:
+                    DevicePairingProtectionLevel
+                        1: None - Pair the device using no levels of protection.
+                        2: Encryption - Pair the device using encryption.
+                        3: EncryptionAndAuthentication - Pair the device using encryption and authentication.
+
+        Returns:
+            Boolean regarding success of pairing.
+
+        """
+        if (
+            self._requester.DeviceInformation.Pairing.CanPair
+            and not self._requester.DeviceInformation.Pairing.IsPaired
+        ):
+
+            # Currently only supporting Just Works solutions...
+            ceremony = DevicePairingKinds.ConfirmOnly
+            custom_pairing = self._requester.DeviceInformation.Pairing.Custom
+
+            def handler(sender, args):
+                args.Accept()
+
+            custom_pairing.PairingRequested += handler
+
+            if protection_level:
+                raise NotImplementedError(
+                    "Cannot set minimally required protection level yet..."
+                )
+            else:
+                pairing_result = await wrap_IAsyncOperation(
+                    IAsyncOperation[DevicePairingResult](
+                        custom_pairing.PairAsync.Overloads[DevicePairingKinds](ceremony)
+                    ),
+                    return_type=DevicePairingResult,
+                )
+
+            try:
+                custom_pairing.PairingRequested -= handler
+            except Exception as e:
+                # TODO: Find a way to remove WinRT events...
+                pass
+            finally:
+                del handler
+
+            if pairing_result.Status not in (
+                DevicePairingResultStatus.Paired,
+                DevicePairingResultStatus.AlreadyPaired,
+            ):
+                raise BleakError(
+                    "Could not pair with device: {0}: {1}".format(
+                        pairing_result.Status,
+                        _pairing_statuses.get(pairing_result.Status),
+                    )
+                )
+            else:
+                logger.info(
+                    "Paired to device with protection level {0}.".format(
+                        pairing_result.ProtectionLevelUsed
+                    )
+                )
+
+        return self._requester.DeviceInformation.Pairing.IsPaired
+
+    async def unpair(self) -> bool:
+        """Attempts to unpair from the device.
+
+        Returns:
+            Boolean on whether the unparing was successful.
+
+        """
+
+        if self._requester.DeviceInformation.Pairing.IsPaired:
+            unpairing_result = await wrap_IAsyncOperation(
+                IAsyncOperation[DeviceUnpairingResult](
+                    self._requester.DeviceInformation.Pairing.UnpairAsync()
+                ),
+                return_type=DeviceUnpairingResult,
+            )
+
+            if unpairing_result.Status not in (
+                DevicePairingResultStatus.Paired,
+                DevicePairingResultStatus.AlreadyPaired,
+            ):
+                raise BleakError(
+                    "Could not unpair with device: {0}: {1}".format(
+                        unpairing_result.Status,
+                        _unpairing_statuses.get(unpairing_result.Status),
+                    )
+                )
+            else:
+                logger.info("Unpaired with device.")
+
+        return not self._requester.DeviceInformation.Pairing.IsPaired
+
     # GATT services methods
 
     async def get_services(self) -> BleakGATTServiceCollection:
@@ -234,15 +368,15 @@ class BleakClientDotNet(BaseBleakClient):
                     self._requester.GetGattServicesAsync()
                 ),
                 return_type=GattDeviceServicesResult,
-                loop=self.loop,
             )
 
             if services_result.Status != GattCommunicationStatus.Success:
                 if services_result.Status == GattCommunicationStatus.ProtocolError:
                     raise BleakDotNetTaskError(
-                        "Could not get GATT services: {0} (Error: 0x{1:02X})".format(
+                        "Could not get GATT services: {0} (Error: 0x{1:02X}: {2})".format(
                             _communication_statues.get(services_result.Status, ""),
                             services_result.ProtocolError,
+                            CONTROLLER_ERROR_CODES.get(services_result.ProtocolError, "Unknown")
                         )
                     )
                 else:
@@ -252,14 +386,12 @@ class BleakClientDotNet(BaseBleakClient):
                         )
                     )
 
-            # TODO: Check if fetching yeilds failures...
             for service in services_result.Services:
                 characteristics_result = await wrap_IAsyncOperation(
                     IAsyncOperation[GattCharacteristicsResult](
                         service.GetCharacteristicsAsync()
                     ),
                     return_type=GattCharacteristicsResult,
-                    loop=self.loop,
                 )
                 self.services.add_service(BleakGATTServiceDotNet(service))
                 if characteristics_result.Status != GattCommunicationStatus.Success:
@@ -268,12 +400,13 @@ class BleakClientDotNet(BaseBleakClient):
                         == GattCommunicationStatus.ProtocolError
                     ):
                         raise BleakDotNetTaskError(
-                            "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                            "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                                 service,
                                 _communication_statues.get(
                                     characteristics_result.Status, ""
                                 ),
                                 characteristics_result.ProtocolError,
+                                CONTROLLER_ERROR_CODES.get(characteristics_result.ProtocolError, "Unknown")
                             )
                         )
                     else:
@@ -291,7 +424,6 @@ class BleakClientDotNet(BaseBleakClient):
                             characteristic.GetDescriptorsAsync()
                         ),
                         return_type=GattDescriptorsResult,
-                        loop=self.loop,
                     )
                     self.services.add_characteristic(
                         BleakGATTCharacteristicDotNet(characteristic)
@@ -302,12 +434,15 @@ class BleakClientDotNet(BaseBleakClient):
                             == GattCommunicationStatus.ProtocolError
                         ):
                             raise BleakDotNetTaskError(
-                                "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X})".format(
+                                "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                                     service,
                                     _communication_statues.get(
                                         descriptors_result.Status, ""
                                     ),
                                     descriptors_result.ProtocolError,
+                                    CONTROLLER_ERROR_CODES.get(
+                                        descriptors_result.ProtocolError,
+                                        "Unknown")
                                 )
                             )
                         else:
@@ -328,6 +463,7 @@ class BleakClientDotNet(BaseBleakClient):
                             )
                         )
 
+            logger.info("Services resolved for %s", str(self))
             self._services_resolved = True
             return self.services
 
@@ -368,23 +504,26 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattReadResult,
-            loop=self.loop,
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
             output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
             reader.ReadBytes(output)
             value = bytearray(output)
+            reader.Dispose()
             logger.debug(
                 "Read Characteristic {0} : {1}".format(characteristic.uuid, value)
             )
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakDotNetTaskError(
-                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                         characteristic.uuid,
                         _communication_statues.get(read_result.Status, ""),
                         read_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            read_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -423,21 +562,24 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattReadResult,
-            loop=self.loop,
         )
         if read_result.Status == GattCommunicationStatus.Success:
             reader = DataReader.FromBuffer(IBuffer(read_result.Value))
             output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
             reader.ReadBytes(output)
             value = bytearray(output)
+            reader.Dispose()
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakDotNetTaskError(
-                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X})".format(
+                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                         descriptor.uuid,
                         _communication_statues.get(read_result.Status, ""),
                         read_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            read_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -487,7 +629,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattWriteResult,
-            loop=self.loop,
         )
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug(
@@ -496,11 +637,14 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             if write_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X})".format(
+                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X}: {4})".format(
                         data,
                         characteristic.uuid,
                         _communication_statues.get(write_result.Status, ""),
                         write_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            write_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -531,18 +675,20 @@ class BleakClientDotNet(BaseBleakClient):
                 descriptor.obj.WriteValueAsync(writer.DetachBuffer())
             ),
             return_type=GattWriteResult,
-            loop=self.loop,
         )
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
         else:
             if write_result.Status == GattCommunicationStatus.ProtocolError:
                 raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X})".format(
+                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X}: {4})".format(
                         data,
                         descriptor.uuid,
                         _communication_statues.get(write_result.Status, ""),
                         write_result.ProtocolError,
+                        CONTROLLER_ERROR_CODES.get(
+                            write_result.ProtocolError,
+                            "Unknown")
                     )
                 )
             else:
@@ -557,17 +703,17 @@ class BleakClientDotNet(BaseBleakClient):
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[str, Any], Any],
+        callback: Callable[[int, bytearray], None],
         **kwargs
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
-        Callbacks must accept two inputs. The first will be a uuid string
-        object and the second will be a bytearray.
+        Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
+        data and the second will be a ``bytearray`` containing the data sent from the connected server.
 
         .. code-block:: python
 
-            def callback(sender, data):
+            def callback(sender: int, data: bytearray):
                 print(f"{sender}: {data}")
             client.start_notify(char_uuid, callback)
 
@@ -591,8 +737,7 @@ class BleakClientDotNet(BaseBleakClient):
         status = await self._start_notify(characteristic, callback)
 
         if status != GattCommunicationStatus.Success:
-            # TODO: Find out how to get the ProtocolError code that describes a
-            #  potential GattCommunicationStatus.ProtocolError result.
+            # TODO: Find out how to get the ProtocolError code that describes a potential GattCommunicationStatus.ProtocolError result.
             raise BleakError(
                 "Could not start notify on {0}: {1}".format(
                     characteristic.uuid, _communication_statues.get(status, "")
@@ -632,7 +777,7 @@ class BleakClientDotNet(BaseBleakClient):
             # TODO: Enable adding multiple handlers!
             self._notification_callbacks[characteristic.handle] = TypedEventHandler[
                 GattCharacteristic, GattValueChangedEventArgs
-            ](_notification_wrapper(self.loop, callback))
+            ](_notification_wrapper(callback, asyncio.get_event_loop()))
             self._bridge.AddValueChangedCallback(
                 characteristic_obj, self._notification_callbacks[characteristic.handle]
             )
@@ -640,7 +785,8 @@ class BleakClientDotNet(BaseBleakClient):
             logger.debug("Start Notify problem: {0}".format(e))
             if characteristic_obj.Uuid.ToString() in self._notification_callbacks:
                 callback = self._notification_callbacks.pop(characteristic.handle)
-                self._bridge.RemoveValueChangedCallback(characteristic_obj, callback)
+                self._bridge.RemoveValueChangedCallback(characteristic_obj)
+                del callback
 
             return GattCommunicationStatus.AccessDenied
 
@@ -651,7 +797,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattCommunicationStatus,
-            loop=self.loop,
         )
 
         if status != GattCommunicationStatus.Success:
@@ -659,7 +804,8 @@ class BleakClientDotNet(BaseBleakClient):
             # but it actually doesn't.
             if characteristic.handle in self._notification_callbacks:
                 callback = self._notification_callbacks.pop(characteristic.handle)
-                self._bridge.RemoveValueChangedCallback(characteristic_obj, callback)
+                self._bridge.RemoveValueChangedCallback(characteristic_obj)
+                del callback
 
             return GattCommunicationStatus.AccessDenied
         return status
@@ -691,7 +837,6 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             ),
             return_type=GattCommunicationStatus,
-            loop=self.loop,
         )
 
         if status != GattCommunicationStatus.Success:
@@ -702,10 +847,11 @@ class BleakClientDotNet(BaseBleakClient):
             )
         else:
             callback = self._notification_callbacks.pop(characteristic.handle)
-            self._bridge.RemoveValueChangedCallback(characteristic.obj, callback)
+            self._bridge.RemoveValueChangedCallback(characteristic.obj)
+            del callback
 
 
-def _notification_wrapper(loop: AbstractEventLoop, func: Callable):
+def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     @wraps(func)
     def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
@@ -713,9 +859,10 @@ def _notification_wrapper(loop: AbstractEventLoop, func: Callable):
         reader = DataReader.FromBuffer(args.CharacteristicValue)
         output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
         reader.ReadBytes(output)
+        reader.Dispose()
 
         return loop.call_soon_threadsafe(
-            func, sender.Uuid.ToString(), bytearray(output)
+            func, sender.AttributeHandle, bytearray(output)
         )
 
     return dotnet_notification_parser

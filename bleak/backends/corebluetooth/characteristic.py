@@ -13,6 +13,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.uuids import uuidstr_to_str
 
 
 class CBChacteristicProperties(Enum):
@@ -92,7 +93,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     def description(self) -> str:
         """Description for this characteristic"""
         # No description available in Core Bluetooth backend.
-        return ""
+        return uuidstr_to_str(self._uuid)
 
     @property
     def properties(self) -> List:

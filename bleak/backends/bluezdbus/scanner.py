@@ -1,9 +1,6 @@
 import logging
 import asyncio
 import pathlib
-import uuid
-from asyncio.events import AbstractEventLoop
-from functools import wraps
 from typing import Callable, Any, Union, List
 
 from bleak.backends.scanner import BaseBleakScanner
@@ -63,17 +60,14 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     ``SetDiscoveryFilter`` method in the `BlueZ docs
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
-    Args:
-        loop (asyncio.events.AbstractEventLoop): The event loop to use.
-
     Keyword Args:
         device (str): Bluetooth device to use for discovery.
         filters (dict): A dict of filters to be applied on discovery.
 
     """
 
-    def __init__(self, loop: AbstractEventLoop = None, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__(loop, **kwargs)
+    def __init__(self, **kwargs):
+        super(BleakScannerBlueZDBus, self).__init__()
 
         self._device = kwargs.get("device", "hci0")
         self._reactor = None
@@ -85,7 +79,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         # Discovery filters
         self._filters = kwargs.get("filters", {})
-        self._filters["Transport"] = "le"
+        if "Transport" not in self._filters:
+            self._filters["Transport"] = "le"
 
         self._adapter_path = None
         self._interface = None
@@ -93,8 +88,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._callback = None
 
     async def start(self):
-        self._reactor = get_reactor(self.loop)
-        self._bus = await client.connect(self._reactor, "system").asFuture(self.loop)
+        loop = asyncio.get_event_loop()
+        self._reactor = get_reactor(loop)
+        self._bus = await client.connect(self._reactor, "system").asFuture(loop)
 
         # Add signal listeners
         self._rules.append(
@@ -102,7 +98,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self.parse_msg,
                 interface="org.freedesktop.DBus.ObjectManager",
                 member="InterfacesAdded",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         )
 
         self._rules.append(
@@ -110,7 +106,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self.parse_msg,
                 interface="org.freedesktop.DBus.ObjectManager",
                 member="InterfacesRemoved",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         )
 
         self._rules.append(
@@ -118,7 +114,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self.parse_msg,
                 interface="org.freedesktop.DBus.Properties",
                 member="PropertiesChanged",
-            ).asFuture(self.loop)
+            ).asFuture(loop)
         )
 
         # Find the HCI device to use for scanning and get cached device properties
@@ -127,7 +123,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             "GetManagedObjects",
             interface=defs.OBJECT_MANAGER_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
-        ).asFuture(self.loop)
+        ).asFuture(loop)
         self._adapter_path, self._interface = _filter_on_adapter(objects, self._device)
         self._cached_devices = dict(_filter_on_device(objects))
 
@@ -139,7 +135,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             destination="org.bluez",
             signature="a{sv}",
             body=[self._filters],
-        ).asFuture(self.loop)
+        ).asFuture(loop)
 
         # Start scanning
         await self._bus.callRemote(
@@ -147,18 +143,19 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             "StartDiscovery",
             interface="org.bluez.Adapter1",
             destination="org.bluez",
-        ).asFuture(self.loop)
+        ).asFuture(loop)
 
     async def stop(self):
+        loop = asyncio.get_event_loop()
         await self._bus.callRemote(
             self._adapter_path,
             "StopDiscovery",
             interface="org.bluez.Adapter1",
             destination="org.bluez",
-        ).asFuture(self.loop)
+        ).asFuture(loop)
 
         for rule in self._rules:
-            await self._bus.delMatch(rule).asFuture(self.loop)
+            await self._bus.delMatch(rule).asFuture(loop)
         self._rules.clear()
 
         # Try to disconnect the System Bus.
@@ -182,7 +179,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         """
         self._filters = kwargs.get("filters", {})
-        self._filters["Transport"] = "le"
+        if "Transport" not in self._filters:
+            self._filters["Transport"] = "le"
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         # Reduce output.
@@ -210,15 +208,39 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         return discovered_devices
 
     def register_detection_callback(self, callback: Callable):
-        """Set a function to be called on each Scanner discovery.
-
-        Documentation for the Event Handler:
-        https://docs.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher.received
+        """Set a function to be called on each device discovery by scanner and when a discovered device has a changed property.
 
         Args:
-            callback: Function accepting one argument of type ?
+            callback: Function accepting one argument of type ``txdbus.message.SignalMessage``
+
         """
         self._callback = callback
+
+    @classmethod
+    async def find_device_by_address(cls, device_identifier: str, timeout: float = 10.0, **kwargs) -> BLEDevice:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
+
+        Args:
+            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Keyword Args:
+            device (str): Bluetooth device to use for discovery.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        device_identifier = device_identifier.lower()
+        loop = asyncio.get_event_loop()
+        stop_scanning_event = asyncio.Event()
+        scanner = cls(timeout=timeout)
+
+        def stop_if_detected(message):
+            if any(device.get("Address", "").lower() == device_identifier for device in scanner._devices.values()):
+                loop.call_soon_threadsafe(stop_scanning_event.set)
+
+        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
 
     # Helper methods
 
@@ -226,7 +248,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if message.member == "InterfacesAdded":
             msg_path = message.body[0]
             try:
-                device_interface = message.body[1].get("org.bluez.Device1", {})
+                device_interface = message.body[1].get(defs.DEVICE_INTERFACE, {})
             except Exception as e:
                 raise e
             self._devices[msg_path] = (
@@ -255,7 +277,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             message.member == "InterfacesRemoved"
             and message.body[1][0] == defs.BATTERY_INTERFACE
         ):
-            logger.info(
+            logger.debug(
                 "{0}, {1} ({2}): {3}".format(
                     message.member, message.interface, message.path, message.body
                 )
@@ -263,13 +285,13 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             return
         else:
             msg_path = message.path
-            logger.info(
+            logger.debug(
                 "{0}, {1} ({2}): {3}".format(
                     message.member, message.interface, message.path, message.body
                 )
             )
 
-        logger.info(
+        logger.debug(
             "{0}, {1} ({2} dBm), Object Path: {3}".format(
                 *_device_info(msg_path, self._devices.get(msg_path))
             )
