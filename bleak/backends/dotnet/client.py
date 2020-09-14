@@ -92,19 +92,19 @@ class BleakClientDotNet(BaseBleakClient):
     Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
     Args:
-        address_or_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
     """
 
-    def __init__(self, address_or_device: Union[BLEDevice, str], **kwargs):
-        super(BleakClientDotNet, self).__init__(address_or_device, **kwargs)
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientDotNet, self).__init__(address_or_ble_device, **kwargs)
 
         # Backend specific. Python.NET objects.
-        if isinstance(address_or_device, BLEDevice):
-            self._device_info = address_or_device.details.BluetoothAddress
+        if isinstance(address_or_ble_device, BLEDevice):
+            self._device_info = address_or_ble_device.details.BluetoothAddress
         else:
             self._device_info = None
         self._requester = None

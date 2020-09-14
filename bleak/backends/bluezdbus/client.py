@@ -37,21 +37,21 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
 
     Args:
-        address_or_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
-    def __init__(self, address_or_device: Union[BLEDevice, str], **kwargs):
-        super(BleakClientBlueZDBus, self).__init__(address_or_device, **kwargs)
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
-        self.address = address_or_device
+        self.address = address_or_ble_device
 
         # Backend specific, TXDBus objects and data
-        if isinstance(address_or_device, BLEDevice):
-            self._device_path = address_or_device.details["path"]
+        if isinstance(address_or_ble_device, BLEDevice):
+            self._device_path = address_or_ble_device.details["path"]
         else:
             self._device_path = None
         self._bus = None

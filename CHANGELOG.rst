@@ -34,7 +34,7 @@ Changed
 * **BREAKING CHANGE** All notifications now have the characteristic's integer **handle** instead of its UUID as a
   string as the first argument ``sender`` sent to notification callbacks. This provides the uniqueness of
   sender in notifications as well.
-* Renamed ``BleakClient`` argument ``address`` to ``address_or_device``.
+* Renamed ``BleakClient`` argument ``address`` to ``address_or_ble_device``.
 * Version 0.5.0 of BleakUWPBridge, with some modified methods and implementing ``IDisposable``.
 * Merged #224. All storing and passing of event loops in bleak is removed.
 * Removed Objective C delegate compliance checks. Merged #253.

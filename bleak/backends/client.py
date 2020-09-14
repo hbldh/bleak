@@ -20,18 +20,18 @@ class BaseBleakClient(abc.ABC):
     The documentation of this interface should thus be safe to use as a reference for your implementation.
 
     Args:
-        address_or_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
 
     """
 
-    def __init__(self, address_or_device: Union[BLEDevice, str], **kwargs):
-        if isinstance(address_or_device, BLEDevice):
-            self.address = address_or_device.address
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        if isinstance(address_or_ble_device, BLEDevice):
+            self.address = address_or_ble_device.address
         else:
-            self.address = address_or_device
+            self.address = address_or_ble_device
 
         self.services = BleakGATTServiceCollection()
 

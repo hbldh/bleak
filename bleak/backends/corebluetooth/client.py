@@ -35,17 +35,17 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     """CoreBluetooth class interface for BleakClient
 
     Args:
-        address_or_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call during connect. Defaults to 10.0.
 
     """
-    def __init__(self, address_or_device: Union[BLEDevice, str], **kwargs):
-        super(BleakClientCoreBluetooth, self).__init__(address_or_device, **kwargs)
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
 
-        if isinstance(address_or_device, BLEDevice):
-            self._device_info = address_or_device.details
+        if isinstance(address_or_ble_device, BLEDevice):
+            self._device_info = address_or_ble_device.details
         else:
             self._device_info = None
 
