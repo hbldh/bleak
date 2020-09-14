@@ -13,8 +13,6 @@ jobs:
     vmImage: 'Ubuntu 16.04'
   strategy:
     matrix:
-      Python35-x64:
-        python.version: '3.5'
         python.architecture: 'x64'
       Python36-x64:
         python.version: '3.6'
@@ -53,8 +51,6 @@ jobs:
     vmImage: 'windows-2019'
   strategy:
     matrix:
-      Python35-x64:
-        python.version: '3.5'
         python.architecture: 'x64'
       Python36-x64:
         python.version: '3.6'
@@ -92,8 +88,6 @@ jobs:
 
   strategy:
     matrix:
-      Python35-x64:
-        python.version: '3.5'
         python.architecture: 'x64'
       Python36-x64:
         python.version: '3.6'
@@ -131,8 +125,6 @@ jobs:
 
   strategy:
     matrix:
-      Python35-x64:
-        python.version: '3.5'
         python.architecture: 'x64'
       Python36-x64:
         python.version: '3.6'
