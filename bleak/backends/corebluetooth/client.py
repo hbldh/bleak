@@ -20,9 +20,9 @@ from bleak.backends.corebluetooth.characteristic import (
     BleakGATTCharacteristicCoreBluetooth,
 )
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
-from bleak.backends.corebluetooth.discovery import discover
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
+from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
@@ -35,14 +35,19 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     """CoreBluetooth class interface for BleakClient
 
     Args:
-        address (str): The uuid of the BLE peripheral to connect to.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call during connect. Defaults to 10.0.
 
     """
-    def __init__(self, address: str, **kwargs):
-        super(BleakClientCoreBluetooth, self).__init__(address, **kwargs)
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
+
+        if isinstance(address_or_ble_device, BLEDevice):
+            self._device_info = address_or_ble_device.details
+        else:
+            self._device_info = None
 
         self._device_info = None
         self._requester = None
@@ -64,16 +69,17 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerCoreBluetooth.find_device_by_address(
-            self.address, timeout=timeout)
+        if self._device_info is None:
+            timeout = kwargs.get("timeout", self._timeout)
+            device = await BleakScannerCoreBluetooth.find_device_by_address(
+                self.address, timeout=timeout)
 
-        if device:
-            self._device_info = device.details
-        else:
-            raise BleakError(
-                "Device with address {} was not found".format(self.address)
-            )
+            if device:
+                self._device_info = device.details
+            else:
+                raise BleakError(
+                    "Device with address {} was not found".format(self.address)
+                )
 
         logger.debug("Connecting to BLE device @ {}".format(self.address))
 
