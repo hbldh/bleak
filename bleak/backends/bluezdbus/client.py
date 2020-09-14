@@ -15,6 +15,7 @@ from typing import Callable, Any, Union
 
 from twisted.internet.error import ConnectionDone
 
+from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -39,20 +40,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
 
     Args:
-        address (str): The  address of the BLE peripheral to connect to.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
-    def __init__(self, address, **kwargs):
-        super(BleakClientBlueZDBus, self).__init__(address, **kwargs)
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
-        self.address = address
+        self.address = address_or_ble_device
 
         # Backend specific, TXDBus objects and data
-        self._device_path = None
+        if isinstance(address_or_ble_device, BLEDevice):
+            self._device_path = address_or_ble_device.details["path"]
+        else:
+            self._device_path = None
         self._bus = None
         self._reactor = None
         self._rules = {}
@@ -112,16 +116,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
-        timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerBlueZDBus.find_device_by_address(
-            self.address, timeout=timeout, device=self.device)
+        if self._device_path is None:
+            timeout = kwargs.get("timeout", self._timeout)
+            device = await BleakScannerBlueZDBus.find_device_by_address(
+                self.address, timeout=timeout, device=self.device)
 
-        if device:
-            self._device_path = device.details["path"]
-        else:
-            raise BleakError(
-                "Device with address {0} was not found.".format(self.address)
-            )
+            if device:
+                self._device_path = device.details["path"]
+            else:
+                raise BleakError(
+                    "Device with address {0} was not found.".format(self.address)
+                )
 
         loop = asyncio.get_event_loop()
         self._reactor = get_reactor(loop)

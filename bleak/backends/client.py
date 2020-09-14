@@ -12,20 +12,26 @@ from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
-
+from bleak.backends.device import BLEDevice
 
 class BaseBleakClient(abc.ABC):
     """The Client Interface for Bleak Backend implementations to implement.
 
     The documentation of this interface should thus be safe to use as a reference for your implementation.
 
+    Args:
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
 
     """
 
-    def __init__(self, address, **kwargs):
-        self.address = address
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        if isinstance(address_or_ble_device, BLEDevice):
+            self.address = address_or_ble_device.address
+        else:
+            self.address = address_or_ble_device
 
         self.services = BleakGATTServiceCollection()
 
