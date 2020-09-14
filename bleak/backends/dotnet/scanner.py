@@ -251,4 +251,6 @@ class BleakScannerDotNet(BaseBleakScanner):
             if event_args.BluetoothAddress == ulong_id:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
+        return await scanner._find_device_by_address(
+            device_identifier, stop_scanning_event, stop_if_detected, timeout
+        )

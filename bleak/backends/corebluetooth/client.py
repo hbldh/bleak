@@ -41,6 +41,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
+
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
 
@@ -72,7 +73,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if self._device_info is None:
             timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerCoreBluetooth.find_device_by_address(
-                self.address, timeout=timeout)
+                self.address, timeout=timeout
+            )
 
             if device:
                 self._device_info = device.details
@@ -175,8 +177,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             logger.debug(
                 "Retrieving characteristics for service {}".format(serviceUUID)
             )
-            characteristics = await manager.connected_peripheral_delegate.discoverCharacteristics_(
-                service
+            characteristics = (
+                await manager.connected_peripheral_delegate.discoverCharacteristics_(
+                    service
+                )
             )
 
             self.services.add_service(BleakGATTServiceCoreBluetooth(service))
@@ -186,8 +190,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 logger.debug(
                     "Retrieving descriptors for characteristic {}".format(cUUID)
                 )
-                descriptors = await manager.connected_peripheral_delegate.discoverDescriptors_(
-                    characteristic
+                descriptors = (
+                    await manager.connected_peripheral_delegate.discoverDescriptors_(
+                        characteristic
+                    )
                 )
 
                 self.services.add_characteristic(
@@ -298,12 +304,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = await manager.connected_peripheral_delegate.writeCharacteristic_value_type_(
-            characteristic.obj,
-            value,
-            CBCharacteristicWriteWithResponse
-            if response
-            else CBCharacteristicWriteWithoutResponse,
+        success = (
+            await manager.connected_peripheral_delegate.writeCharacteristic_value_type_(
+                characteristic.obj,
+                value,
+                CBCharacteristicWriteWithResponse
+                if response
+                else CBCharacteristicWriteWithoutResponse,
+            )
         )
         if success:
             logger.debug(
