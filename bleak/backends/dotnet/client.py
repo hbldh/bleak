@@ -136,7 +136,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._bridge = Bridge()
 
         # Try to find the desired device.
-        if self._device_info is not None:
+        if self._device_info is None:
             timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerDotNet.find_device_by_address(
                 self.address, timeout=timeout)
