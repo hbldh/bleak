@@ -7,8 +7,8 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
+`0.8.0`_ (2020-09-02)
+---------------------
 
 Added
 ~~~~~
@@ -50,8 +50,8 @@ Fixed
 * Modified the ``connected_peripheral_delegate`` handling in macOS backend to fix #213 and #116.
 * Merged #270, fixing a critical bug in ``get_services`` method in Core Bluetooth backend.
 * Improved handling of disconnections and ``is_connected`` in BlueZ backend to fix #259.
-* Fix for `set_disconnected_callback` on Core Bluetooth. Fixes #276.
-
+* Fix for ``set_disconnected_callback`` on Core Bluetooth. Fixes #276.
+* Safer `Core Bluetooth` presence check. Merged #280.
 
 `0.7.1`_ (2020-07-02)
 ---------------------
@@ -294,7 +294,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.7.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.8.0...develop
+.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1
 .. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
 .. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
 .. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
