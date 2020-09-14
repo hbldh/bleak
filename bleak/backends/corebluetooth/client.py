@@ -1,7 +1,7 @@
 """
 BLE Client for CoreBluetooth on macOS
 
-Created on 2019-6-26 by kevincar <kevincarrolldavis@gmail.com>
+Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import logging
@@ -20,7 +20,6 @@ from bleak.backends.corebluetooth.characteristic import (
     BleakGATTCharacteristicCoreBluetooth,
 )
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
-from bleak.backends.corebluetooth.discovery import discover
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.service import BleakGATTServiceCollection
@@ -38,7 +37,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         address (str): The uuid of the BLE peripheral to connect to.
 
     Keyword Args:
-        timeout (float): Timeout for required ``discover`` call during connect. Defaults to 10.0.
+        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
     def __init__(self, address: str, **kwargs):
@@ -58,7 +57,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Connect to a specified Peripheral
 
         Keyword Args:
-            timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
         Returns:
             Boolean representing connection status.
@@ -132,10 +131,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         Reference:
 
-            - https://stackoverflow.com/questions/25254932/can-you-pair-a-bluetooth-le-device-in-an-ios-app
-            - https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral.html#//apple_ref/doc/uid/TP40013257-CH5-SW1
-            - https://stackoverflow.com/questions/47546690/ios-bluetooth-pairing-request-dialog-can-i-know-the-users-choice
-
+            - `Apple Docs <https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral.html#//apple_ref/doc/uid/TP40013257-CH5-SW1>`_
+            - `Stack Overflow post #1 <https://stackoverflow.com/questions/25254932/can-you-pair-a-bluetooth-le-device-in-an-ios-app>`_
+            - `Stack Overflow post #2 <https://stackoverflow.com/questions/47546690/ios-bluetooth-pairing-request-dialog-can-i-know-the-users-choice>`_
 
         Returns:
             Boolean regarding success of pairing.

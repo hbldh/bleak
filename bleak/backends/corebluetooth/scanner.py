@@ -62,6 +62,17 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             logger.warning("stopScan method could not be called: {0}".format(e))
 
     async def set_scanning_filter(self, **kwargs):
+        """Set scanning filter for the scanner.
+
+        .. note::
+
+            This is not implemented for macOS yet.
+
+        Raises:
+
+           ``NotImplementedError``
+
+        """
         raise NotImplementedError(
             "Need to evaluate which macOS versions to support first..."
         )

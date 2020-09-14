@@ -20,7 +20,7 @@ class BaseBleakClient(abc.ABC):
     The documentation of this interface should thus be safe to use as a reference for your implementation.
 
     Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+        timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
 
     """
 

@@ -41,8 +41,12 @@ logger = logging.getLogger(__name__)
 
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
-_mac_version = list(map(int, platform.mac_ver()[0].split(".")))
-_IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
+try:
+    _mac_version = list(map(int, platform.mac_ver()[0].split(".")))
+    _IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
+except:  # noqa For building docs
+    _mac_version = ""
+    _IS_PRE_10_13 = False
 
 
 class CMDConnectionState(Enum):
