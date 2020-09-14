@@ -109,6 +109,7 @@ class BleakClientDotNet(BaseBleakClient):
             self._device_info = None
         self._requester = None
         self._bridge = None
+        self._disconnected_callback = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -164,8 +165,17 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=BluetoothLEDevice,
         )
 
+        loop = asyncio.get_event_loop()
+
         def _ConnectionStatusChanged_Handler(sender, args):
-            logger.debug("_ConnectionStatusChanged_Handler: " + args.ToString())
+            logger.debug(
+                "_ConnectionStatusChanged_Handler: %d", sender.ConnectionStatus
+            )
+            if (
+                sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected
+                and self._disconnected_callback
+            ):
+                loop.call_soon_threadsafe(self._disconnected_callback, self)
 
         self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
 
@@ -246,15 +256,24 @@ class BleakClientDotNet(BaseBleakClient):
     def set_disconnected_callback(
         self, callback: Callable[[BaseBleakClient], None], **kwargs
     ) -> None:
-        """Set the disconnected callback.
+        """Set the disconnect callback.
+        The callback will only be called on unsolicited disconnect event.
 
-        N.B. This is not implemented in the .NET backend yet.
+        Callbacks must accept one input which is the client object itself.
+
+        .. code-block:: python
+
+            def callback(client):
+                print("Client with address {} got disconnected!".format(client.address))
+
+            client.set_disconnected_callback(callback)
+            client.connect()
 
         Args:
             callback: callback to be called on disconnection.
 
         """
-        raise NotImplementedError("This is not implemented in the .NET backend yet")
+        self._disconnected_callback = callback
 
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.
