@@ -109,7 +109,6 @@ class BleakClientDotNet(BaseBleakClient):
             self._device_info = None
         self._requester = None
         self._bridge = None
-        self._disconnected_callback = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -252,28 +251,6 @@ class BleakClientDotNet(BaseBleakClient):
             )
         else:
             return False
-
-    def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient], None], **kwargs
-    ) -> None:
-        """Set the disconnect callback.
-        The callback will only be called on unsolicited disconnect event.
-
-        Callbacks must accept one input which is the client object itself.
-
-        .. code-block:: python
-
-            def callback(client):
-                print("Client with address {} got disconnected!".format(client.address))
-
-            client.set_disconnected_callback(callback)
-            client.connect()
-
-        Args:
-            callback: callback to be called on disconnection.
-
-        """
-        self._disconnected_callback = callback
 
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.

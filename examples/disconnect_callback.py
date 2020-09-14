@@ -19,14 +19,15 @@ async def show_disconnect_handling():
         print("No devices found, try again later.")
         return
 
-    async with BleakClient(devs[0]) as client:
-        disconnected_event = asyncio.Event()
+    disconnected_event = asyncio.Event()
 
-        def disconnected_callback(client):
-            print("Disconnected callback called!")
-            disconnected_event.set()
+    def disconnected_callback(client):
+        print("Disconnected callback called!")
+        disconnected_event.set()
 
-        client.set_disconnected_callback(disconnected_callback)
+    async with BleakClient(
+        devs[0], disconnected_callback=disconnected_callback
+    ) as client:
         print("Sleeping until device disconnects...")
         await disconnected_event.wait()
         print("Connected: {0}".format(await client.is_connected()))
