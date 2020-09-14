@@ -26,7 +26,7 @@ Added
 * Implemented pairing method in .NET backend.
 * Implemented pairing method in the BlueZ backend.
 * Added stumps and ``NotImplementedError`` on pairing in macOS backend.
-* Added the possibility to connect using ``BLEDevice`` instead of a string adress. This
+* Added the possibility to connect using ``BLEDevice`` instead of a string address. This
   allows for skipping the discovery call when connecting.
 
 Changed
@@ -59,7 +59,7 @@ Fixed
 Changed
 ~~~~~~~
 
-* Improved, more explantory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
+* Improved, more explanatory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
 * Better-than-nothing documentation about scanning filters added (#230).
 * Ran black on code which was forgotten in 0.7.0. Large diffs due to that.
 * Re-adding Python 3.8 CI "tests" on Windows again.
