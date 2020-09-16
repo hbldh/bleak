@@ -119,7 +119,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._device_path is None:
             timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerBlueZDBus.find_device_by_address(
-                self.address, timeout=timeout, device=self.device)
+                self.address, timeout=timeout, device=self.device
+            )
 
             if device:
                 self._device_path = device.details["path"]
@@ -349,7 +350,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean regarding success of unpairing.
 
         """
-        warnings.warn("Unpairing is seemingly unavailable in the BlueZ DBus API at the moment.")
+        warnings.warn(
+            "Unpairing is seemingly unavailable in the BlueZ DBus API at the moment."
+        )
         return False
 
     async def is_connected(self) -> bool:
