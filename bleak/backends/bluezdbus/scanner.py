@@ -217,7 +217,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._callback = callback
 
     @classmethod
-    async def find_device_by_address(cls, device_identifier: str, timeout: float = 10.0, **kwargs) -> BLEDevice:
+    async def find_device_by_address(
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs
+    ) -> BLEDevice:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
 
         Args:
@@ -237,10 +239,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         scanner = cls(timeout=timeout)
 
         def stop_if_detected(message):
-            if any(device.get("Address", "").lower() == device_identifier for device in scanner._devices.values()):
+            if any(
+                device.get("Address", "").lower() == device_identifier
+                for device in scanner._devices.values()
+            ):
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
+        return await scanner._find_device_by_address(
+            device_identifier, stop_scanning_event, stop_if_detected, timeout
+        )
 
     # Helper methods
 

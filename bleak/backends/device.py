@@ -27,11 +27,11 @@ class BLEDevice(object):
         #: The Bluetooth address of the device on this machine.
         self.address = address
         #: The advertised name of the device.
-        self.name= name if name else "Unknown"
+        self.name = name if name else "Unknown"
         #: The OS native details required for connecting to the device.
         self.details = details
         #: Device specific details. Contains a ``uuids`` key which is a list of service UUIDs and a ``manufacturer_data`` field with a bytes-object from the advertised data.
-        self.metadata= kwargs
+        self.metadata = kwargs
 
     @property
     def rssi(self):

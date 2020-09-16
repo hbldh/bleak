@@ -15,6 +15,11 @@ Added
 
 * Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
 
+Removed
+~~~~~~~
+
+Support for Python 3.5.
+
 `0.8.0`_ (2020-09-02)
 ---------------------
 

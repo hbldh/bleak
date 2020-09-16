@@ -14,6 +14,7 @@ from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
 
+
 class BaseBleakClient(abc.ABC):
     """The Client Interface for Bleak Backend implementations to implement.
 
@@ -47,7 +48,11 @@ class BaseBleakClient(abc.ABC):
         return "{0}, {1}".format(self.__class__.__name__, self.address)
 
     def __repr__(self):
-        return "<{0}, {1}, {2}>".format(self.__class__.__name__, self.address, super(BaseBleakClient, self).__repr__())
+        return "<{0}, {1}, {2}>".format(
+            self.__class__.__name__,
+            self.address,
+            super(BaseBleakClient, self).__repr__(),
+        )
 
     # Async Context managers
 

@@ -48,10 +48,10 @@ class BLEDeviceCoreBluetooth(BLEDevice):
             return
         # converting to lower case to match other platforms
         chuuids = [str(u).lower() for u in cbuuids]
-        if 'uuids' in self.metadata:
+        if "uuids" in self.metadata:
             for uuid in chuuids:
-                if not uuid in self.metadata['uuids']:
-                    self.metadata['uuids'].append(uuid)
+                if not uuid in self.metadata["uuids"]:
+                    self.metadata["uuids"].append(uuid)
         else:
             self.metadata["uuids"] = chuuids
 

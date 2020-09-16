@@ -139,7 +139,8 @@ class BleakClientDotNet(BaseBleakClient):
         if self._device_info is None:
             timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerDotNet.find_device_by_address(
-                self.address, timeout=timeout)
+                self.address, timeout=timeout
+            )
 
             if device:
                 self._device_info = device.details.BluetoothAddress
@@ -377,7 +378,9 @@ class BleakClientDotNet(BaseBleakClient):
                         "Could not get GATT services: {0} (Error: 0x{1:02X}: {2})".format(
                             _communication_statues.get(services_result.Status, ""),
                             services_result.ProtocolError,
-                            CONTROLLER_ERROR_CODES.get(services_result.ProtocolError, "Unknown")
+                            CONTROLLER_ERROR_CODES.get(
+                                services_result.ProtocolError, "Unknown"
+                            ),
                         )
                     )
                 else:
@@ -407,7 +410,9 @@ class BleakClientDotNet(BaseBleakClient):
                                     characteristics_result.Status, ""
                                 ),
                                 characteristics_result.ProtocolError,
-                                CONTROLLER_ERROR_CODES.get(characteristics_result.ProtocolError, "Unknown")
+                                CONTROLLER_ERROR_CODES.get(
+                                    characteristics_result.ProtocolError, "Unknown"
+                                ),
                             )
                         )
                     else:
@@ -442,8 +447,8 @@ class BleakClientDotNet(BaseBleakClient):
                                     ),
                                     descriptors_result.ProtocolError,
                                     CONTROLLER_ERROR_CODES.get(
-                                        descriptors_result.ProtocolError,
-                                        "Unknown")
+                                        descriptors_result.ProtocolError, "Unknown"
+                                    ),
                                 )
                             )
                         else:
@@ -523,8 +528,8 @@ class BleakClientDotNet(BaseBleakClient):
                         _communication_statues.get(read_result.Status, ""),
                         read_result.ProtocolError,
                         CONTROLLER_ERROR_CODES.get(
-                            read_result.ProtocolError,
-                            "Unknown")
+                            read_result.ProtocolError, "Unknown"
+                        ),
                     )
                 )
             else:
@@ -579,8 +584,8 @@ class BleakClientDotNet(BaseBleakClient):
                         _communication_statues.get(read_result.Status, ""),
                         read_result.ProtocolError,
                         CONTROLLER_ERROR_CODES.get(
-                            read_result.ProtocolError,
-                            "Unknown")
+                            read_result.ProtocolError, "Unknown"
+                        ),
                     )
                 )
             else:
@@ -644,8 +649,8 @@ class BleakClientDotNet(BaseBleakClient):
                         _communication_statues.get(write_result.Status, ""),
                         write_result.ProtocolError,
                         CONTROLLER_ERROR_CODES.get(
-                            write_result.ProtocolError,
-                            "Unknown")
+                            write_result.ProtocolError, "Unknown"
+                        ),
                     )
                 )
             else:
@@ -688,8 +693,8 @@ class BleakClientDotNet(BaseBleakClient):
                         _communication_statues.get(write_result.Status, ""),
                         write_result.ProtocolError,
                         CONTROLLER_ERROR_CODES.get(
-                            write_result.ProtocolError,
-                            "Unknown")
+                            write_result.ProtocolError, "Unknown"
+                        ),
                     )
                 )
             else:

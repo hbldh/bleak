@@ -187,7 +187,8 @@ class CentralManagerDelegate(NSObject):
     def centralManagerDidUpdateState_(self, centralManager):
         logger.debug("centralManagerDidUpdateState_")
         self.event_loop.call_soon_threadsafe(
-            self.did_update_state, centralManager,
+            self.did_update_state,
+            centralManager,
         )
 
     @objc.python_method
@@ -248,7 +249,11 @@ class CentralManagerDelegate(NSObject):
     ):
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
         self.event_loop.call_soon_threadsafe(
-            self.did_discover_peripheral, central, peripheral, advertisementData, RSSI,
+            self.did_discover_peripheral,
+            central,
+            peripheral,
+            advertisementData,
+            RSSI,
         )
 
     @objc.python_method
@@ -259,14 +264,18 @@ class CentralManagerDelegate(NSObject):
             )
         )
         if self._connection_state != CMDConnectionState.CONNECTED:
-            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
+            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(
+                peripheral
+            )
             self.connected_peripheral_delegate = peripheralDelegate
             self._connection_state = CMDConnectionState.CONNECTED
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
         logger.debug("centralManager_didConnectPeripheral_")
         self.event_loop.call_soon_threadsafe(
-            self.did_connect_peripheral, central, peripheral,
+            self.did_connect_peripheral,
+            central,
+            peripheral,
         )
 
     @objc.python_method
@@ -285,7 +294,10 @@ class CentralManagerDelegate(NSObject):
     ):
         logger.debug("centralManager_didFailToConnectPeripheral_error_")
         self.event_loop.call_soon_threadsafe(
-            self.did_fail_to_connect_peripheral, centralManager, peripheral, error,
+            self.did_fail_to_connect_peripheral,
+            centralManager,
+            peripheral,
+            error,
         )
 
     @objc.python_method
@@ -305,7 +317,10 @@ class CentralManagerDelegate(NSObject):
     ):
         logger.debug("centralManager_didDisconnectPeripheral_error_")
         self.event_loop.call_soon_threadsafe(
-            self.did_disconnect_peripheral, central, peripheral, error,
+            self.did_disconnect_peripheral,
+            central,
+            peripheral,
+            error,
         )
 
 
