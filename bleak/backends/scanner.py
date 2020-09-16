@@ -74,7 +74,9 @@ class BaseBleakScanner(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    async def find_device_by_address(cls, device_identifier: str, timeout: float = 10.0) -> BLEDevice:
+    async def find_device_by_address(
+        cls, device_identifier: str, timeout: float = 10.0
+    ) -> BLEDevice:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
 
         Args:
@@ -87,7 +89,9 @@ class BaseBleakScanner(abc.ABC):
         """
         raise NotImplementedError()
 
-    async def _find_device_by_address(self, device_identifier, stop_scanning_event, stop_if_detected_callback, timeout):
+    async def _find_device_by_address(
+        self, device_identifier, stop_scanning_event, stop_if_detected_callback, timeout
+    ):
         """Internal method for performing find by address work."""
 
         self.register_detection_callback(stop_if_detected_callback)
@@ -107,4 +111,3 @@ class BaseBleakScanner(abc.ABC):
             await self.stop()
 
         return device
-

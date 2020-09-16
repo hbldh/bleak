@@ -128,6 +128,6 @@ To be written. In the meantime, check
 
 
 Scanning filter examples in Core Bluetooth backend
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To be implemented. Exists in a draft in `PR #209 <https://github.com/hbldh/bleak/pull/209>`_.

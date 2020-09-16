@@ -12,6 +12,7 @@ from typing import Callable, Any, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.device import BLEDevice
 
 
 class BaseBleakClient(abc.ABC):
@@ -19,13 +20,21 @@ class BaseBleakClient(abc.ABC):
 
     The documentation of this interface should thus be safe to use as a reference for your implementation.
 
-    Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 2.0.
+    Args:
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
+    Keyword Args:
+        timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
+        disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
     """
 
-    def __init__(self, address, **kwargs):
-        self.address = address
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        if isinstance(address_or_ble_device, BLEDevice):
+            self.address = address_or_ble_device.address
+        else:
+            self.address = address_or_ble_device
 
         self.services = BleakGATTServiceCollection()
 
@@ -33,12 +42,17 @@ class BaseBleakClient(abc.ABC):
         self._notification_callbacks = {}
 
         self._timeout = kwargs.get("timeout", 10.0)
+        self._disconnected_callback = kwargs.get("disconnected_callback")
 
     def __str__(self):
         return "{0}, {1}".format(self.__class__.__name__, self.address)
 
     def __repr__(self):
-        return "<{0}, {1}, {2}>".format(self.__class__.__name__, self.address, super(BaseBleakClient, self).__repr__())
+        return "<{0}, {1}, {2}>".format(
+            self.__class__.__name__,
+            self.address,
+            super(BaseBleakClient, self).__repr__(),
+        )
 
     # Async Context managers
 
@@ -51,14 +65,15 @@ class BaseBleakClient(abc.ABC):
 
     # Connectivity methods
 
-    @abc.abstractmethod
-    async def set_disconnected_callback(
-        self, callback: Callable[["BaseBleakClient"], None], **kwargs
+    def set_disconnected_callback(
+        self, callback: Union[Callable[["BaseBleakClient"], None], None], **kwargs
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.
 
         Callbacks must accept one input which is the client object itself.
+
+        Set the callback to ``None`` to remove any existing callback.
 
         .. code-block:: python
 
@@ -72,8 +87,7 @@ class BaseBleakClient(abc.ABC):
             callback: callback to be called on disconnection.
 
         """
-
-        raise NotImplementedError()
+        self._disconnected_callback = callback
 
     @abc.abstractmethod
     async def connect(self, **kwargs) -> bool:

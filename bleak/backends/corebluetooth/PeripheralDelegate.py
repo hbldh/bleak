@@ -35,7 +35,7 @@ CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
 class _EventDict(dict):
     def get_cleared(self, xUUID) -> asyncio.Event:
-        """ Convenience method.
+        """Convenience method.
         Returns a cleared (False) event. Creates it if doesn't exits.
         """
         if xUUID not in self:
@@ -128,9 +128,9 @@ class PeripheralDelegate(NSObject):
         self.peripheral.readValueForCharacteristic_(characteristic)
         await asyncio.wait_for(event.wait(), timeout=5)
         if characteristic.value():
-                return characteristic.value()
+            return characteristic.value()
         else:
-            return b''
+            return b""
 
     async def readDescriptor_(
         self, descriptor: CBDescriptor, use_cached=True
@@ -219,7 +219,9 @@ class PeripheralDelegate(NSObject):
     ) -> None:
         logger.debug("peripheral_didDiscoverServices_")
         self._event_loop.call_soon_threadsafe(
-            self.did_discover_services, peripheral, error,
+            self.did_discover_services,
+            peripheral,
+            error,
         )
 
     @objc.python_method
@@ -244,7 +246,10 @@ class PeripheralDelegate(NSObject):
     ):
         logger.debug("peripheral_didDiscoverCharacteristicsForService_error_")
         self._event_loop.call_soon_threadsafe(
-            self.did_discover_characteristics_for_service, peripheral, service, error,
+            self.did_discover_characteristics_for_service,
+            peripheral,
+            service,
+            error,
         )
 
     @objc.python_method
@@ -336,7 +341,10 @@ class PeripheralDelegate(NSObject):
     ):
         logger.debug("peripheral_didUpdateValueForDescriptor_error_")
         self._event_loop.call_soon_threadsafe(
-            self.did_update_value_for_descriptor, peripheral, descriptor, error,
+            self.did_update_value_for_descriptor,
+            peripheral,
+            descriptor,
+            error,
         )
 
     @objc.python_method
@@ -362,7 +370,10 @@ class PeripheralDelegate(NSObject):
     ):
         logger.debug("peripheral_didWriteValueForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
-            self.did_write_value_for_characteristic, peripheral, characteristic, error,
+            self.did_write_value_for_characteristic,
+            peripheral,
+            characteristic,
+            error,
         )
 
     @objc.python_method
@@ -385,7 +396,10 @@ class PeripheralDelegate(NSObject):
     ):
         logger.debug("peripheral_didWriteValueForDescriptor_error_")
         self._event_loop.call_soon_threadsafe(
-            self.did_write_value_for_descriptor, peripheral, descriptor, error,
+            self.did_write_value_for_descriptor,
+            peripheral,
+            descriptor,
+            error,
         )
 
     @objc.python_method

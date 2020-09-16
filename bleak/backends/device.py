@@ -14,19 +14,23 @@ class BLEDevice(object):
     a `discover` call.
 
     - When using Windows backend, `details` attribute is a
-      `Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement` object, unless
+      ``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement`` object, unless
       it is created with the Windows.Devices.Enumeration discovery method, then is is a
-      `Windows.Devices.Enumeration.DeviceInformation`
-    - When using Linux backend, `details` attribute is a
-      dict with keys `path` which has the string path to the DBus device object and `props`
+      ``Windows.Devices.Enumeration.DeviceInformation``.
+    - When using Linux backend, ``details`` attribute is a
+      dict with keys ``path`` which has the string path to the DBus device object and ``props``
       which houses the properties dictionary of the D-Bus Device.
-    - When using macOS backend, `details` attribute will be a CBPeripheral object
+    - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
     """
 
     def __init__(self, address, name, details=None, **kwargs):
+        #: The Bluetooth address of the device on this machine.
         self.address = address
+        #: The advertised name of the device.
         self.name = name if name else "Unknown"
+        #: The OS native details required for connecting to the device.
         self.details = details
+        #: Device specific details. Contains a ``uuids`` key which is a list of service UUIDs and a ``manufacturer_data`` field with a bytes-object from the advertised data.
         self.metadata = kwargs
 
     @property

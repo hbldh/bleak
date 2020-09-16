@@ -41,17 +41,20 @@ def _format_event_args(e):
 class BleakScannerDotNet(BaseBleakScanner):
     """The native Windows Bleak BLE Scanner.
 
-    Implemented using `pythonnet <https://pythonnet.github.io/>`_, a package that provides an integration to the .NET
-    Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
+    Implemented using `pythonnet <https://pythonnet.github.io/>`_, a package that provides an integration to
+    the .NET Common Language Runtime (CLR). Therefore, much of the code below has a distinct C# feel.
 
     Keyword Args:
-        scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
-        SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
-          BluetoothSignalStrengthFilter object used for configuration of Bluetooth
-          LE advertisement filtering that uses signal strength-based filtering.
-        AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
-          BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-          advertisement filtering that uses payload section-based filtering.
+
+        scanning mode (str): Set to ``Passive`` to avoid the ``Active`` scanning mode.
+
+        SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
+          BluetoothSignalStrengthFilter object used for configuration of Bluetooth LE advertisement
+          filtering that uses signal strength-based filtering.
+
+        AdvertisementFilter (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter``): A
+          BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE advertisement
+          filtering that uses payload section-based filtering.
 
     """
 
@@ -120,12 +123,12 @@ class BleakScannerDotNet(BaseBleakScanner):
         """Set a scanning filter for the BleakScanner.
 
         Keyword Args:
-            SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
-              BluetoothSignalStrengthFilter object used for configuration of Bluetooth
-              LE advertisement filtering that uses signal strength-based filtering.
-            AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
-              BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-              advertisement filtering that uses payload section-based filtering.
+          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
+            BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+            LE advertisement filtering that uses signal strength-based filtering.
+          AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
+            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+            advertisement filtering that uses payload section-based filtering.
 
         """
         if "SignalStrengthFilter" in kwargs:
@@ -176,8 +179,8 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         Args:
             callback: Function accepting two arguments:
-             sender (Windows.Devices.Bluetooth.AdvertisementBluetoothLEAdvertisementWatcher) and
-             eventargs (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementReceivedEventArgs)
+             sender (``Windows.Devices.Bluetooth.AdvertisementBluetoothLEAdvertisementWatcher``) and
+             eventargs (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementReceivedEventArgs``)
 
         """
         self._callback = callback
@@ -215,19 +218,26 @@ class BleakScannerDotNet(BaseBleakScanner):
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
 
         Args:
+
             device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+            timeout (float): Optional timeout to wait for detection of specified peripheral
+              before giving up. Defaults to 10.0 seconds.
 
         Keyword Args:
-            scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
-            SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter): A
-              BluetoothSignalStrengthFilter object used for configuration of Bluetooth
-              LE advertisement filtering that uses signal strength-based filtering.
-            AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
-              BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-              advertisement filtering that uses payload section-based filtering.
+
+          scanning mode (str): Set to ``Passive`` to avoid the ``Active`` scanning mode.
+
+          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
+            BluetoothSignalStrengthFilter object used for configuration of Bluetooth LE advertisement
+            filtering that uses signal strength-based filtering.
+
+          AdvertisementFilter (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter``): A
+            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+            advertisement filtering that uses payload section-based filtering.
 
         Returns:
+
             The ``BLEDevice`` sought or ``None`` if not detected.
 
         """
@@ -241,4 +251,6 @@ class BleakScannerDotNet(BaseBleakScanner):
             if event_args.BluetoothAddress == ulong_id:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
+        return await scanner._find_device_by_address(
+            device_identifier, stop_scanning_event, stop_if_detected, timeout
+        )
