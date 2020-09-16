@@ -62,8 +62,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._rules = {}
         self._subscriptions = list()
 
-        self._disconnected_callback = None
-
         # This maps DBus paths of GATT Characteristics to their BLE handles.
         self._char_path_to_handle = {}
 
@@ -75,34 +73,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._bluez_version = tuple(map(int, s.groups()))
 
     # Connectivity methods
-
-    def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient, Future], None], **kwargs
-    ) -> None:
-        """Set the disconnected callback.
-
-        The callback will be called on DBus PropChanged event with
-        the 'Connected' key set to False.
-
-        A disconnect callback must accept two positional arguments,
-        the BleakClient and the Future that called it.
-
-        Example:
-
-        .. code-block::python
-
-            async with BleakClient(mac_addr) as client:
-                def disconnect_callback(client, future):
-                    print(f"Disconnected callback called on {client}!")
-
-                client.set_disconnected_callback(disconnect_callback)
-
-        Args:
-            callback: callback to be called on disconnection.
-
-        """
-
-        self._disconnected_callback = callback
 
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.

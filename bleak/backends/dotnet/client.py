@@ -165,8 +165,17 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=BluetoothLEDevice,
         )
 
+        loop = asyncio.get_event_loop()
+
         def _ConnectionStatusChanged_Handler(sender, args):
-            logger.debug("_ConnectionStatusChanged_Handler: " + args.ToString())
+            logger.debug(
+                "_ConnectionStatusChanged_Handler: %d", sender.ConnectionStatus
+            )
+            if (
+                sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected
+                and self._disconnected_callback
+            ):
+                loop.call_soon_threadsafe(self._disconnected_callback, self)
 
         self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
 
@@ -243,19 +252,6 @@ class BleakClientDotNet(BaseBleakClient):
             )
         else:
             return False
-
-    def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient], None], **kwargs
-    ) -> None:
-        """Set the disconnected callback.
-
-        N.B. This is not implemented in the .NET backend yet.
-
-        Args:
-            callback: callback to be called on disconnection.
-
-        """
-        raise NotImplementedError("This is not implemented in the .NET backend yet")
 
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.

@@ -55,8 +55,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._callbacks = {}
         self._services = None
 
-        self._disconnected_callback = None
-
     def __str__(self):
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
@@ -87,7 +85,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         manager = self._device_info.manager().delegate()
         await manager.connect_(self._device_info)
-        manager.disconnected_callback = self._disconnect_callback_client
+        manager.disconnected_callback = self._disconnected_callback_client
 
         # Now get services
         await self.get_services()
@@ -118,16 +116,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         """
         self._disconnected_callback = callback
-
-    def _disconnect_callback_client(self):
-        """
-        Callback for device disconnection. Bleak callback sends one argument as client. This is wrapper function
-        that gets called from the CentralManager and call actual disconnected_callback by sending client as argument
-        """
-        logger.debug("Received disconnection callback...")
-
-        if self._disconnected_callback is not None:
-            self._disconnected_callback(self)
 
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.

@@ -10,8 +10,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+* Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
+
 Removed
 ~~~~~~~
+
 Support for Python 3.5.
 
 `0.8.0`_ (2020-09-02)

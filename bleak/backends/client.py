@@ -25,7 +25,9 @@ class BaseBleakClient(abc.ABC):
 
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
-
+        disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
@@ -40,6 +42,7 @@ class BaseBleakClient(abc.ABC):
         self._notification_callbacks = {}
 
         self._timeout = kwargs.get("timeout", 10.0)
+        self._disconnected_callback = kwargs.get("disconnected_callback")
 
     def __str__(self):
         return "{0}, {1}".format(self.__class__.__name__, self.address)
@@ -62,14 +65,15 @@ class BaseBleakClient(abc.ABC):
 
     # Connectivity methods
 
-    @abc.abstractmethod
-    async def set_disconnected_callback(
-        self, callback: Callable[["BaseBleakClient"], None], **kwargs
+    def set_disconnected_callback(
+        self, callback: Union[Callable[["BaseBleakClient"], None], None], **kwargs
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.
 
         Callbacks must accept one input which is the client object itself.
+
+        Set the callback to ``None`` to remove any existing callback.
 
         .. code-block:: python
 
@@ -83,8 +87,7 @@ class BaseBleakClient(abc.ABC):
             callback: callback to be called on disconnection.
 
         """
-
-        raise NotImplementedError()
+        self._disconnected_callback = callback
 
     @abc.abstractmethod
     async def connect(self, **kwargs) -> bool:
