@@ -14,18 +14,6 @@ Added
 ~~~~~
 
 * Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
-
-Removed
-~~~~~~~
-
-Support for Python 3.5.
-
-`0.8.0`_ (2020-09-02)
----------------------
-
-Added
-~~~~~
-
 * Added ``find_device_by_address`` method to the ``BleakScanner`` interface, for stopping scanning
   when a desired address is found.
 * Implemented ``find_device_by_address`` in the .NET backend ``BleakScanner`` implementation and
@@ -41,6 +29,11 @@ Added
 * Added stumps and ``NotImplementedError`` on pairing in macOS backend.
 * Added the possibility to connect using ``BLEDevice`` instead of a string address. This
   allows for skipping the discovery call when connecting.
+
+Removed
+~~~~~~~
+
+* Support for Python 3.5.
 
 Changed
 ~~~~~~~
