@@ -86,8 +86,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
+        timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
-            timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerBlueZDBus.find_device_by_address(
                 self.address, timeout=timeout, device=self.device
             )
@@ -129,6 +129,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 "Connect",
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
+                timeout=timeout
             ).asFuture(loop)
         except RemoteError as e:
             await self._cleanup_all()
