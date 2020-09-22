@@ -123,7 +123,13 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
         if not local_name and d.BluetoothAddress in scan_responses:
             local_name = scan_responses[d.BluetoothAddress].Advertisement.LocalName
         found.append(
-            BLEDevice(bdaddr, local_name, d, uuids=uuids, manufacturer_data=data,)
+            BLEDevice(
+                bdaddr,
+                local_name,
+                d,
+                uuids=uuids,
+                manufacturer_data=data,
+            )
         )
 
     return found
