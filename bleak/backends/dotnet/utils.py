@@ -79,7 +79,6 @@ async def wrap_IAsyncOperation(op, return_type):
 
 
 class BleakDataReader:
-
     def __init__(self, buffer_com_object):
 
         self.reader = None
@@ -104,7 +103,6 @@ class BleakDataReader:
 
 
 class BleakDataWriter:
-
     def __init__(self, data):
         self.data = data
 

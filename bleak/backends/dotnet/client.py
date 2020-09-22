@@ -15,7 +15,11 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.scanner import BleakScannerDotNet
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
-from bleak.backends.dotnet.utils import BleakDataReader, BleakDataWriter, wrap_IAsyncOperation
+from bleak.backends.dotnet.utils import (
+    BleakDataReader,
+    BleakDataWriter,
+    wrap_IAsyncOperation,
+)
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
