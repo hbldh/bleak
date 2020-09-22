@@ -7,25 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
 
-Added
-~~~~~
-
-* Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
-
-Removed
-~~~~~~~
-
-Support for Python 3.5.
-
-`0.8.0`_ (2020-09-02)
+`0.8.0`_ (2020-09-22)
 ---------------------
 
 Added
 ~~~~~
 
+* Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
 * Added ``find_device_by_address`` method to the ``BleakScanner`` interface, for stopping scanning
   when a desired address is found.
 * Implemented ``find_device_by_address`` in the .NET backend ``BleakScanner`` implementation and
@@ -42,6 +31,11 @@ Added
 * Added the possibility to connect using ``BLEDevice`` instead of a string address. This
   allows for skipping the discovery call when connecting.
 
+Removed
+~~~~~~~
+
+* Support for Python 3.5.
+
 Changed
 ~~~~~~~
 * **BREAKING CHANGE** All notifications now have the characteristic's integer **handle** instead of its UUID as a
@@ -51,6 +45,7 @@ Changed
 * Version 0.5.0 of BleakUWPBridge, with some modified methods and implementing ``IDisposable``.
 * Merged #224. All storing and passing of event loops in bleak is removed.
 * Removed Objective C delegate compliance checks. Merged #253.
+* Made context managers for .NET ``DataReader`` and ``DataWriter``.
 
 Fixed
 ~~~~~

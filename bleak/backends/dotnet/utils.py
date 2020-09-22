@@ -18,6 +18,8 @@ from Windows.Foundation import (
     IAsyncOperation,
     AsyncStatus,
 )
+from System import Array, Byte
+from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
 
 
 async def wrap_Task(task):
@@ -74,3 +76,48 @@ async def wrap_IAsyncOperation(op, return_type):
     else:
         # TODO: Handle IsCancelled.
         raise BleakDotNetTaskError("IAsyncOperation Status: {0}".format(op.Status))
+
+
+class BleakDataReader:
+    def __init__(self, buffer_com_object):
+
+        self.reader = None
+        self.buffer = IBuffer(buffer_com_object)
+
+    def __enter__(self):
+        self.reader = DataReader.FromBuffer(self.buffer)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.reader.DetachBuffer()
+        self.reader.Dispose()
+        self.reader = None
+        self.buffer = None
+
+    def read(self) -> bytes:
+        b = Array.CreateInstance(Byte, self.reader.UnconsumedBufferLength)
+        self.reader.ReadBytes(b)
+        py_b = bytes(b)
+        del b
+        return py_b
+
+
+class BleakDataWriter:
+    def __init__(self, data):
+        self.data = data
+
+    def __enter__(self):
+        self.writer = DataWriter()
+        self.writer.WriteBytes(Array[Byte](self.data))
+        return self
+
+    def detach_buffer(self):
+        return self.writer.DetachBuffer()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self.writer.Dispose()
+        except:
+            pass
+        del self.writer
+        self.writer = None

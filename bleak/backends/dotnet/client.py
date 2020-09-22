@@ -15,8 +15,11 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.scanner import BleakScannerDotNet
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
-from bleak.backends.dotnet.discovery import discover
-from bleak.backends.dotnet.utils import wrap_IAsyncOperation
+from bleak.backends.dotnet.utils import (
+    BleakDataReader,
+    BleakDataWriter,
+    wrap_IAsyncOperation,
+)
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
@@ -30,7 +33,7 @@ from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
 from BleakBridge import Bridge
 
 # Import of other CLR components needed.
-from System import Array, Byte, UInt64
+from System import UInt64, Object
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
 from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
 from Windows.Devices.Enumeration import (
@@ -512,11 +515,8 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=GattReadResult,
         )
         if read_result.Status == GattCommunicationStatus.Success:
-            reader = DataReader.FromBuffer(IBuffer(read_result.Value))
-            output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
-            reader.ReadBytes(output)
-            value = bytearray(output)
-            reader.Dispose()
+            with BleakDataReader(read_result.Value) as reader:
+                value = bytearray(reader.read())
             logger.debug(
                 "Read Characteristic {0} : {1}".format(characteristic.uuid, value)
             )
@@ -570,11 +570,8 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=GattReadResult,
         )
         if read_result.Status == GattCommunicationStatus.Success:
-            reader = DataReader.FromBuffer(IBuffer(read_result.Value))
-            output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
-            reader.ReadBytes(output)
-            value = bytearray(output)
-            reader.Dispose()
+            with BleakDataReader(read_result.Value) as reader:
+                value = bytearray(reader.read())
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
             if read_result.Status == GattCommunicationStatus.ProtocolError:
@@ -621,21 +618,21 @@ class BleakClientDotNet(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
-        writer = DataWriter()
-        writer.WriteBytes(Array[Byte](data))
-        response = (
-            GattWriteOption.WriteWithResponse
-            if response
-            else GattWriteOption.WriteWithoutResponse
-        )
-        write_result = await wrap_IAsyncOperation(
-            IAsyncOperation[GattWriteResult](
-                characteristic.obj.WriteValueWithResultAsync(
-                    writer.DetachBuffer(), response
-                )
-            ),
-            return_type=GattWriteResult,
-        )
+        with BleakDataWriter(data) as writer:
+            response = (
+                GattWriteOption.WriteWithResponse
+                if response
+                else GattWriteOption.WriteWithoutResponse
+            )
+            write_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattWriteResult](
+                    characteristic.obj.WriteValueWithResultAsync(
+                        writer.detach_buffer(), response
+                    )
+                ),
+                return_type=GattWriteResult,
+            )
+
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug(
                 "Write Characteristic {0} : {1}".format(characteristic.uuid, data)
@@ -674,14 +671,14 @@ class BleakClientDotNet(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
-        writer = DataWriter()
-        writer.WriteBytes(Array[Byte](data))
-        write_result = await wrap_IAsyncOperation(
-            IAsyncOperation[GattWriteResult](
-                descriptor.obj.WriteValueAsync(writer.DetachBuffer())
-            ),
-            return_type=GattWriteResult,
-        )
+        with BleakDataWriter(data) as writer:
+            write_result = await wrap_IAsyncOperation(
+                IAsyncOperation[GattWriteResult](
+                    descriptor.obj.WriteValueAsync(writer.DetachBuffer())
+                ),
+                return_type=GattWriteResult,
+            )
+
         if write_result.Status == GattCommunicationStatus.Success:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
         else:
@@ -862,10 +859,8 @@ def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
         # Also do a conversion from System.Bytes[] to bytearray.
-        reader = DataReader.FromBuffer(args.CharacteristicValue)
-        output = Array.CreateInstance(Byte, reader.UnconsumedBufferLength)
-        reader.ReadBytes(output)
-        reader.Dispose()
+        with BleakDataReader(args.CharacteristicValue) as reader:
+            output = reader.read()
 
         return loop.call_soon_threadsafe(
             func, sender.AttributeHandle, bytearray(output)
