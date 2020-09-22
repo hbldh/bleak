@@ -2,7 +2,7 @@
 Disconnect callback
 -------------------
 
-An example showing how the `set_disconnect_callback` can be used on BlueZ backend.
+An example showing how the `set_disconnected_callback` can be used on BlueZ backend.
 
 Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 
@@ -10,19 +10,25 @@ Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 
 import asyncio
 
-from bleak import BleakClient
+from bleak import BleakClient, discover
 
 
-async def show_disconnect_handling(mac_addr: str):
-    async with BleakClient(mac_addr) as client:
-        disconnected_event = asyncio.Event()
+async def show_disconnect_handling():
+    devs = await discover()
+    if not devs:
+        print("No devices found, try again later.")
+        return
 
-        def disconnect_callback(client, future):
-            print("Disconnected callback called!")
-            asyncio.get_event_loop().call_soon_threadsafe(disconnected_event.set)
+    disconnected_event = asyncio.Event()
 
-        client.set_disconnected_callback(disconnect_callback)
-        print("Sleeping until device disconnects according to BlueZ...")
+    def disconnected_callback(client):
+        print("Disconnected callback called!")
+        disconnected_event.set()
+
+    async with BleakClient(
+        devs[0], disconnected_callback=disconnected_callback
+    ) as client:
+        print("Sleeping until device disconnects...")
         await disconnected_event.wait()
         print("Connected: {0}".format(await client.is_connected()))
         await asyncio.sleep(
@@ -30,6 +36,5 @@ async def show_disconnect_handling(mac_addr: str):
         )  # Sleep a bit longer to allow _cleanup to remove all BlueZ notifications nicely...
 
 
-mac_addr = "24:71:89:cc:09:05"
 loop = asyncio.get_event_loop()
-loop.run_until_complete(show_disconnect_handling(mac_addr))
+loop.run_until_complete(show_disconnect_handling())

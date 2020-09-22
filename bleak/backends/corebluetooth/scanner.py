@@ -62,6 +62,17 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             logger.warning("stopScan method could not be called: {0}".format(e))
 
     async def set_scanning_filter(self, **kwargs):
+        """Set scanning filter for the scanner.
+
+        .. note::
+
+            This is not implemented for macOS yet.
+
+        Raises:
+
+           ``NotImplementedError``
+
+        """
         raise NotImplementedError(
             "Need to evaluate which macOS versions to support first..."
         )
@@ -142,7 +153,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 
-        return await scanner._find_device_by_address(device_identifier, stop_scanning_event, stop_if_detected, timeout)
+        return await scanner._find_device_by_address(
+            device_identifier, stop_scanning_event, stop_if_detected, timeout
+        )
 
     # macOS specific methods
 

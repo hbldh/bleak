@@ -7,12 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`0.8.0`_ (2020-09-02)
+
+`0.8.0`_ (2020-09-22)
 ---------------------
 
 Added
 ~~~~~
 
+* Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
 * Added ``find_device_by_address`` method to the ``BleakScanner`` interface, for stopping scanning
   when a desired address is found.
 * Implemented ``find_device_by_address`` in the .NET backend ``BleakScanner`` implementation and
@@ -26,15 +28,24 @@ Added
 * Implemented pairing method in .NET backend.
 * Implemented pairing method in the BlueZ backend.
 * Added stumps and ``NotImplementedError`` on pairing in macOS backend.
+* Added the possibility to connect using ``BLEDevice`` instead of a string address. This
+  allows for skipping the discovery call when connecting.
+
+Removed
+~~~~~~~
+
+* Support for Python 3.5.
 
 Changed
 ~~~~~~~
 * **BREAKING CHANGE** All notifications now have the characteristic's integer **handle** instead of its UUID as a
   string as the first argument ``sender`` sent to notification callbacks. This provides the uniqueness of
   sender in notifications as well.
+* Renamed ``BleakClient`` argument ``address`` to ``address_or_ble_device``.
 * Version 0.5.0 of BleakUWPBridge, with some modified methods and implementing ``IDisposable``.
 * Merged #224. All storing and passing of event loops in bleak is removed.
 * Removed Objective C delegate compliance checks. Merged #253.
+* Made context managers for .NET ``DataReader`` and ``DataWriter``.
 
 Fixed
 ~~~~~
@@ -56,7 +67,7 @@ Fixed
 Changed
 ~~~~~~~
 
-* Improved, more explantory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
+* Improved, more explanatory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
 * Better-than-nothing documentation about scanning filters added (#230).
 * Ran black on code which was forgotten in 0.7.0. Large diffs due to that.
 * Re-adding Python 3.8 CI "tests" on Windows again.

@@ -1,4 +1,3 @@
-import re
 from uuid import UUID
 from typing import Union, List
 
@@ -27,8 +26,6 @@ _GattCharacteristicsFlagsEnum = {
     # "authorize"
 }
 
-_handle_regex = re.compile("/char([0-9a-fA-F]*)")
-
 
 class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the BlueZ DBus backend"""
@@ -39,17 +36,8 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         self.__path = object_path
         self.__service_uuid = service_uuid
 
-        # The `Handle` attribute is added in BlueZ Release 5.51. Empirically,
-        # it seems to hold true that the "/charYYYY" that is at the end of the
-        # DBUS path actually is the desired handle. Using regex to extract
-        # that and using as handle, since handle is mostly used for keeping
-        # track of characteristics (internally in bleak anyway).
-        self._handle = self.obj.get("Handle")
-        if not self._handle:
-            _handle_from_path = _handle_regex.search(self.path)
-            if _handle_from_path:
-                self._handle = int(_handle_from_path.groups()[0], 16)
-        self._handle = int(self._handle)
+        # D-Bus object path contains handle as last 4 characters of 'charYYYY'
+        self._handle = int(object_path[-4:], 16)
 
     @property
     def service_uuid(self) -> str:

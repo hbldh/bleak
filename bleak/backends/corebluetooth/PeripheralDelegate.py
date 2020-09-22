@@ -35,7 +35,7 @@ CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
 class _EventDict(dict):
     def get_cleared(self, xUUID) -> asyncio.Event:
-        """ Convenience method.
+        """Convenience method.
         Returns a cleared (False) event. Creates it if doesn't exits.
         """
         if xUUID not in self:
@@ -128,9 +128,9 @@ class PeripheralDelegate(NSObject):
         self.peripheral.readValueForCharacteristic_(characteristic)
         await asyncio.wait_for(event.wait(), timeout=5)
         if characteristic.value():
-                return characteristic.value()
+            return characteristic.value()
         else:
-            return b''
+            return b""
 
     async def readDescriptor_(
         self, descriptor: CBDescriptor, use_cached=True

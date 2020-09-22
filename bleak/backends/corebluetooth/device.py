@@ -47,7 +47,13 @@ class BLEDeviceCoreBluetooth(BLEDevice):
         if not cbuuids:
             return
         # converting to lower case to match other platforms
-        self.metadata["uuids"] = [str(u).lower() for u in cbuuids]
+        chuuids = [str(u).lower() for u in cbuuids]
+        if "uuids" in self.metadata:
+            for uuid in chuuids:
+                if not uuid in self.metadata["uuids"]:
+                    self.metadata["uuids"].append(uuid)
+        else:
+            self.metadata["uuids"] = chuuids
 
     def _update_manufacturer(self, advertisementData: NSDictionary):
         mfg_bytes = advertisementData.get("kCBAdvDataManufacturerData")

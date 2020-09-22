@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+BLE Client for BlueZ on Linux
+"""
 import logging
 import asyncio
 import os
@@ -12,6 +15,7 @@ from typing import Callable, Any, Union
 
 from twisted.internet.error import ConnectionDone
 
+from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -36,26 +40,27 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Implemented by using the `BlueZ DBUS API <https://docs.ubuntu.com/core/en/stacks/bluetooth/bluez/docs/reference/dbus-api>`_.
 
     Args:
-        address (str): The  address of the BLE peripheral to connect to.
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
-    def __init__(self, address, **kwargs):
-        super(BleakClientBlueZDBus, self).__init__(address, **kwargs)
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+        super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
-        self.address = address
+        self.address = address_or_ble_device
 
         # Backend specific, TXDBus objects and data
-        self._device_path = None
+        if isinstance(address_or_ble_device, BLEDevice):
+            self._device_path = address_or_ble_device.details["path"]
+        else:
+            self._device_path = None
         self._bus = None
         self._reactor = None
         self._rules = {}
         self._subscriptions = list()
-
-        self._disconnected_callback = None
 
         # This maps DBus paths of GATT Characteristics to their BLE handles.
         self._char_path_to_handle = {}
@@ -69,34 +74,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
-    def set_disconnected_callback(
-        self, callback: Callable[[BaseBleakClient, Future], None], **kwargs
-    ) -> None:
-        """Set the disconnected callback.
-
-        The callback will be called on DBus PropChanged event with
-        the 'Connected' key set to False.
-
-        A disconnect callback must accept two positional arguments,
-        the BleakClient and the Future that called it.
-
-        Example:
-
-        .. code-block::python
-
-            async with BleakClient(mac_addr) as client:
-                def disconnect_callback(client, future):
-                    print(f"Disconnected callback called on {client}!")
-
-                client.set_disconnected_callback(disconnect_callback)
-
-        Args:
-            callback: callback to be called on disconnection.
-
-        """
-
-        self._disconnected_callback = callback
-
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
@@ -109,16 +86,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
-        timeout = kwargs.get("timeout", self._timeout)
-        device = await BleakScannerBlueZDBus.find_device_by_address(
-            self.address, timeout=timeout, device=self.device)
-
-        if device:
-            self._device_path = device.details["path"]
-        else:
-            raise BleakError(
-                "Device with address {0} was not found.".format(self.address)
+        if self._device_path is None:
+            timeout = kwargs.get("timeout", self._timeout)
+            device = await BleakScannerBlueZDBus.find_device_by_address(
+                self.address, timeout=timeout, device=self.device
             )
+
+            if device:
+                self._device_path = device.details["path"]
+            else:
+                raise BleakError(
+                    "Device with address {0} was not found.".format(self.address)
+                )
 
         loop = asyncio.get_event_loop()
         self._reactor = get_reactor(loop)
@@ -341,7 +320,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean regarding success of unpairing.
 
         """
-        warnings.warn("Unpairing is seemingly unavailable in the BlueZ DBus API at the moment.")
+        warnings.warn(
+            "Unpairing is seemingly unavailable in the BlueZ DBus API at the moment."
+        )
         return False
 
     async def is_connected(self) -> bool:
@@ -429,7 +410,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self.services.add_characteristic(
                 BleakGATTCharacteristicBlueZDBus(char, object_path, _service[0].uuid)
             )
-            self._char_path_to_handle[object_path] = char.get("Handle")
+
+            # D-Bus object path contains handle as last 4 characters of 'charYYYY'
+            self._char_path_to_handle[object_path] = int(object_path[-4:], 16)
 
         for desc, object_path in _descs:
             _characteristic = list(
@@ -569,14 +552,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
-        NB: the version check below is for the "type" option to the
-        "Characteristic.WriteValue" method that was added to Bluez in 5.51
-        https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a
-        Before that commit, "Characteristic.WriteValue" was only "Write with
-        response". "Characteristic.AcquireWrite" was added in Bluez 5.46
-        https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e
-        which can be used to "Write without response", but for older versions
-        of Bluez, it is not possible to "Write without response".
+        .. note::
+
+            The version check below is for the "type" option to the
+            "Characteristic.WriteValue" method that was added to `Bluez in 5.51
+            <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a>`_
+            Before that commit, ``Characteristic.WriteValue`` was only "Write with
+            response". ``Characteristic.AcquireWrite`` was `added in Bluez 5.46
+            <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e>`_
+            which can be used to "Write without response", but for older versions
+            of Bluez, it is not possible to "Write without response".
 
         Args:
             char_specifier (BleakGATTCharacteristicBlueZDBus, int, str or UUID): The characteristic to write

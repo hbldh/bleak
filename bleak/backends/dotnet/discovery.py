@@ -23,7 +23,8 @@ from Windows.Devices.Bluetooth.Advertisement import (
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementType,
 )
-from Windows.Storage.Streams import DataReader, IBuffer
+
+from bleak.backends.dotnet.utils import BleakDataReader
 
 logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
@@ -116,12 +117,8 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
             uuids.append(u.ToString())
         data = {}
         for m in d.Advertisement.ManufacturerData:
-            md = IBuffer(m.Data)
-            b = Array.CreateInstance(Byte, md.Length)
-            reader = DataReader.FromBuffer(md)
-            reader.ReadBytes(b)
-            data[m.CompanyId] = bytes(b)
-            reader.Dispose()
+            with BleakDataReader(m.Data) as reader:
+                data[m.CompanyId] = reader.read()
         local_name = d.Advertisement.LocalName
         if not local_name and d.BluetoothAddress in scan_responses:
             local_name = scan_responses[d.BluetoothAddress].Advertisement.LocalName

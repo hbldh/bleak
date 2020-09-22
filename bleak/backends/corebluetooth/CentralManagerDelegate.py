@@ -41,8 +41,12 @@ logger = logging.getLogger(__name__)
 
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
-_mac_version = list(map(int, platform.mac_ver()[0].split(".")))
-_IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
+try:
+    _mac_version = list(map(int, platform.mac_ver()[0].split(".")))
+    _IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
+except:  # noqa For building docs
+    _mac_version = ""
+    _IS_PRE_10_13 = False
 
 
 class CMDConnectionState(Enum):
@@ -195,6 +199,8 @@ class CentralManagerDelegate(NSObject):
         RSSI: NSNumber,
     ):
         # Note: this function might be called several times for same device.
+        # This can happen for instance when an active scan is done, and the
+        # second call with contain the data from the BLE scan response.
         # Example a first time with the following keys in advertisementData:
         # ['kCBAdvDataLocalName', 'kCBAdvDataIsConnectable', 'kCBAdvDataChannel']
         # ... and later a second time with other keys (and values) such as:
@@ -210,6 +216,9 @@ class CentralManagerDelegate(NSObject):
 
         if uuid_string in self.devices:
             device = self.devices[uuid_string]
+            # It could be the device did not have a name previously but now it does.
+            if peripheral.name():
+                device.name = peripheral.name()
         else:
             address = uuid_string
             name = peripheral.name() or None
@@ -250,7 +259,9 @@ class CentralManagerDelegate(NSObject):
             )
         )
         if self._connection_state != CMDConnectionState.CONNECTED:
-            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
+            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(
+                peripheral
+            )
             self.connected_peripheral_delegate = peripheralDelegate
             self._connection_state = CMDConnectionState.CONNECTED
 
