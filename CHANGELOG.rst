@@ -31,7 +31,6 @@ Added
 * Added the possibility to connect using ``BLEDevice`` instead of a string address. This
   allows for skipping the discovery call when connecting.
 
-
 Removed
 ~~~~~~~
 
