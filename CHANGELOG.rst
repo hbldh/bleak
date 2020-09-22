@@ -30,6 +30,7 @@ Added
 * Added the possibility to connect using ``BLEDevice`` instead of a string address. This
   allows for skipping the discovery call when connecting.
 
+
 Removed
 ~~~~~~~
 
@@ -44,6 +45,7 @@ Changed
 * Version 0.5.0 of BleakUWPBridge, with some modified methods and implementing ``IDisposable``.
 * Merged #224. All storing and passing of event loops in bleak is removed.
 * Removed Objective C delegate compliance checks. Merged #253.
+* Made context managers for .NET ``DataReader`` and ``DataWriter``.
 
 Fixed
 ~~~~~

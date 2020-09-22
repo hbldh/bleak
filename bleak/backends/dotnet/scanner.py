@@ -6,20 +6,19 @@ from functools import wraps
 from typing import Callable, Any, Union, List
 
 from bleak.backends.device import BLEDevice
+from bleak.backends.dotnet.utils import BleakDataReader
 from bleak.exc import BleakError, BleakDotNetTaskError
 from bleak.backends.scanner import BaseBleakScanner
 
 # Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices
 from BleakBridge import Bridge
 
-from System import Array, Byte
-from Windows.Devices import Enumeration
 from Windows.Devices.Bluetooth.Advertisement import (
     BluetoothLEAdvertisementWatcher,
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementType,
 )
-from Windows.Storage.Streams import DataReader, IBuffer
+from Windows.Foundation import TypedEventHandler
 
 logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
@@ -161,11 +160,8 @@ class BleakScannerDotNet(BaseBleakScanner):
             uuids.append(u.ToString())
         data = {}
         for m in event_args.Advertisement.ManufacturerData:
-            md = IBuffer(m.Data)
-            b = Array.CreateInstance(Byte, md.Length)
-            reader = DataReader.FromBuffer(md)
-            reader.ReadBytes(b)
-            data[m.CompanyId] = bytes(b)
+            with BleakDataReader(m.Data) as reader:
+                data[m.CompanyId] = reader.read()
         local_name = event_args.Advertisement.LocalName
         return BLEDevice(
             bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
