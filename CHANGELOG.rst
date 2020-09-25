@@ -14,11 +14,13 @@ Added
 ~~~~~
 
 * Timeout for BlueZ backend connect call to avoid potential infinite hanging. Merged #306.
+* Added Interfaces API docs again.
 
 Fixed
 ~~~~~
 
 * UUID property bug fixed in BlueZ backend. Merged #307
+* Fix for broken RTD documentation.
 
 `0.8.0`_ (2020-09-22)
 ---------------------

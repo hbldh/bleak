@@ -14,7 +14,7 @@
 # serve to show the default.
 
 
-windows_autodoc_mock_import = ["clr", "Windows", "System"]
+windows_autodoc_mock_import = ["clr", "Windows", "System", "BleakBridge"]
 linux_autodoc_mock_import = [
     "twisted",
     "txdbus",

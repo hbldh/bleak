@@ -4,6 +4,12 @@ Interfaces, exceptions and utils
 Connection Clients
 ------------------
 
+Interface
+~~~~~~~~~
+
+.. automodule:: bleak.backends.client
+    :members:
+
 Windows
 ~~~~~~~
 
@@ -24,6 +30,12 @@ Linux Distributions with BlueZ
 
 Scanning Clients
 ----------------
+
+Interface
+~~~~~~~~~
+
+.. automodule:: bleak.backends.scanner
+    :members:
 
 Windows
 ~~~~~~~
