@@ -50,7 +50,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
-        self.address = address_or_ble_device
 
         # Backend specific, TXDBus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
