@@ -57,7 +57,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     @property
     def description(self) -> str:
         """Description for this characteristic"""
-        return uuidstr_to_str(self._uuid)
+        return uuidstr_to_str(self.uuid)
 
     @property
     def properties(self) -> List:
