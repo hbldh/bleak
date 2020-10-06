@@ -350,6 +350,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except ConnectionDone:
             # Twisted error stating that "Connection was closed cleanly."
             pass
+        except RemoteError as e:
+            if e.errName != 'org.freedesktop.DBus.Error.UnknownObject':
+                raise
         except Exception as e:
             # Do not want to silence unknown errors. Send this upwards.
             raise
