@@ -80,7 +80,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     "Device with address {} was not found".format(self.address)
                 )
         # self._device_info.manager() should return a CBCentralManager
-        if hasattr(self._device_info.manager(), 'delegate'):
+        if hasattr(self._device_info.manager(), "delegate"):
             manager = self._device_info.manager().delegate()
             logger.debug("Connecting to BLE device @ {}".format(self.address))
             await manager.connect_(self._device_info)
@@ -169,10 +169,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             logger.debug(
                 "Retrieving characteristics for service {}".format(serviceUUID)
             )
-            characteristics = (
-                await manager.connected_peripheral_delegate.discoverCharacteristics_(
-                    service
-                )
+            characteristics = await manager.connected_peripheral_delegate.discoverCharacteristics_(
+                service
             )
 
             self.services.add_service(BleakGATTServiceCoreBluetooth(service))
@@ -182,10 +180,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 logger.debug(
                     "Retrieving descriptors for characteristic {}".format(cUUID)
                 )
-                descriptors = (
-                    await manager.connected_peripheral_delegate.discoverDescriptors_(
-                        characteristic
-                    )
+                descriptors = await manager.connected_peripheral_delegate.discoverDescriptors_(
+                    characteristic
                 )
 
                 self.services.add_characteristic(
@@ -296,14 +292,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = (
-            await manager.connected_peripheral_delegate.writeCharacteristic_value_type_(
-                characteristic.obj,
-                value,
-                CBCharacteristicWriteWithResponse
-                if response
-                else CBCharacteristicWriteWithoutResponse,
-            )
+        success = await manager.connected_peripheral_delegate.writeCharacteristic_value_type_(
+            characteristic.obj,
+            value,
+            CBCharacteristicWriteWithResponse
+            if response
+            else CBCharacteristicWriteWithoutResponse,
         )
         if success:
             logger.debug(
