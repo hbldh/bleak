@@ -34,6 +34,7 @@ from BleakBridge import Bridge
 
 # Import of other CLR components needed.
 from System import UInt64, Object
+from System.Runtime.InteropServices.WindowsRuntime import EventRegistrationToken
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
 from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
 from Windows.Devices.Enumeration import (
@@ -113,6 +114,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._requester = None
         self._bridge = None
         self._disconnect_events: list[asyncio.Event] = []
+        self._connection_status_changed_token: EventRegistrationToken = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -183,11 +185,23 @@ class BleakClientDotNet(BaseBleakClient):
                     loop.call_soon_threadsafe(e.set)
 
                 def handle_disconnect():
+                    if self._connection_status_changed_token:
+                        sender.remove_ConnectionStatusChanged(
+                            self._connection_status_changed_token
+                        )
+                        self._connection_status_changed_token = None
+
                     self._requester = None
 
                 loop.call_soon_threadsafe(handle_disconnect)
 
-        self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
+        self._connection_status_changed_token = (
+            self._requester.add_ConnectionStatusChanged(
+                TypedEventHandler[BluetoothLEDevice, Object](
+                    _ConnectionStatusChanged_Handler
+                )
+            )
+        )
 
         # Obtain services, which also leads to connection being established.
         services = await self.get_services()
