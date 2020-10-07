@@ -112,6 +112,7 @@ class BleakClientDotNet(BaseBleakClient):
             self._device_info = None
         self._requester = None
         self._bridge = None
+        self._disconnect_events: list[asyncio.Event] = []
 
         self._address_type = (
             kwargs["address_type"]
@@ -174,11 +175,17 @@ class BleakClientDotNet(BaseBleakClient):
             logger.debug(
                 "_ConnectionStatusChanged_Handler: %d", sender.ConnectionStatus
             )
-            if (
-                sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected
-                and self._disconnected_callback
-            ):
-                loop.call_soon_threadsafe(self._disconnected_callback, self)
+            if sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected:
+                if self._disconnected_callback:
+                    loop.call_soon_threadsafe(self._disconnected_callback, self)
+
+                for e in self._disconnect_events:
+                    loop.call_soon_threadsafe(e.set)
+
+                def handle_disconnect():
+                    self._requester = None
+
+                loop.call_soon_threadsafe(handle_disconnect)
 
         self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
 
@@ -211,6 +218,9 @@ class BleakClientDotNet(BaseBleakClient):
         Returns:
             Boolean representing if device is disconnected.
 
+        Raises:
+            asyncio.TimeoutError: If device did not disconnect with 10 seconds.
+
         """
         logger.debug("Disconnecting from BLE device...")
         # Remove notifications. Remove them first in the BleakBridge and then clear
@@ -227,11 +237,14 @@ class BleakClientDotNet(BaseBleakClient):
 
         # Dispose of the BluetoothLEDevice and see that the connection
         # status is now Disconnected.
-        self._requester.Dispose()
-        is_disconnected = (
-            self._requester.ConnectionStatus == BluetoothConnectionStatus.Disconnected
-        )
-        self._requester = None
+        if self._requester:
+            event = asyncio.Event()
+            self._disconnect_events.append(event)
+            try:
+                self._requester.Dispose()
+                await asyncio.wait_for(event.wait(), timeout=10)
+            finally:
+                self._disconnect_events.remove(event)
 
         # Set device info to None as well.
         self._device_info = None
@@ -240,7 +253,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._bridge.Dispose()
         self._bridge = None
 
-        return is_disconnected
+        return True
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
