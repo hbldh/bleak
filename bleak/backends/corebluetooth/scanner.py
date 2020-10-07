@@ -160,5 +160,5 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         # TODO: Evaluate if newer macOS than 10.11 has isScanning.
         try:
             return self._manager.isScanning_
-        except:
+        except Exception:
             return None

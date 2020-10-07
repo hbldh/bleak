@@ -120,7 +120,7 @@ async def run(address, debug=False):
         try:
             device_name = await client.read_gatt_char(DEVICE_NAME_UUID)
             print("Device Name: {0}".format("".join(map(chr, device_name))))
-        except:
+        except Exception:
             pass
 
         manufacturer_name = await client.read_gatt_char(MANUFACTURER_NAME_UUID)

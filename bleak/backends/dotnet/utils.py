@@ -118,7 +118,7 @@ class BleakDataWriter:
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
             self.writer.Dispose()
-        except:
+        except Exception:
             pass
         del self.writer
         self.writer = None
