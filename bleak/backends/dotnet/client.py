@@ -260,9 +260,6 @@ class BleakClientDotNet(BaseBleakClient):
             finally:
                 self._disconnect_events.remove(event)
 
-        # Set device info to None as well.
-        self._device_info = None
-
         # Finally, dispose of the Bleak Bridge as well.
         self._bridge.Dispose()
         self._bridge = None
