@@ -47,9 +47,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         if isinstance(address_or_ble_device, BLEDevice):
             self._device_info = address_or_ble_device.details
+            self._delegate = address_or_ble_device.metadata.get("delegate")
         else:
             self._device_info = None
-
+            self._delegate = None
         self._requester = None
         self._callbacks = {}
         self._services = None
@@ -75,6 +76,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
             if device:
                 self._device_info = device.details
+                self._delegate = device.metadata.get("delegate")
             else:
                 raise BleakError(
                     "Device with address {} was not found".format(self.address)
@@ -82,6 +84,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # self._device_info.manager() should return a CBCentralManager
         if hasattr(self._device_info.manager(), "delegate"):
             manager = self._device_info.manager().delegate()
+            manager = self._delegate
+            logger.debug("CentralManagerDelegate  at {}".format(manager))
             logger.debug("Connecting to BLE device @ {}".format(self.address))
             await manager.connect_(self._device_info)
             manager.disconnected_callback = self._disconnected_callback_client
