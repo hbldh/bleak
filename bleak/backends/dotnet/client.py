@@ -186,24 +186,31 @@ class BleakClientDotNet(BaseBleakClient):
                 self._session.Dispose()
                 self._session = None
 
+        def handle_connection_status_changed(
+            connection_status: BluetoothConnectionStatus,
+        ):
+            if connection_status == BluetoothConnectionStatus.Connected:
+                for e in self._connect_events:
+                    e.set()
+
+            elif connection_status == BluetoothConnectionStatus.Disconnected:
+                if self._disconnected_callback:
+                    self._disconnected_callback(self)
+
+                for e in self._disconnect_events:
+                    e.set()
+
+                handle_disconnect()
+
         loop = asyncio.get_event_loop()
 
         def _ConnectionStatusChanged_Handler(sender, args):
             logger.debug(
                 "_ConnectionStatusChanged_Handler: %d", sender.ConnectionStatus
             )
-            if sender.ConnectionStatus == BluetoothConnectionStatus.Connected:
-                for e in self._connect_events:
-                    loop.call_soon_threadsafe(e.set)
-
-            if sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected:
-                if self._disconnected_callback:
-                    loop.call_soon_threadsafe(self._disconnected_callback, self)
-
-                for e in self._disconnect_events:
-                    loop.call_soon_threadsafe(e.set)
-
-                loop.call_soon_threadsafe(handle_disconnect)
+            loop.call_soon_threadsafe(
+                handle_connection_status_changed, sender.ConnectionStatus
+            )
 
         self._connection_status_changed_token = (
             self._requester.add_ConnectionStatusChanged(
