@@ -38,7 +38,7 @@ class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     @property
     def uuid(self) -> str:
         """UUID for this descriptor"""
-        return cb_uuid_to_str(self.obj.UUID().UUIDString())
+        return cb_uuid_to_str(self.obj.UUID())
 
     @property
     def handle(self) -> int:
