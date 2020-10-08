@@ -67,7 +67,7 @@ if __name__ == "__main__":
     address = (
         "24:71:89:cc:09:05"
         if platform.system() != "Darwin"
-        else "E28D7733-F28E-47AE-85A8-7E832FE57B79"
+        else "15A43D03-7ACE-4826-AEC7-ADF2001A5C9B"
     )
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
