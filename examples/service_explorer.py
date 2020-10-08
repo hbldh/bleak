@@ -20,16 +20,10 @@ async def run(address, debug=False):
     if debug:
         import sys
 
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(asctime)s [%(name)s] [%(threadName)s] [%(levelname)s] %(message)s",
-            handlers=[handler],
-        )
-        log = logging.getLogger(__name__)
-        log.addHandler(handler)
         log.setLevel(logging.DEBUG)
+        h = logging.StreamHandler(sys.stdout)
+        h.setLevel(logging.DEBUG)
+        log.addHandler(h)
 
     async with BleakClient(address) as client:
         x = await client.is_connected()
@@ -67,7 +61,7 @@ if __name__ == "__main__":
     address = (
         "24:71:89:cc:09:05"
         if platform.system() != "Darwin"
-        else "15A43D03-7ACE-4826-AEC7-ADF2001A5C9B"
+        else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
     )
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
