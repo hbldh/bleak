@@ -113,7 +113,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                     details,
                     uuids=uuids,
                     manufacturer_data=manufacturer_data,
-                    delegate=details.manager().delegate(),
+                    delegate=self._manager.central_manager.delegate(),
                 )
             )
 
