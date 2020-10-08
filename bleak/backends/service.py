@@ -118,7 +118,7 @@ class BleakGATTServiceCollection(object):
 
     def get_service(self, _uuid: Union[str, UUID]) -> BleakGATTService:
         """Get a service by UUID string"""
-        return self.services.get(str(_uuid), None)
+        return self.services.get(str(_uuid).lower(), None)
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
         """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
@@ -145,7 +145,8 @@ class BleakGATTServiceCollection(object):
             # Assume uuid usage.
             x = list(
                 filter(
-                    lambda x: x.uuid == str(specifier), self.characteristics.values()
+                    lambda x: x.uuid == str(specifier).lower(),
+                    self.characteristics.values(),
                 )
             )
             if len(x) > 1:

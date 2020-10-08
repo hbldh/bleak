@@ -22,6 +22,7 @@ from bleak.backends.corebluetooth.characteristic import (
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -191,7 +192,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     self.services.add_descriptor(
                         BleakGATTDescriptorCoreBluetooth(
                             descriptor,
-                            characteristic.UUID().UUIDString(),
+                            cb_uuid_to_str(characteristic.UUID().UUIDString()),
                             int(characteristic.handle()),
                         )
                     )
