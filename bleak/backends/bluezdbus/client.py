@@ -128,7 +128,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 "Connect",
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
-                timeout=timeout
+                timeout=timeout,
             ).asFuture(loop)
         except RemoteError as e:
             await self._cleanup_all()
@@ -350,6 +350,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except ConnectionDone:
             # Twisted error stating that "Connection was closed cleanly."
             pass
+        except RemoteError as e:
+            if e.errName != "org.freedesktop.DBus.Error.UnknownObject":
+                raise
         except Exception as e:
             # Do not want to silence unknown errors. Send this upwards.
             raise
