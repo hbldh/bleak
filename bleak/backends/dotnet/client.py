@@ -67,6 +67,7 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import (
     GattValueChangedEventArgs,
     GattCharacteristicProperties,
     GattClientCharacteristicConfigurationDescriptorValue,
+    GattSession,
 )
 
 logger = logging.getLogger(__name__)
@@ -112,8 +113,10 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             self._device_info = None
         self._requester = None
+        self._connect_events: list[asyncio.Event] = []
         self._disconnect_events: list[asyncio.Event] = []
         self._connection_status_changed_token: EventRegistrationToken = None
+        self._session: GattSession = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -167,27 +170,38 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=BluetoothLEDevice,
         )
 
+        # Called on disconnect event or on failure to connect.
+        def handle_disconnect():
+            if self._connection_status_changed_token:
+                self._requester.remove_ConnectionStatusChanged(
+                    self._connection_status_changed_token
+                )
+                self._connection_status_changed_token = None
+
+            if self._requester:
+                self._requester.Dispose()
+                self._requester = None
+
+            if self._session:
+                self._session.Dispose()
+                self._session = None
+
         loop = asyncio.get_event_loop()
 
         def _ConnectionStatusChanged_Handler(sender, args):
             logger.debug(
                 "_ConnectionStatusChanged_Handler: %d", sender.ConnectionStatus
             )
+            if sender.ConnectionStatus == BluetoothConnectionStatus.Connected:
+                for e in self._connect_events:
+                    loop.call_soon_threadsafe(e.set)
+
             if sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected:
                 if self._disconnected_callback:
                     loop.call_soon_threadsafe(self._disconnected_callback, self)
 
                 for e in self._disconnect_events:
                     loop.call_soon_threadsafe(e.set)
-
-                def handle_disconnect():
-                    if self._connection_status_changed_token:
-                        sender.remove_ConnectionStatusChanged(
-                            self._connection_status_changed_token
-                        )
-                        self._connection_status_changed_token = None
-
-                    self._requester = None
 
                 loop.call_soon_threadsafe(handle_disconnect)
 
@@ -199,28 +213,29 @@ class BleakClientDotNet(BaseBleakClient):
             )
         )
 
-        # Obtain services, which also leads to connection being established.
-        services = await self.get_services()
-        connected = False
-        if self._services_resolved:
-            # If services has been resolved, then we assume that we are connected. This is due to
-            # some issues with getting `is_connected` to give correct response here.
-            connected = True
-        else:
-            for _ in range(5):
-                await asyncio.sleep(0.2)
-                connected = await self.is_connected()
-                if connected:
-                    break
-
-        if connected:
-            logger.debug("Connection successful.")
-        else:
-            raise BleakError(
-                "Connection to {0} was not successful!".format(self.address)
+        # Start a GATT Session to connect
+        event = asyncio.Event()
+        self._connect_events.append(event)
+        try:
+            self._session = await wrap_IAsyncOperation(
+                IAsyncOperation[GattSession](
+                    GattSession.FromDeviceIdAsync(self._requester.BluetoothDeviceId)
+                ),
+                return_type=GattSession,
             )
+            # This keeps the device connected until we dispose the session or
+            # until we set MaintainConnection = False.
+            self._session.MaintainConnection = True
+            await asyncio.wait_for(event.wait(), timeout=10)
+        except BaseException:
+            handle_disconnect()
+            raise
+        finally:
+            self._connect_events.remove(event)
 
-        return connected
+        await self.get_services()
+
+        return True
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -244,6 +259,10 @@ class BleakClientDotNet(BaseBleakClient):
             service.obj.Dispose()
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
+
+        # Without this, disposing the BluetoothLEDevice won't disconnect it
+        if self._session:
+            self._session.Dispose()
 
         # Dispose of the BluetoothLEDevice and see that the connection
         # status is now Disconnected.
