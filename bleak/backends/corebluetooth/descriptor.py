@@ -6,8 +6,8 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 """
 from Foundation import CBDescriptor
 
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.uuids import uuidstr_to_str
 
 
 class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
@@ -37,14 +37,9 @@ class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
     @property
     def uuid(self) -> str:
         """UUID for this descriptor"""
-        return self.obj.UUID().UUIDString()
+        return cb_uuid_to_str(self.obj.UUID())
 
     @property
     def handle(self) -> int:
         """Integer handle for this descriptor"""
         return int(self.obj.handle())
-
-    @property
-    def description(self) -> str:
-        """Description for this descriptor"""
-        return uuidstr_to_str(self.uuid)

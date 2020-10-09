@@ -6,7 +6,6 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
-import uuid
 from uuid import UUID
 from typing import List, Union, Iterator
 
@@ -50,12 +49,24 @@ class BleakGATTService(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def get_characteristic(
-        self, _uuid: Union[str, UUID]
+        self, uuid: Union[str, UUID]
     ) -> Union[BleakGATTCharacteristic, None]:
-        """Get a characteristic by UUID"""
-        raise NotImplementedError()
+        """Get a characteristic by UUID.
+
+        Args:
+            uuid: The UUID to match.
+
+        Returns:
+            The first characteristic matching ``uuid`` or ``None`` if no
+            matching characteristic was found.
+        """
+        try:
+            return next(
+                filter(lambda x: x.uuid == str(uuid).lower(), self.characteristics)
+            )
+        except StopIteration:
+            return None
 
 
 class BleakGATTServiceCollection(object):
@@ -67,7 +78,7 @@ class BleakGATTServiceCollection(object):
         self.__descriptors = {}
 
     def __getitem__(
-        self, item: Union[str, int, uuid.UUID]
+        self, item: Union[str, int, UUID]
     ) -> Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor]:
         """Get a service, characteristic or descriptor from uuid or handle"""
         return self.services.get(
@@ -107,7 +118,7 @@ class BleakGATTServiceCollection(object):
 
     def get_service(self, _uuid: Union[str, UUID]) -> BleakGATTService:
         """Get a service by UUID string"""
-        return self.services.get(str(_uuid), None)
+        return self.services.get(str(_uuid).lower(), None)
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
         """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
@@ -134,7 +145,8 @@ class BleakGATTServiceCollection(object):
             # Assume uuid usage.
             x = list(
                 filter(
-                    lambda x: x.uuid == str(specifier), self.characteristics.values()
+                    lambda x: x.uuid == str(specifier).lower(),
+                    self.characteristics.values(),
                 )
             )
             if len(x) > 1:
