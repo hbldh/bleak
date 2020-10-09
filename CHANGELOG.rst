@@ -35,11 +35,12 @@ Changed
 Fixed
 ~~~~~
 
-* UUID property bug fixed in BlueZ backend. Merged #307
+* UUID property bug fixed in BlueZ backend. Merged #307.
 * Fix for broken RTD documentation.
 * Fix UUID string arguments should not be case sensitive.
 * Fix ``BleakGATTService.get_characteristic()`` method overridden with ``NotImplementedError``
   in BlueZ backend.
+* Fix ``AttributeError`` when trying to connect using CoreBluetooth backend. Merged #323.
 * Fix disconnect callback called multiple times in .NET backend. Fixes #312.
 * Fix ``BleakClient.disconnect()`` method failing when called multiple times in
   .NET backend. Fixes #313.
