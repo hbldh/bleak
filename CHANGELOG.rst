@@ -20,6 +20,8 @@ Added
 Changed
 ~~~~~~~
 
+* ``BleakCharacteristic.description()`` on .NET now returns the same value as
+  other platforms.
 * Changed all adding and removal of .NET event handler from ``+=``/``-=`` syntax to
   calling ``add_`` and ``remove_`` methods instead. This allows for proper
   removal of event handlers in .NET backend.
@@ -35,6 +37,9 @@ Fixed
 
 * UUID property bug fixed in BlueZ backend. Merged #307
 * Fix for broken RTD documentation.
+* Fix UUID string arguments should not be case sensitive.
+* Fix ``BleakGATTService.get_characteristic()`` method overridden with ``NotImplementedError``
+  in BlueZ backend.
 * Fix disconnect callback called multiple times in .NET backend. Fixes #312.
 * Fix ``BleakClient.disconnect()`` method failing when called multiple times in
   .NET backend. Fixes #313.

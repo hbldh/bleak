@@ -11,6 +11,7 @@ from uuid import UUID
 from typing import List, Union, Any
 
 from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.uuids import uuidstr_to_str
 
 
 class GattCharacteristicsFlags(enum.Enum):
@@ -54,10 +55,9 @@ class BleakGATTCharacteristic(abc.ABC):
         raise NotImplementedError()
 
     @property
-    @abc.abstractmethod
     def description(self) -> str:
         """Description for this characteristic"""
-        raise NotImplementedError()
+        return uuidstr_to_str(self.uuid)
 
     @property
     @abc.abstractmethod
