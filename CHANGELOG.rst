@@ -25,11 +25,12 @@ Changed
 Fixed
 ~~~~~
 
-* UUID property bug fixed in BlueZ backend. Merged #307
+* UUID property bug fixed in BlueZ backend. Merged #307.
 * Fix for broken RTD documentation.
 * Fix UUID string arguments should not be case sensitive.
 * Fix ``BleakGATTService.get_characteristic()`` method overridden with ``NotImplementedError``
   in BlueZ backend.
+* Fix ``AttributeError`` when trying to connect using CoreBluetooth backend. Merged #323.
 
 `0.8.0`_ (2020-09-22)
 ---------------------
