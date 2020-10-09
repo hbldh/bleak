@@ -38,7 +38,6 @@ from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 
 
 logger = logging.getLogger(__name__)
-
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
 try:
@@ -235,8 +234,8 @@ class CentralManagerDelegate(NSObject):
                 callback(peripheral, advertisementData, RSSI)
 
         logger.debug(
-            "Discovered device {}: {} @ RSSI: {} (kCBAdvData {})".format(
-                uuid_string, device.name, RSSI, advertisementData.keys()
+            "Discovered device {}: {} @ RSSI: {} (kCBAdvData {}) and Central: {}".format(
+                uuid_string, device.name, RSSI, advertisementData.keys(), central
             )
         )
 
