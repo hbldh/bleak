@@ -779,31 +779,6 @@ class BleakClientDotNet(BaseBleakClient):
         if characteristic.handle in self._notification_callbacks:
             await self.stop_notify(characteristic)
 
-        status = await self._start_notify(characteristic, callback)
-
-        if status != GattCommunicationStatus.Success:
-            # TODO: Find out how to get the ProtocolError code that describes a potential GattCommunicationStatus.ProtocolError result.
-            raise BleakError(
-                "Could not start notify on {0}: {1}".format(
-                    characteristic.uuid, _communication_statues.get(status, "")
-                )
-            )
-
-    async def _start_notify(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        callback: Callable[[str, Any], Any],
-    ):
-        """Internal method performing call to BleakUWPBridge method.
-
-        Args:
-            characteristic: The BleakGATTCharacteristic to start notification on.
-            callback: The function to be called on notification.
-
-        Returns:
-            (int) The GattCommunicationStatus of the operation.
-
-        """
         characteristic_obj = characteristic.obj
         if (
             characteristic_obj.CharacteristicProperties
@@ -841,8 +816,12 @@ class BleakClientDotNet(BaseBleakClient):
             characteristic_obj.remove_ValueChanged(
                 self._notification_callbacks.pop(characteristic.handle)
             )
-
-        return status
+            # TODO: Find out how to get the ProtocolError code that describes a potential GattCommunicationStatus.ProtocolError result.
+            raise BleakError(
+                "Could not start notify on {0}: {1}".format(
+                    characteristic.uuid, _communication_statues.get(status, "")
+                )
+            )
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]

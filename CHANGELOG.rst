@@ -15,6 +15,17 @@ Added
 
 * Timeout for BlueZ backend connect call to avoid potential infinite hanging. Merged #306.
 * Added Interfaces API docs again.
+* noqa flags added to ``BleakBridge`` imports.
+
+Changed
+~~~~~~~
+
+* Changed all adding and removal of .NET event handler from ``+=``/``-=`` syntax to
+  calling ``add_`` and ``remove_`` methods instead. This allows for proper
+  removal of event handlers in .NET backend.
+* All code dependence on the ``BleakBridge`` is now removed. It is only imported to
+  allow for access to UWP namespaces.
+* Removing internal method ``_start_notify`` in the .NET backend.
 
 Fixed
 ~~~~~
