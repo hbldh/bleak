@@ -26,12 +26,18 @@ Changed
 * All code dependence on the ``BleakBridge`` is now removed. It is only imported to
   allow for access to UWP namespaces.
 * Removing internal method ``_start_notify`` in the .NET backend.
+* ``GattSession`` object now manages lifetime of .NET ``BleakClient`` connection.
+* ``BleakClient`` in .NET backend will reuse previous device information when
+  reconnecting so that it doesn't have to scan/discover again.
 
 Fixed
 ~~~~~
 
 * UUID property bug fixed in BlueZ backend. Merged #307
 * Fix for broken RTD documentation.
+* Fix disconnect callback called multiple times in .NET backend. Fixes #312.
+* Fix ``BleakClient.disconnect()`` method failing when called multiple times in
+  .NET backend. Fixes #313.
 
 `0.8.0`_ (2020-09-22)
 ---------------------
