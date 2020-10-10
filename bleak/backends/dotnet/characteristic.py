@@ -70,11 +70,6 @@ class BleakGATTCharacteristicDotNet(BleakGATTCharacteristic):
         return self.obj.Uuid.ToString()
 
     @property
-    def description(self) -> str:
-        """Description for this characteristic"""
-        return self.obj.UserDescription
-
-    @property
     def properties(self) -> List:
         """Properties of this characteristic"""
         return self.__props
