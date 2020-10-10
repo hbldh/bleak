@@ -15,6 +15,7 @@ Added
 
 * Timeout for BlueZ backend connect call to avoid potential infinite hanging. Merged #306.
 * Added Interfaces API docs again.
+* Troubleshooting documentation.
 
 Changed
 ~~~~~~~
