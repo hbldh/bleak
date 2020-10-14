@@ -9,6 +9,7 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import logging
 import platform
+import time
 from enum import Enum
 from typing import List
 
@@ -141,12 +142,15 @@ class CentralManagerDelegate(NSObject):
         await asyncio.sleep(float(scan_options.get("timeout", 0.0)))
         return await self.stop_scan()
 
-    async def connect_(self, peripheral: CBPeripheral) -> bool:
+    async def connect_(self, peripheral: CBPeripheral, timeout=10.0) -> bool:
         self._connection_state = CMDConnectionState.PENDING
         self.central_manager.connectPeripheral_options_(peripheral, None)
 
+        start = time.time()
         while self._connection_state == CMDConnectionState.PENDING:
             await asyncio.sleep(0)
+            if time.time() - start > timeout:
+                raise TimeoutError("Failed to connect in %d seconds" % timeout)
 
         self.connected_peripheral = peripheral
 

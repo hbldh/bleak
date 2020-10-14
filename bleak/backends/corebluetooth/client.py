@@ -71,8 +71,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             Boolean representing connection status.
 
         """
+        timeout = kwargs.get("timeout", self._timeout)
         if self._device_info is None:
-            timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerCoreBluetooth.find_device_by_address(
                 self.address, timeout=timeout
             )
@@ -89,7 +89,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         manager = self._central_manager_delegate
         logger.debug("CentralManagerDelegate  at {}".format(manager))
         logger.debug("Connecting to BLE device @ {}".format(self.address))
-        await manager.connect_(self._device_info)
+        await manager.connect_(self._device_info, timeout=timeout)
         manager.disconnected_callback = self._disconnected_callback_client
 
         # Now get services
