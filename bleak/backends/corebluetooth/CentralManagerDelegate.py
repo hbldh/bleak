@@ -36,7 +36,6 @@ from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 
-
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
@@ -76,6 +75,7 @@ class CentralManagerDelegate(NSObject):
 
         self.callbacks = {}
         self.disconnected_callback = None
+        self._connection_state_changed = asyncio.Event()
 
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
             self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
@@ -141,18 +141,29 @@ class CentralManagerDelegate(NSObject):
         await asyncio.sleep(float(scan_options.get("timeout", 0.0)))
         return await self.stop_scan()
 
-    async def connect_(self, peripheral: CBPeripheral) -> bool:
+    async def connect_(self, peripheral: CBPeripheral, timeout=10.0) -> bool:
         self._connection_state = CMDConnectionState.PENDING
+        self._connection_state_changed.clear()
         self.central_manager.connectPeripheral_options_(peripheral, None)
 
-        while self._connection_state == CMDConnectionState.PENDING:
-            await asyncio.sleep(0)
+        try:
+            await asyncio.wait_for(
+                self._connection_state_changed.wait(), timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            logger.debug(f"Connection timed out after {timeout} seconds.")
+            self.central_manager.cancelPeripheralConnection_(peripheral)
+            raise
 
         self.connected_peripheral = peripheral
 
         return self._connection_state == CMDConnectionState.CONNECTED
 
     async def disconnect(self) -> bool:
+        # Is a peripheral even connected?
+        if self.connected_peripheral is None:
+            return True
+
         self._connection_state = CMDConnectionState.PENDING
         self.central_manager.cancelPeripheralConnection_(self.connected_peripheral)
 
@@ -268,6 +279,7 @@ class CentralManagerDelegate(NSObject):
             )
             self.connected_peripheral_delegate = peripheralDelegate
             self._connection_state = CMDConnectionState.CONNECTED
+            self._connection_state_changed.set()
 
     def centralManager_didConnectPeripheral_(self, central, peripheral):
         logger.debug("centralManager_didConnectPeripheral_")
@@ -287,6 +299,7 @@ class CentralManagerDelegate(NSObject):
             )
         )
         self._connection_state = CMDConnectionState.DISCONNECTED
+        self._connection_state_changed.set()
 
     def centralManager_didFailToConnectPeripheral_error_(
         self, centralManager: CBCentralManager, peripheral: CBPeripheral, error: NSError
