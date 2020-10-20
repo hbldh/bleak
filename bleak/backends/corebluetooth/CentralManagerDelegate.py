@@ -145,15 +145,17 @@ class CentralManagerDelegate(NSObject):
 
     async def connect_(self, peripheral: CBPeripheral, timeout=10.0) -> bool:
         self._connection_state = CMDConnectionState.PENDING
+        self._connection_state_changed.clear()
         self.central_manager.connectPeripheral_options_(peripheral, None)
 
         try:
             await asyncio.wait_for(
                 self._connection_state_changed.wait(), timeout=timeout
             )
-        except TimeoutError:
+        except asyncio.TimeoutError:
             logger.debug(f"Connection timed out after {timeout} seconds.")
-            return False
+            self.central_manager.cancelPeripheralConnection_(peripheral)
+            raise
 
         self.connected_peripheral = peripheral
 
