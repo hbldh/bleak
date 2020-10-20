@@ -36,7 +36,6 @@ from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 
-
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
@@ -153,6 +152,10 @@ class CentralManagerDelegate(NSObject):
         return self._connection_state == CMDConnectionState.CONNECTED
 
     async def disconnect(self) -> bool:
+        # Is a peripheral even connected?
+        if self.connected_peripheral is None:
+            return True
+
         self._connection_state = CMDConnectionState.PENDING
         self.central_manager.cancelPeripheralConnection_(self.connected_peripheral)
 
