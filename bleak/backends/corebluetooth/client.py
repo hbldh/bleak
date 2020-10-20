@@ -110,6 +110,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def disconnect(self) -> bool:
         """Disconnect from the peripheral device"""
         manager = self._central_manager_delegate
+        if manager is None:
+            return False
         await manager.disconnect()
         self.services = BleakGATTServiceCollection()
         # Ensure that `get_services` retrieves services again, rather than using the cached object

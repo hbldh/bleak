@@ -30,10 +30,11 @@ from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
 
 # CLR imports
 # Import of Bleak CLR->UWP Bridge.
-from BleakBridge import Bridge
+import BleakBridge  # noqa: F401
 
 # Import of other CLR components needed.
 from System import UInt64, Object
+from System.Runtime.InteropServices.WindowsRuntime import EventRegistrationToken
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
 from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
 from Windows.Devices.Enumeration import (
@@ -66,6 +67,7 @@ from Windows.Devices.Bluetooth.GenericAttributeProfile import (
     GattValueChangedEventArgs,
     GattCharacteristicProperties,
     GattClientCharacteristicConfigurationDescriptorValue,
+    GattSession,
 )
 
 logger = logging.getLogger(__name__)
@@ -111,7 +113,10 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             self._device_info = None
         self._requester = None
-        self._bridge = None
+        self._connect_events: list[asyncio.Event] = []
+        self._disconnect_events: list[asyncio.Event] = []
+        self._connection_status_changed_token: EventRegistrationToken = None
+        self._session: GattSession = None
 
         self._address_type = (
             kwargs["address_type"]
@@ -135,9 +140,6 @@ class BleakClientDotNet(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        # Create a new BleakBridge here.
-        self._bridge = Bridge()
-
         # Try to find the desired device.
         if self._device_info is None:
             timeout = kwargs.get("timeout", self._timeout)
@@ -168,42 +170,79 @@ class BleakClientDotNet(BaseBleakClient):
             return_type=BluetoothLEDevice,
         )
 
+        # Called on disconnect event or on failure to connect.
+        def handle_disconnect():
+            if self._connection_status_changed_token:
+                self._requester.remove_ConnectionStatusChanged(
+                    self._connection_status_changed_token
+                )
+                self._connection_status_changed_token = None
+
+            if self._requester:
+                self._requester.Dispose()
+                self._requester = None
+
+            if self._session:
+                self._session.Dispose()
+                self._session = None
+
+        def handle_connection_status_changed(
+            connection_status: BluetoothConnectionStatus,
+        ):
+            if connection_status == BluetoothConnectionStatus.Connected:
+                for e in self._connect_events:
+                    e.set()
+
+            elif connection_status == BluetoothConnectionStatus.Disconnected:
+                if self._disconnected_callback:
+                    self._disconnected_callback(self)
+
+                for e in self._disconnect_events:
+                    e.set()
+
+                handle_disconnect()
+
         loop = asyncio.get_event_loop()
 
         def _ConnectionStatusChanged_Handler(sender, args):
             logger.debug(
                 "_ConnectionStatusChanged_Handler: %d", sender.ConnectionStatus
             )
-            if (
-                sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected
-                and self._disconnected_callback
-            ):
-                loop.call_soon_threadsafe(self._disconnected_callback, self)
-
-        self._requester.ConnectionStatusChanged += _ConnectionStatusChanged_Handler
-
-        # Obtain services, which also leads to connection being established.
-        services = await self.get_services()
-        connected = False
-        if self._services_resolved:
-            # If services has been resolved, then we assume that we are connected. This is due to
-            # some issues with getting `is_connected` to give correct response here.
-            connected = True
-        else:
-            for _ in range(5):
-                await asyncio.sleep(0.2)
-                connected = await self.is_connected()
-                if connected:
-                    break
-
-        if connected:
-            logger.debug("Connection successful.")
-        else:
-            raise BleakError(
-                "Connection to {0} was not successful!".format(self.address)
+            loop.call_soon_threadsafe(
+                handle_connection_status_changed, sender.ConnectionStatus
             )
 
-        return connected
+        self._connection_status_changed_token = (
+            self._requester.add_ConnectionStatusChanged(
+                TypedEventHandler[BluetoothLEDevice, Object](
+                    _ConnectionStatusChanged_Handler
+                )
+            )
+        )
+
+        # Start a GATT Session to connect
+        event = asyncio.Event()
+        self._connect_events.append(event)
+        try:
+            self._session = await wrap_IAsyncOperation(
+                IAsyncOperation[GattSession](
+                    GattSession.FromDeviceIdAsync(self._requester.BluetoothDeviceId)
+                ),
+                return_type=GattSession,
+            )
+            # This keeps the device connected until we dispose the session or
+            # until we set MaintainConnection = False.
+            self._session.MaintainConnection = True
+            await asyncio.wait_for(event.wait(), timeout=10)
+        except BaseException:
+            handle_disconnect()
+            raise
+        finally:
+            self._connect_events.remove(event)
+
+        await self.get_services()
+
+        return True
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -211,13 +250,16 @@ class BleakClientDotNet(BaseBleakClient):
         Returns:
             Boolean representing if device is disconnected.
 
+        Raises:
+            asyncio.TimeoutError: If device did not disconnect with 10 seconds.
+
         """
         logger.debug("Disconnecting from BLE device...")
-        # Remove notifications. Remove them first in the BleakBridge and then clear
-        # remaining notifications in Python as well.
+        # Remove notifications.
         for characteristic in self.services.characteristics.values():
-            self._bridge.RemoveValueChangedCallback(characteristic.obj)
-        self._notification_callbacks.clear()
+            token = self._notification_callbacks.pop(characteristic.handle, None)
+            if token:
+                characteristic.obj.remove_ValueChanged(token)
 
         # Dispose all service components that we have requested and created.
         for service in self.services:
@@ -225,22 +267,22 @@ class BleakClientDotNet(BaseBleakClient):
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
 
+        # Without this, disposing the BluetoothLEDevice won't disconnect it
+        if self._session:
+            self._session.Dispose()
+
         # Dispose of the BluetoothLEDevice and see that the connection
         # status is now Disconnected.
-        self._requester.Dispose()
-        is_disconnected = (
-            self._requester.ConnectionStatus == BluetoothConnectionStatus.Disconnected
-        )
-        self._requester = None
+        if self._requester:
+            event = asyncio.Event()
+            self._disconnect_events.append(event)
+            try:
+                self._requester.Dispose()
+                await asyncio.wait_for(event.wait(), timeout=10)
+            finally:
+                self._disconnect_events.remove(event)
 
-        # Set device info to None as well.
-        self._device_info = None
-
-        # Finally, dispose of the Bleak Bridge as well.
-        self._bridge.Dispose()
-        self._bridge = None
-
-        return is_disconnected
+        return True
 
     async def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -734,34 +776,9 @@ class BleakClientDotNet(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {0} not found!".format(char_specifier))
 
-        if self._notification_callbacks.get(characteristic.handle):
+        if characteristic.handle in self._notification_callbacks:
             await self.stop_notify(characteristic)
 
-        status = await self._start_notify(characteristic, callback)
-
-        if status != GattCommunicationStatus.Success:
-            # TODO: Find out how to get the ProtocolError code that describes a potential GattCommunicationStatus.ProtocolError result.
-            raise BleakError(
-                "Could not start notify on {0}: {1}".format(
-                    characteristic.uuid, _communication_statues.get(status, "")
-                )
-            )
-
-    async def _start_notify(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        callback: Callable[[str, Any], Any],
-    ):
-        """Internal method performing call to BleakUWPBridge method.
-
-        Args:
-            characteristic: The BleakGATTCharacteristic to start notification on.
-            callback: The function to be called on notification.
-
-        Returns:
-            (int) The GattCommunicationStatus of the operation.
-
-        """
         characteristic_obj = characteristic.obj
         if (
             characteristic_obj.CharacteristicProperties
@@ -776,22 +793,13 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             cccd = getattr(GattClientCharacteristicConfigurationDescriptorValue, "None")
 
-        try:
-            # TODO: Enable adding multiple handlers!
-            self._notification_callbacks[characteristic.handle] = TypedEventHandler[
-                GattCharacteristic, GattValueChangedEventArgs
-            ](_notification_wrapper(callback, asyncio.get_event_loop()))
-            self._bridge.AddValueChangedCallback(
-                characteristic_obj, self._notification_callbacks[characteristic.handle]
+        self._notification_callbacks[
+            characteristic.handle
+        ] = characteristic_obj.add_ValueChanged(
+            TypedEventHandler[GattCharacteristic, GattValueChangedEventArgs](
+                _notification_wrapper(callback, asyncio.get_event_loop())
             )
-        except Exception as e:
-            logger.debug("Start Notify problem: {0}".format(e))
-            if characteristic_obj.Uuid.ToString() in self._notification_callbacks:
-                callback = self._notification_callbacks.pop(characteristic.handle)
-                self._bridge.RemoveValueChangedCallback(characteristic_obj)
-                del callback
-
-            return GattCommunicationStatus.AccessDenied
+        )
 
         status = await wrap_IAsyncOperation(
             IAsyncOperation[GattCommunicationStatus](
@@ -805,13 +813,15 @@ class BleakClientDotNet(BaseBleakClient):
         if status != GattCommunicationStatus.Success:
             # This usually happens when a device reports that it support indicate,
             # but it actually doesn't.
-            if characteristic.handle in self._notification_callbacks:
-                callback = self._notification_callbacks.pop(characteristic.handle)
-                self._bridge.RemoveValueChangedCallback(characteristic_obj)
-                del callback
-
-            return GattCommunicationStatus.AccessDenied
-        return status
+            characteristic_obj.remove_ValueChanged(
+                self._notification_callbacks.pop(characteristic.handle)
+            )
+            # TODO: Find out how to get the ProtocolError code that describes a potential GattCommunicationStatus.ProtocolError result.
+            raise BleakError(
+                "Could not start notify on {0}: {1}".format(
+                    characteristic.uuid, _communication_statues.get(status, "")
+                )
+            )
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
@@ -848,10 +858,10 @@ class BleakClientDotNet(BaseBleakClient):
                     characteristic.uuid, _communication_statues.get(status, "")
                 )
             )
-        else:
-            callback = self._notification_callbacks.pop(characteristic.handle)
-            self._bridge.RemoveValueChangedCallback(characteristic.obj)
-            del callback
+
+        characteristic.obj.remove_ValueChanged(
+            self._notification_callbacks.pop(characteristic.handle)
+        )
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):

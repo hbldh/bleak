@@ -15,12 +15,22 @@ Added
 
 * Timeout for BlueZ backend connect call to avoid potential infinite hanging. Merged #306.
 * Added Interfaces API docs again.
+* noqa flags added to ``BleakBridge`` imports.
 
 Changed
 ~~~~~~~
 
 * ``BleakCharacteristic.description()`` on .NET now returns the same value as
   other platforms.
+* Changed all adding and removal of .NET event handler from ``+=``/``-=`` syntax to
+  calling ``add_`` and ``remove_`` methods instead. This allows for proper
+  removal of event handlers in .NET backend.
+* All code dependence on the ``BleakBridge`` is now removed. It is only imported to
+  allow for access to UWP namespaces.
+* Removing internal method ``_start_notify`` in the .NET backend.
+* ``GattSession`` object now manages lifetime of .NET ``BleakClient`` connection.
+* ``BleakClient`` in .NET backend will reuse previous device information when
+  reconnecting so that it doesn't have to scan/discover again.
 
 Fixed
 ~~~~~
@@ -31,6 +41,9 @@ Fixed
 * Fix ``BleakGATTService.get_characteristic()`` method overridden with ``NotImplementedError``
   in BlueZ backend.
 * Fix ``AttributeError`` when trying to connect using CoreBluetooth backend. Merged #323.
+* Fix disconnect callback called multiple times in .NET backend. Fixes #312.
+* Fix ``BleakClient.disconnect()`` method failing when called multiple times in
+  .NET backend. Fixes #313.
 
 `0.8.0`_ (2020-09-22)
 ---------------------
