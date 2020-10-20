@@ -9,7 +9,6 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import logging
 import platform
-import time
 from enum import Enum
 from typing import List
 
