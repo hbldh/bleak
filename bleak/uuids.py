@@ -747,8 +747,8 @@ uuid128_dict = {
     "e95d1b25-251d-470a-a062-fa1922dfa9a8": "MicroBit Temperature Period",
     # Nordic UART Port Emulation */
     "6e400001-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART Service",
-    "6e400002-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART TX",
-    "6e400003-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART RX",
+    "6e400003-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART TX",
+    "6e400002-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART RX",
     # from nRF connect
     "be15bee0-6186-407e-8381-0bd89c4d8df4": "Anki Drive Vehicle Service READ",
     "be15bee1-6186-407e-8381-0bd89c4d8df4": "Anki Drive Vehicle Service WRITE",
