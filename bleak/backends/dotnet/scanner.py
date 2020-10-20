@@ -11,12 +11,14 @@ from bleak.exc import BleakError, BleakDotNetTaskError
 from bleak.backends.scanner import BaseBleakScanner
 
 # Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices
-from BleakBridge import Bridge
+from BleakBridge import Bridge  # noqa: F401
 
 from Windows.Devices.Bluetooth.Advertisement import (
     BluetoothLEAdvertisementWatcher,
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementType,
+    BluetoothLEAdvertisementReceivedEventArgs,
+    BluetoothLEAdvertisementWatcherStoppedEventArgs,
 )
 from Windows.Foundation import TypedEventHandler
 
@@ -66,6 +68,9 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         self._callback = None
 
+        self._received_token = None
+        self._stopped_token = None
+
         if "scanning_mode" in kwargs and kwargs["scanning_mode"].lower() == "passive":
             self._scanning_mode = BluetoothLEScanningMode.Passive
         else:
@@ -74,19 +79,22 @@ class BleakScannerDotNet(BaseBleakScanner):
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
-    def AdvertisementWatcher_Received(self, sender, e):
+    def _received_handler(self, sender, event_args):
         if sender == self.watcher:
-            logger.debug("Received {0}.".format(_format_event_args(e)))
-            if e.AdvertisementType == BluetoothLEAdvertisementType.ScanResponse:
-                if e.BluetoothAddress not in self._scan_responses:
-                    self._scan_responses[e.BluetoothAddress] = e
+            logger.debug("Received {0}.".format(_format_event_args(event_args)))
+            if (
+                event_args.AdvertisementType
+                == BluetoothLEAdvertisementType.ScanResponse
+            ):
+                if event_args.BluetoothAddress not in self._scan_responses:
+                    self._scan_responses[event_args.BluetoothAddress] = event_args
             else:
-                if e.BluetoothAddress not in self._devices:
-                    self._devices[e.BluetoothAddress] = e
+                if event_args.BluetoothAddress not in self._devices:
+                    self._devices[event_args.BluetoothAddress] = event_args
         if self._callback is not None:
-            self._callback(sender, e)
+            self._callback(sender, event_args)
 
-    def AdvertisementWatcher_Stopped(self, sender, e):
+    def _stopped_handler(self, sender, event_args):
         if sender == self.watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
@@ -98,8 +106,18 @@ class BleakScannerDotNet(BaseBleakScanner):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.ScanningMode = self._scanning_mode
 
-        self.watcher.Received += self.AdvertisementWatcher_Received
-        self.watcher.Stopped += self.AdvertisementWatcher_Stopped
+        self._received_token = self.watcher.add_Received(
+            TypedEventHandler[
+                BluetoothLEAdvertisementWatcher,
+                BluetoothLEAdvertisementReceivedEventArgs,
+            ](self._received_handler)
+        )
+        self._stopped_token = self.watcher.add_Stopped(
+            TypedEventHandler[
+                BluetoothLEAdvertisementWatcher,
+                BluetoothLEAdvertisementWatcherStoppedEventArgs,
+            ](self._stopped_handler)
+        )
 
         if self._signal_strength_filter is not None:
             self.watcher.SignalStrengthFilter = self._signal_strength_filter
@@ -111,11 +129,13 @@ class BleakScannerDotNet(BaseBleakScanner):
     async def stop(self):
         self.watcher.Stop()
 
-        try:
-            self.watcher.Received -= self.AdvertisementWatcher_Received
-            self.watcher.Stopped -= self.AdvertisementWatcher_Stopped
-        except Exception as e:
-            logger.debug("Could not remove event handlers: {0}...".format(e))
+        if self._received_token:
+            self.watcher.remove_Received(self._received_token)
+            self._received_token = None
+        if self._stopped_token:
+            self.watcher.remove_Stopped(self._stopped_token)
+            self._stopped_token = None
+
         self.watcher = None
 
     async def set_scanning_filter(self, **kwargs):
