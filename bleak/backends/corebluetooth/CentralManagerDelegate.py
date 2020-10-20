@@ -148,7 +148,9 @@ class CentralManagerDelegate(NSObject):
         self.central_manager.connectPeripheral_options_(peripheral, None)
 
         try:
-            await asyncio.wait_for(self._connection_state_changed.wait(), timeout=timeout)
+            await asyncio.wait_for(
+                self._connection_state_changed.wait(), timeout=timeout
+            )
         except TimeoutError:
             logger.debug(f"Connection timed out after {timeout} seconds.")
             return False
