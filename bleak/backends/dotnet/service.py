@@ -17,22 +17,14 @@ class BleakGATTServiceDotNet(BleakGATTService):
         ]
 
     @property
-    def uuid(self):
+    def uuid(self) -> str:
+        """UUID for this service."""
         return self.obj.Uuid.ToString()
 
     @property
     def characteristics(self) -> List[BleakGATTCharacteristicDotNet]:
         """List of characteristics for this service"""
         return self.__characteristics
-
-    def get_characteristic(
-        self, _uuid: Union[str, UUID]
-    ) -> Union[BleakGATTCharacteristicDotNet, None]:
-        """Get a characteristic by UUID"""
-        try:
-            return next(filter(lambda x: x.uuid == str(_uuid), self.characteristics))
-        except StopIteration:
-            return None
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristicDotNet):
         """Add a :py:class:`~BleakGATTCharacteristicDotNet` to the service.

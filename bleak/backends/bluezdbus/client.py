@@ -50,7 +50,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
-        self.address = address_or_ble_device
 
         # Backend specific, TXDBus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -86,8 +85,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
+        timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
-            timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerBlueZDBus.find_device_by_address(
                 self.address, timeout=timeout, device=self.device
             )
@@ -129,6 +128,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 "Connect",
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
+                timeout=timeout,
             ).asFuture(loop)
         except RemoteError as e:
             await self._cleanup_all()
@@ -350,6 +350,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except ConnectionDone:
             # Twisted error stating that "Connection was closed cleanly."
             pass
+        except RemoteError as e:
+            if e.errName != "org.freedesktop.DBus.Error.UnknownObject":
+                raise
         except Exception as e:
             # Do not want to silence unknown errors. Send this upwards.
             raise

@@ -1,5 +1,4 @@
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.uuids import uuidstr_to_str
 
 
 class BleakGATTDescriptorBlueZDBus(BleakGATTDescriptor):
@@ -42,8 +41,3 @@ class BleakGATTDescriptorBlueZDBus(BleakGATTDescriptor):
     def path(self) -> str:
         """The DBus path. Mostly needed by `bleak`, not by end user"""
         return self.__path
-
-    @property
-    def description(self) -> str:
-        """Description for this descriptor"""
-        return uuidstr_to_str(self.uuid)

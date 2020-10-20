@@ -1,3 +1,4 @@
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from typing import List, Union
 
 from Foundation import CBService, CBUUID
@@ -17,21 +18,13 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
 
     @property
     def uuid(self) -> str:
-        return self.obj.UUID().UUIDString()
+        """UUID for this service."""
+        return cb_uuid_to_str(self.obj.UUID())
 
     @property
     def characteristics(self) -> List[BleakGATTCharacteristicCoreBluetooth]:
         """List of characteristics for this service"""
         return self.__characteristics
-
-    def get_characteristic(
-        self, _uuid: CBUUID
-    ) -> Union[BleakGATTCharacteristicCoreBluetooth, None]:
-        """Get a characteristic by UUID"""
-        try:
-            return next(filter(lambda x: x.uuid == _uuid, self.characteristics))
-        except StopIteration:
-            return None
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristicCoreBluetooth):
         """Add a :py:class:`~BleakGATTCharacteristicDotNet` to the service.

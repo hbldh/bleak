@@ -136,6 +136,6 @@ class BleakGATTDescriptor(abc.ABC):
         raise NotImplementedError()
 
     @property
-    def description(self):
+    def description(self) -> str:
         """A text description of what this descriptor represents"""
         return _descriptor_descriptions.get(self.uuid.lower(), ["None"])[0]

@@ -13,7 +13,6 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
-from bleak.uuids import uuidstr_to_str
 
 
 class CBChacteristicProperties(Enum):
@@ -68,8 +67,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
             for v in [2 ** n for n in range(10)]
             if (self.obj.properties() & v)
         ]
-        uuid_string = self.obj.UUID().UUIDString()
-        self._uuid = cb_uuid_to_str(uuid_string)
+        self._uuid = cb_uuid_to_str(self.obj.UUID())
 
     def __str__(self):
         return "{0}: {1}".format(self.uuid, self.description)
@@ -77,7 +75,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     @property
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
-        return self.obj.service().UUID().UUIDString()
+        return cb_uuid_to_str(self.obj.service().UUID())
 
     @property
     def handle(self) -> int:
@@ -88,12 +86,6 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return self._uuid
-
-    @property
-    def description(self) -> str:
-        """Description for this characteristic"""
-        # No description available in Core Bluetooth backend.
-        return uuidstr_to_str(self._uuid)
 
     @property
     def properties(self) -> List:

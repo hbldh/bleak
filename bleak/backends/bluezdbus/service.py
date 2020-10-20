@@ -23,12 +23,6 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def get_characteristic(
-        self, _uuid: Union[str, UUID]
-    ) -> Union[BleakGATTCharacteristicBlueZDBus, None]:
-        """Get a characteristic by UUID"""
-        raise NotImplementedError()
-
     def add_characteristic(self, characteristic: BleakGATTCharacteristicBlueZDBus):
         """Add a :py:class:`~BleakGATTCharacteristicBlueZDBus` to the service.
 
