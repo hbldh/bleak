@@ -16,6 +16,8 @@ Fixed
 
 * Fix well-known services not converted to UUIDs in ``BLEDevice.metadata`` in
   CoreBluetooth backend. Fixes #342.
+* Fix advertising data replaced instead of merged in scanner in CoreBluetooth
+  backend. Merged #343.
 
 
 `0.9.0`_ (2020-10-20)

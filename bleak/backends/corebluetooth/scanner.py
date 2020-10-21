@@ -48,7 +48,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._identifiers = {}
 
         def callback(p, a, r):
-            self._identifiers[p.identifier()] = a
+            # update identifiers for scanned device
+            self._identifiers.setdefault(p.identifier(), {}).update(a)
             if self._callback:
                 self._callback(p, a, r)
 
