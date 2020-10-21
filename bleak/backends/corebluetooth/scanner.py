@@ -5,6 +5,7 @@ import uuid
 from typing import Callable, Any, Union, List
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
@@ -102,8 +103,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_data = {manufacturer_id: manufacturer_value}
 
             uuids = [
-                # converting to lower case to match other platforms
-                str(u).lower()
+                cb_uuid_to_str(u)
                 for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
             ]
 
