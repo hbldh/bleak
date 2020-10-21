@@ -7,15 +7,17 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
+`0.9.0`_ (2020-10-20)
+---------------------
 
 Added
 ~~~~~
 
 * Timeout for BlueZ backend connect call to avoid potential infinite hanging. Merged #306.
 * Added Interfaces API docs again.
+* Troubleshooting documentation.
 * noqa flags added to ``BleakBridge`` imports.
+* Adding a timeout on OSX so that the connect cannot hang forever. Merge #336.
 
 Changed
 ~~~~~~~
@@ -32,6 +34,7 @@ Changed
 * ``BleakClient`` in .NET backend will reuse previous device information when
   reconnecting so that it doesn't have to scan/discover again.
 
+
 Fixed
 ~~~~~
 
@@ -44,6 +47,11 @@ Fixed
 * Fix disconnect callback called multiple times in .NET backend. Fixes #312.
 * Fix ``BleakClient.disconnect()`` method failing when called multiple times in
   .NET backend. Fixes #313.
+* Fix ``BleakClient.disconnect()`` method failing when called multiple times in
+  Core Bluetooth backend. Merge #333.
+* Catch RemoteError in ``is_connected`` in BlueZ backend. Fixes #310,
+* Prevent overwriting address in constructor of ``BleakClient`` in BlueZ backend. Merge #311.
+* Fix nordic uart UUID. Merge #339.
 
 `0.8.0`_ (2020-09-22)
 ---------------------
@@ -339,7 +347,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.8.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.9.0...develop
+.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.9.0...v0.8.0
 .. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1
 .. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
 .. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
