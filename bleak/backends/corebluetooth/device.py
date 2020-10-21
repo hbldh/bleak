@@ -3,7 +3,7 @@ from bleak.backends._manufacturers import MANUFACTURERS
 
 from Foundation import NSDictionary
 
-
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
 
 
@@ -46,8 +46,7 @@ class BLEDeviceCoreBluetooth(BLEDevice):
         cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
         if not cbuuids:
             return
-        # converting to lower case to match other platforms
-        chuuids = [str(u).lower() for u in cbuuids]
+        chuuids = [cb_uuid_to_str(u) for u in cbuuids]
         if "uuids" in self.metadata:
             for uuid in chuuids:
                 if not uuid in self.metadata["uuids"]:
