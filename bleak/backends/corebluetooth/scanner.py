@@ -7,7 +7,6 @@ from typing import Callable, Any, Union, List
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
-from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
 
 
@@ -40,11 +39,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._timeout = kwargs.get("timeout", 5.0)
 
     async def start(self):
-        try:
-            await self._manager.wait_for_powered_on(0.1)
-        except asyncio.TimeoutError:
-            raise BleakError("Bluetooth device is turned off")
-
         self._identifiers = {}
 
         def callback(p, a, r):

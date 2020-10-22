@@ -9,6 +9,7 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import logging
 import platform
+import threading
 from enum import Enum
 from typing import List
 
@@ -35,6 +36,7 @@ from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
@@ -70,16 +72,25 @@ class CentralManagerDelegate(NSObject):
         self.connected_peripheral = None
         self._connection_state = CMDConnectionState.DISCONNECTED
 
-        self.powered_on_event = asyncio.Event()
         self.devices = {}
 
         self.callbacks = {}
         self.disconnected_callback = None
         self._connection_state_changed = asyncio.Event()
 
+        self._did_update_state_event = threading.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
             self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
         )
+
+        # according to CoreBluetooth docs, it is not valid to call CBCentral
+        # methods until the centralManagerDidUpdateState_() delegate method
+        # is called and the current state is CBManagerStatePoweredOn.
+        # It doesn't take long for the callback to occur, so we should be able
+        # to do a blocking wait here without anyone complaining.
+        self._did_update_state_event.wait(1)
+        if self.central_manager.state() != CBManagerStatePoweredOn:
+            raise BleakError("Bluetooth device is turned off")
 
         return self
 
@@ -88,16 +99,6 @@ class CentralManagerDelegate(NSObject):
     @property
     def isConnected(self) -> bool:
         return self._connection_state == CMDConnectionState.CONNECTED
-
-    @objc.python_method
-    async def wait_for_powered_on(self, timeout: float):
-        """
-        Waits for state to be CBManagerStatePoweredOn. This must be done before
-        attempting to do anything else.
-
-        Throws asyncio.TimeoutError if power on is not detected before timeout.
-        """
-        await asyncio.wait_for(self.powered_on_event.wait(), timeout)
 
     @objc.python_method
     def start_scan(self, scan_options):
@@ -174,8 +175,8 @@ class CentralManagerDelegate(NSObject):
 
     # Protocol Functions
 
-    @objc.python_method
-    def did_update_state(self, centralManager):
+    def centralManagerDidUpdateState_(self, centralManager):
+        logger.debug("centralManagerDidUpdateState_")
         if centralManager.state() == CBManagerStateUnknown:
             logger.debug("Cannot detect bluetooth device")
         elif centralManager.state() == CBManagerStateResetting:
@@ -189,17 +190,7 @@ class CentralManagerDelegate(NSObject):
         elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
 
-        if centralManager.state() == CBManagerStatePoweredOn:
-            self.powered_on_event.set()
-        else:
-            self.powered_on_event.clear()
-
-    def centralManagerDidUpdateState_(self, centralManager):
-        logger.debug("centralManagerDidUpdateState_")
-        self.event_loop.call_soon_threadsafe(
-            self.did_update_state,
-            centralManager,
-        )
+        self._did_update_state_event.set()
 
     @objc.python_method
     def did_discover_peripheral(
