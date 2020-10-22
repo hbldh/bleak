@@ -54,8 +54,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Backend specific, TXDBus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
             self._device_path = address_or_ble_device.details["path"]
+            self._device_info = address_or_ble_device.details.get("props")
         else:
             self._device_path = None
+            self._device_info = None
         self._bus = None
         self._reactor = None
         self._rules = {}
@@ -92,6 +94,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
 
             if device:
+                self._device_info = device.details.get("props")
                 self._device_path = device.details["path"]
             else:
                 raise BleakError(

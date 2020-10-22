@@ -5,8 +5,8 @@ import uuid
 from typing import Callable, Any, Union, List
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
-from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
 
 
@@ -39,15 +39,11 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._timeout = kwargs.get("timeout", 5.0)
 
     async def start(self):
-        try:
-            await self._manager.wait_for_powered_on(0.1)
-        except asyncio.TimeoutError:
-            raise BleakError("Bluetooth device is turned off")
-
         self._identifiers = {}
 
         def callback(p, a, r):
-            self._identifiers[p.identifier()] = a
+            # update identifiers for scanned device
+            self._identifiers.setdefault(p.identifier(), {}).update(a)
             if self._callback:
                 self._callback(p, a, r)
 
@@ -101,8 +97,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_data = {manufacturer_id: manufacturer_value}
 
             uuids = [
-                # converting to lower case to match other platforms
-                str(u).lower()
+                cb_uuid_to_str(u)
                 for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
             ]
 
