@@ -14,7 +14,7 @@ class BLEDeviceCoreBluetooth(BLEDevice):
 
     - The `details` attribute will be a CBPeripheral object.
 
-    - The `metadata` keys are more or less part of the crossplattform interface.
+    - The `metadata` keys are more or less part of the cross-platform interface.
 
     - Note: Take care not to rely on any reference to `advertisementData` and
       it's data as lower layers of the corebluetooth stack can change it. i.e.
@@ -35,7 +35,6 @@ class BLEDeviceCoreBluetooth(BLEDevice):
 
     def __init__(self, *args, **kwargs):
         super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
-        self.metadata = {}
         self._rssi = kwargs.get("rssi")
 
     def _update(self, advertisementData: NSDictionary):

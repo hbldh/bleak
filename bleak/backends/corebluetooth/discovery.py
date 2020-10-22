@@ -7,12 +7,10 @@ Created on 2019-06-24 by kevincar <kevincarrolldavis@gmail.com>
 
 """
 
-import asyncio
 from typing import List
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.device import BLEDevice
-from bleak.exc import BleakError
 
 
 async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
@@ -23,11 +21,6 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
 
     """
     manager = CentralManagerDelegate.alloc().init()
-    try:
-        await manager.wait_for_powered_on(0.1)
-    except asyncio.TimeoutError:
-        raise BleakError("Bluetooth device is turned off")
-
     scan_options = {"timeout": timeout}
 
     await manager.scanForPeripherals_(scan_options)
