@@ -225,7 +225,7 @@ class CentralManagerDelegate(NSObject):
             address = uuid_string
             name = peripheral.name() or None
             details = peripheral
-            device = BLEDeviceCoreBluetooth(address, name, details)
+            device = BLEDeviceCoreBluetooth(address, name, details, delegate=self)
             self.devices[uuid_string] = device
 
         device._rssi = float(RSSI)

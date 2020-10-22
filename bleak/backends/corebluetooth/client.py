@@ -48,9 +48,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         if isinstance(address_or_ble_device, BLEDevice):
             self._device_info = address_or_ble_device.details
-            self._central_manager_delegate = address_or_ble_device.metadata.get(
-                "delegate"
-            )
+            self._central_manager_delegate = address_or_ble_device.metadata["delegate"]
         else:
             self._device_info = None
             self._central_manager_delegate = None
@@ -79,7 +77,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
             if device:
                 self._device_info = device.details
-                self._central_manager_delegate = device.metadata.get("delegate")
+                self._central_manager_delegate = device.metadata["delegate"]
             else:
                 raise BleakError(
                     "Device with address {} was not found".format(self.address)

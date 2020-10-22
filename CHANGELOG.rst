@@ -20,6 +20,7 @@ Fixed
   backend. Merged #343.
 * Fix CBCentralManager not properly waited for during initialization in some
   cases.
+* Fix AttributeError in CoreBluetooth when using BLEDeviceCoreBluetooth object.
 
 
 `0.9.0`_ (2020-10-20)
