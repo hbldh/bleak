@@ -15,6 +15,13 @@ Added
 ~~~~~
 
 * Added new attribute ``_device_info`` on ``BleakClientBlueZDBus``. Merges #347
+* Added Pull Request Template.
+
+Changed
+~~~~~~~
+
+* Updated instructions on how to contribute, file issues and make PRs.
+* Updated ``AUTHORS.rst`` file with development team.
 
 Fixed
 ~~~~~
