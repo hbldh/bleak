@@ -48,8 +48,7 @@ def _device_info(path, props):
                 address = None
         rssi = props.get("RSSI", "?")
         return name, address, rssi, path
-    except Exception as e:
-        # logger.exception(e, exc_info=True)
+    except Exception:
         return None, None, None, None
 
 

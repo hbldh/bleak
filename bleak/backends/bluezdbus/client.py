@@ -298,7 +298,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
             ).asFuture(loop)
-        except RemoteError as e:
+        except RemoteError:
             await self._cleanup_all()
             raise BleakError(
                 "Device with address {0} could not be paired with.".format(self.address)
@@ -354,9 +354,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except RemoteError as e:
             if e.errName != "org.freedesktop.DBus.Error.UnknownObject":
                 raise
-        except Exception as e:
-            # Do not want to silence unknown errors. Send this upwards.
-            raise
         return is_connected
 
     # GATT services methods

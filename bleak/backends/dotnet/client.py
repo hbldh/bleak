@@ -334,7 +334,7 @@ class BleakClientDotNet(BaseBleakClient):
 
             try:
                 custom_pairing.PairingRequested -= handler
-            except Exception as e:
+            except Exception:
                 # TODO: Find a way to remove WinRT events...
                 pass
             finally:
