@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import pathlib
-from typing import Callable, Any, Union, List
+from typing import Callable, List
 
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.device import BLEDevice

@@ -9,20 +9,18 @@ import re
 import subprocess
 import uuid
 import warnings
-from asyncio import Future
 from functools import wraps, partial
-from typing import Callable, Any, Union
+from typing import Callable, Union
 
 from twisted.internet.error import ConnectionDone
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.bluezdbus import defs, signals, utils, get_reactor
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
-from bleak.backends.bluezdbus.utils import get_device_object_path, get_managed_objects
+from bleak.backends.bluezdbus.utils import get_managed_objects
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus

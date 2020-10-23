@@ -46,23 +46,23 @@ if platform.system() == "Linux":
     from bleak.backends.bluezdbus.discovery import discover  # noqa
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as BleakScanner,
-    )  # noqa
+    )  # noqa: F401
     from bleak.backends.bluezdbus.client import (
         BleakClientBlueZDBus as BleakClient,
-    )  # noqa
+    )  # noqa: F401
 elif platform.system() == "Darwin":
     try:
-        from CoreBluetooth import CBPeripheral
+        from CoreBluetooth import CBPeripheral  # noqa: F401
     except Exception as ex:
         raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
-    from bleak.backends.corebluetooth.discovery import discover  # noqa
+    from bleak.backends.corebluetooth.discovery import discover  # noqa: F401
     from bleak.backends.corebluetooth.scanner import (
         BleakScannerCoreBluetooth as BleakScanner,
-    )  # noqa
+    )  # noqa: F401
     from bleak.backends.corebluetooth.client import (
         BleakClientCoreBluetooth as BleakClient,
-    )  # noqa
+    )  # noqa: F401
 
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299

@@ -1,13 +1,10 @@
 import logging
 import asyncio
 import pathlib
-import uuid
-from functools import wraps
-from typing import Callable, Any, Union, List
+from typing import Callable, Union, List
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.utils import BleakDataReader
-from bleak.exc import BleakError, BleakDotNetTaskError
 from bleak.backends.scanner import BaseBleakScanner
 
 # Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices

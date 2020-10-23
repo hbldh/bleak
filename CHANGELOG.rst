@@ -19,6 +19,7 @@ Removed
 ~~~~~~~
 
 * Removed duplicate definition of BLEDevice in BlueZ backend.
+* Removed unused imports.
 
 
 `0.9.1`_ (2020-10-22)
