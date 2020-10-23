@@ -6,10 +6,10 @@ Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 
 import logging
 import uuid
-from typing import Callable, Any, Union
+from typing import Callable, Union
 import asyncio
 
-from Foundation import NSData, CBUUID
+from Foundation import NSData
 from CoreBluetooth import (
     CBCharacteristicWriteWithResponse,
     CBCharacteristicWriteWithoutResponse,

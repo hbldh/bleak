@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import pathlib
-from typing import Callable, Any, Union, List
+from typing import Callable, List
 
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.device import BLEDevice
@@ -48,8 +48,7 @@ def _device_info(path, props):
                 address = None
         rssi = props.get("RSSI", "?")
         return name, address, rssi, path
-    except Exception as e:
-        # logger.exception(e, exc_info=True)
+    except Exception:
         return None, None, None, None
 
 

@@ -6,9 +6,8 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
-import asyncio
 import uuid
-from typing import Callable, Any, Union
+from typing import Callable, Union
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic

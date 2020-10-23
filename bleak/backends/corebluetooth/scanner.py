@@ -1,8 +1,7 @@
 import logging
 import asyncio
 import pathlib
-import uuid
-from typing import Callable, Any, Union, List
+from typing import Callable, Union, List
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
@@ -160,5 +159,5 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         # TODO: Evaluate if newer macOS than 10.11 has isScanning.
         try:
             return self._manager.isScanning_
-        except:
+        except Exception:
             return None

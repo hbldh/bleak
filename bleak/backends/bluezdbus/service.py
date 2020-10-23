@@ -1,5 +1,4 @@
-from uuid import UUID
-from typing import Union, List
+from typing import List
 
 from bleak.backends.service import BleakGATTService
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus

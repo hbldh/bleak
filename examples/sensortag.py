@@ -8,9 +8,8 @@ An example connecting to a TI CC2650 SensorTag.
 Created on 2018-01-10 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-import platform
-import logging
 import asyncio
+import platform
 
 from bleak import BleakClient
 from bleak import _logger as logger
@@ -94,14 +93,14 @@ IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 
 
 async def run(address, debug=False):
-    if debug:
-        import sys
+    # if debug:
+    #     import sys
 
-        # l = logging.getLogger("asyncio")
-        # l.setLevel(logging.DEBUG)
-        # h = logging.StreamHandler(sys.stdout)
-        # h.setLevel(logging.DEBUG)
-        # l.addHandler(h)
+    #     l = logging.getLogger("asyncio")
+    #     l.setLevel(logging.DEBUG)
+    #     h = logging.StreamHandler(sys.stdout)
+    #     h.setLevel(logging.DEBUG)
+    #     l.addHandler(h)
 
     async with BleakClient(address) as client:
         x = await client.is_connected()
@@ -120,7 +119,7 @@ async def run(address, debug=False):
         try:
             device_name = await client.read_gatt_char(DEVICE_NAME_UUID)
             print("Device Name: {0}".format("".join(map(chr, device_name))))
-        except:
+        except Exception:
             pass
 
         manufacturer_name = await client.read_gatt_char(MANUFACTURER_NAME_UUID)

@@ -1,5 +1,4 @@
-from uuid import UUID
-from typing import List, Union
+from typing import List
 
 from bleak.backends.service import BleakGATTService
 from bleak.backends.dotnet.characteristic import BleakGATTCharacteristicDotNet
