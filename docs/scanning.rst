@@ -96,6 +96,10 @@ In the manual mode, it is possible to add an own callback that you want to call 
 scanner detection, as can be seen above. There are also possibilities of adding scanning filters,
 which differ widely between OS backend implementations, so the instructions merit careful reading.
 
+Note that the when using :code:`BleakScanner.register_detection_callback(callback)`, your callback
+function will be passed a AdvertisementData class whose structure can be found in the base scanner file.
+`See detection_callback.py` example. Note that platform specific advertisement data can be found in the platform_data field.
+
 Scanning Filters
 ----------------
 

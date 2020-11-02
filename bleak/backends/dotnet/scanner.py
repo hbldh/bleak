@@ -5,7 +5,8 @@ from typing import Callable, Union, List
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.utils import BleakDataReader
-from bleak.backends.scanner import BaseBleakScanner
+from bleak.exc import BleakError, BleakDotNetTaskError
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 # Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices
 from BleakBridge import Bridge  # noqa: F401
@@ -89,9 +90,23 @@ class BleakScannerDotNet(BaseBleakScanner):
                 if event_args.BluetoothAddress not in self._devices:
                     self._devices[event_args.BluetoothAddress] = event_args
         if self._callback is not None:
-            self._callback(sender, event_args)
+            # Get a "BLEDevice" from parse_event args
+            temporary_device = self.parse_eventargs(event_args)
 
-    def _stopped_handler(self, sender, event_args):
+            # Use the BLEDevice to populate all the fields for the advertisement data to return
+            advertisement_data = AdvertisementData(
+                address=temporary_device.address,
+                local_name=temporary_device.name or "Unknown",
+                rssi=temporary_device.rssi,
+                manufacturer_data=temporary_device.metadata["manufacturer_data"],
+                service_data=event_args.Advertisement.GetSectionsByType(0x16),
+                service_uuids=temporary_device.metadata["uuids"],
+                platform_data=(sender, event_args),
+            )
+
+            self._callback(advertisement_data)
+
+    def _stopped_handler(self, sender, e):
         if sender == self.watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
@@ -260,7 +275,8 @@ class BleakScannerDotNet(BaseBleakScanner):
         stop_scanning_event = asyncio.Event()
         scanner = cls(timeout=timeout)
 
-        def stop_if_detected(sender, event_args):
+        def stop_if_detected(advertisement_data: AdvertisementData):
+            event_args = advertisement_data.platform_data[1]
             if event_args.BluetoothAddress == ulong_id:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 

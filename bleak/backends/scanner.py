@@ -111,3 +111,34 @@ class BaseBleakScanner(abc.ABC):
             await self.stop()
 
         return device
+
+
+class AdvertisementData:
+    """
+    Wrapper around the advertisement data that each platform returns upon discovery
+    """
+
+    def __init__(self, address, **kwargs):
+        # Platform specific address of the device
+        self.address = address
+
+        # The local name of the device
+        self.local_name = kwargs.get("local_name", None)
+
+        # Integer RSSI value from the device
+        self.rssi = kwargs.get("rssi", 0)
+
+        # Dictionary of manufacturer data in bytes
+        self.manufacturer_data = kwargs.get("manufacturer_data", {})
+
+        # Dictionary of service data
+        self.service_data = kwargs.get("service_data", {})
+
+        # List of UUIDs
+        self.service_uuids = kwargs.get("service_uuids", None)
+
+        # Tuple of platform specific data
+        self.platform_data = kwargs.get("platform_data", ())
+
+    def __str__(self):
+        return "Advertisement data for device at addr: {0}".format(self.address)
