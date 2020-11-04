@@ -303,37 +303,33 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         )
 
         if self._callback is not None:
-            # First ensure that the message body is a list and has the dict where we can find the information we need
-            if isinstance(message.body, list) and len(message.body) > 2:
-                discovery_data = message.body[1]
+            discovery_data = message.body[1]
 
-                # Get all the information wanted to pack in the advertisement data
-                _address = message.path[message.path.rfind("dev_") + 4 :].replace(
-                    "_", ":"
-                )
+            # Get all the information wanted to pack in the advertisement data
+            _address = discovery_data["Address"]
 
-                _local_name = discovery_data.get("Name", None)
+            _local_name = discovery_data.get("Name", "Unknown")
 
-                _manufacturer_data = discovery_data.get("ManufacturerData", {})
+            _manufacturer_data = discovery_data.get("ManufacturerData", {})
 
-                _service_data = discovery_data.get("ServiceData", {})
+            _service_data = discovery_data.get("ServiceData", {})
 
-                _service_uuids = discovery_data.get("UUIDs", [])
+            _service_uuids = discovery_data.get("UUIDs", [])
 
-                _rssi = discovery_data.get("RSSI", 0)
+            _rssi = discovery_data.get("RSSI", 0)
 
-                # Pack the advertisement data
-                advertisement_data = AdvertisementData(
-                    address=_address,
-                    local_name=_local_name or "Unknown",
-                    rssi=_rssi,
-                    manufacturer_data=_manufacturer_data,
-                    service_data=_service_data,
-                    service_uuids=_service_uuids,
-                    platform_data=(message,),
-                )
+            # Pack the advertisement data
+            advertisement_data = AdvertisementData(
+                address=_address,
+                local_name=_local_name,
+                rssi=_rssi,
+                manufacturer_data=_manufacturer_data,
+                service_data=_service_data,
+                service_uuids=_service_uuids,
+                platform_data=(message,),
+            )
 
-                self._callback(advertisement_data)
+            self._callback(advertisement_data)
 
             logger.info(
                 "Advertisement Data was an unexpected format, unable to safely trigger callback"

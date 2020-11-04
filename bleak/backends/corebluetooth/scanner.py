@@ -39,32 +39,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def start(self):
         self._identifiers = {}
 
-        def safe_list_get(l: list, idx: int, default):
-            """
-            Returns an index from a list safely similar to .get() with dicts
-            """
-            try:
-                return repr(l[idx]).lower()
-            except IndexError:
-                return default
-
-        def callback_dict_breakdown(data) -> Union[None, dict]:
-            """
-            This function parses the __NSDictionaryM or __NSSingleEntryDictionry
-            object passed as data into a more user-friendly dictionary which
-            is returned, if data is None, or if an exception is raised during
-            parsing, None is returned
-            """
-            if data:
-                try:
-                    _service_dict_key = data.allKeys()[0]
-                    _service_dict_data = data.objectForKey_(_service_dict_key)
-                    return {str(_service_dict_key): str(_service_dict_data)}
-                except Exception:
-                    return None
-            else:
-                return None
-
         def callback(p, a, r):
             # update identifiers for scanned device
             self._identifiers.setdefault(p.identifier(), {}).update(a)
@@ -83,7 +57,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                     manufacturer_binary_data[0:2], byteorder="little"
                 )
                 manufacturer_value = bytes(manufacturer_binary_data[2:])
-                manufacturer_data = {manufacturer_id: manufacturer_value}
+                manufacturer_data[manufacturer_id] = manufacturer_value
 
             advertisement_data = AdvertisementData(
                 address=p.identifier().UUIDString(),

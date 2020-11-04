@@ -119,6 +119,18 @@ class AdvertisementData:
     """
 
     def __init__(self, address, **kwargs):
+        """
+        Required Args:
+            address (str): The platform specific address of the device
+
+        Keyword Args:
+            local_name (str): The name of the ble device advertising
+            rssi (int): Rssi value of the device
+            manufacturer_data (dict): Manufacturer data from the device
+            service_data (dict): Service data from the device
+            service_uuids (list): UUIDs associated with the device
+            platform_data (tuple): Tuple of platform specific advertisement data
+        """
         # Platform specific address of the device
         self.address = address
 
@@ -135,7 +147,7 @@ class AdvertisementData:
         self.service_data = kwargs.get("service_data", {})
 
         # List of UUIDs
-        self.service_uuids = kwargs.get("service_uuids", None)
+        self.service_uuids = kwargs.get("service_uuids", [])
 
         # Tuple of platform specific data
         self.platform_data = kwargs.get("platform_data", ())
