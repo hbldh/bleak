@@ -14,6 +14,7 @@ Fixed
 -----
 
 * Fixed use of bare exceptions.
+* Fixed #374 "BleakClientBlueZDBus.start_notify() misses initial notifications with fast Bluetooth devices"
 
 Removed
 ~~~~~~~
