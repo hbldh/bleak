@@ -17,13 +17,18 @@ from bleak.backends.device import BLEDevice
 from BleakBridge import Bridge  # noqa: F401
 
 from System import Array, Object
-from Windows.Devices import Enumeration
 from Windows.Devices.Bluetooth.Advertisement import (
     BluetoothLEAdvertisementWatcher,
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementType,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementWatcherStoppedEventArgs,
+)
+from Windows.Devices.Enumeration import (
+    DeviceInformation,
+    DeviceInformationUpdate,
+    DeviceInformationKind,
+    DeviceWatcher,
 )
 from Windows.Foundation import TypedEventHandler
 
@@ -175,10 +180,10 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
     aqs_all_bluetooth_le_devices = (
         '(System.Devices.Aep.ProtocolId:="' '{bb7bb05e-5972-42b5-94fc-76eaa7084d49}")'
     )
-    watcher = Enumeration.DeviceInformation.CreateWatcher(
+    watcher = DeviceInformation.CreateWatcher(
         aqs_all_bluetooth_le_devices,
         requested_properties,
-        Enumeration.DeviceInformationKind.AssociationEndpoint,
+        DeviceInformationKind.AssociationEndpoint,
     )
 
     devices = {}
@@ -231,27 +236,19 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
             )
 
     added_token = watcher.add_Added(
-        TypedEventHandler[Enumeration.DeviceWatcher, Enumeration.DeviceInformation](
-            _added_handler
-        )
+        TypedEventHandler[DeviceWatcher, DeviceInformation](_added_handler)
     )
     updated_token = watcher.add_Updated(
-        TypedEventHandler[
-            Enumeration.DeviceWatcher, Enumeration.DeviceInformationUpdate
-        ](_updated_handler)
+        TypedEventHandler[DeviceWatcher, DeviceInformationUpdate](_updated_handler)
     )
     removed_token = watcher.add_Removed(
-        TypedEventHandler[
-            Enumeration.DeviceWatcher, Enumeration.DeviceInformationUpdate
-        ](_removed_handler)
+        TypedEventHandler[DeviceWatcher, DeviceInformationUpdate](_removed_handler)
     )
     enumeration_completed_token = watcher.add_EnumerationCompleted(
-        TypedEventHandler[Enumeration.DeviceWatcher, Object](
-            _enumeration_completed_handler
-        )
+        TypedEventHandler[DeviceWatcher, Object](_enumeration_completed_handler)
     )
     stopped_token = watcher.add_Stopped(
-        TypedEventHandler[Enumeration.DeviceWatcher, Object](_stopped_handler)
+        TypedEventHandler[DeviceWatcher, Object](_stopped_handler)
     )
 
     # Watcher works outside of the Python process.
