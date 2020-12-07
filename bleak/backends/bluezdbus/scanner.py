@@ -310,7 +310,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                     manufacturer_data=_manufacturer_data,
                     service_data=_service_data,
                     service_uuids=_service_uuids,
-                    platform_data=(device, message)
+                    platform_data=(device, message),
                 )
 
                 self._callback(advertisement_data)
