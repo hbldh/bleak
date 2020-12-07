@@ -716,15 +716,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     char_specifier
                 )
             )
-        await self._bus.callRemote(
-            characteristic.path,
-            "StartNotify",
-            interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-            signature="",
-            body=[],
-            returnSignature="",
-        ).asFuture(asyncio.get_event_loop())
 
         if _wrap:
             self._notification_callbacks[
@@ -740,6 +731,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )  # noqa | E123 error in flake8...
 
         self._subscriptions.append(characteristic.handle)
+
+        await self._bus.callRemote(
+            characteristic.path,
+            "StartNotify",
+            interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature="",
+            body=[],
+            returnSignature="",
+        ).asFuture(asyncio.get_event_loop())
 
     async def stop_notify(
         self,

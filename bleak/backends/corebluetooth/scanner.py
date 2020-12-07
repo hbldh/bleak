@@ -3,6 +3,8 @@ import logging
 import pathlib
 from typing import Callable, Union, List
 
+from Foundation import NSArray
+
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
@@ -102,7 +104,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def get_discovered_devices(self) -> List[BLEDevice]:
         found = []
         peripherals = self._manager.central_manager.retrievePeripheralsWithIdentifiers_(
-            self._identifiers.keys()
+            NSArray(self._identifiers.keys()),
         )
 
         for i, peripheral in enumerate(peripherals):
