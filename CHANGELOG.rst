@@ -14,7 +14,8 @@ Fixed
 -----
 
 * Fixed use of bare exceptions.
-* Fixed #374 "BleakClientBlueZDBus.start_notify() misses initial notifications with fast Bluetooth devices"
+* Fixed #374 "BleakClientBlueZDBus.start_notify() misses initial notifications with fast Bluetooth devices".
+* Fixed ``BleakScanner.discover()`` on older versions of macOS. Fixes #331.
 
 Removed
 ~~~~~~~
