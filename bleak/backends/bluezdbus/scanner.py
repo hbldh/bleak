@@ -227,6 +227,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         Keyword Args:
             device (str): Bluetooth device to use for discovery.
+            filters (dict): A dict of filters to be applied on discovery.
 
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.
@@ -235,7 +236,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         device_identifier = device_identifier.lower()
         loop = asyncio.get_event_loop()
         stop_scanning_event = asyncio.Event()
-        scanner = cls(timeout=timeout)
+        scanner = cls(timeout=timeout, **kwargs)
 
         def stop_if_detected(message):
             if any(
