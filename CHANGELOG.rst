@@ -12,12 +12,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 ~~~~~
+
 * Added AdvertisementData class used with detection callbacks across all supported platforms. Merge #334
 
 Changed
 ~~~~~~~
 
-* Update minimum PyObjC version to 7.0.1.
+* Updated minimum PyObjC version to 7.0.1.
+* Consolidated implementation of BleakScanner.register_detection_callback().
+  All platforms now take callback with single AdvertisementData argument.
 
 Fixed
 ~~~~~
