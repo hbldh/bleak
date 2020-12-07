@@ -9,7 +9,7 @@ import re
 import subprocess
 import uuid
 import warnings
-from functools import wraps, partial
+from functools import wraps
 from typing import Callable, Union
 
 from twisted.internet.error import ConnectionDone
@@ -878,7 +878,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     task = asyncio.get_event_loop().create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
-                            partial(self._disconnected_callback, self)
+                            lambda _: self._disconnected_callback(self)
                         )
 
 
