@@ -111,3 +111,62 @@ class BaseBleakScanner(abc.ABC):
             await self.stop()
 
         return device
+
+
+class AdvertisementData:
+    """
+    Wrapper around the advertisement data that each platform returns upon discovery
+    """
+
+    def __init__(self, address, **kwargs):
+        """
+        Required Args:
+            address (str): The platform specific address of the device
+
+        Keyword Args:
+            local_name (str): The name of the ble device advertising
+            rssi (int): Rssi value of the device
+            manufacturer_data (dict): Manufacturer data from the device
+            service_data (dict): Service data from the device
+            service_uuids (list): UUIDs associated with the device
+            platform_data (tuple): Tuple of platform specific advertisement data
+        """
+        # Platform specific address of the device
+        self.address = address
+
+        # The local name of the device
+        self.local_name = kwargs.get("local_name", None)
+
+        # Integer RSSI value from the device
+        self.rssi = kwargs.get("rssi", 0)
+
+        # Dictionary of manufacturer data in bytes
+        self.manufacturer_data = kwargs.get("manufacturer_data", {})
+
+        # Dictionary of service data
+        self.service_data = kwargs.get("service_data", {})
+
+        # List of UUIDs
+        self.service_uuids = kwargs.get("service_uuids", [])
+
+        # Tuple of platform specific data
+        self.platform_data = kwargs.get("platform_data", ())
+
+    def __str__(self):
+        return repr(self)
+
+    def __repr__(self) -> str:
+        kwargs = ""
+        if self.local_name:
+            kwargs += f", local_name={repr(self.local_name)}"
+        if self.rssi:
+            kwargs += f", rssi={repr(self.rssi)}"
+        if self.manufacturer_data:
+            kwargs += f", manufacturer_data={repr(self.manufacturer_data)}"
+        if self.service_data:
+            kwargs += f", service_data={repr(self.service_data)}"
+        if self.service_uuids:
+            kwargs += f", service_uuids={repr(self.service_uuids)}"
+        if self.platform_data:
+            kwargs += f", platform_data={repr(self.platform_data)}"
+        return f"AdvertisementData({repr(self.address)}{kwargs})"
