@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 --------------
 
+Added
+~~~~~
+* Added AdvertisementData class used with detection callbacks across all supported platforms. Merge #334
+
 Changed
 -------
 Update minimum PyObjC version to 7.0.1.
