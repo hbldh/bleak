@@ -2,6 +2,7 @@ import logging
 import asyncio
 import pathlib
 from typing import Callable, Union, List
+from uuid import UUID
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.utils import BleakDataReader
@@ -77,7 +78,11 @@ class BleakScannerDotNet(BaseBleakScanner):
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
-    def _received_handler(self, sender, event_args):
+    def _received_handler(
+        self,
+        sender: BluetoothLEAdvertisementWatcher,
+        event_args: BluetoothLEAdvertisementReceivedEventArgs,
+    ):
         if sender == self.watcher:
             logger.debug("Received {0}.".format(_format_event_args(event_args)))
             if (
@@ -91,22 +96,48 @@ class BleakScannerDotNet(BaseBleakScanner):
                     self._devices[event_args.BluetoothAddress] = event_args
         if self._callback is not None:
             # Get a "BLEDevice" from parse_event args
-            temporary_device = self.parse_eventargs(event_args)
+            device = self.parse_eventargs(event_args)
+
+            # Decode service data
+            service_data = {}
+            # 0x16 is service data with 16-bit UUID
+            for section in event_args.Advertisement.GetSectionsByType(0x16):
+                with BleakDataReader(section.Data) as reader:
+                    data = reader.read()
+                    service_data[
+                        f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                    ] = data[2:]
+            # 0x20 is service data with 32-bit UUID
+            for section in event_args.Advertisement.GetSectionsByType(0x20):
+                with BleakDataReader(section.Data) as reader:
+                    data = reader.read()
+                    service_data[
+                        f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                    ] = data[4:]
+            # 0x21 is service data with 128-bit UUID
+            for section in event_args.Advertisement.GetSectionsByType(0x21):
+                with BleakDataReader(section.Data) as reader:
+                    data = reader.read()
+                    service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
 
             # Use the BLEDevice to populate all the fields for the advertisement data to return
             advertisement_data = AdvertisementData(
-                address=temporary_device.address,
-                local_name=temporary_device.name or "Unknown",
-                rssi=temporary_device.rssi,
-                manufacturer_data=temporary_device.metadata["manufacturer_data"],
-                service_data=event_args.Advertisement.GetSectionsByType(0x16),
-                service_uuids=temporary_device.metadata["uuids"],
+                address=device.address,
+                local_name=device.name or "Unknown",
+                rssi=device.rssi,
+                manufacturer_data=device.metadata["manufacturer_data"],
+                service_data=service_data,
+                service_uuids=device.metadata["uuids"],
                 platform_data=(sender, event_args),
             )
 
             self._callback(advertisement_data)
 
-    def _stopped_handler(self, sender, e):
+    def _stopped_handler(
+        self,
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    ):
         if sender == self.watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
@@ -118,17 +149,23 @@ class BleakScannerDotNet(BaseBleakScanner):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.ScanningMode = self._scanning_mode
 
+        event_loop = asyncio.get_event_loop()
+
         self._received_token = self.watcher.add_Received(
             TypedEventHandler[
                 BluetoothLEAdvertisementWatcher,
                 BluetoothLEAdvertisementReceivedEventArgs,
-            ](self._received_handler)
+            ](
+                lambda s, e: event_loop.call_soon_threadsafe(
+                    self._received_handler, s, e
+                )
+            )
         )
         self._stopped_token = self.watcher.add_Stopped(
             TypedEventHandler[
                 BluetoothLEAdvertisementWatcher,
                 BluetoothLEAdvertisementWatcherStoppedEventArgs,
-            ](self._stopped_handler)
+            ](lambda s, e: event_loop.call_soon_threadsafe(self._stopped_handler, s, e))
         )
 
         if self._signal_strength_filter is not None:

@@ -153,4 +153,20 @@ class AdvertisementData:
         self.platform_data = kwargs.get("platform_data", ())
 
     def __str__(self):
-        return "Advertisement data for device at addr: {0}".format(self.address)
+        return repr(self)
+
+    def __repr__(self) -> str:
+        kwargs = ""
+        if self.local_name:
+            kwargs += f", local_name={repr(self.local_name)}"
+        if self.rssi:
+            kwargs += f", rssi={repr(self.rssi)}"
+        if self.manufacturer_data:
+            kwargs += f", manufacturer_data={repr(self.manufacturer_data)}"
+        if self.service_data:
+            kwargs += f", service_data={repr(self.service_data)}"
+        if self.service_uuids:
+            kwargs += f", service_uuids={repr(self.service_uuids)}"
+        if self.platform_data:
+            kwargs += f", platform_data={repr(self.platform_data)}"
+        return f"AdvertisementData({repr(self.address)}{kwargs})"

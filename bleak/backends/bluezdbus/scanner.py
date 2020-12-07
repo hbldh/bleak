@@ -36,7 +36,7 @@ def _filter_on_device(objs):
 
 def _device_info(path, props):
     try:
-        name = props.get("Name", props.get("Alias", path.split("/")[-1]))
+        name = props.get("Alias", "Unknown")
         address = props.get("Address", None)
         if address is None:
             try:
@@ -278,6 +278,43 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 if msg_path in self._devices
                 else changed
             )
+
+            if self._callback is not None:
+                device = self._devices[msg_path]
+
+                # Get all the information wanted to pack in the advertisement data
+                _address = device["Address"]
+                _local_name = changed.get("Alias", device["Alias"])
+                # TODO: Look into BlueZ AdvertisementData property to get the local name
+                #  (see https://github.com/bluez/bluez/blob/master/doc/device-api.txt#L260)
+                _manufacturer_data = {
+                    k: bytes(v)
+                    for k, v in changed.get(
+                        "ManufacturerData", device.get("ManufacturerData", {})
+                    ).items()
+                }
+                _service_data = {
+                    k: bytes(v)
+                    for k, v in changed.get(
+                        "ServiceData", device.get("ServiceData", {})
+                    ).items()
+                }
+                _service_uuids = changed.get("UUIDs", device.get("UUIDs", []))
+                _rssi = changed.get("RSSI", device.get("RSSI", 0))
+
+                # Pack the advertisement data
+                advertisement_data = AdvertisementData(
+                    address=_address,
+                    local_name=_local_name,
+                    rssi=_rssi,
+                    manufacturer_data=_manufacturer_data,
+                    service_data=_service_data,
+                    service_uuids=_service_uuids,
+                    platform_data=(device, message)
+                )
+
+                self._callback(advertisement_data)
+
         elif (
             message.member == "InterfacesRemoved"
             and message.body[1][0] == defs.BATTERY_INTERFACE
@@ -301,36 +338,3 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 *_device_info(msg_path, self._devices.get(msg_path))
             )
         )
-
-        if self._callback is not None:
-            discovery_data = message.body[1]
-
-            # Get all the information wanted to pack in the advertisement data
-            _address = discovery_data["Address"]
-
-            _local_name = discovery_data.get("Name", "Unknown")
-
-            _manufacturer_data = discovery_data.get("ManufacturerData", {})
-
-            _service_data = discovery_data.get("ServiceData", {})
-
-            _service_uuids = discovery_data.get("UUIDs", [])
-
-            _rssi = discovery_data.get("RSSI", 0)
-
-            # Pack the advertisement data
-            advertisement_data = AdvertisementData(
-                address=_address,
-                local_name=_local_name,
-                rssi=_rssi,
-                manufacturer_data=_manufacturer_data,
-                service_data=_service_data,
-                service_uuids=_service_uuids,
-                platform_data=(message,),
-            )
-
-            self._callback(advertisement_data)
-
-            logger.info(
-                "Advertisement Data was an unexpected format, unable to safely trigger callback"
-            )
