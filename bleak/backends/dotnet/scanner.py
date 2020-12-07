@@ -2,10 +2,12 @@ import logging
 import asyncio
 import pathlib
 from typing import Callable, Union, List
+from uuid import UUID
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.utils import BleakDataReader
-from bleak.backends.scanner import BaseBleakScanner
+from bleak.exc import BleakError, BleakDotNetTaskError
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 # Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices
 from BleakBridge import Bridge  # noqa: F401
@@ -93,12 +95,48 @@ class BleakScannerDotNet(BaseBleakScanner):
                 if event_args.BluetoothAddress not in self._devices:
                     self._devices[event_args.BluetoothAddress] = event_args
         if self._callback is not None:
-            self._callback(sender, event_args)
+            # Get a "BLEDevice" from parse_event args
+            device = self.parse_eventargs(event_args)
+
+            # Decode service data
+            service_data = {}
+            # 0x16 is service data with 16-bit UUID
+            for section in event_args.Advertisement.GetSectionsByType(0x16):
+                with BleakDataReader(section.Data) as reader:
+                    data = reader.read()
+                    service_data[
+                        f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                    ] = data[2:]
+            # 0x20 is service data with 32-bit UUID
+            for section in event_args.Advertisement.GetSectionsByType(0x20):
+                with BleakDataReader(section.Data) as reader:
+                    data = reader.read()
+                    service_data[
+                        f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                    ] = data[4:]
+            # 0x21 is service data with 128-bit UUID
+            for section in event_args.Advertisement.GetSectionsByType(0x21):
+                with BleakDataReader(section.Data) as reader:
+                    data = reader.read()
+                    service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+
+            # Use the BLEDevice to populate all the fields for the advertisement data to return
+            advertisement_data = AdvertisementData(
+                address=device.address,
+                local_name=device.name or "Unknown",
+                rssi=device.rssi,
+                manufacturer_data=device.metadata["manufacturer_data"],
+                service_data=service_data,
+                service_uuids=device.metadata["uuids"],
+                platform_data=(sender, event_args),
+            )
+
+            self._callback(advertisement_data)
 
     def _stopped_handler(
         self,
         sender: BluetoothLEAdvertisementWatcher,
-        event_args: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
     ):
         if sender == self.watcher:
             logger.debug(
@@ -274,7 +312,8 @@ class BleakScannerDotNet(BaseBleakScanner):
         stop_scanning_event = asyncio.Event()
         scanner = cls(timeout=timeout)
 
-        def stop_if_detected(sender, event_args):
+        def stop_if_detected(advertisement_data: AdvertisementData):
+            event_args = advertisement_data.platform_data[1]
             if event_args.BluetoothAddress == ulong_id:
                 loop.call_soon_threadsafe(stop_scanning_event.set)
 

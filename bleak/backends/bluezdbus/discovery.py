@@ -35,7 +35,7 @@ def _filter_on_device(objs):
 
 def _device_info(path, props):
     try:
-        name = props.get("Name", props.get("Alias", path.split("/")[-1]))
+        name = props.get("Alias", "Unknown")
         address = props.get("Address", None)
         if address is None:
             try:

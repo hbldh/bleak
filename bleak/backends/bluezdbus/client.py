@@ -9,7 +9,7 @@ import re
 import subprocess
 import uuid
 import warnings
-from functools import wraps, partial
+from functools import wraps
 from typing import Callable, Union
 
 from twisted.internet.error import ConnectionDone
@@ -487,7 +487,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     interface=defs.DEVICE_INTERFACE
                 )
                 # Simulate regular characteristics read to be consistent over all platforms.
-                value = bytearray(props.get("Name", "").encode("ascii"))
+                value = bytearray(props.get("Alias", "").encode("ascii"))
                 logger.debug(
                     "Read Device Name {0} | {1}: {2}".format(
                         char_specifier, self._device_path, value
@@ -884,7 +884,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     task = asyncio.get_event_loop().create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
-                            partial(self._disconnected_callback, self)
+                            lambda _: self._disconnected_callback(self)
                         )
 
 

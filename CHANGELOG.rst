@@ -10,20 +10,26 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 --------------
 
+Added
+~~~~~
+
+* Added AdvertisementData class used with detection callbacks across all supported platforms. Merge #334
+
 Changed
--------
+~~~~~~~
 
 * Updated minimum PyObjC version to 7.0.1.
 * Renamed "device" kwarg to "adapter" in BleakClient and BleakScanner. Fixes
   #381.
 
 Fixed
------
+~~~~~
 
 * Fixed use of bare exceptions.
 * Fixed #374 "BleakClientBlueZDBus.start_notify() misses initial notifications with fast Bluetooth devices".
 * Fix event callbacks on Windows not running in asyncio event loop thread.
 * Fixed ``BleakScanner.discover()`` on older versions of macOS. Fixes #331.
+* Fixed disconnect callback on BlueZ backend.
 * Fixed kwargs ignored in BleakScanner.find_device_by_address() in BlueZ backend.
   Fixes #360.
 
