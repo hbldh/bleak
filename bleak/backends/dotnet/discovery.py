@@ -17,13 +17,18 @@ from bleak.backends.device import BLEDevice
 from BleakBridge import Bridge  # noqa: F401
 
 from System import Array, Object
-from Windows.Devices import Enumeration
 from Windows.Devices.Bluetooth.Advertisement import (
     BluetoothLEAdvertisementWatcher,
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementType,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementWatcherStoppedEventArgs,
+)
+from Windows.Devices.Enumeration import (
+    DeviceInformation,
+    DeviceInformationUpdate,
+    DeviceInformationKind,
+    DeviceWatcher,
 )
 from Windows.Foundation import TypedEventHandler
 
@@ -73,7 +78,10 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
         except Exception:
             return e.BluetoothAddress
 
-    def _received_handler(sender, e):
+    def _received_handler(
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementReceivedEventArgs,
+    ):
         if sender == watcher:
             logger.debug("Received {0}.".format(_format_event_args(e)))
             if e.AdvertisementType == BluetoothLEAdvertisementType.ScanResponse:
@@ -83,7 +91,10 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
                 if e.BluetoothAddress not in devices:
                     devices[e.BluetoothAddress] = e
 
-    def _stopped_handler(sender, e):
+    def _stopped_handler(
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    ):
         if sender == watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
@@ -91,17 +102,19 @@ async def discover(timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
                 )
             )
 
+    event_loop = asyncio.get_event_loop()
+
     received_token = watcher.add_Received(
         TypedEventHandler[
             BluetoothLEAdvertisementWatcher,
             BluetoothLEAdvertisementReceivedEventArgs,
-        ](_received_handler)
+        ](lambda s, e: event_loop.call_soon_threadsafe(_received_handler, s, e))
     )
     stopped_token = watcher.add_Stopped(
         TypedEventHandler[
             BluetoothLEAdvertisementWatcher,
             BluetoothLEAdvertisementWatcherStoppedEventArgs,
-        ](_stopped_handler)
+        ](lambda s, e: event_loop.call_soon_threadsafe(_stopped_handler, s, e))
     )
 
     watcher.ScanningMode = BluetoothLEScanningMode.Active
@@ -175,10 +188,10 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
     aqs_all_bluetooth_le_devices = (
         '(System.Devices.Aep.ProtocolId:="' '{bb7bb05e-5972-42b5-94fc-76eaa7084d49}")'
     )
-    watcher = Enumeration.DeviceInformation.CreateWatcher(
+    watcher = DeviceInformation.CreateWatcher(
         aqs_all_bluetooth_le_devices,
         requested_properties,
-        Enumeration.DeviceInformationKind.AssociationEndpoint,
+        DeviceInformationKind.AssociationEndpoint,
     )
 
     devices = {}
@@ -191,14 +204,14 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
         except Exception:
             return d.Id
 
-    def _added_handler(sender, dinfo):
+    def _added_handler(sender: DeviceWatcher, dinfo: DeviceInformation):
         if sender == watcher:
 
             logger.debug("Added {0}.".format(_format_device_info(dinfo)))
             if dinfo.Id not in devices:
                 devices[dinfo.Id] = dinfo
 
-    def _updated_handler(sender, dinfo_update):
+    def _updated_handler(sender: DeviceWatcher, dinfo_update: DeviceInformationUpdate):
         if sender == watcher:
             if dinfo_update.Id in devices:
                 logger.debug(
@@ -206,7 +219,7 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
                 )
                 devices[dinfo_update.Id].Update(dinfo_update)
 
-    def _removed_handler(sender, dinfo_update):
+    def _removed_handler(sender: DeviceWatcher, dinfo_update: DeviceInformationUpdate):
         if sender == watcher:
             logger.debug(
                 "Removed {0}.".format(_format_device_info(devices[dinfo_update.Id]))
@@ -214,7 +227,7 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
             if dinfo_update.Id in devices:
                 devices.pop(dinfo_update.Id)
 
-    def _enumeration_completed_handler(sender, obj):
+    def _enumeration_completed_handler(sender: DeviceWatcher, _: Object):
         if sender == watcher:
             logger.debug(
                 "{0} devices found. Enumeration completed. Watching for updates...".format(
@@ -222,7 +235,7 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
                 )
             )
 
-    def _stopped_handler(sender, obj):
+    def _stopped_handler(sender: DeviceWatcher, _: Object):
         if sender == watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
@@ -230,28 +243,34 @@ async def discover_by_enumeration(timeout: float = 5.0, **kwargs) -> List[BLEDev
                 )
             )
 
+    event_loop = asyncio.get_event_loop()
+
     added_token = watcher.add_Added(
-        TypedEventHandler[Enumeration.DeviceWatcher, Enumeration.DeviceInformation](
-            _added_handler
+        TypedEventHandler[DeviceWatcher, DeviceInformation](
+            lambda s, e: event_loop.call_soon_threadsafe(_added_handler, s, e)
         )
     )
     updated_token = watcher.add_Updated(
-        TypedEventHandler[
-            Enumeration.DeviceWatcher, Enumeration.DeviceInformationUpdate
-        ](_updated_handler)
+        TypedEventHandler[DeviceWatcher, DeviceInformationUpdate](
+            lambda s, e: event_loop.call_soon_threadsafe(_updated_handler, s, e)
+        )
     )
     removed_token = watcher.add_Removed(
-        TypedEventHandler[
-            Enumeration.DeviceWatcher, Enumeration.DeviceInformationUpdate
-        ](_removed_handler)
+        TypedEventHandler[DeviceWatcher, DeviceInformationUpdate](
+            lambda s, e: event_loop.call_soon_threadsafe(_removed_handler, s, e)
+        )
     )
     enumeration_completed_token = watcher.add_EnumerationCompleted(
-        TypedEventHandler[Enumeration.DeviceWatcher, Object](
-            _enumeration_completed_handler
+        TypedEventHandler[DeviceWatcher, Object](
+            lambda s, e: event_loop.call_soon_threadsafe(
+                _enumeration_completed_handler, s, e
+            )
         )
     )
     stopped_token = watcher.add_Stopped(
-        TypedEventHandler[Enumeration.DeviceWatcher, Object](_stopped_handler)
+        TypedEventHandler[DeviceWatcher, Object](
+            lambda s, e: event_loop.call_soon_threadsafe(_stopped_handler, s, e)
+        )
     )
 
     # Watcher works outside of the Python process.

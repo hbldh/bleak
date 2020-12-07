@@ -10,11 +10,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 --------------
 
+Changed
+-------
+Update minimum PyObjC version to 7.0.1.
+
 Fixed
 -----
 
 * Fixed use of bare exceptions.
 * Fixed #374 "BleakClientBlueZDBus.start_notify() misses initial notifications with fast Bluetooth devices".
+* Fix event callbacks on Windows not running in asyncio event loop thread.
 * Fixed ``BleakScanner.discover()`` on older versions of macOS. Fixes #331.
 
 Removed
