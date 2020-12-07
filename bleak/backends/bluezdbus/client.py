@@ -42,12 +42,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
+        disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
+        adapter (str): Bluetooth adapter to use for discovery.
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
-        self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
+        # kwarg "device" is for backwards compatibility
+        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
 
         # Backend specific, TXDBus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -88,7 +92,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
             device = await BleakScannerBlueZDBus.find_device_by_address(
-                self.address, timeout=timeout, device=self.device
+                self.address, timeout=timeout, adapter=self._adapter
             )
 
             if device:
@@ -121,7 +125,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
         logger.debug(
-            "Connecting to BLE device @ {0} with {1}".format(self.address, self.device)
+            "Connecting to BLE device @ {0} with {1}".format(
+                self.address, self._adapter
+            )
         )
         try:
             await self._bus.callRemote(
@@ -289,7 +295,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         ).asFuture(asyncio.get_event_loop())
 
         logger.debug(
-            "Pairing to BLE device @ {0} with {1}".format(self.address, self.device)
+            "Pairing to BLE device @ {0} with {1}".format(self.address, self._adapter)
         )
         try:
             await self._bus.callRemote(
@@ -864,7 +870,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
         elif message.body[0] == defs.DEVICE_INTERFACE:
             device_path = "/org/bluez/%s/dev_%s" % (
-                self.device,
+                self._adapter,
                 self.address.replace(":", "_"),
             )
             if message.path.lower() == device_path.lower():

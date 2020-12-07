@@ -12,7 +12,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Changed
 -------
-Update minimum PyObjC version to 7.0.1.
+
+* Updated minimum PyObjC version to 7.0.1.
+* Renamed "device" kwarg to "adapter" in BleakClient and BleakScanner. Fixes
+  #381.
 
 Fixed
 -----

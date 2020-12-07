@@ -63,7 +63,7 @@ async def discover(timeout=5.0, **kwargs):
         timeout (float): Duration to scan for.
 
     Keyword Args:
-        device (str): Bluetooth device to use for discovery.
+        adapter (str): Bluetooth adapter to use for discovery.
         filters (dict): A dict of filters to be applied on discovery.
 
     Returns:
@@ -71,7 +71,8 @@ async def discover(timeout=5.0, **kwargs):
         of nearby devices.
 
     """
-    device = kwargs.get("device", "hci0")
+    # kwarg "device" is for backwards compatibility
+    adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
     loop = asyncio.get_event_loop()
     cached_devices = {}
     devices = {}
@@ -170,7 +171,7 @@ async def discover(timeout=5.0, **kwargs):
         interface=defs.OBJECT_MANAGER_INTERFACE,
         destination=defs.BLUEZ_SERVICE,
     ).asFuture(loop)
-    adapter_path, interface = _filter_on_adapter(objects, device)
+    adapter_path, _ = _filter_on_adapter(objects, adapter)
     cached_devices = dict(_filter_on_device(objects))
 
     # Running Discovery loop.
