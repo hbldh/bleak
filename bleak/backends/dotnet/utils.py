@@ -9,6 +9,9 @@ import asyncio
 
 from bleak.exc import BleakDotNetTaskError
 
+# Import of BleakBridge to enable loading of winrt bindings
+from BleakBridge import Bridge  # noqa: F401
+
 # Python for .NET CLR imports
 from System import Action
 from System.Threading.Tasks import Task
