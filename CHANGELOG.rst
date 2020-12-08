@@ -27,6 +27,7 @@ Fixed
 * Fix event callbacks on Windows not running in asyncio event loop thread.
 * Fixed ``BleakScanner.discover()`` on older versions of macOS. Fixes #331.
 * Fixed disconnect callback on BlueZ backend.
+* Fixed calling BleakClient.is_connected() on Mac before connection.
 
 Removed
 ~~~~~~~
