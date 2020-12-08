@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import pathlib
-from typing import Callable, Union, List
+from typing import Union, List
 from uuid import UUID
 
 from bleak.backends.device import BLEDevice
@@ -63,8 +63,6 @@ class BleakScannerDotNet(BaseBleakScanner):
         self.watcher = None
         self._devices = {}
         self._scan_responses = {}
-
-        self._callback = None
 
         self._received_token = None
         self._stopped_token = None
@@ -234,20 +232,6 @@ class BleakScannerDotNet(BaseBleakScanner):
         return BLEDevice(
             bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
         )
-
-    def register_detection_callback(self, callback: Callable):
-        """Set a function to act as Received Event Handler.
-
-        Documentation for the Event Handler:
-        https://docs.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher.received
-
-        Args:
-            callback: Function accepting two arguments:
-             sender (``Windows.Devices.Bluetooth.AdvertisementBluetoothLEAdvertisementWatcher``) and
-             eventargs (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementReceivedEventArgs``)
-
-        """
-        self._callback = callback
 
     # Windows specific
 

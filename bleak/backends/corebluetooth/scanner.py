@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import pathlib
-from typing import Callable, Union, List
+from typing import Union, List
 
 from Foundation import NSArray
 
@@ -33,7 +33,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(self, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
-        self._callback = None
         self._identifiers = None
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout = kwargs.get("timeout", 5.0)
@@ -44,6 +43,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         def callback(p, a, r):
             # update identifiers for scanned device
             self._identifiers.setdefault(p.identifier(), {}).update(a)
+
+            if not self._callback:
+                return
 
             # Process service data
             service_data_dict_raw = a.get("kCBAdvDataServiceData", {})
@@ -141,18 +143,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             )
 
         return found
-
-    def register_detection_callback(self, callback: Callable):
-        """Set a function to act as callback on discovered devices or devices with changed properties.
-
-        Args:
-            callback: Function accepting three arguments:
-             peripheral
-             advertisementData
-             rssi
-
-        """
-        self._callback = callback
 
     @classmethod
     async def find_device_by_address(
