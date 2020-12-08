@@ -82,6 +82,8 @@ elif platform.system() == "Windows":
     from bleak.backends.dotnet.discovery import discover  # noqa
     from bleak.backends.dotnet.scanner import BleakScannerDotNet as BleakScanner  # noqa
     from bleak.backends.dotnet.client import BleakClientDotNet as BleakClient  # noqa
+else:
+    raise BleakError(f"Unsupported platform: {platform.system()}")
 
 
 def cli():

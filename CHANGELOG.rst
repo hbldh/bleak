@@ -12,7 +12,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 ~~~~~
+
 * Added AdvertisementData class used with detection callbacks across all supported platforms. Merge #334
+* Added BleakError raised during import on unsupported platforms.
 
 Changed
 ~~~~~~~
