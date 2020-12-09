@@ -29,8 +29,9 @@ from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
 
 
 # CLR imports
-# Import of Bleak CLR->UWP Bridge.
-import BleakBridge  # noqa: F401
+
+# Import of BleakBridge to enable loading of winrt bindings
+from BleakBridge import Bridge  # noqa: F401
 
 # Import of other CLR components needed.
 from System import UInt64, Object

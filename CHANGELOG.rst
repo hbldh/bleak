@@ -14,6 +14,7 @@ Added
 ~~~~~
 
 * Added AdvertisementData class used with detection callbacks across all supported platforms. Merge #334
+* Added BleakError raised during import on unsupported platforms.
 
 Changed
 ~~~~~~~
@@ -37,6 +38,7 @@ Removed
 
 * Removed duplicate definition of BLEDevice in BlueZ backend.
 * Removed unused imports.
+* Removed separate implementation of global ``discover`` method.
 
 
 `0.9.1`_ (2020-10-22)

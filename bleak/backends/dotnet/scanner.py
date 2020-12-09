@@ -8,7 +8,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.utils import BleakDataReader
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
-# Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices
+# Import of BleakBridge to enable loading of winrt bindings
 from BleakBridge import Bridge  # noqa: F401
 
 from Windows.Devices.Bluetooth.Advertisement import (
