@@ -226,7 +226,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         stop_scanning_event = asyncio.Event()
         scanner = cls(timeout=timeout)
 
-        def stop_if_detected(advertisement_data: AdvertisementData):
+        def stop_if_detected(d: BLEDevice, advertisement_data: AdvertisementData):
             if any(
                 device.get("Address", "").lower() == device_identifier
                 for device in scanner._devices.values()
@@ -269,41 +269,35 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 else changed
             )
 
-            if self._callback is not None:
-                device = self._devices[msg_path]
+            if self._callback is None:
+                return
 
-                # Get all the information wanted to pack in the advertisement data
-                _address = device["Address"]
-                _local_name = changed.get("Alias", device["Alias"])
-                # TODO: Look into BlueZ AdvertisementData property to get the local name
-                #  (see https://github.com/bluez/bluez/blob/master/doc/device-api.txt#L260)
-                _manufacturer_data = {
-                    k: bytes(v)
-                    for k, v in changed.get(
-                        "ManufacturerData", device.get("ManufacturerData", {})
-                    ).items()
-                }
-                _service_data = {
-                    k: bytes(v)
-                    for k, v in changed.get(
-                        "ServiceData", device.get("ServiceData", {})
-                    ).items()
-                }
-                _service_uuids = changed.get("UUIDs", device.get("UUIDs", []))
-                _rssi = changed.get("RSSI", device.get("RSSI", 0))
+            props = self._devices[msg_path]
 
-                # Pack the advertisement data
-                advertisement_data = AdvertisementData(
-                    address=_address,
-                    local_name=_local_name,
-                    rssi=_rssi,
-                    manufacturer_data=_manufacturer_data,
-                    service_data=_service_data,
-                    service_uuids=_service_uuids,
-                    platform_data=(device, message),
-                )
+            # Get all the information wanted to pack in the advertisement data
+            _local_name = props.get("Name")
+            _manufacturer_data = {
+                k: bytes(v) for k, v in props.get("ManufacturerData", {}).items()
+            }
+            _service_data = {
+                k: bytes(v) for k, v in props.get("ServiceData", {}).items()
+            }
+            _service_uuids = props.get("UUIDs", [])
 
-                self._callback(advertisement_data)
+            # Pack the advertisement data
+            advertisement_data = AdvertisementData(
+                local_name=_local_name,
+                manufacturer_data=_manufacturer_data,
+                service_data=_service_data,
+                service_uuids=_service_uuids,
+                platform_data=(props, message),
+            )
+
+            device = BLEDevice(
+                props["Address"], props["Alias"], props, props.get("RSSI", 0)
+            )
+
+            self._callback(device, advertisement_data)
 
         elif (
             message.member == "InterfacesRemoved"

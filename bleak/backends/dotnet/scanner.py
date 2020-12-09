@@ -91,44 +91,45 @@ class BleakScannerDotNet(BaseBleakScanner):
             else:
                 if event_args.BluetoothAddress not in self._devices:
                     self._devices[event_args.BluetoothAddress] = event_args
-        if self._callback is not None:
-            # Get a "BLEDevice" from parse_event args
-            device = self.parse_eventargs(event_args)
 
-            # Decode service data
-            service_data = {}
-            # 0x16 is service data with 16-bit UUID
-            for section in event_args.Advertisement.GetSectionsByType(0x16):
-                with BleakDataReader(section.Data) as reader:
-                    data = reader.read()
-                    service_data[
-                        f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
-                    ] = data[2:]
-            # 0x20 is service data with 32-bit UUID
-            for section in event_args.Advertisement.GetSectionsByType(0x20):
-                with BleakDataReader(section.Data) as reader:
-                    data = reader.read()
-                    service_data[
-                        f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
-                    ] = data[4:]
-            # 0x21 is service data with 128-bit UUID
-            for section in event_args.Advertisement.GetSectionsByType(0x21):
-                with BleakDataReader(section.Data) as reader:
-                    data = reader.read()
-                    service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+        if self._callback is None:
+            return
 
-            # Use the BLEDevice to populate all the fields for the advertisement data to return
-            advertisement_data = AdvertisementData(
-                address=device.address,
-                local_name=device.name or "Unknown",
-                rssi=device.rssi,
-                manufacturer_data=device.metadata["manufacturer_data"],
-                service_data=service_data,
-                service_uuids=device.metadata["uuids"],
-                platform_data=(sender, event_args),
-            )
+        # Get a "BLEDevice" from parse_event args
+        device = self.parse_eventargs(event_args)
 
-            self._callback(advertisement_data)
+        # Decode service data
+        service_data = {}
+        # 0x16 is service data with 16-bit UUID
+        for section in event_args.Advertisement.GetSectionsByType(0x16):
+            with BleakDataReader(section.Data) as reader:
+                data = reader.read()
+                service_data[
+                    f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                ] = data[2:]
+        # 0x20 is service data with 32-bit UUID
+        for section in event_args.Advertisement.GetSectionsByType(0x20):
+            with BleakDataReader(section.Data) as reader:
+                data = reader.read()
+                service_data[
+                    f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                ] = data[4:]
+        # 0x21 is service data with 128-bit UUID
+        for section in event_args.Advertisement.GetSectionsByType(0x21):
+            with BleakDataReader(section.Data) as reader:
+                data = reader.read()
+                service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+
+        # Use the BLEDevice to populate all the fields for the advertisement data to return
+        advertisement_data = AdvertisementData(
+            local_name=device.name,
+            manufacturer_data=device.metadata["manufacturer_data"],
+            service_data=service_data,
+            service_uuids=device.metadata["uuids"],
+            platform_data=(sender, event_args),
+        )
+
+        self._callback(device, advertisement_data)
 
     def _stopped_handler(
         self,
@@ -296,7 +297,7 @@ class BleakScannerDotNet(BaseBleakScanner):
         stop_scanning_event = asyncio.Event()
         scanner = cls(timeout=timeout)
 
-        def stop_if_detected(advertisement_data: AdvertisementData):
+        def stop_if_detected(d: BLEDevice, advertisement_data: AdvertisementData):
             event_args = advertisement_data.platform_data[1]
             if event_args.BluetoothAddress == ulong_id:
                 loop.call_soon_threadsafe(stop_scanning_event.set)

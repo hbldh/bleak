@@ -22,7 +22,7 @@ Changed
 
 * Updated minimum PyObjC version to 7.0.1.
 * Consolidated implementation of BleakScanner.register_detection_callback().
-  All platforms now take callback with single AdvertisementData argument.
+  All platforms now take callback with BLEDevice and AdvertisementData arguments.
 
 Fixed
 ~~~~~

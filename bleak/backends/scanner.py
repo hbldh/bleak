@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import inspect
 from typing import Callable, Dict, List, Optional, Tuple
 
 from bleak.backends.device import BLEDevice
@@ -10,27 +11,17 @@ class AdvertisementData:
     Wrapper around the advertisement data that each platform returns upon discovery
     """
 
-    def __init__(self, address: str, **kwargs):
+    def __init__(self, **kwargs):
         """
-        Required Args:
-            address (str): The platform specific address of the device
-
         Keyword Args:
             local_name (str): The name of the ble device advertising
-            rssi (int): Rssi value of the device
             manufacturer_data (dict): Manufacturer data from the device
             service_data (dict): Service data from the device
             service_uuids (list): UUIDs associated with the device
             platform_data (tuple): Tuple of platform specific advertisement data
         """
-        # Platform specific address of the device
-        self.address: str = address
-
         # The local name of the device
         self.local_name: Optional[str] = kwargs.get("local_name", None)
-
-        # Integer RSSI value from the device
-        self.rssi: int = kwargs.get("rssi", 0)
 
         # Dictionary of manufacturer data in bytes
         self.manufacturer_data: Dict[int, bytes] = kwargs.get("manufacturer_data", {})
@@ -44,24 +35,20 @@ class AdvertisementData:
         # Tuple of platform specific data
         self.platform_data: Tuple = kwargs.get("platform_data", ())
 
-    def __str__(self) -> str:
-        return repr(self)
-
     def __repr__(self) -> str:
-        kwargs = ""
+        kwargs = []
         if self.local_name:
-            kwargs += f", local_name={repr(self.local_name)}"
-        if self.rssi:
-            kwargs += f", rssi={repr(self.rssi)}"
+            kwargs.append(f"local_name={repr(self.local_name)}")
         if self.manufacturer_data:
-            kwargs += f", manufacturer_data={repr(self.manufacturer_data)}"
+            kwargs.append(f"manufacturer_data={repr(self.manufacturer_data)}")
         if self.service_data:
-            kwargs += f", service_data={repr(self.service_data)}"
+            kwargs.append(f"service_data={repr(self.service_data)}")
         if self.service_uuids:
-            kwargs += f", service_uuids={repr(self.service_uuids)}"
-        if self.platform_data:
-            kwargs += f", platform_data={repr(self.platform_data)}"
-        return f"AdvertisementData({repr(self.address)}{kwargs})"
+            kwargs.append(f"service_uuids={repr(self.service_uuids)}")
+        return f"AdvertisementData({', '.join(kwargs)})"
+
+
+AdvertisementDataCallback = Callable[[BLEDevice, AdvertisementData], None]
 
 
 class BaseBleakScanner(abc.ABC):
@@ -98,16 +85,27 @@ class BaseBleakScanner(abc.ABC):
         return devices
 
     def register_detection_callback(
-        self, callback: Optional[Callable[[AdvertisementData], None]]
+        self, callback: Optional[AdvertisementDataCallback]
     ) -> None:
         """Register a callback that is called when a device is discovered or has a property changed.
 
         If another callback has already been registered, it will be replaced with ``callback``.
+        ``None`` can be used to remove the current callback.
+
+        The ``callback`` is a function that takes two arguments: :class:`BLEDevice` and :class:`AdvertisementData`.
 
         Args:
-            callback: A function that takes one argument which will be an :class:`AdvertisementData` object
-                      or ``None`` remove an existing callback.
+            callback: A function or ``None``.
         """
+        if callback is not None:
+            error_text = "callback must be callable with 2 parameters"
+            if not callable(callback):
+                raise TypeError(error_text)
+
+            handler_signature = inspect.signature(callback)
+            if len(handler_signature.parameters) != 2:
+                raise TypeError(error_text)
+
         self._callback = callback
 
     @abc.abstractmethod
