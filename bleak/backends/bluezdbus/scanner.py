@@ -197,6 +197,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                     address,
                     name,
                     {"path": path, "props": props},
+                    props.get("RSSI", 0),
                     uuids=uuids,
                     manufacturer_data=manufacturer_data,
                 )

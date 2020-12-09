@@ -229,8 +229,9 @@ class BleakScannerDotNet(BaseBleakScanner):
             with BleakDataReader(m.Data) as reader:
                 data[m.CompanyId] = reader.read()
         local_name = event_args.Advertisement.LocalName
+        rssi = event_args.RawSignalStrengthInDBm
         return BLEDevice(
-            bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
+            bdaddr, local_name, event_args, rssi, uuids=uuids, manufacturer_data=data
         )
 
     # Windows specific

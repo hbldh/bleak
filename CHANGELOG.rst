@@ -15,6 +15,7 @@ Added
 
 * Added AdvertisementData class used with detection callbacks across all supported platforms. Merge #334
 * Added BleakError raised during import on unsupported platforms.
+* Added rssi parameter to BLEDevice constructor.
 
 Changed
 ~~~~~~~
