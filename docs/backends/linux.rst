@@ -16,7 +16,7 @@ Special handling for ``write_gatt_char``
 
 The ``type`` option to the ``Characteristic.WriteValue``
 method was added to
-`Bluez in 5.50 <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a>`_
+`Bluez in 5.51 <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a>`_
 Before that commit, ``Characteristic.WriteValue`` was only "Write with response".
 
 ``Characteristic.AcquireWrite`` was added in

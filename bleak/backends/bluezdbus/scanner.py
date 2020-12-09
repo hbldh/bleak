@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import pathlib
-from typing import Callable, List
+from typing import List
 
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 from bleak.backends.device import BLEDevice
@@ -83,8 +83,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         self._adapter_path = None
         self._interface = None
-
-        self._callback = None
 
     async def start(self):
         loop = asyncio.get_event_loop()
@@ -205,15 +203,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 )
             )
         return discovered_devices
-
-    def register_detection_callback(self, callback: Callable):
-        """Set a function to be called on each device discovery by scanner and when a discovered device has a changed property.
-
-        Args:
-            callback: Function accepting one argument of type ``txdbus.message.SignalMessage``
-
-        """
-        self._callback = callback
 
     @classmethod
     async def find_device_by_address(

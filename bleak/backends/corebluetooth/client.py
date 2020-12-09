@@ -120,7 +120,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def is_connected(self) -> bool:
         """Checks for current active connection"""
         manager = self._central_manager_delegate
-        return manager.isConnected
+        return False if manager is None else manager.isConnected
 
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.
