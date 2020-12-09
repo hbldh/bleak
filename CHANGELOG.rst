@@ -29,6 +29,7 @@ Changed
 * Renamed "device" kwarg to "adapter" in BleakClient and BleakScanner. Fixes
   #381.
 * Changed ``BleakScanner.set_scanning_filter()`` from async method to normal method.
+* Changed BlueZ backend to use dbus-next instead of txdbus.
 
 Fixed
 ~~~~~

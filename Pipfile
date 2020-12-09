@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 dbus-next = {version = ">=0.2.2", sys_platform = "== 'linux'"}
-txdbus = {version = ">=1.1.1", sys_platform = "== 'linux'"}
 pyobjc-core = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pyobjc-framework-CoreBluetooth = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pyobjc-framework-libdispatch = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
