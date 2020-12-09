@@ -27,6 +27,7 @@ Changed
 * Consolidated BleakScanner.find_device_by_address() implementations.
 * Renamed "device" kwarg to "adapter" in BleakClient and BleakScanner. Fixes
   #381.
+* Changed ``BleakScanner.set_scanning_filter()`` from async method to normal method.
 
 Fixed
 ~~~~~

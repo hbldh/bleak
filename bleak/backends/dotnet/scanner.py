@@ -72,8 +72,9 @@ class BleakScannerDotNet(BaseBleakScanner):
         else:
             self._scanning_mode = BluetoothLEScanningMode.Active
 
-        self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
-        self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
+        self._signal_strength_filter = None
+        self._advertisement_filter = None
+        self.set_scanning_filter(**kwargs)
 
     def _received_handler(
         self,
@@ -185,7 +186,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         self.watcher = None
 
-    async def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs):
         """Set a scanning filter for the BleakScanner.
 
         Keyword Args:

@@ -77,9 +77,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._rules = list()
 
         # Discovery filters
-        self._filters = kwargs.get("filters", {})
-        if "Transport" not in self._filters:
-            self._filters["Transport"] = "le"
+        self._filters = {}
+        self.set_scanning_filter(**kwargs)
 
         self._adapter_path = None
         self._interface = None
@@ -164,7 +163,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._bus = None
         self._reactor = None
 
-    async def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs):
         """Sets OS level scanning filters for the BleakScanner.
 
         For possible values for `filters`, see the parameters to the

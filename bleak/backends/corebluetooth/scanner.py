@@ -87,7 +87,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         except Exception as e:
             logger.warning("stopScan method could not be called: {0}".format(e))
 
-    async def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs):
         """Set scanning filter for the scanner.
 
         .. note::
