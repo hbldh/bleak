@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 from uuid import UUID
-from typing import List, Union, Iterator
+from typing import Dict, List, Union, Iterator
 
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
@@ -90,17 +90,17 @@ class BleakGATTServiceCollection(object):
         return iter(self.services.values())
 
     @property
-    def services(self) -> dict:
+    def services(self) -> Dict[str, BleakGATTService]:
         """Returns dictionary of UUID strings to BleakGATTService"""
         return self.__services
 
     @property
-    def characteristics(self) -> dict:
+    def characteristics(self) -> Dict[int, BleakGATTCharacteristic]:
         """Returns dictionary of handles to BleakGATTCharacteristic"""
         return self.__characteristics
 
     @property
-    def descriptors(self) -> dict:
+    def descriptors(self) -> Dict[int, BleakGATTDescriptor]:
         """Returns a dictionary of integer handles to BleakGATTDescriptor"""
         return self.__descriptors
 

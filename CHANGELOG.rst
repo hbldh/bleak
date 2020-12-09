@@ -17,6 +17,7 @@ Added
 * Added BleakError raised during import on unsupported platforms.
 * Added rssi parameter to BLEDevice constructor.
 * Added detection_callback kwarg to BleakScanner constructor.
+* Added more specific type hints for BleakGATTServiceCollection properties.
 
 Changed
 ~~~~~~~
