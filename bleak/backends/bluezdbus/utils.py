@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import re
+from typing import Any, Dict
 
-from bleak.uuids import uuidstr_to_str
+from dbus_next.signature import Variant
 
 from bleak.backends.bluezdbus import defs
+from bleak.uuids import uuidstr_to_str
+
 
 _mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
@@ -46,3 +49,21 @@ def format_GATT_object(object_path, interfaces):
     return "\n{0}\n\t{1}\n\t{2}\n\t{3}".format(
         _type, object_path, _uuid, uuidstr_to_str(_uuid)
     )
+
+
+def unpack_variants(dictionary: Dict[str, Variant]) -> Dict[str, Any]:
+    """Recursively unpacks all ``Variant`` types in a dictionary to their
+    corresponding Python types.
+
+    ``dbus-next`` doesn't automatically do this, so this needs to be called on
+    all dictionaries ("a{sv}") returned from D-Bus messages.
+    """
+    unpacked = {}
+    for k, v in dictionary.items():
+        v = v.value
+        if isinstance(v, dict):
+            v = unpack_variants(v)
+        elif isinstance(v, list):
+            v = [x.value if isinstance(x, Variant) else x for x in v]
+        unpacked[k] = v
+    return unpacked

@@ -20,6 +20,7 @@ AUTHOR = "Henrik Blidh"
 
 REQUIRED = [
     # Linux reqs
+    'dbus-next;platform_system=="Linux"',
     'txdbus;platform_system=="Linux"',
     # macOS reqs
     'pyobjc-core;platform_system=="Darwin"',

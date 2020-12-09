@@ -1,37 +1,19 @@
 import logging
 import asyncio
-import pathlib
-from typing import List
+from typing import Any, Dict, List, Optional
 
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from dbus_next.aio import MessageBus
+from dbus_next.constants import BusType, MessageType
+from dbus_next.message import Message
+from dbus_next.signature import Variant
+
+from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
+from bleak.backends.bluezdbus.utils import unpack_variants, validate_mac_address
 from bleak.backends.device import BLEDevice
-from bleak.backends.bluezdbus import defs, get_reactor
-from bleak.backends.bluezdbus.utils import validate_mac_address
-from txdbus import client
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 logger = logging.getLogger(__name__)
-_here = pathlib.Path(__file__).parent
-
-
-def _filter_on_adapter(objs, pattern="hci0"):
-    for path, interfaces in objs.items():
-        adapter = interfaces.get("org.bluez.Adapter1")
-        if adapter is None:
-            continue
-
-        if not pattern or pattern == adapter["Address"] or path.endswith(pattern):
-            return path, interfaces
-
-    raise Exception("Bluetooth adapter not found")
-
-
-def _filter_on_device(objs):
-    for path, interfaces in objs.items():
-        device = interfaces.get("org.bluez.Device1")
-        if device is None:
-            continue
-
-        yield path, device
 
 
 def _device_info(path, props):
@@ -66,93 +48,110 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     def __init__(self, **kwargs):
         super(BleakScannerBlueZDBus, self).__init__(**kwargs)
-
         # kwarg "device" is for backwards compatibility
         self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
-        self._reactor = None
-        self._bus = None
 
-        self._cached_devices = {}
-        self._devices = {}
-        self._rules = list()
+        self._bus: Optional[MessageBus] = None
+        self._cached_devices: Dict[str, Variant] = {}
+        self._devices: Dict[str, Any] = {}
+        self._rules: List[MatchRules] = []
+        self._adapter_path: str = f"/org/bluez/{self._adapter}"
 
         # Discovery filters
-        self._filters = {}
+        self._filters: Dict[str, Variant] = {}
         self.set_scanning_filter(**kwargs)
 
-        self._adapter_path = None
-        self._interface = None
-
     async def start(self):
-        loop = asyncio.get_event_loop()
-        self._reactor = get_reactor(loop)
-        self._bus = await client.connect(self._reactor, "system").asFuture(loop)
+        self._bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
 
         # Add signal listeners
-        self._rules.append(
-            await self._bus.addMatch(
-                self.parse_msg,
-                interface="org.freedesktop.DBus.ObjectManager",
-                member="InterfacesAdded",
-            ).asFuture(loop)
-        )
 
-        self._rules.append(
-            await self._bus.addMatch(
-                self.parse_msg,
-                interface="org.freedesktop.DBus.ObjectManager",
-                member="InterfacesRemoved",
-            ).asFuture(loop)
-        )
+        self._bus.add_message_handler(self._parse_msg)
 
-        self._rules.append(
-            await self._bus.addMatch(
-                self.parse_msg,
-                interface="org.freedesktop.DBus.Properties",
-                member="PropertiesChanged",
-            ).asFuture(loop)
+        rules = MatchRules(
+            interface=defs.OBJECT_MANAGER_INTERFACE,
+            member="InterfacesAdded",
+            arg0path=f"{self._adapter_path}/",
         )
+        reply = await add_match(self._bus, rules)
+        assert reply.message_type == MessageType.METHOD_RETURN
+        self._rules.append(rules)
+
+        rules = MatchRules(
+            interface=defs.OBJECT_MANAGER_INTERFACE,
+            member="InterfacesRemoved",
+            arg0path=f"{self._adapter_path}/",
+        )
+        reply = await add_match(self._bus, rules)
+        assert reply.message_type == MessageType.METHOD_RETURN
+        self._rules.append(rules)
+
+        rules = MatchRules(
+            interface=defs.PROPERTIES_INTERFACE,
+            member="PropertiesChanged",
+            path_namespace=self._adapter_path,
+        )
+        reply = await add_match(self._bus, rules)
+        assert reply.message_type == MessageType.METHOD_RETURN
+        self._rules.append(rules)
 
         # Find the HCI device to use for scanning and get cached device properties
-        objects = await self._bus.callRemote(
-            "/",
-            "GetManagedObjects",
-            interface=defs.OBJECT_MANAGER_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-        ).asFuture(loop)
-        self._adapter_path, self._interface = _filter_on_adapter(objects, self._adapter)
-        self._cached_devices = dict(_filter_on_device(objects))
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path="/",
+                member="GetManagedObjects",
+                interface=defs.OBJECT_MANAGER_INTERFACE,
+            )
+        )
+        assert reply.message_type == MessageType.METHOD_RETURN
+
+        # get only the device interface
+        self._cached_devices = {
+            path: unpack_variants(interfaces[defs.DEVICE_INTERFACE])
+            for path, interfaces in reply.body[0].items()
+            if defs.DEVICE_INTERFACE in interfaces
+        }
 
         # Apply the filters
-        await self._bus.callRemote(
-            self._adapter_path,
-            "SetDiscoveryFilter",
-            interface="org.bluez.Adapter1",
-            destination="org.bluez",
-            signature="a{sv}",
-            body=[self._filters],
-        ).asFuture(loop)
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=self._adapter_path,
+                interface=defs.ADAPTER_INTERFACE,
+                member="SetDiscoveryFilter",
+                signature="a{sv}",
+                body=[self._filters],
+            )
+        )
+        assert reply.message_type == MessageType.METHOD_RETURN
 
         # Start scanning
-        await self._bus.callRemote(
-            self._adapter_path,
-            "StartDiscovery",
-            interface="org.bluez.Adapter1",
-            destination="org.bluez",
-        ).asFuture(loop)
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=self._adapter_path,
+                interface=defs.ADAPTER_INTERFACE,
+                member="StartDiscovery",
+            )
+        )
+        assert reply.message_type == MessageType.METHOD_RETURN
 
     async def stop(self):
-        loop = asyncio.get_event_loop()
-        await self._bus.callRemote(
-            self._adapter_path,
-            "StopDiscovery",
-            interface="org.bluez.Adapter1",
-            destination="org.bluez",
-        ).asFuture(loop)
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=self._adapter_path,
+                interface=defs.ADAPTER_INTERFACE,
+                member="StopDiscovery",
+            )
+        )
+        assert reply.message_type == MessageType.METHOD_RETURN
 
         for rule in self._rules:
-            await self._bus.delMatch(rule).asFuture(loop)
+            await remove_match(self._bus, rule)
         self._rules.clear()
+        self._bus.remove_message_handler(self._parse_msg)
 
         # Try to disconnect the System Bus.
         try:
@@ -174,9 +173,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             filters (dict): A dict of filters to be applied on discovery.
 
         """
-        self._filters = kwargs.get("filters", {})
+        self._filters = {k: Variant(v) for k, v in kwargs.get("filters", {}).items()}
         if "Transport" not in self._filters:
-            self._filters["Transport"] = "le"
+            self._filters["Transport"] = Variant("s", "le")
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         # Reduce output.
@@ -206,40 +205,71 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     # Helper methods
 
-    def parse_msg(self, message):
+    def _update_devices(self, path: str, properties: Dict[str, Variant]):
+        """Update the active devices based on the new properties.
+
+        Args:
+            path: The D-Bus path of the device.
+            properties: New properties for this device.
+        """
+        # if this is the first time we have seen this device, use the cached
+        # properties from ObjectManager.GetManagedObjects as a starting point
+        # if they exist
+        if path not in self._devices:
+            self._devices[path] = {}
+            self._update_devices(path, self._cached_devices.get(path, {}))
+
+        # then update the existing properties with the new ones
+        self._devices[path].update(properties)
+
+    def _parse_msg(self, message: Message):
         if message.member == "InterfacesAdded":
+            # if a new device is discovered while we are scanning, add it to
+            # the discovered devices list
+
             msg_path = message.body[0]
-            try:
-                device_interface = message.body[1].get(defs.DEVICE_INTERFACE, {})
-            except Exception as e:
-                raise e
-            self._devices[msg_path] = (
-                {**self._devices[msg_path], **device_interface}
-                if msg_path in self._devices
-                else device_interface
+            device_interface = unpack_variants(
+                message.body[1].get(defs.DEVICE_INTERFACE, {})
+            )
+            self._update_devices(msg_path, device_interface)
+            logger.debug(
+                "{0}, {1} ({2}): {3}".format(
+                    message.member, message.interface, message.path, message.body
+                )
+            )
+        elif message.member == "InterfacesRemoved":
+            # if a device disappears while we are scanning, remove it from the
+            # discovered devices list
+
+            msg_path = message.body[0]
+            del self._devices[msg_path]
+            logger.debug(
+                "{0}, {1} ({2}): {3}".format(
+                    message.member, message.interface, message.path, message.body
+                )
             )
         elif message.member == "PropertiesChanged":
-            iface, changed, invalidated = message.body
-            if iface != defs.DEVICE_INTERFACE:
+            # Property change events basically mean that new advertising data
+            # was received or the RSSI changed. Either way, it lets us know
+            # that the device is active and we can add it to the discovered
+            # devices list.
+
+            if message.body[0] != defs.DEVICE_INTERFACE:
                 return
 
-            msg_path = message.path
-            # the PropertiesChanged signal only sends changed properties, so we
-            # need to get remaining properties from cached_devices. However, we
-            # don't want to add all cached_devices to the devices dict since
-            # they may not actually be nearby or powered on.
-            if msg_path not in self._devices and msg_path in self._cached_devices:
-                self._devices[msg_path] = self._cached_devices[msg_path]
-            self._devices[msg_path] = (
-                {**self._devices[msg_path], **changed}
-                if msg_path in self._devices
-                else changed
+            changed = unpack_variants(message.body[1])
+            self._update_devices(message.path, changed)
+
+            logger.debug(
+                "{0}, {1} ({2} dBm), Object Path: {3}".format(
+                    *_device_info(message.path, self._devices.get(message.path))
+                )
             )
 
             if self._callback is None:
                 return
 
-            props = self._devices[msg_path]
+            props = self._devices[message.path]
 
             # Get all the information wanted to pack in the advertisement data
             _local_name = props.get("Name")
@@ -265,27 +295,3 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             )
 
             self._callback(device, advertisement_data)
-
-        elif (
-            message.member == "InterfacesRemoved"
-            and message.body[1][0] == defs.BATTERY_INTERFACE
-        ):
-            logger.debug(
-                "{0}, {1} ({2}): {3}".format(
-                    message.member, message.interface, message.path, message.body
-                )
-            )
-            return
-        else:
-            msg_path = message.path
-            logger.debug(
-                "{0}, {1} ({2}): {3}".format(
-                    message.member, message.interface, message.path, message.body
-                )
-            )
-
-        logger.debug(
-            "{0}, {1} ({2} dBm), Object Path: {3}".format(
-                *_device_info(msg_path, self._devices.get(msg_path))
-            )
-        )
