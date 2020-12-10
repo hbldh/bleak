@@ -88,7 +88,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
             device = await BleakScannerBlueZDBus.find_device_by_address(
-                self.address, timeout=timeout, device=self.device
+                self.address, timeout=timeout
             )
 
             if device:

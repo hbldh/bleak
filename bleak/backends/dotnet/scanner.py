@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import pathlib
-from typing import Union, List
+from typing import List
 from uuid import UUID
 
 from bleak.backends.device import BLEDevice
@@ -260,48 +260,3 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         """
         return self.watcher.Status if self.watcher else None
-
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> Union[BLEDevice, None]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
-
-        Args:
-
-            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-
-            timeout (float): Optional timeout to wait for detection of specified peripheral
-              before giving up. Defaults to 10.0 seconds.
-
-        Keyword Args:
-
-          scanning mode (str): Set to ``Passive`` to avoid the ``Active`` scanning mode.
-
-          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
-            BluetoothSignalStrengthFilter object used for configuration of Bluetooth LE advertisement
-            filtering that uses signal strength-based filtering.
-
-          AdvertisementFilter (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter``): A
-            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-            advertisement filtering that uses payload section-based filtering.
-
-        Returns:
-
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-
-        ulong_id = int(device_identifier.replace(":", ""), 16)
-        loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event()
-        scanner = cls(timeout=timeout)
-
-        def stop_if_detected(d: BLEDevice, advertisement_data: AdvertisementData):
-            event_args = advertisement_data.platform_data[1]
-            if event_args.BluetoothAddress == ulong_id:
-                loop.call_soon_threadsafe(stop_scanning_event.set)
-
-        return await scanner._find_device_by_address(
-            device_identifier, stop_scanning_event, stop_if_detected, timeout
-        )

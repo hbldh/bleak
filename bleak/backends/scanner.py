@@ -140,7 +140,6 @@ class BaseBleakScanner(abc.ABC):
         raise NotImplementedError()
 
     @classmethod
-    @abc.abstractmethod
     async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0
     ) -> BLEDevice:
@@ -154,27 +153,20 @@ class BaseBleakScanner(abc.ABC):
             The ``BLEDevice`` sought or ``None`` if not detected.
 
         """
-        raise NotImplementedError()
+        device_identifier = device_identifier.lower()
+        stop_scanning_event = asyncio.Event()
 
-    async def _find_device_by_address(
-        self, device_identifier, stop_scanning_event, stop_if_detected_callback, timeout
-    ):
-        """Internal method for performing find by address work."""
+        def stop_if_detected(d: BLEDevice, ad: AdvertisementData):
+            if d.address.lower() == device_identifier:
+                stop_scanning_event.set()
 
-        self.register_detection_callback(stop_if_detected_callback)
-
-        await self.start()
-        try:
-            await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
-        except asyncio.TimeoutError:
-            device = None
-        else:
-            device = next(
+        async with cls(timeout=timeout, detection_callback=stop_if_detected) as scanner:
+            try:
+                await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+            except asyncio.TimeoutError:
+                return None
+            return next(
                 d
-                for d in await self.get_discovered_devices()
-                if d.address.lower() == device_identifier.lower()
+                for d in await scanner.get_discovered_devices()
+                if d.address.lower() == device_identifier
             )
-        finally:
-            await self.stop()
-
-        return device

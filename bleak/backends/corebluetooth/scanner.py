@@ -1,7 +1,6 @@
-import asyncio
 import logging
 import pathlib
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from Foundation import NSArray
 from CoreBluetooth import CBPeripheral
@@ -144,35 +143,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             )
 
         return found
-
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> Union[BLEDevice, None]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by macOS UUID address.
-
-        Args:
-            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-
-        Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-        loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event()
-        device_identifier = device_identifier.lower()
-        scanner = cls(timeout=timeout)
-
-        def stop_if_detected(d: BLEDevice, advertisement_data: AdvertisementData):
-            peripheral = advertisement_data.platform_data[0]
-
-            if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
-                loop.call_soon_threadsafe(stop_scanning_event.set)
-
-        return await scanner._find_device_by_address(
-            device_identifier, stop_scanning_event, stop_if_detected, timeout
-        )
 
     # macOS specific methods
 

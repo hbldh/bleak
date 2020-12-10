@@ -204,39 +204,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             )
         return discovered_devices
 
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> BLEDevice:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
-
-        Args:
-            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-
-        Keyword Args:
-            device (str): Bluetooth device to use for discovery.
-
-        Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-        device_identifier = device_identifier.lower()
-        loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event()
-        scanner = cls(timeout=timeout)
-
-        def stop_if_detected(d: BLEDevice, advertisement_data: AdvertisementData):
-            if any(
-                device.get("Address", "").lower() == device_identifier
-                for device in scanner._devices.values()
-            ):
-                loop.call_soon_threadsafe(stop_scanning_event.set)
-
-        return await scanner._find_device_by_address(
-            device_identifier, stop_scanning_event, stop_if_detected, timeout
-        )
-
     # Helper methods
 
     def parse_msg(self, message):
