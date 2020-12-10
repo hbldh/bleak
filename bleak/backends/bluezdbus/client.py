@@ -71,6 +71,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._subscriptions: List[int] = []
         # provides synchronization between get_services() and PropertiesChanged signal
         self._services_resolved_event: Optional[asyncio.Event] = None
+        # used to ensure device gets disconnected if event loop crashes
+        self._disconnect_event: Optional[asyncio.Event] = None
 
         # get BlueZ version
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
@@ -254,6 +256,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     "Connection to {0} was not successful!".format(self.address)
                 )
 
+            # Create a task that runs until the device is disconnected.
+            self._disconnect_event = asyncio.Event()
+            asyncio.create_task(self._disconnect_monitor())
+
             # Get all services. This means making the actual connection.
             await self.get_services()
 
@@ -261,6 +267,34 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except BaseException:
             await self._cleanup_all()
             raise
+
+    async def _disconnect_monitor(self) -> None:
+        # This task runs until the device is disconnected. If the task is
+        # cancelled, it probably means that the event loop crashed so we
+        # try to disconnected the device. Otherwise BlueZ will keep the device
+        # connected even after Python exits. This will only work if the event
+        # loop is called with asyncio.run() or otherwise runs pending tasks
+        # after the original event loop stops. This will also cause an exception
+        # if a run loop is stopped before the device is disconnected since this
+        # task will still be running and asyncio compains if a loop with running
+        # tasks is stopped.
+        try:
+            await self._disconnect_event.wait()
+        except asyncio.CancelledError:
+            try:
+                # by using send() instead of call(), we ensure that the message
+                # gets sent, but we don't wait for a reply, which could take
+                # over one second while the device disconnects.
+                await self._bus.send(
+                    Message(
+                        destination=defs.BLUEZ_SERVICE,
+                        path=self._device_path,
+                        interface=defs.DEVICE_INTERFACE,
+                        member="Disconnect",
+                    )
+                )
+            except Exception:
+                pass
 
     async def _cleanup_notifications(self) -> None:
         """
@@ -875,6 +909,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 if "Connected" in changed and not changed["Connected"]:
                     logger.debug(f"Device {self.address} disconnected.")
+
+                    if self._disconnect_event:
+                        self._disconnect_event.set()
+                        self._disconnect_event = None
 
                     task = asyncio.get_event_loop().create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:

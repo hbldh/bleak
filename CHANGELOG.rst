@@ -18,6 +18,7 @@ Added
 * Added rssi parameter to BLEDevice constructor.
 * Added detection_callback kwarg to BleakScanner constructor.
 * Added more specific type hints for BleakGATTServiceCollection properties.
+* Added asyncio task to disconnect devices on event loop crash in BlueZ backend.
 
 Changed
 ~~~~~~~
