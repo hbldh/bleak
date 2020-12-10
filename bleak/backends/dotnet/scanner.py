@@ -122,7 +122,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
-            local_name=device.name,
+            local_name=event_args.Advertisement.LocalName,
             manufacturer_data=device.metadata["manufacturer_data"],
             service_data=service_data,
             service_uuids=device.metadata["uuids"],
