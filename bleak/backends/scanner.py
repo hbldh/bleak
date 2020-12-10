@@ -56,7 +56,8 @@ class BaseBleakScanner(abc.ABC):
 
     def __init__(self, *args, **kwargs):
         super(BaseBleakScanner, self).__init__()
-        self._callback: Optional[Callable[[AdvertisementData], None]] = None
+        self._callback: Optional[AdvertisementDataCallback] = None
+        self.register_detection_callback(kwargs.get("detection_callback"))
 
     async def __aenter__(self):
         await self.start()

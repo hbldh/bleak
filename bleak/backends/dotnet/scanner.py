@@ -58,7 +58,7 @@ class BleakScannerDotNet(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerDotNet, self).__init__()
+        super(BleakScannerDotNet, self).__init__(**kwargs)
 
         self.watcher = None
         self._devices = {}

@@ -65,7 +65,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__()
+        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
 
         self._device = kwargs.get("device", "hci0")
         self._reactor = None
