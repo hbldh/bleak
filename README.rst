@@ -56,10 +56,10 @@ To discover Bluetooth devices that can be connected to:
 .. code-block:: python
 
     import asyncio
-    from bleak import discover
+    from bleak import BleakScanner
 
     async def run():
-        devices = await discover()
+        devices = await BleakScanner.discover()
         for d in devices:
             print(d)
 
