@@ -29,23 +29,20 @@ from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
 
 
 # CLR imports
-# Import of Bleak CLR->UWP Bridge.
-import BleakBridge  # noqa: F401
+
+# Import of BleakBridge to enable loading of winrt bindings
+from BleakBridge import Bridge  # noqa: F401
 
 # Import of other CLR components needed.
 from System import UInt64, Object
 from System.Runtime.InteropServices.WindowsRuntime import EventRegistrationToken
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
-from Windows.Storage.Streams import DataReader, DataWriter, IBuffer
 from Windows.Devices.Enumeration import (
     DevicePairingResult,
     DevicePairingResultStatus,
     DeviceUnpairingResult,
     DeviceUnpairingResultStatus,
     DevicePairingKinds,
-    DevicePairingProtectionLevel,
-    DeviceInformationCustomPairing,
-    DevicePairingRequestedEventArgs,
 )
 from Windows.Devices.Bluetooth import (
     BluetoothLEDevice,
@@ -54,11 +51,9 @@ from Windows.Devices.Bluetooth import (
     BluetoothAddressType,
 )
 from Windows.Devices.Bluetooth.GenericAttributeProfile import (
-    GattDeviceService,
     GattDeviceServicesResult,
     GattCharacteristic,
     GattCharacteristicsResult,
-    GattDescriptor,
     GattDescriptorsResult,
     GattCommunicationStatus,
     GattReadResult,
@@ -340,7 +335,7 @@ class BleakClientDotNet(BaseBleakClient):
 
             try:
                 custom_pairing.PairingRequested -= handler
-            except Exception as e:
+            except Exception:
                 # TODO: Find a way to remove WinRT events...
                 pass
             finally:
@@ -524,7 +519,7 @@ class BleakClientDotNet(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         use_cached=False,
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -749,7 +744,7 @@ class BleakClientDotNet(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         callback: Callable[[int, bytearray], None],
-        **kwargs
+        **kwargs,
     ) -> None:
         """Activate notifications/indications on a characteristic.
 

@@ -7,6 +7,49 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`0.10.0`_ (2020-12-11)
+----------------------
+
+Added
+~~~~~
+
+* Added ``AdvertisementData`` class used with detection callbacks across all
+  supported platforms. Merged #334.
+* Added ``BleakError`` raised during import on unsupported platforms.
+* Added ``rssi`` parameter to ``BLEDevice`` constructor.
+* Added ``detection_callback`` kwarg to ``BleakScanner`` constructor.
+
+Changed
+~~~~~~~
+
+* Updated minimum PyObjC version to 7.0.1.
+* Consolidated implementation of ``BleakScanner.register_detection_callback()``.
+  All platforms now take callback with ``BLEDevice`` and ``AdvertisementData``
+  arguments.
+* Consolidated ``BleakScanner.find_device_by_address()`` implementations.
+* Renamed "device" kwarg to "adapter" in BleakClient and BleakScanner. Fixes
+  #381.
+
+Fixed
+~~~~~
+
+* Fixed use of bare exceptions.
+* Fixed ``BleakClientBlueZDBus.start_notify()`` misses initial notifications with
+  fast Bluetooth devices. Fixed #374.
+* Fix event callbacks on Windows not running in asyncio event loop thread.
+* Fixed ``BleakScanner.discover()`` on older versions of macOS. Fixes #331.
+* Fixed disconnect callback on BlueZ backend.
+* Fixed calling ``BleakClient.is_connected()`` on Mac before connection.
+* Fixed kwargs ignored in ``BleakScanner.find_device_by_address()`` in BlueZ backend.
+  Fixes #360.
+
+Removed
+~~~~~~~
+
+* Removed duplicate definition of ``BLEDevice`` in BlueZ backend.
+* Removed unused imports.
+* Removed separate implementation of global ``discover`` method.
+
 
 `0.9.1`_ (2020-10-22)
 ---------------------
@@ -375,7 +418,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.9.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.10.0...develop
+.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.9.1
 .. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.1...v0.9.0
 .. _0.9.0: https://github.com/hbldh/bleak/compare/v0.9.0...v0.8.0
 .. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1

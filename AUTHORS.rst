@@ -15,4 +15,5 @@ Development Team / Collaborators
 Contributors
 ------------
 
-
+* Chad Spensky <chad@allthenticate.net>
+* Bernie Conrad <bernie@allthenticate.net>

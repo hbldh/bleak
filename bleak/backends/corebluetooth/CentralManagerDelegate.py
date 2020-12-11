@@ -44,7 +44,7 @@ CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 try:
     _mac_version = list(map(int, platform.mac_ver()[0].split(".")))
     _IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
-except:  # noqa For building docs
+except Exception:
     _mac_version = ""
     _IS_PRE_10_13 = False
 
@@ -228,7 +228,7 @@ class CentralManagerDelegate(NSObject):
             device = BLEDeviceCoreBluetooth(address, name, details, delegate=self)
             self.devices[uuid_string] = device
 
-        device._rssi = float(RSSI)
+        device.rssi = RSSI
         device._update(advertisementData)
 
         for callback in self.callbacks.values():

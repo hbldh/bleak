@@ -43,26 +43,24 @@ if platform.system() == "Linux":
                 "Bleak requires BlueZ >= 5.43. Found version {0} installed.".format(out)
             )
 
-    from bleak.backends.bluezdbus.discovery import discover  # noqa
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as BleakScanner,
-    )  # noqa
+    )  # noqa: F401
     from bleak.backends.bluezdbus.client import (
         BleakClientBlueZDBus as BleakClient,
-    )  # noqa
+    )  # noqa: F401
 elif platform.system() == "Darwin":
     try:
-        from CoreBluetooth import CBPeripheral
+        from CoreBluetooth import CBPeripheral  # noqa: F401
     except Exception as ex:
         raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
-    from bleak.backends.corebluetooth.discovery import discover  # noqa
     from bleak.backends.corebluetooth.scanner import (
         BleakScannerCoreBluetooth as BleakScanner,
-    )  # noqa
+    )  # noqa: F401
     from bleak.backends.corebluetooth.client import (
         BleakClientCoreBluetooth as BleakClient,
-    )  # noqa
+    )  # noqa: F401
 
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
@@ -79,9 +77,13 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    from bleak.backends.dotnet.discovery import discover  # noqa
     from bleak.backends.dotnet.scanner import BleakScannerDotNet as BleakScanner  # noqa
     from bleak.backends.dotnet.client import BleakClientDotNet as BleakClient  # noqa
+else:
+    raise BleakError(f"Unsupported platform: {platform.system()}")
+
+# for backward compatibility
+discover = BleakScanner.discover
 
 
 def cli():
@@ -93,14 +95,14 @@ def cli():
     parser = argparse.ArgumentParser(
         description="Perform Bluetooth Low Energy device scan"
     )
-    parser.add_argument("-i", dest="dev", default="hci0", help="HCI device")
+    parser.add_argument("-i", dest="adapter", default="hci0", help="HCI device")
     parser.add_argument(
         "-t", dest="timeout", type=int, default=5, help="Duration to scan for"
     )
     args = parser.parse_args()
 
     out = loop.run_until_complete(
-        ensure_future(discover(device=args.dev, timeout=float(args.timeout)))
+        ensure_future(discover(adapter=args.adapter, timeout=float(args.timeout)))
     )
     for o in out:
         print(str(o))

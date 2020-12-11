@@ -1,4 +1,4 @@
-from bleak import BleakClient, discover, BleakError
+from bleak import BleakClient
 import asyncio
 
 temperatureUUID = "45366e80-cf3a-11e1-9ab4-0002a5d5c51b"

@@ -6,6 +6,9 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
 
+# Import of BleakBridge to enable loading of winrt bindings
+from BleakBridge import Bridge  # noqa: F401
+
 from Windows.Devices.Bluetooth.GenericAttributeProfile import GattCharacteristic
 
 # Python representation of <class 'Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristicProperties'>

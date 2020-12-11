@@ -1,13 +1,12 @@
 import logging
 import asyncio
 import pathlib
-from typing import Callable, Any, Union, List
+from typing import List
 
-from bleak.backends.scanner import BaseBleakScanner
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 from bleak.backends.device import BLEDevice
 from bleak.backends.bluezdbus import defs, get_reactor
 from bleak.backends.bluezdbus.utils import validate_mac_address
-
 from txdbus import client
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ def _filter_on_device(objs):
 
 def _device_info(path, props):
     try:
-        name = props.get("Name", props.get("Alias", path.split("/")[-1]))
+        name = props.get("Alias", "Unknown")
         address = props.get("Address", None)
         if address is None:
             try:
@@ -48,8 +47,7 @@ def _device_info(path, props):
                 address = None
         rssi = props.get("RSSI", "?")
         return name, address, rssi, path
-    except Exception as e:
-        # logger.exception(e, exc_info=True)
+    except Exception:
         return None, None, None, None
 
 
@@ -61,15 +59,16 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
     Keyword Args:
-        device (str): Bluetooth device to use for discovery.
+        adapter (str): Bluetooth adapter to use for discovery.
         filters (dict): A dict of filters to be applied on discovery.
 
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__()
+        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
 
-        self._device = kwargs.get("device", "hci0")
+        # kwarg "device" is for backwards compatibility
+        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
         self._reactor = None
         self._bus = None
 
@@ -84,8 +83,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         self._adapter_path = None
         self._interface = None
-
-        self._callback = None
 
     async def start(self):
         loop = asyncio.get_event_loop()
@@ -124,7 +121,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             interface=defs.OBJECT_MANAGER_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
         ).asFuture(loop)
-        self._adapter_path, self._interface = _filter_on_adapter(objects, self._device)
+        self._adapter_path, self._interface = _filter_on_adapter(objects, self._adapter)
         self._cached_devices = dict(_filter_on_device(objects))
 
         # Apply the filters
@@ -201,53 +198,12 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                     address,
                     name,
                     {"path": path, "props": props},
+                    props.get("RSSI", 0),
                     uuids=uuids,
                     manufacturer_data=manufacturer_data,
                 )
             )
         return discovered_devices
-
-    def register_detection_callback(self, callback: Callable):
-        """Set a function to be called on each device discovery by scanner and when a discovered device has a changed property.
-
-        Args:
-            callback: Function accepting one argument of type ``txdbus.message.SignalMessage``
-
-        """
-        self._callback = callback
-
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> BLEDevice:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
-
-        Args:
-            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-
-        Keyword Args:
-            device (str): Bluetooth device to use for discovery.
-
-        Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-        device_identifier = device_identifier.lower()
-        loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event()
-        scanner = cls(timeout=timeout)
-
-        def stop_if_detected(message):
-            if any(
-                device.get("Address", "").lower() == device_identifier
-                for device in scanner._devices.values()
-            ):
-                loop.call_soon_threadsafe(stop_scanning_event.set)
-
-        return await scanner._find_device_by_address(
-            device_identifier, stop_scanning_event, stop_if_detected, timeout
-        )
 
     # Helper methods
 
@@ -280,6 +236,37 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 if msg_path in self._devices
                 else changed
             )
+
+            if self._callback is None:
+                return
+
+            props = self._devices[msg_path]
+
+            # Get all the information wanted to pack in the advertisement data
+            _local_name = props.get("Name")
+            _manufacturer_data = {
+                k: bytes(v) for k, v in props.get("ManufacturerData", {}).items()
+            }
+            _service_data = {
+                k: bytes(v) for k, v in props.get("ServiceData", {}).items()
+            }
+            _service_uuids = props.get("UUIDs", [])
+
+            # Pack the advertisement data
+            advertisement_data = AdvertisementData(
+                local_name=_local_name,
+                manufacturer_data=_manufacturer_data,
+                service_data=_service_data,
+                service_uuids=_service_uuids,
+                platform_data=(props, message),
+            )
+
+            device = BLEDevice(
+                props["Address"], props["Alias"], props, props.get("RSSI", 0)
+            )
+
+            self._callback(device, advertisement_data)
+
         elif (
             message.member == "InterfacesRemoved"
             and message.body[1][0] == defs.BATTERY_INTERFACE
@@ -303,6 +290,3 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 *_device_info(msg_path, self._devices.get(msg_path))
             )
         )
-
-        if self._callback is not None:
-            self._callback(message)

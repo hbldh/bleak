@@ -1,16 +1,14 @@
 import logging
 import asyncio
 import pathlib
-import uuid
-from functools import wraps
-from typing import Callable, Any, Union, List
+from typing import List
+from uuid import UUID
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.utils import BleakDataReader
-from bleak.exc import BleakError, BleakDotNetTaskError
-from bleak.backends.scanner import BaseBleakScanner
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
-# Import of Bleak CLR->UWP Bridge. It is not needed here, but it enables loading of Windows.Devices
+# Import of BleakBridge to enable loading of winrt bindings
 from BleakBridge import Bridge  # noqa: F401
 
 from Windows.Devices.Bluetooth.Advertisement import (
@@ -60,13 +58,11 @@ class BleakScannerDotNet(BaseBleakScanner):
     """
 
     def __init__(self, **kwargs):
-        super(BleakScannerDotNet, self).__init__()
+        super(BleakScannerDotNet, self).__init__(**kwargs)
 
         self.watcher = None
         self._devices = {}
         self._scan_responses = {}
-
-        self._callback = None
 
         self._received_token = None
         self._stopped_token = None
@@ -79,7 +75,11 @@ class BleakScannerDotNet(BaseBleakScanner):
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
-    def _received_handler(self, sender, event_args):
+    def _received_handler(
+        self,
+        sender: BluetoothLEAdvertisementWatcher,
+        event_args: BluetoothLEAdvertisementReceivedEventArgs,
+    ):
         if sender == self.watcher:
             logger.debug("Received {0}.".format(_format_event_args(event_args)))
             if (
@@ -91,10 +91,51 @@ class BleakScannerDotNet(BaseBleakScanner):
             else:
                 if event_args.BluetoothAddress not in self._devices:
                     self._devices[event_args.BluetoothAddress] = event_args
-        if self._callback is not None:
-            self._callback(sender, event_args)
 
-    def _stopped_handler(self, sender, event_args):
+        if self._callback is None:
+            return
+
+        # Get a "BLEDevice" from parse_event args
+        device = self.parse_eventargs(event_args)
+
+        # Decode service data
+        service_data = {}
+        # 0x16 is service data with 16-bit UUID
+        for section in event_args.Advertisement.GetSectionsByType(0x16):
+            with BleakDataReader(section.Data) as reader:
+                data = reader.read()
+                service_data[
+                    f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                ] = data[2:]
+        # 0x20 is service data with 32-bit UUID
+        for section in event_args.Advertisement.GetSectionsByType(0x20):
+            with BleakDataReader(section.Data) as reader:
+                data = reader.read()
+                service_data[
+                    f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                ] = data[4:]
+        # 0x21 is service data with 128-bit UUID
+        for section in event_args.Advertisement.GetSectionsByType(0x21):
+            with BleakDataReader(section.Data) as reader:
+                data = reader.read()
+                service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+
+        # Use the BLEDevice to populate all the fields for the advertisement data to return
+        advertisement_data = AdvertisementData(
+            local_name=event_args.Advertisement.LocalName,
+            manufacturer_data=device.metadata["manufacturer_data"],
+            service_data=service_data,
+            service_uuids=device.metadata["uuids"],
+            platform_data=(sender, event_args),
+        )
+
+        self._callback(device, advertisement_data)
+
+    def _stopped_handler(
+        self,
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    ):
         if sender == self.watcher:
             logger.debug(
                 "{0} devices found. Watcher status: {1}.".format(
@@ -106,17 +147,23 @@ class BleakScannerDotNet(BaseBleakScanner):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.ScanningMode = self._scanning_mode
 
+        event_loop = asyncio.get_event_loop()
+
         self._received_token = self.watcher.add_Received(
             TypedEventHandler[
                 BluetoothLEAdvertisementWatcher,
                 BluetoothLEAdvertisementReceivedEventArgs,
-            ](self._received_handler)
+            ](
+                lambda s, e: event_loop.call_soon_threadsafe(
+                    self._received_handler, s, e
+                )
+            )
         )
         self._stopped_token = self.watcher.add_Stopped(
             TypedEventHandler[
                 BluetoothLEAdvertisementWatcher,
                 BluetoothLEAdvertisementWatcherStoppedEventArgs,
-            ](self._stopped_handler)
+            ](lambda s, e: event_loop.call_soon_threadsafe(self._stopped_handler, s, e))
         )
 
         if self._signal_strength_filter is not None:
@@ -183,23 +230,10 @@ class BleakScannerDotNet(BaseBleakScanner):
             with BleakDataReader(m.Data) as reader:
                 data[m.CompanyId] = reader.read()
         local_name = event_args.Advertisement.LocalName
+        rssi = event_args.RawSignalStrengthInDBm
         return BLEDevice(
-            bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
+            bdaddr, local_name, event_args, rssi, uuids=uuids, manufacturer_data=data
         )
-
-    def register_detection_callback(self, callback: Callable):
-        """Set a function to act as Received Event Handler.
-
-        Documentation for the Event Handler:
-        https://docs.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.advertisement.bluetoothleadvertisementwatcher.received
-
-        Args:
-            callback: Function accepting two arguments:
-             sender (``Windows.Devices.Bluetooth.AdvertisementBluetoothLEAdvertisementWatcher``) and
-             eventargs (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementReceivedEventArgs``)
-
-        """
-        self._callback = callback
 
     # Windows specific
 
@@ -226,47 +260,3 @@ class BleakScannerDotNet(BaseBleakScanner):
 
         """
         return self.watcher.Status if self.watcher else None
-
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> Union[BLEDevice, None]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address.
-
-        Args:
-
-            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-
-            timeout (float): Optional timeout to wait for detection of specified peripheral
-              before giving up. Defaults to 10.0 seconds.
-
-        Keyword Args:
-
-          scanning mode (str): Set to ``Passive`` to avoid the ``Active`` scanning mode.
-
-          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
-            BluetoothSignalStrengthFilter object used for configuration of Bluetooth LE advertisement
-            filtering that uses signal strength-based filtering.
-
-          AdvertisementFilter (``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter``): A
-            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-            advertisement filtering that uses payload section-based filtering.
-
-        Returns:
-
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-
-        ulong_id = int(device_identifier.replace(":", ""), 16)
-        loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event()
-        scanner = cls(timeout=timeout)
-
-        def stop_if_detected(sender, event_args):
-            if event_args.BluetoothAddress == ulong_id:
-                loop.call_soon_threadsafe(stop_scanning_event.set)
-
-        return await scanner._find_device_by_address(
-            device_identifier, stop_scanning_event, stop_if_detected, timeout
-        )

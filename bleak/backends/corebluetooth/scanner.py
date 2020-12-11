@@ -1,14 +1,14 @@
 import logging
-import asyncio
 import pathlib
-import uuid
-from typing import Callable, Any, Union, List
+from typing import Any, Dict, List
+
+from Foundation import NSArray
+from CoreBluetooth import CBPeripheral
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner
-
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 logger = logging.getLogger(__name__)
 _here = pathlib.Path(__file__).parent
@@ -33,7 +33,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(self, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
-        self._callback = None
         self._identifiers = None
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout = kwargs.get("timeout", 5.0)
@@ -41,11 +40,42 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def start(self):
         self._identifiers = {}
 
-        def callback(p, a, r):
+        def callback(p: CBPeripheral, a: Dict[str, Any], r: int):
             # update identifiers for scanned device
             self._identifiers.setdefault(p.identifier(), {}).update(a)
-            if self._callback:
-                self._callback(p, a, r)
+
+            if not self._callback:
+                return
+
+            # Process service data
+            service_data_dict_raw = a.get("kCBAdvDataServiceData", {})
+            service_data = {
+                cb_uuid_to_str(k): bytes(v) for k, v in service_data_dict_raw.items()
+            }
+
+            # Process manufacturer data into a more friendly format
+            manufacturer_binary_data = a.get("kCBAdvDataManufacturerData")
+            manufacturer_data = {}
+            if manufacturer_binary_data:
+                manufacturer_id = int.from_bytes(
+                    manufacturer_binary_data[0:2], byteorder="little"
+                )
+                manufacturer_value = bytes(manufacturer_binary_data[2:])
+                manufacturer_data[manufacturer_id] = manufacturer_value
+
+            advertisement_data = AdvertisementData(
+                local_name=p.name(),
+                manufacturer_data=manufacturer_data,
+                service_data=service_data,
+                service_uuids=[
+                    cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
+                ],
+                platform_data=(p, a, r),
+            )
+
+            device = BLEDevice(p.identifier().UUIDString(), p.name(), p, r)
+
+            self._callback(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
         self._manager.start_scan({})
@@ -76,7 +106,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def get_discovered_devices(self) -> List[BLEDevice]:
         found = []
         peripherals = self._manager.central_manager.retrievePeripheralsWithIdentifiers_(
-            self._identifiers.keys(),
+            NSArray(self._identifiers.keys()),
         )
 
         for i, peripheral in enumerate(peripherals):
@@ -114,45 +144,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
         return found
 
-    def register_detection_callback(self, callback: Callable):
-        """Set a function to act as callback on discovered devices or devices with changed properties.
-
-        Args:
-            callback: Function accepting three arguments:
-             peripheral
-             advertisementData
-             rssi
-
-        """
-        self._callback = callback
-
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> Union[BLEDevice, None]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by macOS UUID address.
-
-        Args:
-            device_identifier (str): The Bluetooth address of the Bluetooth peripheral.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-
-        Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-        loop = asyncio.get_event_loop()
-        stop_scanning_event = asyncio.Event()
-        device_identifier = device_identifier.lower()
-        scanner = cls(timeout=timeout)
-
-        def stop_if_detected(peripheral, advertisement_data, rssi):
-            if str(peripheral.identifier().UUIDString()).lower() == device_identifier:
-                loop.call_soon_threadsafe(stop_scanning_event.set)
-
-        return await scanner._find_device_by_address(
-            device_identifier, stop_scanning_event, stop_if_detected, timeout
-        )
-
     # macOS specific methods
 
     @property
@@ -160,5 +151,5 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         # TODO: Evaluate if newer macOS than 10.11 has isScanning.
         try:
             return self._manager.isScanning_
-        except:
+        except Exception:
             return None

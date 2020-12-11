@@ -9,6 +9,9 @@ import asyncio
 
 from bleak.exc import BleakDotNetTaskError
 
+# Import of BleakBridge to enable loading of winrt bindings
+from BleakBridge import Bridge  # noqa: F401
+
 # Python for .NET CLR imports
 from System import Action
 from System.Threading.Tasks import Task
@@ -48,11 +51,12 @@ async def wrap_Task(task):
     return task.Result
 
 
-async def wrap_IAsyncOperation(op, return_type):
+async def wrap_IAsyncOperation(op: IAsyncOperation, return_type):
     """Enables await on .NET Task using asyncio.Event and a lambda callback.
 
     Args:
-        task (System.Threading.Tasks.Task): .NET async task object to await.
+        op (Windows.Foundation.IAsyncOperation[TResult]): .NET async operation object to await.
+        result_type (TResult): The .NET type of the result of the async operation.
 
     Returns:
         The results of the the .NET Task.
@@ -117,7 +121,7 @@ class BleakDataWriter:
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
             self.writer.Dispose()
-        except:
+        except Exception:
             pass
         del self.writer
         self.writer = None

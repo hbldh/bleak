@@ -6,10 +6,10 @@ Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 
 import logging
 import uuid
-from typing import Callable, Any, Union
+from typing import Callable, Union
 import asyncio
 
-from Foundation import NSData, CBUUID
+from Foundation import NSData
 from CoreBluetooth import (
     CBCharacteristicWriteWithResponse,
     CBCharacteristicWriteWithoutResponse,
@@ -120,7 +120,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def is_connected(self) -> bool:
         """Checks for current active connection"""
         manager = self._central_manager_delegate
-        return manager.isConnected
+        return False if manager is None else manager.isConnected
 
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.

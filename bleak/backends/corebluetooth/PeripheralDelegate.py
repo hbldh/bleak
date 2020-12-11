@@ -20,10 +20,7 @@ from Foundation import (
     NSData,
     NSError,
 )
-from CoreBluetooth import (
-    CBCharacteristicWriteWithResponse,
-    CBCharacteristicWriteWithoutResponse,
-)
+from CoreBluetooth import CBCharacteristicWriteWithResponse
 
 from bleak.exc import BleakError
 

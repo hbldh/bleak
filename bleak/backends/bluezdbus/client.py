@@ -9,20 +9,18 @@ import re
 import subprocess
 import uuid
 import warnings
-from asyncio import Future
-from functools import wraps, partial
-from typing import Callable, Any, Union
+from functools import wraps
+from typing import Callable, Union
 
 from twisted.internet.error import ConnectionDone
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.bluezdbus import defs, signals, utils, get_reactor
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
-from bleak.backends.bluezdbus.utils import get_device_object_path, get_managed_objects
+from bleak.backends.bluezdbus.utils import get_managed_objects
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
@@ -44,12 +42,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
+        disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
+        adapter (str): Bluetooth adapter to use for discovery.
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
-        self.device = kwargs.get("device") if kwargs.get("device") else "hci0"
+        # kwarg "device" is for backwards compatibility
+        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
 
         # Backend specific, TXDBus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -90,7 +92,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
             device = await BleakScannerBlueZDBus.find_device_by_address(
-                self.address, timeout=timeout, device=self.device
+                self.address, timeout=timeout, adapter=self._adapter
             )
 
             if device:
@@ -123,7 +125,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
         logger.debug(
-            "Connecting to BLE device @ {0} with {1}".format(self.address, self.device)
+            "Connecting to BLE device @ {0} with {1}".format(
+                self.address, self._adapter
+            )
         )
         try:
             await self._bus.callRemote(
@@ -291,7 +295,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         ).asFuture(asyncio.get_event_loop())
 
         logger.debug(
-            "Pairing to BLE device @ {0} with {1}".format(self.address, self.device)
+            "Pairing to BLE device @ {0} with {1}".format(self.address, self._adapter)
         )
         try:
             await self._bus.callRemote(
@@ -300,7 +304,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.DEVICE_INTERFACE,
                 destination=defs.BLUEZ_SERVICE,
             ).asFuture(loop)
-        except RemoteError as e:
+        except RemoteError:
             await self._cleanup_all()
             raise BleakError(
                 "Device with address {0} could not be paired with.".format(self.address)
@@ -356,9 +360,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except RemoteError as e:
             if e.errName != "org.freedesktop.DBus.Error.UnknownObject":
                 raise
-        except Exception as e:
-            # Do not want to silence unknown errors. Send this upwards.
-            raise
         return is_connected
 
     # GATT services methods
@@ -486,7 +487,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     interface=defs.DEVICE_INTERFACE
                 )
                 # Simulate regular characteristics read to be consistent over all platforms.
-                value = bytearray(props.get("Name", "").encode("ascii"))
+                value = bytearray(props.get("Alias", "").encode("ascii"))
                 logger.debug(
                     "Read Device Name {0} | {1}: {2}".format(
                         char_specifier, self._device_path, value
@@ -721,15 +722,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     char_specifier
                 )
             )
-        await self._bus.callRemote(
-            characteristic.path,
-            "StartNotify",
-            interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-            destination=defs.BLUEZ_SERVICE,
-            signature="",
-            body=[],
-            returnSignature="",
-        ).asFuture(asyncio.get_event_loop())
 
         if _wrap:
             self._notification_callbacks[
@@ -745,6 +737,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )  # noqa | E123 error in flake8...
 
         self._subscriptions.append(characteristic.handle)
+
+        await self._bus.callRemote(
+            characteristic.path,
+            "StartNotify",
+            interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+            destination=defs.BLUEZ_SERVICE,
+            signature="",
+            body=[],
+            returnSignature="",
+        ).asFuture(asyncio.get_event_loop())
 
     async def stop_notify(
         self,
@@ -868,7 +870,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
         elif message.body[0] == defs.DEVICE_INTERFACE:
             device_path = "/org/bluez/%s/dev_%s" % (
-                self.device,
+                self._adapter,
                 self.address.replace(":", "_"),
             )
             if message.path.lower() == device_path.lower():
@@ -882,7 +884,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     task = asyncio.get_event_loop().create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
-                            partial(self._disconnected_callback, self)
+                            lambda _: self._disconnected_callback(self)
                         )
 
 

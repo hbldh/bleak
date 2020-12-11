@@ -1,8 +1,10 @@
-from uuid import UUID
-from typing import List, Union
+from typing import List
 
 from bleak.backends.service import BleakGATTService
 from bleak.backends.dotnet.characteristic import BleakGATTCharacteristicDotNet
+
+# Import of BleakBridge to enable loading of winrt bindings
+from BleakBridge import Bridge  # noqa: F401
 
 from Windows.Devices.Bluetooth.GenericAttributeProfile import GattDeviceService
 
