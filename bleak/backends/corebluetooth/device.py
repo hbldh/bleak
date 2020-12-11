@@ -34,7 +34,6 @@ class BLEDeviceCoreBluetooth(BLEDevice):
 
     def __init__(self, *args, **kwargs):
         super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
-        self._rssi = kwargs.get("rssi")
 
     def _update(self, advertisementData: NSDictionary):
         self._update_uuids(advertisementData)
@@ -60,7 +59,3 @@ class BLEDeviceCoreBluetooth(BLEDevice):
         mfg_id = int.from_bytes(mfg_bytes[0:2], byteorder="little")
         mfg_val = bytes(mfg_bytes[2:])
         self.metadata["manufacturer_data"] = {mfg_id: mfg_val}
-
-    @property
-    def rssi(self):
-        return self._rssi

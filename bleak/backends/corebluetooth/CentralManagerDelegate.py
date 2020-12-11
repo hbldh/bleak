@@ -228,7 +228,7 @@ class CentralManagerDelegate(NSObject):
             device = BLEDeviceCoreBluetooth(address, name, details, delegate=self)
             self.devices[uuid_string] = device
 
-        device._rssi = float(RSSI)
+        device.rssi = RSSI
         device._update(advertisementData)
 
         for callback in self.callbacks.values():
