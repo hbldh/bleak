@@ -23,30 +23,17 @@ class BLEDevice(object):
     - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
     """
 
-    def __init__(self, address, name, details=None, **kwargs):
+    def __init__(self, address, name, details=None, rssi=0, **kwargs):
         #: The Bluetooth address of the device on this machine.
         self.address = address
         #: The advertised name of the device.
         self.name = name if name else "Unknown"
         #: The OS native details required for connecting to the device.
         self.details = details
+        #: RSSI, if available
+        self.rssi = rssi
         #: Device specific details. Contains a ``uuids`` key which is a list of service UUIDs and a ``manufacturer_data`` field with a bytes-object from the advertised data.
         self.metadata = kwargs
-
-    @property
-    def rssi(self):
-        """Get the signal strength in dBm"""
-        if isinstance(self.details, dict) and "props" in self.details:
-            rssi = self.details["props"].get("RSSI", 0)  # Should not be set to 0...
-        elif hasattr(self.details, "RawSignalStrengthInDBm"):
-            rssi = self.details.RawSignalStrengthInDBm
-        elif hasattr(self.details, "Properties"):
-            rssi = {p.Key: p.Value for p in self.details.Properties}[
-                "System.Devices.Aep.SignalStrength"
-            ]
-        else:
-            rssi = None
-        return int(rssi) if rssi is not None else None
 
     def __str__(self):
         if self.name == "Unknown":
