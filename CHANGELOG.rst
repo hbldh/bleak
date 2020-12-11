@@ -25,6 +25,8 @@ Changed
 * Consolidated implementation of BleakScanner.register_detection_callback().
   All platforms now take callback with BLEDevice and AdvertisementData arguments.
 * Consolidated BleakScanner.find_device_by_address() implementations.
+* Renamed "device" kwarg to "adapter" in BleakClient and BleakScanner. Fixes
+  #381.
 
 Fixed
 ~~~~~
@@ -35,6 +37,8 @@ Fixed
 * Fixed ``BleakScanner.discover()`` on older versions of macOS. Fixes #331.
 * Fixed disconnect callback on BlueZ backend.
 * Fixed calling BleakClient.is_connected() on Mac before connection.
+* Fixed kwargs ignored in BleakScanner.find_device_by_address() in BlueZ backend.
+  Fixes #360.
 
 Removed
 ~~~~~~~

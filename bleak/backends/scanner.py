@@ -141,13 +141,16 @@ class BaseBleakScanner(abc.ABC):
 
     @classmethod
     async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> BLEDevice:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
 
         Args:
             device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
             timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Keyword Args:
+            adapter (str): Bluetooth adapter to use for discovery.
 
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.
@@ -160,7 +163,9 @@ class BaseBleakScanner(abc.ABC):
             if d.address.lower() == device_identifier:
                 stop_scanning_event.set()
 
-        async with cls(timeout=timeout, detection_callback=stop_if_detected) as scanner:
+        async with cls(
+            timeout=timeout, detection_callback=stop_if_detected, **kwargs
+        ) as scanner:
             try:
                 await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
             except asyncio.TimeoutError:

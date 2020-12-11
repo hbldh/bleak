@@ -59,7 +59,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
     Keyword Args:
-        device (str): Bluetooth device to use for discovery.
+        adapter (str): Bluetooth adapter to use for discovery.
         filters (dict): A dict of filters to be applied on discovery.
 
     """
@@ -67,7 +67,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     def __init__(self, **kwargs):
         super(BleakScannerBlueZDBus, self).__init__(**kwargs)
 
-        self._device = kwargs.get("device", "hci0")
+        # kwarg "device" is for backwards compatibility
+        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
         self._reactor = None
         self._bus = None
 
@@ -120,7 +121,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             interface=defs.OBJECT_MANAGER_INTERFACE,
             destination=defs.BLUEZ_SERVICE,
         ).asFuture(loop)
-        self._adapter_path, self._interface = _filter_on_adapter(objects, self._device)
+        self._adapter_path, self._interface = _filter_on_adapter(objects, self._adapter)
         self._cached_devices = dict(_filter_on_device(objects))
 
         # Apply the filters
