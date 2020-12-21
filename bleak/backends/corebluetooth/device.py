@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from Foundation import NSDictionary
+from Foundation import NSDictionary, NSNumber
 
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
@@ -38,6 +38,9 @@ class BLEDeviceCoreBluetooth(BLEDevice):
     def _update(self, advertisementData: NSDictionary):
         self._update_uuids(advertisementData)
         self._update_manufacturer(advertisementData)
+
+    def _update_rssi(self, RSSI: NSNumber):
+        self.rssi = RSSI
 
     def _update_uuids(self, advertisementData: NSDictionary):
         cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
