@@ -711,7 +711,7 @@ class BleakClientDotNet(BaseBleakClient):
         with BleakDataWriter(data) as writer:
             write_result = await wrap_IAsyncOperation(
                 IAsyncOperation[GattWriteResult](
-                    descriptor.obj.WriteValueAsync(writer.DetachBuffer())
+                    descriptor.obj.WriteValueAsync(writer.detach_buffer())
                 ),
                 return_type=GattWriteResult,
             )
