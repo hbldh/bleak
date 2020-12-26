@@ -249,7 +249,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 raise
 
-            if await self.is_connected():
+            if self.is_connected:
                 logger.debug("Connection successful.")
             else:
                 raise BleakError(
@@ -373,15 +373,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
         except Exception as e:
             logger.error("Attempt to disconnect device failed: {0}".format(e))
 
-        is_disconnected = not await self.is_connected()
-
         self._cleanup_dbus_resources()
 
         # Reset all stored services.
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
 
-        return is_disconnected
+        return True
 
     async def pair(self, *args, **kwargs) -> bool:
         """Pair with the peripheral.
@@ -461,7 +459,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return False
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
         Returns:

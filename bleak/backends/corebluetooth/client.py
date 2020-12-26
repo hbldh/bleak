@@ -117,7 +117,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._services = None
         return True
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Checks for current active connection"""
         manager = self._central_manager_delegate
         return False if manager is None else manager.isConnected

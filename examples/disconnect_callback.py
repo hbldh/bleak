@@ -31,7 +31,7 @@ async def show_disconnect_handling():
     ) as client:
         print("Sleeping until device disconnects...")
         await disconnected_event.wait()
-        print("Connected: {0}".format(await client.is_connected()))
+        print("Connected:", client.is_connected)
 
 
 if sys.version_info >= (3, 7):

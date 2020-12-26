@@ -118,8 +118,8 @@ class BaseBleakClient(abc.ABC):
         """Unpair with the peripheral."""
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    async def is_connected(self) -> bool:
+    @abc.abstractproperty
+    def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
         Returns:
