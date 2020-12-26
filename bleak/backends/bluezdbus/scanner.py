@@ -1,5 +1,4 @@
 import logging
-import asyncio
 from typing import Any, Dict, List, Optional
 
 from dbus_next.aio import MessageBus
@@ -14,6 +13,16 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 logger = logging.getLogger(__name__)
+
+# set of org.bluez.Device1 property names that come from advertising data
+_ADVERTISING_DATA_PROPERTIES = {
+    "AdvertisingData",
+    "AdvertisingFlags",
+    "ManufacturerData",
+    "Name",
+    "ServiceData",
+    "UUIDs",
+}
 
 
 def _device_info(path, props):
@@ -205,22 +214,64 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     # Helper methods
 
-    def _update_devices(self, path: str, properties: Dict[str, Variant]):
+    def _update_devices(self, path: str, properties: Dict[str, Variant]) -> bool:
         """Update the active devices based on the new properties.
 
         Args:
             path: The D-Bus path of the device.
             properties: New properties for this device.
+
+        Returns:
+            ``True`` if this is the first time we have seen the device,
+            otherwise ``False``.
         """
+        first_time_seen = False
+
         # if this is the first time we have seen this device, use the cached
         # properties from ObjectManager.GetManagedObjects as a starting point
         # if they exist
         if path not in self._devices:
             self._devices[path] = {}
             self._update_devices(path, self._cached_devices.get(path, {}))
+            first_time_seen = True
 
         # then update the existing properties with the new ones
         self._devices[path].update(properties)
+        return first_time_seen
+
+    def _invoke_callback(self, path: str, message: Message) -> None:
+        """Invokes the advertising data callback.
+
+        Args:
+            message: The D-Bus message that triggered the callback.
+        """
+        if self._callback is None:
+            return
+
+        props = self._devices[path]
+
+        # Get all the information wanted to pack in the advertisement data
+        _local_name = props.get("Name")
+        _manufacturer_data = {
+            k: bytes(v) for k, v in props.get("ManufacturerData", {}).items()
+        }
+        _service_data = {k: bytes(v) for k, v in props.get("ServiceData", {}).items()}
+        _service_uuids = props.get("UUIDs", [])
+
+        # Pack the advertisement data
+        advertisement_data = AdvertisementData(
+            local_name=_local_name,
+            manufacturer_data=_manufacturer_data,
+            service_data=_service_data,
+            service_uuids=_service_uuids,
+            platform_data=(props, message),
+        )
+
+        device = BLEDevice(
+            props["Address"], props["Alias"], props, props.get("RSSI", 0)
+        )
+
+        self._callback(device, advertisement_data)
 
     def _parse_msg(self, message: Message):
         if message.member == "InterfacesAdded":
@@ -237,6 +288,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                     message.member, message.interface, message.path, message.body
                 )
             )
+            self._invoke_callback(msg_path, message)
         elif message.member == "InterfacesRemoved":
             # if a device disappears while we are scanning, remove it from the
             # discovered devices list
@@ -258,7 +310,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 return
 
             changed = unpack_variants(message.body[1])
-            self._update_devices(message.path, changed)
+            first_time_seen = self._update_devices(message.path, changed)
 
             logger.debug(
                 "{0}, {1} ({2} dBm), Object Path: {3}".format(
@@ -266,32 +318,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 )
             )
 
-            if self._callback is None:
-                return
-
-            props = self._devices[message.path]
-
-            # Get all the information wanted to pack in the advertisement data
-            _local_name = props.get("Name")
-            _manufacturer_data = {
-                k: bytes(v) for k, v in props.get("ManufacturerData", {}).items()
-            }
-            _service_data = {
-                k: bytes(v) for k, v in props.get("ServiceData", {}).items()
-            }
-            _service_uuids = props.get("UUIDs", [])
-
-            # Pack the advertisement data
-            advertisement_data = AdvertisementData(
-                local_name=_local_name,
-                manufacturer_data=_manufacturer_data,
-                service_data=_service_data,
-                service_uuids=_service_uuids,
-                platform_data=(props, message),
-            )
-
-            device = BLEDevice(
-                props["Address"], props["Alias"], props, props.get("RSSI", 0)
-            )
-
-            self._callback(device, advertisement_data)
+            # Only do advertising data callback if this is the first time the
+            # device has been seen or if an advertising data property changed.
+            # Otherwise we get a flood of callbacks from RSSI changing.
+            if first_time_seen or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
+                changed.keys()
+            ):
+                self._invoke_callback(message.path, message)

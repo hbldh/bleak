@@ -15,6 +15,8 @@ Added
 
 * Added more specific type hints for ``BleakGATTServiceCollection`` properties.
 * Added ``asyncio`` task to disconnect devices on event loop crash in BlueZ backend.
+* Added filtering on advertisement data callbacks on BlueZ backend so that
+  callbacks only occur when advertising data changes like on macOS backend.
 
 Changed
 ~~~~~~~
