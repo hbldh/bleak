@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import UUID
 
 from dbus_next.aio import MessageBus
-from dbus_next.constants import BusType, MessageType
+from dbus_next.constants import BusType, ErrorType, MessageType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
 
@@ -231,6 +231,45 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     ),
                     timeout,
                 )
+                # Sometimes devices can be removed from the BlueZ object manager
+                # before we connect to them. In this case we try using the
+                # org.bluez.Adapter1.ConnectDevice method instead. This method
+                # requires that bluetoothd is run with the --experimental flag
+                # and is available since BlueZ 5.49.
+                if (
+                    reply.message_type == MessageType.ERROR
+                    and reply.error_name == ErrorType.UNKNOWN_OBJECT.value
+                ):
+                    logger.debug("falling back to org.bluez.Adapter1.ConnectDevice")
+                    reply = await asyncio.wait_for(
+                        self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.ADAPTER_INTERFACE,
+                                path=f"/org/bluez/{self._adapter}",
+                                member="ConnectDevice",
+                                signature="a{sv}",
+                                body=[
+                                    {
+                                        "Address": Variant(
+                                            "s", self._properties["Address"]
+                                        ),
+                                        "AddressType": Variant(
+                                            "s", self._properties["AddressType"]
+                                        ),
+                                    }
+                                ],
+                            )
+                        ),
+                        timeout,
+                    )
+                    if (
+                        reply.message_type == MessageType.ERROR
+                        and reply.error_name == ErrorType.UNKNOWN_METHOD.value
+                    ):
+                        logger.debug(
+                            "org.bluez.Adapter1.ConnectDevice not found, try enabling bluetoothd --experimental"
+                        )
                 assert reply.message_type == MessageType.METHOD_RETURN
             except BaseException:
                 # calling Disconnect cancels any pending connect request
