@@ -113,6 +113,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             address = peripheral.identifier().UUIDString()
             name = peripheral.name() or "Unknown"
             details = peripheral
+            rssi = self._manager.devices[address].rssi
 
             advertisementData = self._identifiers[peripheral.identifier()]
             manufacturer_binary_data = advertisementData.get(
@@ -136,6 +137,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                     address,
                     name,
                     details,
+                    rssi=rssi,
                     uuids=uuids,
                     manufacturer_data=manufacturer_data,
                     delegate=self._manager.central_manager.delegate(),
