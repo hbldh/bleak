@@ -255,6 +255,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # Reset all stored services.
         self.services = BleakGATTServiceCollection()
+        self._services_resolved = False
 
         return is_disconnected
 

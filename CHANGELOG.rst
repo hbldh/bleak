@@ -17,6 +17,8 @@ Fixed
   Merged #403.
 * Fixed wrong OS write method called in ``write_gatt_descriptor()`` in Windows
   backend.  Merged #403.
+* Fixed ``BaseBleakClient.services_resolved`` not reset on disconnect on BlueZ
+  backend. Merges #401.
 
 
 `0.10.0`_ (2020-12-11)
