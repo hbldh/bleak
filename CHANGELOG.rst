@@ -26,6 +26,7 @@ Changed
 * Changed ``BleakScanner.set_scanning_filter()`` from async method to normal method.
 * Changed BlueZ backend to use ``dbus-next`` instead of ``txdbus``.
 * Changed ``BleakClient.is_connected`` from async method to property.
+* Consolidated D-Bus signal debug messages in BlueZ backend.
 
 Fixed
 ~~~~~

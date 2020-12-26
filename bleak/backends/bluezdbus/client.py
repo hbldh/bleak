@@ -880,21 +880,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # Internal Callbacks
 
     def _parse_msg(self, message: Message):
-        """Notification handler.
+        if message.message_type != MessageType.SIGNAL:
+            return
 
-        In the BlueZ DBus API, notifications come as
-        PropertiesChanged callbacks on the GATT Characteristic interface
-        that StartNotify has been called on.
+        logger.debug(
+            "received D-Bus signal: {0}.{1} ({2}): {3}".format(
+                message.interface, message.member, message.path, message.body
+            )
+        )
 
-        Args:
-            message (): The PropertiesChanged DBus signal message relaying
-                the new data on the GATT Characteristic.
-
-        """
         if message.member == "InterfacesAdded":
             path, interfaces = message.body
-
-            logger.debug(f"InterfacesAdded: path: {path}, interfaces: {interfaces}")
 
             if defs.GATT_SERVICE_INTERFACE in interfaces:
                 obj = unpack_variants(interfaces[defs.GATT_SERVICE_INTERFACE])
@@ -922,15 +918,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
         elif message.member == "InterfacesRemoved":
             path, interfaces = message.body
-            logger.debug(f"InterfacesRemoved: path: {path}, interfaces: {interfaces}")
 
         elif message.member == "PropertiesChanged":
             interface, changed, _ = message.body
             changed = unpack_variants(changed)
-
-            logger.debug(
-                f"PropertiesChanged: path: {message.path}, interface: {interface}, changed: {changed}"
-            )
 
             if interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                 if message.path in self._notification_callbacks and "Value" in changed:

@@ -274,6 +274,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._callback(device, advertisement_data)
 
     def _parse_msg(self, message: Message):
+        if message.message_type != MessageType.SIGNAL:
+            return
+
+        logger.debug(
+            "received D-Bus signal: {0}.{1} ({2}): {3}".format(
+                message.interface, message.member, message.path, message.body
+            )
+        )
+
         if message.member == "InterfacesAdded":
             # if a new device is discovered while we are scanning, add it to
             # the discovered devices list
@@ -283,11 +292,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 message.body[1].get(defs.DEVICE_INTERFACE, {})
             )
             self._update_devices(msg_path, device_interface)
-            logger.debug(
-                "{0}, {1} ({2}): {3}".format(
-                    message.member, message.interface, message.path, message.body
-                )
-            )
             self._invoke_callback(msg_path, message)
         elif message.member == "InterfacesRemoved":
             # if a device disappears while we are scanning, remove it from the
@@ -295,11 +299,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
             msg_path = message.body[0]
             del self._devices[msg_path]
-            logger.debug(
-                "{0}, {1} ({2}): {3}".format(
-                    message.member, message.interface, message.path, message.body
-                )
-            )
         elif message.member == "PropertiesChanged":
             # Property change events basically mean that new advertising data
             # was received or the RSSI changed. Either way, it lets us know
@@ -311,12 +310,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
             changed = unpack_variants(message.body[1])
             first_time_seen = self._update_devices(message.path, changed)
-
-            logger.debug(
-                "{0}, {1} ({2} dBm), Object Path: {3}".format(
-                    *_device_info(message.path, self._devices.get(message.path))
-                )
-            )
 
             # Only do advertising data callback if this is the first time the
             # device has been seen or if an advertising data property changed.
