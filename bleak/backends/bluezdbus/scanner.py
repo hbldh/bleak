@@ -268,7 +268,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         )
 
         device = BLEDevice(
-            props["Address"], props["Alias"], props, props.get("RSSI", 0)
+            props["Address"],
+            props["Alias"],
+            {"path": path, "props": props},
+            props.get("RSSI", 0),
         )
 
         self._callback(device, advertisement_data)
