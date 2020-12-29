@@ -290,18 +290,24 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             # if a new device is discovered while we are scanning, add it to
             # the discovered devices list
 
-            msg_path = message.body[0]
-            device_interface = unpack_variants(
-                message.body[1].get(defs.DEVICE_INTERFACE, {})
+            obj_path: str
+            interfaces_and_props: Dict[str, Dict[str, Variant]]
+            obj_path, interfaces_and_props = message.body
+            device_props = unpack_variants(
+                interfaces_and_props.get(defs.DEVICE_INTERFACE, {})
             )
-            self._update_devices(msg_path, device_interface)
-            self._invoke_callback(msg_path, message)
+            if device_props:
+                self._update_devices(obj_path, device_props)
+                self._invoke_callback(obj_path, message)
         elif message.member == "InterfacesRemoved":
             # if a device disappears while we are scanning, remove it from the
             # discovered devices list
 
-            msg_path = message.body[0]
-            del self._devices[msg_path]
+            obj_path: str
+            interfaces: List[str]
+            obj_path, interfaces = message.body
+            if defs.DEVICE_INTERFACE in interfaces:
+                del self._devices[obj_path]
         elif message.member == "PropertiesChanged":
             # Property change events basically mean that new advertising data
             # was received or the RSSI changed. Either way, it lets us know
