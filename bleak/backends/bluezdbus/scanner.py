@@ -122,6 +122,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             if defs.DEVICE_INTERFACE in interfaces
         }
 
+        logger.debug(f"cached devices: {self._cached_devices}")
+
         # Apply the filters
         reply = await self._bus.call(
             Message(
