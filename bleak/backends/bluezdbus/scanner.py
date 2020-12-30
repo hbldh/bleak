@@ -8,7 +8,11 @@ from dbus_next.signature import Variant
 
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
-from bleak.backends.bluezdbus.utils import unpack_variants, validate_mac_address
+from bleak.backends.bluezdbus.utils import (
+    assert_reply,
+    unpack_variants,
+    validate_mac_address,
+)
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
@@ -86,7 +90,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             arg0path=f"{self._adapter_path}/",
         )
         reply = await add_match(self._bus, rules)
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
         self._rules.append(rules)
 
         rules = MatchRules(
@@ -95,7 +99,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             arg0path=f"{self._adapter_path}/",
         )
         reply = await add_match(self._bus, rules)
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
         self._rules.append(rules)
 
         rules = MatchRules(
@@ -104,7 +108,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             path_namespace=self._adapter_path,
         )
         reply = await add_match(self._bus, rules)
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
         self._rules.append(rules)
 
         # Find the HCI device to use for scanning and get cached device properties
@@ -116,7 +120,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 interface=defs.OBJECT_MANAGER_INTERFACE,
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         # get only the device interface
         self._cached_devices = {
@@ -138,7 +142,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 body=[self._filters],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         # Start scanning
         reply = await self._bus.call(
@@ -149,7 +153,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 member="StartDiscovery",
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
     async def stop(self):
         reply = await self._bus.call(
@@ -160,7 +164,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 member="StopDiscovery",
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         for rule in self._rules:
             await remove_match(self._bus, rule)

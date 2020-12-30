@@ -2,10 +2,25 @@
 import re
 from typing import Any, Dict
 
+from dbus_next.constants import MessageType
+from dbus_next.message import Message
 from dbus_next.signature import Variant
 
+from bleak.exc import BleakDBusError
 
 _mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+
+
+def assert_reply(reply: Message):
+    """Checks that a D-Bus message is a valid reply.
+
+    Raises:
+        BleakDBusError: if the message type is ``MessageType.ERROR``
+        AssentationError: if the message type is not ``MessageType.METHOD_RETURN``
+    """
+    if reply.message_type == MessageType.ERROR:
+        raise BleakDBusError(reply.error_name)
+    assert reply.message_type == MessageType.METHOD_RETURN
 
 
 def validate_mac_address(address):

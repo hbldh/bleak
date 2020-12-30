@@ -22,7 +22,7 @@ from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
-from bleak.backends.bluezdbus.utils import unpack_variants
+from bleak.backends.bluezdbus.utils import assert_reply, unpack_variants
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
@@ -145,7 +145,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 arg0path=f"{self._device_path}/",
             )
             reply = await add_match(self._bus, rules)
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
             self._rules.append(rules)
 
             rules = MatchRules(
@@ -154,7 +154,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 arg0path=f"{self._device_path}/",
             )
             reply = await add_match(self._bus, rules)
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
             self._rules.append(rules)
 
             rules = MatchRules(
@@ -163,7 +163,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 path_namespace=self._device_path,
             )
             reply = await add_match(self._bus, rules)
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
             self._rules.append(rules)
 
             # Find the HCI device to use for scanning and get cached device properties
@@ -175,7 +175,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     interface=defs.OBJECT_MANAGER_INTERFACE,
                 )
             )
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
 
             # The device may have been removed from BlueZ since the time we stopped scanning
             if self._device_path not in reply.body[0]:
@@ -270,7 +270,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         logger.debug(
                             "org.bluez.Adapter1.ConnectDevice not found, try enabling bluetoothd --experimental"
                         )
-                assert reply.message_type == MessageType.METHOD_RETURN
+                assert_reply(reply)
             except BaseException:
                 # calling Disconnect cancels any pending connect request
                 try:
@@ -282,7 +282,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             member="Disconnect",
                         )
                     )
-                    assert reply.message_type == MessageType.METHOD_RETURN
+                    assert_reply(reply)
                 except Exception as e:
                     logger.warning(f"Failed to cancel connection: {e}")
 
@@ -408,7 +408,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="Disconnect",
                 )
             )
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
         except Exception as e:
             logger.error("Attempt to disconnect device failed: {0}".format(e))
 
@@ -441,7 +441,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Paired"],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
         if reply.body[0]:
             return True
 
@@ -456,7 +456,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Trusted", True],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         logger.debug(
             "Pairing to BLE device @ {0} with {1}".format(self.address, self._adapter)
@@ -470,7 +470,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         reply = await self._bus.call(
             Message(
@@ -482,7 +482,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Paired"],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         return reply.body[0]
 
@@ -573,7 +573,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         body=[defs.BATTERY_INTERFACE],
                     )
                 )
-                assert reply.message_type == MessageType.METHOD_RETURN
+                assert_reply(reply)
                 # Simulate regular characteristics read to be consistent over all platforms.
                 value = bytearray(reply.body[0]["Percentage"].value)
                 logger.debug(
@@ -610,7 +610,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[{}],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
         value = bytearray(reply.body[0])
 
         logger.debug(
@@ -644,7 +644,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[{}],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
         value = bytearray(reply.body[0])
 
         logger.debug(
@@ -726,7 +726,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     ],
                 )
             )
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
         else:
             # Older versions of BlueZ don't have the "type" option, so we have
             # to write the hard way. This isn't the most efficient way of doing
@@ -741,7 +741,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     body=[{}],
                 )
             )
-            assert reply.message_type == MessageType.METHOD_RETURN
+            assert_reply(reply)
             fd = reply.body[0]
             try:
                 os.write(fd, data)
@@ -776,7 +776,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[data, {"type": Variant("s", "command")}],
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         logger.debug(
             "Write Descriptor {0} | {1}: {2}".format(handle, descriptor.path, data)
@@ -842,7 +842,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="StartNotify",
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
     async def stop_notify(
         self,
@@ -871,7 +871,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="StopNotify",
             )
         )
-        assert reply.message_type == MessageType.METHOD_RETURN
+        assert_reply(reply)
 
         self._notification_callbacks.pop(characteristic.path, None)
 
