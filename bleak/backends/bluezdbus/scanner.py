@@ -73,6 +73,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     async def start(self):
         self._bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
 
+        self._devices.clear()
+        self._cached_devices.clear()
+
         # Add signal listeners
 
         self._bus.add_message_handler(self._parse_msg)
