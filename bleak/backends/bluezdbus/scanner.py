@@ -62,7 +62,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         self._bus: Optional[MessageBus] = None
         self._cached_devices: Dict[str, Variant] = {}
-        self._devices: Dict[str, Any] = {}
+        self._devices: Dict[str, Dict[str, Any]] = {}
         self._rules: List[MatchRules] = []
         self._adapter_path: str = f"/org/bluez/{self._adapter}"
 
@@ -216,31 +216,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     # Helper methods
 
-    def _update_devices(self, path: str, properties: Dict[str, Variant]) -> bool:
-        """Update the active devices based on the new properties.
-
-        Args:
-            path: The D-Bus path of the device.
-            properties: New properties for this device.
-
-        Returns:
-            ``True`` if this is the first time we have seen the device,
-            otherwise ``False``.
-        """
-        first_time_seen = False
-
-        # if this is the first time we have seen this device, use the cached
-        # properties from ObjectManager.GetManagedObjects as a starting point
-        # if they exist
-        if path not in self._devices:
-            self._devices[path] = {}
-            self._update_devices(path, self._cached_devices.get(path, {}))
-            first_time_seen = True
-
-        # then update the existing properties with the new ones
-        self._devices[path].update(properties)
-        return first_time_seen
-
     def _invoke_callback(self, path: str, message: Message) -> None:
         """Invokes the advertising data callback.
 
@@ -299,7 +274,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 interfaces_and_props.get(defs.DEVICE_INTERFACE, {})
             )
             if device_props:
-                self._update_devices(obj_path, device_props)
+                self._devices[obj_path] = device_props
                 self._invoke_callback(obj_path, message)
         elif message.member == "InterfacesRemoved":
             # if a device disappears while we are scanning, remove it from the
@@ -316,11 +291,30 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             # that the device is active and we can add it to the discovered
             # devices list.
 
-            if message.body[0] != defs.DEVICE_INTERFACE:
+            interface: str
+            changed: Dict[str, Variant]
+            invalidated: List[str]
+            interface, changed, invalidated = message.body
+
+            if interface != defs.DEVICE_INTERFACE:
                 return
 
-            changed = unpack_variants(message.body[1])
-            first_time_seen = self._update_devices(message.path, changed)
+            first_time_seen = False
+
+            if message.path not in self._devices:
+                if message.path not in self._cached_devices:
+                    # This can happen when we start scanning. The "PropertyChanged"
+                    # handler is attached before "GetManagedObjects" is called
+                    # and so self._cached_devices is not assigned yet.
+                    # This is not a problem. We just discard the property value
+                    # since "GetManagedObjects" will return a newer value.
+                    return
+
+                first_time_seen = True
+                self._devices[message.path] = self._cached_devices[message.path]
+
+            changed = unpack_variants(changed)
+            self._devices[message.path].update(changed)
 
             # Only do advertising data callback if this is the first time the
             # device has been seen or if an advertising data property changed.
