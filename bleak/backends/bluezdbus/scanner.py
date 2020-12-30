@@ -286,8 +286,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             obj_path: str
             interfaces: List[str]
             obj_path, interfaces = message.body
+
             if defs.DEVICE_INTERFACE in interfaces:
-                del self._devices[obj_path]
+                # Using pop to avoid KeyError if obj_path does not exist
+                self._devices.pop(obj_path, None)
         elif message.member == "PropertiesChanged":
             # Property change events basically mean that new advertising data
             # was received or the RSSI changed. Either way, it lets us know
