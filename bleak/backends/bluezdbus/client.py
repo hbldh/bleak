@@ -721,7 +721,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="WriteValue",
                     signature="aya{sv}",
                     body=[
-                        data,
+                        bytes(data),
                         {"type": Variant("s", "request" if response else "command")},
                     ],
                 )
@@ -773,7 +773,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.GATT_DESCRIPTOR_INTERFACE,
                 member="WriteValue",
                 signature="aya{sv}",
-                body=[data, {"type": Variant("s", "command")}],
+                body=[bytes(data), {"type": Variant("s", "command")}],
             )
         )
         assert_reply(reply)
