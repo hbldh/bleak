@@ -26,7 +26,7 @@ from bleak.backends.bluezdbus.utils import assert_reply, unpack_variants
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import BleakError
+from bleak.exc import BleakDBusError, BleakError
 
 
 logger = logging.getLogger(__name__)
@@ -182,120 +182,137 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
             assert_reply(reply)
 
+            interfaces_and_props: Dict[str, Dict[str, Variant]] = reply.body[0]
+
             # The device may have been removed from BlueZ since the time we stopped scanning
-            if self._device_path not in reply.body[0]:
-                raise BleakError(
-                    "Device with address {0} could not be found. "
-                    "Try increasing `timeout` value or moving the device closer.".format(
-                        self.address
-                    )
-                )
-
-            self._properties = unpack_variants(
-                reply.body[0][self._device_path][defs.DEVICE_INTERFACE]
-            )
-
-            for path, interfaces in reply.body[0].items():
-                if not path.startswith(self._device_path):
-                    continue
-
-                if defs.GATT_SERVICE_INTERFACE in interfaces:
-                    obj = unpack_variants(interfaces[defs.GATT_SERVICE_INTERFACE])
-                    self.services.add_service(BleakGATTServiceBlueZDBus(obj, path))
-
-                if defs.GATT_CHARACTERISTIC_INTERFACE in interfaces:
-                    obj = unpack_variants(
-                        interfaces[defs.GATT_CHARACTERISTIC_INTERFACE]
-                    )
-                    service = reply.body[0][obj["Service"]][defs.GATT_SERVICE_INTERFACE]
-                    uuid = service["UUID"].value
-                    self.services.add_characteristic(
-                        BleakGATTCharacteristicBlueZDBus(obj, path, uuid)
-                    )
-
-                if defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
-                    obj = unpack_variants(interfaces[defs.GATT_DESCRIPTOR_INTERFACE])
-                    characteristic = reply.body[0][obj["Characteristic"]][
-                        defs.GATT_CHARACTERISTIC_INTERFACE
-                    ]
-                    uuid = characteristic["UUID"].value
-                    handle = int(obj["Characteristic"][-4:], 16)
-                    self.services.add_descriptor(
-                        BleakGATTDescriptorBlueZDBus(obj, path, uuid, handle)
-                    )
-
-            try:
-                reply = await asyncio.wait_for(
-                    self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Connect",
-                        )
-                    ),
-                    timeout,
-                )
+            if self._device_path not in interfaces_and_props:
                 # Sometimes devices can be removed from the BlueZ object manager
                 # before we connect to them. In this case we try using the
                 # org.bluez.Adapter1.ConnectDevice method instead. This method
                 # requires that bluetoothd is run with the --experimental flag
                 # and is available since BlueZ 5.49.
+                logger.debug(
+                    f"org.bluez.Device1 object not found, trying org.bluez.Adapter1.ConnectDevice ({self._device_path})"
+                )
+                reply = await asyncio.wait_for(
+                    self._bus.call(
+                        Message(
+                            destination=defs.BLUEZ_SERVICE,
+                            interface=defs.ADAPTER_INTERFACE,
+                            path=f"/org/bluez/{self._adapter}",
+                            member="ConnectDevice",
+                            signature="a{sv}",
+                            body=[
+                                {
+                                    "Address": Variant(
+                                        "s", self._device_info["Address"]
+                                    ),
+                                    "AddressType": Variant(
+                                        "s", self._device_info["AddressType"]
+                                    ),
+                                }
+                            ],
+                        )
+                    ),
+                    timeout,
+                )
+
+                # FIXME: how to cancel connection if timeout?
+
                 if (
                     reply.message_type == MessageType.ERROR
-                    and reply.error_name == ErrorType.UNKNOWN_OBJECT.value
+                    and reply.error_name == ErrorType.UNKNOWN_METHOD.value
                 ):
                     logger.debug(
-                        f"falling back to org.bluez.Adapter1.ConnectDevice ({self._device_path})"
+                        f"org.bluez.Adapter1.ConnectDevice not found ({self._device_path}), try enabling bluetoothd --experimental"
                     )
+                    raise BleakError(
+                        "Device with address {0} could not be found. "
+                        "Try increasing `timeout` value or moving the device closer.".format(
+                            self.address
+                        )
+                    )
+
+                assert_reply(reply)
+            else:
+                # required interface
+                self._properties = unpack_variants(
+                    interfaces_and_props[self._device_path][defs.DEVICE_INTERFACE]
+                )
+
+                # optional interfaces - services and characteristics may not
+                # be populated yet
+                for path, interfaces in interfaces_and_props.items():
+                    if not path.startswith(self._device_path):
+                        continue
+
+                    if defs.GATT_SERVICE_INTERFACE in interfaces:
+                        obj = unpack_variants(interfaces[defs.GATT_SERVICE_INTERFACE])
+                        self.services.add_service(BleakGATTServiceBlueZDBus(obj, path))
+
+                    if defs.GATT_CHARACTERISTIC_INTERFACE in interfaces:
+                        obj = unpack_variants(
+                            interfaces[defs.GATT_CHARACTERISTIC_INTERFACE]
+                        )
+                        service = interfaces_and_props[obj["Service"]][
+                            defs.GATT_SERVICE_INTERFACE
+                        ]
+                        uuid = service["UUID"].value
+                        self.services.add_characteristic(
+                            BleakGATTCharacteristicBlueZDBus(obj, path, uuid)
+                        )
+
+                    if defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
+                        obj = unpack_variants(
+                            interfaces[defs.GATT_DESCRIPTOR_INTERFACE]
+                        )
+                        characteristic = interfaces_and_props[obj["Characteristic"]][
+                            defs.GATT_CHARACTERISTIC_INTERFACE
+                        ]
+                        uuid = characteristic["UUID"].value
+                        handle = int(obj["Characteristic"][-4:], 16)
+                        self.services.add_descriptor(
+                            BleakGATTDescriptorBlueZDBus(obj, path, uuid, handle)
+                        )
+
+                try:
                     reply = await asyncio.wait_for(
                         self._bus.call(
                             Message(
                                 destination=defs.BLUEZ_SERVICE,
-                                interface=defs.ADAPTER_INTERFACE,
-                                path=f"/org/bluez/{self._adapter}",
-                                member="ConnectDevice",
-                                signature="a{sv}",
-                                body=[
-                                    {
-                                        "Address": Variant(
-                                            "s", self._properties["Address"]
-                                        ),
-                                        "AddressType": Variant(
-                                            "s", self._properties["AddressType"]
-                                        ),
-                                    }
-                                ],
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Connect",
                             )
                         ),
                         timeout,
                     )
-                    if (
-                        reply.message_type == MessageType.ERROR
-                        and reply.error_name == ErrorType.UNKNOWN_METHOD.value
-                    ):
-                        logger.debug(
-                            f"org.bluez.Adapter1.ConnectDevice not found ({self._device_path}), try enabling bluetoothd --experimental"
-                        )
-                assert_reply(reply)
-            except BaseException:
-                # calling Disconnect cancels any pending connect request
-                try:
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Disconnect",
-                        )
-                    )
                     assert_reply(reply)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to cancel connection ({self._device_path}): {e}"
-                    )
+                except BaseException:
+                    # calling Disconnect cancels any pending connect request
+                    try:
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Disconnect",
+                            )
+                        )
+                        try:
+                            assert_reply(reply)
+                        except BleakDBusError as e:
+                            # if the object no longer exists, then we know we
+                            # are disconnected for sure, so don't need to log a
+                            # warning about it
+                            if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
+                                raise
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to cancel connection ({self._device_path}): {e}"
+                        )
 
-                raise
+                    raise
 
             if self.is_connected:
                 logger.debug(f"Connection successful ({self._device_path})")
