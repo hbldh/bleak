@@ -71,8 +71,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._subscriptions: List[int] = []
         # provides synchronization between get_services() and PropertiesChanged signal
         self._services_resolved_event: Optional[asyncio.Event] = None
+        # indicates disconnect request in progress when not None
+        self._disconnecting_event: Optional[asyncio.Event] = None
         # used to ensure device gets disconnected if event loop crashes
-        self._disconnect_event: Optional[asyncio.Event] = None
+        self._disconnect_monitor_event: Optional[asyncio.Event] = None
 
         # get BlueZ version
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
@@ -102,7 +104,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Returns:
             Boolean representing connection status.
 
+        Raises:
+            BleakError: If the device is already connected or if the device could not be found.
+            BleakDBusError: If there was a D-Bus error
+            asyncio.TimeoutError: If the connection timed out
         """
+        logger.debug(f"Connecting to device @ {self.address} with {self._adapter}")
+
+        if self.is_connected:
+            raise BleakError("Client is already connected")
+
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
@@ -118,12 +129,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 raise BleakError(
                     "Device with address {0} was not found.".format(self.address)
                 )
-
-        logger.debug(
-            "Connecting to BLE device @ {0} with {1}".format(
-                self.address, self._adapter
-            )
-        )
 
         # Create system bus
         self._bus = await MessageBus(
@@ -240,7 +245,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     reply.message_type == MessageType.ERROR
                     and reply.error_name == ErrorType.UNKNOWN_OBJECT.value
                 ):
-                    logger.debug("falling back to org.bluez.Adapter1.ConnectDevice")
+                    logger.debug(
+                        f"falling back to org.bluez.Adapter1.ConnectDevice ({self._device_path})"
+                    )
                     reply = await asyncio.wait_for(
                         self._bus.call(
                             Message(
@@ -268,7 +275,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         and reply.error_name == ErrorType.UNKNOWN_METHOD.value
                     ):
                         logger.debug(
-                            "org.bluez.Adapter1.ConnectDevice not found, try enabling bluetoothd --experimental"
+                            f"org.bluez.Adapter1.ConnectDevice not found ({self._device_path}), try enabling bluetoothd --experimental"
                         )
                 assert_reply(reply)
             except BaseException:
@@ -284,19 +291,21 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                     assert_reply(reply)
                 except Exception as e:
-                    logger.warning(f"Failed to cancel connection: {e}")
+                    logger.warning(
+                        f"Failed to cancel connection ({self._device_path}): {e}"
+                    )
 
                 raise
 
             if self.is_connected:
-                logger.debug("Connection successful.")
+                logger.debug(f"Connection successful ({self._device_path})")
             else:
                 raise BleakError(
-                    "Connection to {0} was not successful!".format(self.address)
+                    f"Connection was not successful! ({self._device_path})"
                 )
 
             # Create a task that runs until the device is disconnected.
-            self._disconnect_event = asyncio.Event()
+            self._disconnect_monitor_event = asyncio.Event()
             asyncio.create_task(self._disconnect_monitor())
 
             # Get all services. This means making the actual connection.
@@ -318,7 +327,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # task will still be running and asyncio compains if a loop with running
         # tasks is stopped.
         try:
-            await self._disconnect_event.wait()
+            await self._disconnect_monitor_event.wait()
         except asyncio.CancelledError:
             try:
                 # by using send() instead of call(), we ensure that the message
@@ -335,38 +344,53 @@ class BleakClientBlueZDBus(BaseBleakClient):
             except Exception:
                 pass
 
-    async def _cleanup_notifications(self) -> None:
+    async def _remove_signal_handlers(self) -> None:
         """
         Remove all pending notifications of the client. This method is used to
         free the DBus matches that have been established.
         """
-        for rule in self._rules:
-            await remove_match(self._bus, rule)
-        self._rules.clear()
+        logger.debug(f"_remove_signal_handlers({self._device_path})")
 
-        for handle in list(self._subscriptions):
+        self._bus.remove_message_handler(self._parse_msg)
+
+        # avoid reentrancy issues by taking a copy of self._rules
+        old_rules, self._rules = self._rules, []
+        for rule in old_rules:
+            try:
+                await remove_match(self._bus, rule)
+            except Exception as e:
+                logger.error(
+                    f"Failed to remove match {rule.member} ({self._device_path}): {e}"
+                )
+
+        # avoid reentrancy issues by taking a copy of self._subscriptions
+        old_subscriptions, self._subscriptions = self._subscriptions, []
+        for handle in old_subscriptions:
             try:
                 await self.stop_notify(handle)
             except Exception as e:
                 logger.error(
-                    "Could not remove notifications on characteristic {0}: {1}".format(
-                        handle, e
-                    )
+                    f"Failed to stop notifications on characteristic {handle} ({self._device_path}): {e}"
                 )
-        self._subscriptions.clear()
 
-        self._bus.remove_message_handler(self._parse_msg)
-
-    def _cleanup_dbus_resources(self) -> None:
+    def _disconnect_message_bus(self) -> None:
         """
         Free the resources allocated for both the DBus bus.
         Use this method upon final disconnection.
         """
+        logger.debug(f"_disconnect_message_bus({self._device_path})")
+
+        if not self._bus:
+            logger.debug(f"already disconnected ({self._device_path})")
+            return
+
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
         except Exception as e:
-            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
+            logger.error(
+                f"Attempt to disconnect system bus failed ({self._device_path}): {e}"
+            )
         else:
             # Critical to remove the `self._bus` object here to since it was
             # closed above. If not, calls made to it later could lead to
@@ -378,8 +402,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Free all the allocated resource in DBus. Use this method to
         eventually cleanup all otherwise leaked resources.
         """
-        await self._cleanup_notifications()
-        self._cleanup_dbus_resources()
+        await self._remove_signal_handlers()
+        self._disconnect_message_bus()
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -387,32 +411,43 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Returns:
             Boolean representing if device is disconnected.
 
+        Raises:
+            BleakDBusError: If there was a D-Bus error
+            asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
-        logger.debug("Disconnecting from BLE device...")
+        logger.debug(f"Disconnecting ({self._device_path})")
+
         if self._bus is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the D-Bus
             # connection.
+            logger.debug(f"already disconnected ({self._device_path})")
             return True
 
-        # Remove all residual notifications.
-        await self._cleanup_notifications()
-
-        # Try to disconnect the actual device/peripheral
-        try:
-            reply = await self._bus.call(
-                Message(
-                    destination=defs.BLUEZ_SERVICE,
-                    path=self._device_path,
-                    interface=defs.DEVICE_INTERFACE,
-                    member="Disconnect",
+        if self._disconnecting_event:
+            # another call to disconnect() is already in progress
+            logger.debug(f"already in progress ({self._device_path})")
+            await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+        elif self.is_connected:
+            self._disconnecting_event = asyncio.Event()
+            try:
+                # Try to disconnect the actual device/peripheral
+                reply = await self._bus.call(
+                    Message(
+                        destination=defs.BLUEZ_SERVICE,
+                        path=self._device_path,
+                        interface=defs.DEVICE_INTERFACE,
+                        member="Disconnect",
+                    )
                 )
-            )
-            assert_reply(reply)
-        except Exception as e:
-            logger.error("Attempt to disconnect device failed: {0}".format(e))
+                assert_reply(reply)
+                await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+            finally:
+                self._disconnecting_event = None
 
-        self._cleanup_dbus_resources()
+        # sanity check to make sure _cleanup_all() was triggered by the
+        # "PropertiesChanged" signal handler and that it completed successfully
+        assert self._bus is None
 
         # Reset all stored services.
         self.services = BleakGATTServiceCollection()
@@ -524,7 +559,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             return self.services
 
         if not self._properties["ServicesResolved"]:
-            logger.debug("Waiting for ServicesResolved")
+            logger.debug(f"Waiting for ServicesResolved ({self._device_path})")
             self._services_resolved_event = asyncio.Event()
             try:
                 await asyncio.wait_for(self._services_resolved_event.wait(), 5)
@@ -938,14 +973,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         self._services_resolved = False
 
                 if "Connected" in changed and not changed["Connected"]:
-                    logger.debug(f"Device {self.address} disconnected.")
+                    logger.debug(f"Device disconnected ({self._device_path})")
 
-                    if self._disconnect_event:
-                        self._disconnect_event.set()
-                        self._disconnect_event = None
+                    if self._disconnect_monitor_event:
+                        self._disconnect_monitor_event.set()
+                        self._disconnect_monitor_event = None
 
                     task = asyncio.get_event_loop().create_task(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
                             lambda _: self._disconnected_callback(self)
+                        )
+                    if self._disconnecting_event:
+                        task.add_done_callback(
+                            lambda _: self._disconnecting_event.set()
                         )
