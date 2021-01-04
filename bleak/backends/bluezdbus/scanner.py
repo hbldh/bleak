@@ -242,7 +242,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             # discovered devices list
 
             msg_path = message.body[0]
-            del self._devices[msg_path]
+            try:
+                del self._devices[msg_path]
+            except KeyError:
+                pass
             logger.debug(
                 "{0}, {1} ({2}): {3}".format(
                     message.member, message.interface, message.path, message.body
@@ -270,6 +273,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 return
 
             props = self._devices[message.path]
+
+            # Make sure that we can actually construct a meaningful callback
+            if "Address" not in props and "Alias" not in props:
+                return
 
             # Get all the information wanted to pack in the advertisement data
             _local_name = props.get("Name")

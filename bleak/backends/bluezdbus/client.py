@@ -513,6 +513,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if self._bus is None:
+            raise BleakError("D-Bus object is None")
+
         if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
