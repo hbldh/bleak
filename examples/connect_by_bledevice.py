@@ -12,7 +12,9 @@ async def print_services(mac_addr: str):
     device = await BleakScanner.find_device_by_address(mac_addr)
     async with BleakClient(device) as client:
         svcs = await client.get_services()
-        print("Services:", svcs)
+        print("Services:")
+        for service in svcs:
+            print(service)
 
 
 mac_addr = (

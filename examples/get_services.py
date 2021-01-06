@@ -17,7 +17,9 @@ from bleak import BleakClient
 async def print_services(mac_addr: str):
     async with BleakClient(mac_addr) as client:
         svcs = await client.get_services()
-        print("Services:", svcs)
+        print("Services:")
+        for service in svcs:
+            print(service)
 
 
 mac_addr = (
