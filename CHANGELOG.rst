@@ -13,7 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
-* Added ``AdvertisementServiceData`` in BLEDevice.
+* Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
 
 Fixed
 ~~~~~

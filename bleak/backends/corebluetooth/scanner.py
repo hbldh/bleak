@@ -135,7 +135,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             service_data = {}
             adv_service_data = advertisementData.get("kCBAdvDataServiceData", [])
             for u in adv_service_data:
-                service_data[cb_uuid_to_str(u)]= bytes(adv_service_data[u])
+                service_data[cb_uuid_to_str(u)] = bytes(adv_service_data[u])
 
             found.append(
                 BLEDevice(
