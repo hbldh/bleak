@@ -48,19 +48,33 @@ async def run(address, debug=False):
         log.info("Paired: {0}".format(x))
 
         print("Turning Light off...")
-        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b'\x00')
+        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x00")
         await asyncio.sleep(1.0)
         print("Turning Light on...")
-        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b'\x01')
+        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x01")
         await asyncio.sleep(1.0)
 
         for brightness in range(256):
             print(f"Set Brightness to {brightness}...")
-            await client.write_gatt_char(BRIGHTNESS_CHARACTERISTIC, bytearray([brightness, ]))
+            await client.write_gatt_char(
+                BRIGHTNESS_CHARACTERISTIC,
+                bytearray(
+                    [
+                        brightness,
+                    ]
+                ),
+            )
             await asyncio.sleep(0.2)
 
         print(f"Set Brightness to {40}...")
-        await client.write_gatt_char(BRIGHTNESS_CHARACTERISTIC, bytearray([40, ]))
+        await client.write_gatt_char(
+            BRIGHTNESS_CHARACTERISTIC,
+            bytearray(
+                [
+                    40,
+                ]
+            ),
+        )
 
 
 if __name__ == "__main__":

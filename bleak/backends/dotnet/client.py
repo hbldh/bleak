@@ -323,17 +323,17 @@ class BleakClientDotNet(BaseBleakClient):
                 args.Accept()
 
             pairing_requested_token = custom_pairing.add_PairingRequested(
-                TypedEventHandler[DeviceInformationCustomPairing, DevicePairingRequestedEventArgs](handler)
+                TypedEventHandler[
+                    DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
+                ](handler)
             )
 
             if protection_level:
                 pairing_result = await wrap_IAsyncOperation(
                     IAsyncOperation[DevicePairingResult](
-                        custom_pairing.PairAsync.Overloads[DevicePairingKinds, DevicePairingProtectionLevel]
-                        (
-                            ceremony,
-                            protection_level
-                        )
+                        custom_pairing.PairAsync.Overloads[
+                            DevicePairingKinds, DevicePairingProtectionLevel
+                        ](ceremony, protection_level)
                     ),
                     return_type=DevicePairingResult,
                 )
