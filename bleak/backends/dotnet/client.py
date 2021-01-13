@@ -327,8 +327,15 @@ class BleakClientDotNet(BaseBleakClient):
             )
 
             if protection_level:
-                raise NotImplementedError(
-                    "Cannot set minimally required protection level yet..."
+                pairing_result = await wrap_IAsyncOperation(
+                    IAsyncOperation[DevicePairingResult](
+                        custom_pairing.PairAsync.Overloads[DevicePairingKinds, DevicePairingProtectionLevel]
+                        (
+                            ceremony,
+                            protection_level
+                        )
+                    ),
+                    return_type=DevicePairingResult,
                 )
             else:
                 pairing_result = await wrap_IAsyncOperation(
