@@ -2,15 +2,24 @@
 Philips Hue lamp
 ----------------
 
-Needs to be connected to with encrypted pairing to enable reading and writing.
+Very important:
 
-Reference:
-https://www.reddit.com/r/Hue/comments/eq0y3y/philips_hue_bluetooth_developer_documentation/
+It seems that the device needs to be connected to in the official Philips Hue Bluetooth app
+and reset from there to be able to use with Bleak-type of BLE software. After that one needs to
+do a encrypted pairing to enable reading and writing of characteristics.
+
+ONLY TESTED IN WINDOWS BACKEND AS OF YET!
+
+References:
+
+- https://www.reddit.com/r/Hue/comments/eq0y3y/philips_hue_bluetooth_developer_documentation/
+- https://gist.github.com/shinyquagsire23/f7907fdf6b470200702e75a30135caf3
+- https://github.com/Mic92/hue-ble-ctl/blob/master/hue-ble-ctl.py
 
 Created on 2020-01-13 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-import platform
+
 import asyncio
 import logging
 
@@ -50,6 +59,7 @@ async def run(address, debug=False):
             await client.write_gatt_char(BRIGHTNESS_CHARACTERISTIC, bytearray([brightness, ]))
             await asyncio.sleep(0.2)
 
+        print(f"Set Brightness to {40}...")
         await client.write_gatt_char(BRIGHTNESS_CHARACTERISTIC, bytearray([40, ]))
 
 
