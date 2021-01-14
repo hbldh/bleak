@@ -304,7 +304,8 @@ class BleakClientDotNet(BaseBleakClient):
                     DevicePairingProtectionLevel
                         1: None - Pair the device using no levels of protection.
                         2: Encryption - Pair the device using encryption.
-                        3: EncryptionAndAuthentication - Pair the device using encryption and authentication.
+                        3: EncryptionAndAuthentication - Pair the device using
+                           encryption and authentication. (This will not work in Bleak...)
 
         Returns:
             Boolean regarding success of pairing.
@@ -327,25 +328,29 @@ class BleakClientDotNet(BaseBleakClient):
                     DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
                 ](handler)
             )
-
-            if protection_level:
-                pairing_result = await wrap_IAsyncOperation(
-                    IAsyncOperation[DevicePairingResult](
-                        custom_pairing.PairAsync.Overloads[
-                            DevicePairingKinds, DevicePairingProtectionLevel
-                        ](ceremony, protection_level)
-                    ),
-                    return_type=DevicePairingResult,
-                )
-            else:
-                pairing_result = await wrap_IAsyncOperation(
-                    IAsyncOperation[DevicePairingResult](
-                        custom_pairing.PairAsync.Overloads[DevicePairingKinds](ceremony)
-                    ),
-                    return_type=DevicePairingResult,
-                )
-
-            custom_pairing.remove_PairingRequested(pairing_requested_token)
+            try:
+                if protection_level:
+                    pairing_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[DevicePairingResult](
+                            custom_pairing.PairAsync.Overloads[
+                                DevicePairingKinds, DevicePairingProtectionLevel
+                            ](ceremony, protection_level)
+                        ),
+                        return_type=DevicePairingResult,
+                    )
+                else:
+                    pairing_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[DevicePairingResult](
+                            custom_pairing.PairAsync.Overloads[DevicePairingKinds](
+                                ceremony
+                            )
+                        ),
+                        return_type=DevicePairingResult,
+                    )
+            except Exception as e:
+                raise BleakError("Failure trying to pair with device!") from e
+            finally:
+                custom_pairing.remove_PairingRequested(pairing_requested_token)
 
             if pairing_result.Status not in (
                 DevicePairingResultStatus.Paired,
