@@ -14,6 +14,8 @@ Added
 ~~~~~
 
 * Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
+* Protection levels (encryption) in Windows backend pairing. Solves #405.
+* Philips Hue lamp example script. Relates to #405.
 
 Fixed
 ~~~~~

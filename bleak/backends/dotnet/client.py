@@ -43,6 +43,9 @@ from Windows.Devices.Enumeration import (
     DeviceUnpairingResult,
     DeviceUnpairingResultStatus,
     DevicePairingKinds,
+    DevicePairingProtectionLevel,
+    DeviceInformationCustomPairing,
+    DevicePairingRequestedEventArgs,
 )
 from Windows.Devices.Bluetooth import (
     BluetoothLEDevice,
@@ -136,8 +139,8 @@ class BleakClientDotNet(BaseBleakClient):
 
         """
         # Try to find the desired device.
+        timeout = kwargs.get("timeout", self._timeout)
         if self._device_info is None:
-            timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerDotNet.find_device_by_address(
                 self.address, timeout=timeout
             )
@@ -228,7 +231,7 @@ class BleakClientDotNet(BaseBleakClient):
             # This keeps the device connected until we dispose the session or
             # until we set MaintainConnection = False.
             self._session.MaintainConnection = True
-            await asyncio.wait_for(event.wait(), timeout=10)
+            await asyncio.wait_for(event.wait(), timeout=timeout)
         except BaseException:
             handle_disconnect()
             raise
@@ -301,7 +304,8 @@ class BleakClientDotNet(BaseBleakClient):
                     DevicePairingProtectionLevel
                         1: None - Pair the device using no levels of protection.
                         2: Encryption - Pair the device using encryption.
-                        3: EncryptionAndAuthentication - Pair the device using encryption and authentication.
+                        3: EncryptionAndAuthentication - Pair the device using
+                           encryption and authentication. (This will not work in Bleak...)
 
         Returns:
             Boolean regarding success of pairing.
@@ -319,27 +323,34 @@ class BleakClientDotNet(BaseBleakClient):
             def handler(sender, args):
                 args.Accept()
 
-            custom_pairing.PairingRequested += handler
-
-            if protection_level:
-                raise NotImplementedError(
-                    "Cannot set minimally required protection level yet..."
-                )
-            else:
-                pairing_result = await wrap_IAsyncOperation(
-                    IAsyncOperation[DevicePairingResult](
-                        custom_pairing.PairAsync.Overloads[DevicePairingKinds](ceremony)
-                    ),
-                    return_type=DevicePairingResult,
-                )
-
+            pairing_requested_token = custom_pairing.add_PairingRequested(
+                TypedEventHandler[
+                    DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
+                ](handler)
+            )
             try:
-                custom_pairing.PairingRequested -= handler
-            except Exception:
-                # TODO: Find a way to remove WinRT events...
-                pass
+                if protection_level:
+                    pairing_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[DevicePairingResult](
+                            custom_pairing.PairAsync.Overloads[
+                                DevicePairingKinds, DevicePairingProtectionLevel
+                            ](ceremony, protection_level)
+                        ),
+                        return_type=DevicePairingResult,
+                    )
+                else:
+                    pairing_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[DevicePairingResult](
+                            custom_pairing.PairAsync.Overloads[DevicePairingKinds](
+                                ceremony
+                            )
+                        ),
+                        return_type=DevicePairingResult,
+                    )
+            except Exception as e:
+                raise BleakError("Failure trying to pair with device!") from e
             finally:
-                del handler
+                custom_pairing.remove_PairingRequested(pairing_requested_token)
 
             if pairing_result.Status not in (
                 DevicePairingResultStatus.Paired,
@@ -357,11 +368,14 @@ class BleakClientDotNet(BaseBleakClient):
                         pairing_result.ProtectionLevelUsed
                     )
                 )
-
-        return self._requester.DeviceInformation.Pairing.IsPaired
+                return True
+        else:
+            return self._requester.DeviceInformation.Pairing.IsPaired
 
     async def unpair(self) -> bool:
         """Attempts to unpair from the device.
+
+        N.B. unpairing also leads to disconnection in the Windows backend.
 
         Returns:
             Boolean on whether the unparing was successful.
@@ -388,6 +402,7 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             else:
                 logger.info("Unpaired with device.")
+                return True
 
         return not self._requester.DeviceInformation.Pairing.IsPaired
 
