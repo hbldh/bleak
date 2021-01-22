@@ -187,11 +187,26 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         ``SetDiscoveryFilter`` method in the `BlueZ docs
         <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
+        See variant types here: <https://python-dbus-next.readthedocs.io/en/latest/type-system/>
+
         Keyword Args:
             filters (dict): A dict of filters to be applied on discovery.
 
         """
-        self._filters = {k: Variant(v) for k, v in kwargs.get("filters", {}).items()}
+        for k, v in kwargs.get("filters", {}).items():
+            if k == "UUIDs":
+                self._filters[k] = Variant("as", v)
+            elif k == "RSSI":
+                self._filters[k] = Variant("n", v)
+            elif k == "DuplicateData":
+                self._filters[k] = Variant("b", v)
+            elif k == "Pathloss":
+                self._filters[k] = Variant("n", v)
+            elif k == "Transport":
+                self._filters[k] = Variant("s", v)
+            else:
+                logger.warning("Filter '%s' is not currently supported." % k)
+
         if "Transport" not in self._filters:
             self._filters["Transport"] = Variant("s", "le")
 
