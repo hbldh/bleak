@@ -124,7 +124,7 @@ class BleakClientDotNet(BaseBleakClient):
             and kwargs["address_type"] in ("public", "random")
             else None
         )
-        self._use_cached = kwargs.get('use_cached', True)
+        self._use_cached = kwargs.get("use_cached", True)
 
     def __str__(self):
         return "BleakClientDotNet ({0})".format(self.address)
