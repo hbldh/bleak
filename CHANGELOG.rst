@@ -16,6 +16,9 @@ Added
 * Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
 * Protection levels (encryption) in Windows backend pairing. Solves #405.
 * Philips Hue lamp example script. Relates to #405.
+* Keyword arguments to ``get_services`` method on ``BleakClient``.
+* Keyword argument ``use_cached`` on .NET backend, to enable uncached reading
+  of services, characteristics and descriptors in Windows.
 
 Fixed
 ~~~~~

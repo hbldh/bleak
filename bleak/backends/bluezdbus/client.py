@@ -365,7 +365,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:
