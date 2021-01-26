@@ -19,6 +19,7 @@ Added
 * Keyword arguments to ``get_services`` method on ``BleakClient``.
 * Keyword argument ``use_cached`` on .NET backend, to enable uncached reading
   of services, characteristics and descriptors in Windows.
+* Documentation on troubleshooting OS level caches for services.
 
 Fixed
 ~~~~~

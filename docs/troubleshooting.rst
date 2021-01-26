@@ -144,3 +144,57 @@ On Linux, `Wireshark`_ can be used to capture and view Bluetooth traffic.
 
 
 .. _Wireshark Wiki: https://gitlab.com/wireshark/wireshark/-/wikis/CaptureSetup
+
+
+------------------------------------------
+Handling OS Caching of BLE Device Services
+------------------------------------------
+
+If you develop your own BLE peripherals, and frequently change services, characteristics and/or descriptors, then
+Bleak might report outdated versions of your peripheral's services due to OS level caching. The caching is done to
+speed up the connections with peripherals where services do not change and is enabled by default on most operating
+systems and thus also in Bleak.
+
+There are ways to avoid this on different backends though, and if you experience these kinds of problems, the steps
+below might help you to circumvent the caches.
+
+Windows 10
+==========
+
+The Windows .NET backend has the most straightforward means of handling the os caches. When creating a BleakClient, one
+can use the keyword argument `use_cached`:
+
+.. code-block:: python
+
+    async with BleakClient(address, use_cached=False) as client:
+        print(f"Connected: {await client.is_connected()}")
+        // Do whatever it is you want to do.
+
+The keyword argument is also present in the :py:meth:`bleak.backends.client.BleakClient.connect` method to use if you
+don't want to use the async context manager:
+
+.. code-block:: python
+
+    client = BleakClient(address)
+    await client.connect(use_cached=True)
+    print(f"Connected: {await client.is_connected()}")
+    // Do whatever it is you want to do.
+    await client.disconnect()
+
+macOS
+=====
+
+The OS level caching handling on macOS has not been explored yet.
+
+
+Linux
+=====
+
+When you change the structure of services/characteristics on a device, you have to remove the device from
+BlueZ so that it will read everything again. Otherwise BlueZ gives the cached values from the first time
+the device was connected. You can use the ``bluetoothctl`` command line tool to do this:
+
+.. code-block:: shell
+
+    bluetoothctl -- remove [mac_address]
+
