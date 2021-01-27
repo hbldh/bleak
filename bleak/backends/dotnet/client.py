@@ -5,6 +5,7 @@ BLE Client for Windows 10 systems.
 Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 """
 
+import inspect
 import logging
 import asyncio
 import uuid
@@ -899,15 +900,28 @@ class BleakClientDotNet(BaseBleakClient):
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
-    @wraps(func)
-    def dotnet_notification_parser(sender: Any, args: Any):
-        # Return only the UUID string representation as sender.
-        # Also do a conversion from System.Bytes[] to bytearray.
-        with BleakDataReader(args.CharacteristicValue) as reader:
-            output = reader.read()
+    if inspect.iscoroutinefunction(func):
 
-        return loop.call_soon_threadsafe(
-            func, sender.AttributeHandle, bytearray(output)
-        )
+        @wraps(func)
+        def dotnet_notification_parser(sender: Any, args: Any):
+            # Return only the UUID string representation as sender.
+            # Also do a conversion from System.Bytes[] to bytearray.
+            with BleakDataReader(args.CharacteristicValue) as reader:
+                output = reader.read()
+            return asyncio.run_coroutine_threadsafe(
+                func(sender.AttributeHandle, bytearray(output)), loop
+            )
+
+    else:
+
+        @wraps(func)
+        def dotnet_notification_parser(sender: Any, args: Any):
+            # Return only the UUID string representation as sender.
+            # Also do a conversion from System.Bytes[] to bytearray.
+            with BleakDataReader(args.CharacteristicValue) as reader:
+                output = reader.read()
+            return loop.call_soon_threadsafe(
+                func, sender.AttributeHandle, bytearray(output)
+            )
 
     return dotnet_notification_parser

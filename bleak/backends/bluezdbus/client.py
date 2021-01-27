@@ -2,6 +2,7 @@
 """
 BLE Client for BlueZ on Linux
 """
+import inspect
 import logging
 import asyncio
 import os
@@ -724,17 +725,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
+        loop = asyncio.get_event_loop()
         if _wrap:
             self._notification_callbacks[
                 characteristic.path
             ] = _data_notification_wrapper(
-                callback, self._char_path_to_handle
+                callback, self._char_path_to_handle, loop
             )  # noqa | E123 error in flake8...
         else:
             self._notification_callbacks[
                 characteristic.path
             ] = _regular_notification_wrapper(
-                callback, self._char_path_to_handle
+                callback, self._char_path_to_handle, loop
             )  # noqa | E123 error in flake8...
 
         self._subscriptions.append(characteristic.handle)
@@ -889,19 +891,45 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         )
 
 
-def _data_notification_wrapper(func, char_map):
-    @wraps(func)
-    def args_parser(sender, data):
-        if "Value" in data:
-            # Do a conversion from {'Value': [...]} to bytearray.
-            return func(char_map.get(sender, sender), bytearray(data.get("Value")))
+def _data_notification_wrapper(func, char_map, loop: asyncio.AbstractEventLoop):
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        def args_parser(sender, data):
+            if "Value" in data:
+                # Do a conversion from {'Value': [...]} to bytearray.
+                return asyncio.run_coroutine_threadsafe(
+                    func(char_map.get(sender, sender), bytearray(data.get("Value"))),
+                    loop
+                )
+
+    else:
+
+        @wraps(func)
+        def args_parser(sender, data):
+            if "Value" in data:
+                # Do a conversion from {'Value': [...]} to bytearray.
+                return loop.call_soon_threadsafe(
+                    func, char_map.get(sender, sender), bytearray(data.get("Value"))
+                )
 
     return args_parser
 
 
-def _regular_notification_wrapper(func, char_map):
-    @wraps(func)
-    def args_parser(sender, data):
-        return func(char_map.get(sender, sender), data)
+def _regular_notification_wrapper(func, char_map, loop: asyncio.AbstractEventLoop):
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        def args_parser(sender, data):
+            return asyncio.run_coroutine_threadsafe(
+                func(char_map.get(sender, sender), data),
+                loop
+            )
+
+    else:
+
+        @wraps(func)
+        def args_parser(sender, data):
+            return loop.call_soon_threadsafe(func, char_map.get(sender, sender), data)
 
     return args_parser

@@ -137,7 +137,8 @@ async def run(address, debug=False):
         battery_level = await client.read_gatt_char(BATTERY_LEVEL_UUID)
         print("Battery Level: {0}%".format(int(battery_level[0])))
 
-        def keypress_handler(sender, data):
+        async def keypress_handler(sender, data):
+            asyncio.get_event_loop().call_soon_threadsafe(lambda x: print(x), "Async!")
             print("{0}: {1}".format(sender, data))
 
         write_value = bytearray([0xA0])
