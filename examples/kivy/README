@@ -1,0 +1,7 @@
+This is a kivy application that lists scanned devices in a desktop window.
+
+It can be run on Android via:
+    pip3 install buildozer
+    buildozer android debug deploy run
+
+An iOS backend has not been implemented yet.

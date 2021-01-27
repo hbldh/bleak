@@ -28,6 +28,12 @@ Linux Distributions with BlueZ
 .. automodule:: bleak.backends.bluezdbus.client
     :members:
 
+Python-for-Android/Kivy
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.client
+    :members:
+
 Scanning Clients
 ----------------
 
@@ -53,6 +59,12 @@ Linux Distributions with BlueZ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: bleak.backends.bluezdbus.scanner
+    :members:
+
+Python-for-Android/Kivy
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.scanner
     :members:
 
 
