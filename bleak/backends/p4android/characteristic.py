@@ -7,24 +7,7 @@ from bleak.exc import BleakError
 
 from jnius import autoclass
 
-
-class _java:
-    BluetoothGattCharacteristic = autoclass(
-        "android.bluetooth.BluetoothGattCharacteristic"
-    )
-
-    CHARACTERISTIC_PROPERTY_DBUS_NAMES = {
-        BluetoothGattCharacteristic.PROPERTY_BROADCAST: "broadcast",
-        BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS: "extended-properties",
-        BluetoothGattCharacteristic.PROPERTY_INDICATE: "indicate",
-        BluetoothGattCharacteristic.PROPERTY_NOTIFY: "notify",
-        BluetoothGattCharacteristic.PROPERTY_READ: "read",
-        BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE: "authenticated-signed-writes",
-        BluetoothGattCharacteristic.PROPERTY_WRITE: "write",
-        BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE: "write-without-response",
-    }
-
-    NOTIFICATION_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
+from . import defs
 
 
 class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
@@ -40,7 +23,7 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
 
         self.__properties = [
             name
-            for flag, name in _java.CHARACTERISTIC_PROPERTY_DBUS_NAMES.items()
+            for flag, name in defs.CHARACTERISTIC_PROPERTY_DBUS_NAMES.items()
             if flag & self.obj.getProperties()
         ]
 
@@ -93,7 +76,7 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
         Should not be used by end user, but rather by `bleak` itself.
         """
         self.__descriptors.append(descriptor)
-        if descriptor.uuid == _java.NOTIFICATION_DESCRIPTOR_UUID:
+        if descriptor.uuid == defs.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID:
             self.__notification_descriptor = descriptor
 
     @property
