@@ -17,6 +17,11 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
         self.__characteristics = []
 
     @property
+    def handle(self) -> str:
+        """The integer handle of this service"""
+        raise NotImplementedError("This needs to be implemented!")
+
+    @property
     def uuid(self) -> str:
         """UUID for this service."""
         return cb_uuid_to_str(self.obj.UUID())

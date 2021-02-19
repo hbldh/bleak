@@ -32,6 +32,13 @@ Fixed
   backend. Merged #401.
 * Fixed RSSI missing in discovered devices on macOS backend. Merged #400.
 * Fixed a broken check for the correct adapter in ``BleakClientBlueZDBus``.
+* Fixed #445 and #362 for Windows.
+
+Changed
+~~~~~~~
+
+* Using handles to identify the services. Added `handle` abstract property to `BleakGATTService`
+  and storing the services by handle instead of UUID.
 
 
 `0.10.0`_ (2020-12-11)

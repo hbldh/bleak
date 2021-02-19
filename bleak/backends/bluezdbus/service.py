@@ -18,6 +18,11 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         return self.obj["UUID"]
 
     @property
+    def handle(self) -> str:
+        """The integer handle of this service"""
+        raise NotImplementedError("This needs to be implemented!")
+
+    @property
     def characteristics(self) -> List[BleakGATTCharacteristicBlueZDBus]:
         """List of characteristics for this service"""
         return self.__characteristics

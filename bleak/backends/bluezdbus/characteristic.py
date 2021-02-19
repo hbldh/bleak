@@ -29,11 +29,14 @@ _GattCharacteristicsFlagsEnum = {
 class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the BlueZ DBus backend"""
 
-    def __init__(self, obj: dict, object_path: str, service_uuid: str):
+    def __init__(
+        self, obj: dict, object_path: str, service_uuid: str, service_handle: int
+    ):
         super(BleakGATTCharacteristicBlueZDBus, self).__init__(obj)
         self.__descriptors = []
         self.__path = object_path
         self.__service_uuid = service_uuid
+        self.__service_handle = service_handle
 
         # D-Bus object path contains handle as last 4 characters of 'charYYYY'
         self._handle = int(object_path[-4:], 16)
@@ -42,6 +45,10 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return self.__service_uuid
+
+    @property
+    def service_handle(self) -> int:
+        return self.__service_handle
 
     @property
     def handle(self) -> int:

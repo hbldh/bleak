@@ -30,7 +30,7 @@ async def run(address, debug=False):
         log.info("Connected: {0}".format(x))
 
         for service in client.services:
-            log.info("[Service] {0}: {1}".format(service.uuid, service.description))
+            log.info(f"[Service] {service}")
             for char in service.characteristics:
                 if "read" in char.properties:
                     try:
@@ -40,19 +40,20 @@ async def run(address, debug=False):
                 else:
                     value = None
                 log.info(
-                    "\t[Characteristic] {0}: (Handle: {1}) ({2}) | Name: {3}, Value: {4} ".format(
-                        char.uuid,
-                        char.handle,
-                        ",".join(char.properties),
-                        char.description,
-                        value,
-                    )
+                    f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
                 )
+
                 for descriptor in char.descriptors:
-                    value = await client.read_gatt_descriptor(descriptor.handle)
+                    try:
+                        value = bytes(
+                            await client.read_gatt_descriptor(descriptor.handle)
+                        )
+                    except Exception as e:
+                        value = str(e).encode()
                     log.info(
-                        "\t\t[Descriptor] {0}: (Handle: {1}) | Value: {2} ".format(
-                            descriptor.uuid, descriptor.handle, bytes(value)
+                        f"\t\t[Descriptor] {descriptor}) | Value: {value} ".format(
+                            descriptor.uuid,
+                            descriptor.handle,
                         )
                     )
 
