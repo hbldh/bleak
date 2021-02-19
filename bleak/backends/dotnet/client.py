@@ -415,7 +415,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         return not self._requester.DeviceInformation.Pairing.IsPaired
 
-    #     #GATT services methods
+    # GATT services methods
 
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
