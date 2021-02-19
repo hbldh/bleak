@@ -24,6 +24,7 @@ Fixed
 Added
 ~~~~~
 
+* WinRT backend added
 * Updated ``dotnet.client.BleakClientDotNet`` connect method docstring.
 * Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
 * Protection levels (encryption) in Windows backend pairing. Solves #405.

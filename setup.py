@@ -91,6 +91,11 @@ setup(
     install_requires=REQUIRED,
     test_suite="tests",
     tests_require=TEST_REQUIRED,
+    extras_require={
+        "winrt": [
+            "winrt>=1.0.20330.1",
+        ],
+    },
     include_package_data=True,
     license="MIT",
     classifiers=[
