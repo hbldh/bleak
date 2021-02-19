@@ -4,6 +4,7 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
+
 import inspect
 import logging
 import asyncio
