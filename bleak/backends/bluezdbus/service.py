@@ -1,5 +1,6 @@
 from typing import List
 
+from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
 from bleak.backends.service import BleakGATTService
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 
@@ -11,6 +12,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         super().__init__(obj)
         self.__characteristics = []
         self.__path = path
+        self.__handle = extract_service_handle_from_path(path)
 
     @property
     def uuid(self) -> str:
@@ -20,7 +22,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
     @property
     def handle(self) -> str:
         """The integer handle of this service"""
-        raise NotImplementedError("This needs to be implemented!")
+        return self.__handle
 
     @property
     def characteristics(self) -> List[BleakGATTCharacteristicBlueZDBus]:

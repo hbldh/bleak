@@ -2,11 +2,13 @@
 import asyncio
 import re
 
+from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 
 from bleak.backends.bluezdbus import defs
 
 _mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+_service_handle_regex = re.compile('service([0-9A-Fa-f]*)')
 
 
 def validate_mac_address(address):
@@ -46,3 +48,11 @@ def format_GATT_object(object_path, interfaces):
     return "\n{0}\n\t{1}\n\t{2}\n\t{3}".format(
         _type, object_path, _uuid, uuidstr_to_str(_uuid)
     )
+
+
+def extract_service_handle_from_path(path):
+    try:
+        return int(_service_handle_regex.search(path).groups()[-1], 16)
+    except Exception as e:
+        raise BleakError(f"Could not parse service handle from path: {path} ({e})")
+
