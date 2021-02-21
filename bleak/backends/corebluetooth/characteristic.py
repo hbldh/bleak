@@ -58,6 +58,7 @@ _GattCharacteristicsPropertiesEnum = {
 class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
+
     def __init__(self, obj: CBCharacteristic):
         super().__init__(obj)
         self.__descriptors = []
@@ -73,6 +74,11 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return cb_uuid_to_str(self.obj.service().UUID())
+
+    @property
+    def service_handle(self) -> int:
+        return int(self.obj.service().startHandle())
+
 
     @property
     def handle(self) -> int:

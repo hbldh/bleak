@@ -15,11 +15,12 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
     def __init__(self, obj: CBService):
         super().__init__(obj)
         self.__characteristics = []
+        self.__handle = int(self.obj.startHandle())
 
     @property
-    def handle(self) -> str:
+    def handle(self) -> int:
         """The integer handle of this service"""
-        raise NotImplementedError("This needs to be implemented!")
+        return self.__handle
 
     @property
     def uuid(self) -> str:
