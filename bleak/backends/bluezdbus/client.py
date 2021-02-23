@@ -113,10 +113,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         def _services_resolved_callback(message):
             iface, changed, invalidated = message.body
-            is_resolved = defs.DEVICE_INTERFACE and changed.get(
+            is_resolved = iface == defs.DEVICE_INTERFACE and changed.get(
                 "ServicesResolved", False
             )
-            if iface == is_resolved:
+            if is_resolved:
                 logger.info("Services resolved for %s", str(self))
                 self.services_resolved = True
 
