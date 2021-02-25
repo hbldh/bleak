@@ -26,8 +26,8 @@ REQUIRED = [
     'pyobjc-framework-CoreBluetooth;platform_system=="Darwin"',
     'pyobjc-framework-libdispatch;platform_system=="Darwin"',
     # Windows reqs
-    'pythonnet;platform_system=="Windows" and python_version < "3.6.0"',
-    'winrt>=1.0.20330.1;platform_system=="Windows" and python_version>="3.6.0"',
+    'pythonnet;platform_system=="Windows" and python_version < "3.7.0"',
+    'winrt>=1.0.20330.1;platform_system=="Windows" and python_version >= "3.7.0"',
 ]
 
 TEST_REQUIRED = ["pytest", "pytest-cov"]

@@ -20,7 +20,7 @@ _on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
-if bool(os.environ.get("BLEAK_LOGGING", False)):
+if bool(os.environ.get("BLEAK_LOGGING", True)):
     FORMAT = "%(asctime)-15s %(name)-8s %(levelname)s: %(message)s"
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
@@ -78,7 +78,7 @@ elif platform.system() == "Windows":
         )
 
     py_major, py_minor, _ = platform.python_version_tuple()
-    if int(py_major) >= 3 and int(py_minor) >= 9:
+    if int(py_major) >= 3 and int(py_minor) >= 7:
         from bleak.backends.winrt.scanner import (
             BleakScannerWinRT as BleakScanner,
         )  # noqa
