@@ -55,14 +55,10 @@ async def run(address, debug=False):
                         value = bytes(
                             await client.read_gatt_descriptor(descriptor.handle)
                         )
-                        log.info(
-                            f"\t\t[Descriptor] {descriptor}) | Value: {value}"
-                        )
+                        log.info(f"\t\t[Descriptor] {descriptor}) | Value: {value}")
                     except Exception as e:
                         value = str(e).encode()
-                        log.error(
-                            f"\t\t[Descriptor] {descriptor}) | Value: {value}"
-                        )
+                        log.error(f"\t\t[Descriptor] {descriptor}) | Value: {value}")
 
 
 if __name__ == "__main__":
