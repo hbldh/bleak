@@ -39,9 +39,8 @@ async def run(address, debug=False):
                             f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
                         )
                     except Exception as e:
-                        value = str(e).encode()
                         log.error(
-                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {e}"
                         )
 
                 else:
@@ -57,8 +56,7 @@ async def run(address, debug=False):
                         )
                         log.info(f"\t\t[Descriptor] {descriptor}) | Value: {value}")
                     except Exception as e:
-                        value = str(e).encode()
-                        log.error(f"\t\t[Descriptor] {descriptor}) | Value: {value}")
+                        log.error(f"\t\t[Descriptor] {descriptor}) | Value: {e}")
 
 
 if __name__ == "__main__":

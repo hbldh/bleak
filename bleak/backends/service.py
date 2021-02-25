@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 from uuid import UUID
-from typing import Dict, List, Union, Iterator
+from typing import Dict, List, Optional, Union, Iterator
 
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
@@ -85,7 +85,9 @@ class BleakGATTServiceCollection(object):
 
     def __getitem__(
         self, item: Union[str, int, UUID]
-    ) -> Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor, None]:
+    ) -> Optional[
+        Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor]
+    ]:
         """Get a service, characteristic or descriptor from uuid or handle"""
         return (
             self.get_service(item)
