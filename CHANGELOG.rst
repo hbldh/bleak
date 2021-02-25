@@ -20,6 +20,7 @@ Added
 * Keyword argument ``use_cached`` on .NET backend, to enable uncached reading
   of services, characteristics and descriptors in Windows.
 * Documentation on troubleshooting OS level caches for services.
+* New example added: Async callbacks with a queue and external consumer
 
 Fixed
 ~~~~~
