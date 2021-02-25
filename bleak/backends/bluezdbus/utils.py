@@ -8,7 +8,6 @@ from bleak.uuids import uuidstr_to_str
 from bleak.backends.bluezdbus import defs
 
 _mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
-_service_handle_regex = re.compile("service([0-9A-Fa-f]*)")
 
 
 def validate_mac_address(address):
@@ -52,6 +51,6 @@ def format_GATT_object(object_path, interfaces):
 
 def extract_service_handle_from_path(path):
     try:
-        return int(_service_handle_regex.search(path).groups()[-1], 16)
+        return int(path[-4:], 16)
     except Exception as e:
-        raise BleakError(f"Could not parse service handle from path: {path} ({e})")
+        raise BleakError(f"Could not parse service handle from path: {path}") from e

@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 from uuid import UUID
-from typing import List, Union, Iterator
+from typing import Dict, List, Union, Iterator
 
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
@@ -85,10 +85,12 @@ class BleakGATTServiceCollection(object):
 
     def __getitem__(
         self, item: Union[str, int, UUID]
-    ) -> Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor]:
+    ) -> Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor, None]:
         """Get a service, characteristic or descriptor from uuid or handle"""
-        return self.services.get(
-            str(item), self.characteristics.get(item, self.descriptors.get(item, None))
+        return (
+            self.get_service(item)
+            or self.get_characteristic(item)
+            or self.get_descriptor(item)
         )
 
     def __iter__(self) -> Iterator[BleakGATTService]:
@@ -96,17 +98,17 @@ class BleakGATTServiceCollection(object):
         return iter(self.services.values())
 
     @property
-    def services(self) -> dict:
+    def services(self) -> Dict[int, BleakGATTService]:
         """Returns dictionary of handles mapping to BleakGATTService"""
         return self.__services
 
     @property
-    def characteristics(self) -> dict:
+    def characteristics(self) -> Dict[int, BleakGATTCharacteristic]:
         """Returns dictionary of handles mapping to BleakGATTCharacteristic"""
         return self.__characteristics
 
     @property
-    def descriptors(self) -> dict:
+    def descriptors(self) -> Dict[int, BleakGATTDescriptor]:
         """Returns a dictionary of integer handles mapping to BleakGATTDescriptor"""
         return self.__descriptors
 

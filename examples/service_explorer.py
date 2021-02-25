@@ -26,8 +26,8 @@ async def run(address, debug=False):
         log.addHandler(h)
 
     async with BleakClient(address) as client:
-        x = await client.is_connected()
-        log.info("Connected: {0}".format(x))
+        is_connected = await client.is_connected()
+        log.info(f"Connected: {is_connected}")
 
         for service in client.services:
             log.info(f"[Service] {service}")
@@ -35,27 +35,34 @@ async def run(address, debug=False):
                 if "read" in char.properties:
                     try:
                         value = bytes(await client.read_gatt_char(char.uuid))
+                        log.info(
+                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                        )
                     except Exception as e:
                         value = str(e).encode()
+                        log.error(
+                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                        )
+
                 else:
                     value = None
-                log.info(
-                    f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
-                )
+                    log.info(
+                        f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                    )
 
                 for descriptor in char.descriptors:
                     try:
                         value = bytes(
                             await client.read_gatt_descriptor(descriptor.handle)
                         )
+                        log.info(
+                            f"\t\t[Descriptor] {descriptor}) | Value: {value}"
+                        )
                     except Exception as e:
                         value = str(e).encode()
-                    log.info(
-                        f"\t\t[Descriptor] {descriptor}) | Value: {value} ".format(
-                            descriptor.uuid,
-                            descriptor.handle,
+                        log.error(
+                            f"\t\t[Descriptor] {descriptor}) | Value: {value}"
                         )
-                    )
 
 
 if __name__ == "__main__":
