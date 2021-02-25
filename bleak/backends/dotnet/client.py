@@ -4,7 +4,6 @@ BLE Client for Windows 10 systems.
 
 Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 """
-
 import inspect
 import logging
 import asyncio
@@ -804,6 +803,14 @@ class BleakClientDotNet(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.create_task(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -832,7 +839,7 @@ class BleakClientDotNet(BaseBleakClient):
             characteristic.handle
         ] = characteristic_obj.add_ValueChanged(
             TypedEventHandler[GattCharacteristic, GattValueChangedEventArgs](
-                _notification_wrapper(callback, asyncio.get_event_loop())
+                _notification_wrapper(bleak_callback, asyncio.get_event_loop())
             )
         )
 
@@ -900,28 +907,15 @@ class BleakClientDotNet(BaseBleakClient):
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
-    if inspect.iscoroutinefunction(func):
+    @wraps(func)
+    def dotnet_notification_parser(sender: Any, args: Any):
+        # Return only the UUID string representation as sender.
+        # Also do a conversion from System.Bytes[] to bytearray.
+        with BleakDataReader(args.CharacteristicValue) as reader:
+            output = reader.read()
 
-        @wraps(func)
-        def dotnet_notification_parser(sender: Any, args: Any):
-            # Return only the UUID string representation as sender.
-            # Also do a conversion from System.Bytes[] to bytearray.
-            with BleakDataReader(args.CharacteristicValue) as reader:
-                output = reader.read()
-            return asyncio.run_coroutine_threadsafe(
-                func(sender.AttributeHandle, bytearray(output)), loop
-            )
-
-    else:
-
-        @wraps(func)
-        def dotnet_notification_parser(sender: Any, args: Any):
-            # Return only the UUID string representation as sender.
-            # Also do a conversion from System.Bytes[] to bytearray.
-            with BleakDataReader(args.CharacteristicValue) as reader:
-                output = reader.read()
-            return loop.call_soon_threadsafe(
-                func, sender.AttributeHandle, bytearray(output)
-            )
+        return loop.call_soon_threadsafe(
+            func, sender.AttributeHandle, bytearray(output)
+        )
 
     return dotnet_notification_parser
