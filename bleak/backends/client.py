@@ -131,7 +131,7 @@ class BaseBleakClient(abc.ABC):
     # GATT services methods
 
     @abc.abstractmethod
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:

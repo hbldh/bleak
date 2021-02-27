@@ -43,6 +43,9 @@ from Windows.Devices.Enumeration import (
     DeviceUnpairingResult,
     DeviceUnpairingResultStatus,
     DevicePairingKinds,
+    DevicePairingProtectionLevel,
+    DeviceInformationCustomPairing,
+    DevicePairingRequestedEventArgs,
 )
 from Windows.Devices.Bluetooth import (
     BluetoothLEDevice,
@@ -93,9 +96,11 @@ class BleakClientDotNet(BaseBleakClient):
 
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        use_cached (bool): If set to `True`, then the OS level BLE cache is used for
+                getting services, characteristics and descriptors. Defaults to ``True``.
 
     Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
@@ -119,6 +124,7 @@ class BleakClientDotNet(BaseBleakClient):
             and kwargs["address_type"] in ("public", "random")
             else None
         )
+        self._use_cached = kwargs.get("use_cached", True)
 
     def __str__(self):
         return "BleakClientDotNet ({0})".format(self.address)
@@ -130,14 +136,17 @@ class BleakClientDotNet(BaseBleakClient):
 
         Keyword Args:
             timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+            use_cached (bool): If set to `True`, then the OS level BLE cache is used for
+                getting services, characteristics and descriptors. Defaults to ``True``.
 
         Returns:
             Boolean representing connection status.
 
         """
         # Try to find the desired device.
+        timeout = kwargs.get("timeout", self._timeout)
+        use_cached = kwargs.get("use_cached", self._use_cached)
         if self._device_info is None:
-            timeout = kwargs.get("timeout", self._timeout)
             device = await BleakScannerDotNet.find_device_by_address(
                 self.address, timeout=timeout
             )
@@ -228,14 +237,14 @@ class BleakClientDotNet(BaseBleakClient):
             # This keeps the device connected until we dispose the session or
             # until we set MaintainConnection = False.
             self._session.MaintainConnection = True
-            await asyncio.wait_for(event.wait(), timeout=10)
+            await asyncio.wait_for(event.wait(), timeout=timeout)
         except BaseException:
             handle_disconnect()
             raise
         finally:
             self._connect_events.remove(event)
 
-        await self.get_services()
+        await self.get_services(use_cached=use_cached)
 
         return True
 
@@ -302,7 +311,8 @@ class BleakClientDotNet(BaseBleakClient):
                     DevicePairingProtectionLevel
                         1: None - Pair the device using no levels of protection.
                         2: Encryption - Pair the device using encryption.
-                        3: EncryptionAndAuthentication - Pair the device using encryption and authentication.
+                        3: EncryptionAndAuthentication - Pair the device using
+                           encryption and authentication. (This will not work in Bleak...)
 
         Returns:
             Boolean regarding success of pairing.
@@ -320,27 +330,34 @@ class BleakClientDotNet(BaseBleakClient):
             def handler(sender, args):
                 args.Accept()
 
-            custom_pairing.PairingRequested += handler
-
-            if protection_level:
-                raise NotImplementedError(
-                    "Cannot set minimally required protection level yet..."
-                )
-            else:
-                pairing_result = await wrap_IAsyncOperation(
-                    IAsyncOperation[DevicePairingResult](
-                        custom_pairing.PairAsync.Overloads[DevicePairingKinds](ceremony)
-                    ),
-                    return_type=DevicePairingResult,
-                )
-
+            pairing_requested_token = custom_pairing.add_PairingRequested(
+                TypedEventHandler[
+                    DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
+                ](handler)
+            )
             try:
-                custom_pairing.PairingRequested -= handler
-            except Exception:
-                # TODO: Find a way to remove WinRT events...
-                pass
+                if protection_level:
+                    pairing_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[DevicePairingResult](
+                            custom_pairing.PairAsync.Overloads[
+                                DevicePairingKinds, DevicePairingProtectionLevel
+                            ](ceremony, protection_level)
+                        ),
+                        return_type=DevicePairingResult,
+                    )
+                else:
+                    pairing_result = await wrap_IAsyncOperation(
+                        IAsyncOperation[DevicePairingResult](
+                            custom_pairing.PairAsync.Overloads[DevicePairingKinds](
+                                ceremony
+                            )
+                        ),
+                        return_type=DevicePairingResult,
+                    )
+            except Exception as e:
+                raise BleakError("Failure trying to pair with device!") from e
             finally:
-                del handler
+                custom_pairing.remove_PairingRequested(pairing_requested_token)
 
             if pairing_result.Status not in (
                 DevicePairingResultStatus.Paired,
@@ -358,11 +375,14 @@ class BleakClientDotNet(BaseBleakClient):
                         pairing_result.ProtectionLevelUsed
                     )
                 )
-
-        return self._requester.DeviceInformation.Pairing.IsPaired
+                return True
+        else:
+            return self._requester.DeviceInformation.Pairing.IsPaired
 
     async def unpair(self) -> bool:
         """Attempts to unpair from the device.
+
+        N.B. unpairing also leads to disconnection in the Windows backend.
 
         Returns:
             Boolean on whether the unparing was successful.
@@ -389,18 +409,25 @@ class BleakClientDotNet(BaseBleakClient):
                 )
             else:
                 logger.info("Unpaired with device.")
+                return True
 
         return not self._requester.DeviceInformation.Pairing.IsPaired
 
     # GATT services methods
 
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
+
+        Keyword Args:
+
+            use_cached (bool): If set to `True`, then the OS level BLE cache is used for
+                getting services, characteristics and descriptors.
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
+        use_cached = kwargs.get("use_cached", self._use_cached)
         # Return the Service Collection.
         if self._services_resolved:
             return self.services
@@ -408,7 +435,11 @@ class BleakClientDotNet(BaseBleakClient):
             logger.debug("Get Services...")
             services_result = await wrap_IAsyncOperation(
                 IAsyncOperation[GattDeviceServicesResult](
-                    self._requester.GetGattServicesAsync()
+                    self._requester.GetGattServicesAsync(
+                        BluetoothCacheMode.Cached
+                        if use_cached
+                        else BluetoothCacheMode.Uncached
+                    )
                 ),
                 return_type=GattDeviceServicesResult,
             )
@@ -434,7 +465,11 @@ class BleakClientDotNet(BaseBleakClient):
             for service in services_result.Services:
                 characteristics_result = await wrap_IAsyncOperation(
                     IAsyncOperation[GattCharacteristicsResult](
-                        service.GetCharacteristicsAsync()
+                        service.GetCharacteristicsAsync(
+                            BluetoothCacheMode.Cached
+                            if use_cached
+                            else BluetoothCacheMode.Uncached
+                        )
                     ),
                     return_type=GattCharacteristicsResult,
                 )
@@ -468,7 +503,11 @@ class BleakClientDotNet(BaseBleakClient):
                 for characteristic in characteristics_result.Characteristics:
                     descriptors_result = await wrap_IAsyncOperation(
                         IAsyncOperation[GattDescriptorsResult](
-                            characteristic.GetDescriptorsAsync()
+                            characteristic.GetDescriptorsAsync(
+                                BluetoothCacheMode.Cached
+                                if use_cached
+                                else BluetoothCacheMode.Uncached
+                            )
                         ),
                         return_type=GattDescriptorsResult,
                     )
@@ -528,8 +567,8 @@ class BleakClientDotNet(BaseBleakClient):
             char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
                 specified by either integer handle, UUID or directly by the
                 BleakGATTCharacteristic object representing it.
-            use_cached (bool): `False` forces Windows to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
+            use_cached (bool): ``False`` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to ``False``.
 
         Returns:
             (bytearray) The read data.
@@ -586,8 +625,8 @@ class BleakClientDotNet(BaseBleakClient):
 
         Args:
             handle (int): The handle of the descriptor to read from.
-            use_cached (bool): `False` forces Windows to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
+            use_cached (bool): ``False`` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to ``False``.
 
         Returns:
             (bytearray) The read data.

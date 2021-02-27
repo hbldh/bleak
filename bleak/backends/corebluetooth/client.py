@@ -152,7 +152,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:

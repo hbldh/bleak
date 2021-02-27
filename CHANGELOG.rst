@@ -13,6 +13,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
+* Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
+* Protection levels (encryption) in Windows backend pairing. Solves #405.
+* Philips Hue lamp example script. Relates to #405.
+* Keyword arguments to ``get_services`` method on ``BleakClient``.
+* Keyword argument ``use_cached`` on .NET backend, to enable uncached reading
+  of services, characteristics and descriptors in Windows.
+* Documentation on troubleshooting OS level caches for services.
 * Added more specific type hints for ``BleakGATTServiceCollection`` properties.
 * Added ``asyncio`` task to disconnect devices on event loop crash in BlueZ backend.
 * Added filtering on advertisement data callbacks on BlueZ backend so that
@@ -38,6 +45,7 @@ Fixed
 * Fixed ``BaseBleakClient.services_resolved`` not reset on disconnect on BlueZ
   backend. Merged #401.
 * Fixed RSSI missing in discovered devices on macOS backend. Merged #400.
+* Fixed a broken check for the correct adapter in ``BleakClientBlueZDBus``.
 
 
 `0.10.0`_ (2020-12-11)
