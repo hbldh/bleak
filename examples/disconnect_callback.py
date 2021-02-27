@@ -9,7 +9,6 @@ Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 """
 
 import asyncio
-import sys
 
 from bleak import BleakClient, discover
 
@@ -34,21 +33,7 @@ async def show_disconnect_handling():
         print("Connected:", client.is_connected)
 
 
-if sys.version_info >= (3, 7):
-    asyncio.run(show_disconnect_handling())
-else:
-    loop = asyncio.new_event_loop()
-    try:
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(show_disconnect_handling())
-    finally:
-        try:
-            tasks = asyncio.all_tasks(loop)
-            if tasks:
-                for t in tasks:
-                    t.cancel()
-                loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
-            loop.run_until_complete(loop.shutdown_asyncgens())
-        finally:
-            asyncio.set_event_loop(None)
-            loop.close()
+# It is important to use asyncio.run() to get proper cleanup on KeyboardInterrupt.
+# This was introduced in Python 3.7. If you need it in Python 3.6, you can copy
+# it from https://github.com/python/cpython/blob/3.7/Lib/asyncio/runners.py#L8-L50
+asyncio.run(show_disconnect_handling())
