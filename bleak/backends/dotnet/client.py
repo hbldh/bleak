@@ -4,7 +4,7 @@ BLE Client for Windows 10 systems.
 
 Created on 2017-12-05 by hbldh <henrik.blidh@nedomkull.com>
 """
-
+import inspect
 import logging
 import asyncio
 import uuid
@@ -803,6 +803,14 @@ class BleakClientDotNet(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.create_task(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -831,7 +839,7 @@ class BleakClientDotNet(BaseBleakClient):
             characteristic.handle
         ] = characteristic_obj.add_ValueChanged(
             TypedEventHandler[GattCharacteristic, GattValueChangedEventArgs](
-                _notification_wrapper(callback, asyncio.get_event_loop())
+                _notification_wrapper(bleak_callback, asyncio.get_event_loop())
             )
         )
 

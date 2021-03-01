@@ -2,6 +2,7 @@
 """
 BLE Client for BlueZ on Linux
 """
+import inspect
 import logging
 import asyncio
 import os
@@ -699,6 +700,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 notification to bytearray.
 
         """
+
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.create_task(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         _wrap = kwargs.get("notification_wrapper", True)
         if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
             characteristic = self.services.get_characteristic(char_specifier)
@@ -729,15 +739,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if _wrap:
             self._notification_callbacks[
                 characteristic.path
-            ] = _data_notification_wrapper(
-                callback, self._char_path_to_handle
-            )  # noqa | E123 error in flake8...
+            ] = _data_notification_wrapper(bleak_callback, self._char_path_to_handle)
         else:
             self._notification_callbacks[
                 characteristic.path
-            ] = _regular_notification_wrapper(
-                callback, self._char_path_to_handle
-            )  # noqa | E123 error in flake8...
+            ] = _regular_notification_wrapper(bleak_callback, self._char_path_to_handle)
 
         self._subscriptions.append(characteristic.handle)
 
