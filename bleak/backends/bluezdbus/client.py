@@ -113,10 +113,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         def _services_resolved_callback(message):
             iface, changed, invalidated = message.body
-            is_resolved = defs.DEVICE_INTERFACE and changed.get(
+            is_resolved = iface == defs.DEVICE_INTERFACE and changed.get(
                 "ServicesResolved", False
             )
-            if iface == is_resolved:
+            if is_resolved:
                 logger.info("Services resolved for %s", str(self))
                 self.services_resolved = True
 
@@ -416,7 +416,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         for char, object_path in _chars:
             _service = list(filter(lambda x: x.path == char["Service"], self.services))
             self.services.add_characteristic(
-                BleakGATTCharacteristicBlueZDBus(char, object_path, _service[0].uuid)
+                BleakGATTCharacteristicBlueZDBus(
+                    char, object_path, _service[0].uuid, _service[0].handle
+                )
             )
 
             # D-Bus object path contains handle as last 4 characters of 'charYYYY'

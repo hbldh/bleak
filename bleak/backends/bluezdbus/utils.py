@@ -2,6 +2,7 @@
 import asyncio
 import re
 
+from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 
 from bleak.backends.bluezdbus import defs
@@ -46,3 +47,10 @@ def format_GATT_object(object_path, interfaces):
     return "\n{0}\n\t{1}\n\t{2}\n\t{3}".format(
         _type, object_path, _uuid, uuidstr_to_str(_uuid)
     )
+
+
+def extract_service_handle_from_path(path):
+    try:
+        return int(path[-4:], 16)
+    except Exception as e:
+        raise BleakError(f"Could not parse service handle from path: {path}") from e

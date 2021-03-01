@@ -34,12 +34,18 @@ class BleakGATTCharacteristic(abc.ABC):
         self.obj = obj
 
     def __str__(self):
-        return "{0}: {1}".format(self.uuid, self.description)
+        return f"{self.uuid} (Handle: {self.handle}): {self.description}"
 
     @property
     @abc.abstractmethod
     def service_uuid(self) -> str:
         """The UUID of the Service containing this characteristic"""
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def service_handle(self) -> int:
+        """The integer handle of the Service containing this characteristic"""
         raise NotImplementedError()
 
     @property

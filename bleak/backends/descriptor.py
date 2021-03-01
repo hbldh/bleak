@@ -109,7 +109,7 @@ class BleakGATTDescriptor(abc.ABC):
         self.obj = obj
 
     def __str__(self):
-        return "{0}: {1}".format(self.uuid, self.description)
+        return f"{self.uuid} (Handle: {self.handle}): {self.description}"
 
     @property
     @abc.abstractmethod
