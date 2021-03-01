@@ -21,6 +21,9 @@ Added
   of services, characteristics and descriptors in Windows.
 * Documentation on troubleshooting OS level caches for services.
 * New example added: Async callbacks with a queue and external consumer
+* ``handle`` property on ``BleakGATTService`` objects
+* ``service_handle`` property on ``BleakGATTCharacteristic`` objects
+
 
 Fixed
 ~~~~~
@@ -32,7 +35,21 @@ Fixed
 * Fixed ``BaseBleakClient.services_resolved`` not reset on disconnect on BlueZ
   backend. Merged #401.
 * Fixed RSSI missing in discovered devices on macOS backend. Merged #400.
+* Fixed scan result shows 'Unknown' name of the ``BLEDevice``. Fixes #371.
 * Fixed a broken check for the correct adapter in ``BleakClientBlueZDBus``.
+* Fixed #445 and #362 for Windows.
+
+Changed
+~~~~~~~
+
+* Using handles to identify the services. Added `handle` abstract property to `BleakGATTService`
+  and storing the services by handle instead of UUID.
+
+Removed
+~~~~~~~
+* Removed all ``__str__`` methods from backend service, characteristic and descriptor implementations
+  in favour of those in the abstract base classes.
+
 
 
 `0.10.0`_ (2020-12-11)

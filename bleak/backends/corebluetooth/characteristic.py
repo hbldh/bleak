@@ -69,13 +69,14 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         ]
         self._uuid = cb_uuid_to_str(self.obj.UUID())
 
-    def __str__(self):
-        return "{0}: {1}".format(self.uuid, self.description)
-
     @property
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return cb_uuid_to_str(self.obj.service().UUID())
+
+    @property
+    def service_handle(self) -> int:
+        return int(self.obj.service().startHandle())
 
     @property
     def handle(self) -> int:

@@ -417,7 +417,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         for char, object_path in _chars:
             _service = list(filter(lambda x: x.path == char["Service"], self.services))
             self.services.add_characteristic(
-                BleakGATTCharacteristicBlueZDBus(char, object_path, _service[0].uuid)
+                BleakGATTCharacteristicBlueZDBus(
+                    char, object_path, _service[0].uuid, _service[0].handle
+                )
             )
 
             # D-Bus object path contains handle as last 4 characters of 'charYYYY'
