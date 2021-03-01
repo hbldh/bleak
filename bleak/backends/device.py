@@ -27,7 +27,7 @@ class BLEDevice(object):
         #: The Bluetooth address of the device on this machine.
         self.address = address
         #: The advertised name of the device.
-        self.name = name if name else "Unknown"
+        self.name = name
         #: The OS native details required for connecting to the device.
         self.details = details
         #: RSSI, if available
@@ -36,7 +36,7 @@ class BLEDevice(object):
         self.metadata = kwargs
 
     def __str__(self):
-        if self.name == "Unknown":
+        if not self.name:
             if "manufacturer_data" in self.metadata:
                 ks = list(self.metadata["manufacturer_data"].keys())
                 if len(ks):
@@ -46,7 +46,7 @@ class BLEDevice(object):
                     )
                     # TODO: Evaluate how to interpret the value of the company identifier...
                     return "{0}: {1} ({2})".format(self.address, mf, value)
-        return "{0}: {1}".format(self.address, self.name)
+        return "{0}: {1}".format(self.address, self.name or "Unknown")
 
     def __repr__(self):
         return str(self)

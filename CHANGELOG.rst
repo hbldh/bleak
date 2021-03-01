@@ -33,6 +33,7 @@ Fixed
 * Fixed ``BaseBleakClient.services_resolved`` not reset on disconnect on BlueZ
   backend. Merged #401.
 * Fixed RSSI missing in discovered devices on macOS backend. Merged #400.
+* Fixed scan result shows 'Unknown' name of the ``BLEDevice``. Fixes #371.
 * Fixed a broken check for the correct adapter in ``BleakClientBlueZDBus``.
 * Fixed #445 and #362 for Windows.
 
@@ -46,6 +47,7 @@ Removed
 ~~~~~~~
 * Removed all ``__str__`` methods from backend service, characteristic and descriptor implementations
   in favour of those in the abstract base classes.
+
 
 
 `0.10.0`_ (2020-12-11)
