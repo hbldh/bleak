@@ -4,7 +4,7 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
-
+import inspect
 import logging
 import asyncio
 import uuid
@@ -733,6 +733,14 @@ class BleakClientWinRT(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.create_task(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -757,20 +765,9 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             cccd = GattClientCharacteristicConfigurationDescriptorValue.NONE
 
-        try:
-            fcn = _notification_wrapper(callback, asyncio.get_event_loop())
-            fcn_token = characteristic_obj.add_value_changed(fcn)
-            self._notification_callbacks[characteristic.handle] = fcn, fcn_token
-        except Exception as e:
-            logger.debug("Start Notify problem: {0}".format(e))
-            if characteristic.handle in self._notification_callbacks:
-                callback, token = self._notification_callbacks.pop(
-                    characteristic.handle
-                )
-                characteristic_obj.remove_value_changed(token)
-
-            return GattCommunicationStatus.ACCESS_DENIED
-
+        fcn = _notification_wrapper(bleak_callback, asyncio.get_event_loop())
+        fcn_token = characteristic_obj.add_value_changed(fcn)
+        self._notification_callbacks[characteristic.handle] = fcn, fcn_token
         status = await characteristic_obj.write_client_characteristic_configuration_descriptor_async(
             cccd
         )
