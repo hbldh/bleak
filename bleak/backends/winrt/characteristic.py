@@ -77,9 +77,9 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         return str(self.obj.service.uuid)
 
     @property
-    def service_handle(self) -> str:
+    def service_handle(self) -> int:
         """The integer handle of the Service containing this characteristic"""
-        return str(self.obj.service.attribute_handle)
+        return int(self.obj.service.attribute_handle)
 
     @property
     def handle(self) -> int:
