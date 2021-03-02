@@ -374,7 +374,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
-                asyncio.create_task(callback(s, d))
+                asyncio.ensure_future(callback(s, d))
 
         else:
             bleak_callback = callback

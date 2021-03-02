@@ -329,7 +329,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
             # Create a task that runs until the device is disconnected.
             self._disconnect_monitor_event = asyncio.Event()
-            asyncio.create_task(self._disconnect_monitor())
+            asyncio.ensure_future(self._disconnect_monitor())
 
             # Get all services. This means making the actual connection.
             await self.get_services()
@@ -887,7 +887,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
-                asyncio.create_task(callback(s, d))
+                asyncio.ensure_future(callback(s, d))
 
         else:
             bleak_callback = callback
@@ -1040,7 +1040,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         self._disconnect_monitor_event.set()
                         self._disconnect_monitor_event = None
 
-                    task = asyncio.get_event_loop().create_task(self._cleanup_all())
+                    task = asyncio.get_event_loop().ensure_future(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
                             lambda _: self._disconnected_callback(self)
