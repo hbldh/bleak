@@ -37,7 +37,7 @@ async def run(address, debug=False):
         logger.addHandler(h)
 
     async with BleakClient(address) as client:
-        logger.info("Connected:", client.is_connected)
+        logger.info(f"Connected: {client.is_connected}")
 
         await client.start_notify(CHARACTERISTIC_UUID, notification_handler)
         await asyncio.sleep(5.0)

@@ -103,7 +103,7 @@ async def run(address, debug=False):
     #     l.addHandler(h)
 
     async with BleakClient(address) as client:
-        logger.info("Connected:", client.is_connected)
+        logger.info(f"Connected: {client.is_connected}")
 
         system_id = await client.read_gatt_char(SYSTEM_ID_UUID)
         print(

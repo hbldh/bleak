@@ -23,7 +23,7 @@ async def print_services(mac_addr: str):
 
 
 mac_addr = (
-    "90:84:2B:4A:46:D8"
+    "24:71:89:cc:09:05"
     if platform.system() != "Darwin"
     else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
 )

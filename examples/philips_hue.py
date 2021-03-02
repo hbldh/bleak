@@ -43,7 +43,9 @@ async def run(address, debug=False):
 
     async with BleakClient(address) as client:
         log.info(f"Connected: {client.is_connected}")
-        log.info(f"Paired: {await client.pair(protection_level=2)}")
+
+        paired = await client.pair(protection_level=2)
+        log.info(f"Paired: {paired}")
 
         print("Turning Light off...")
         await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x00")
