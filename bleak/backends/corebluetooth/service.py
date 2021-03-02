@@ -15,6 +15,14 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
     def __init__(self, obj: CBService):
         super().__init__(obj)
         self.__characteristics = []
+        # N.B. the `startHandle` method of the CBService is an undocumented Core Bluetooth feature,
+        # which Bleak takes advantage of in order to have a service handle to use.
+        self.__handle = int(self.obj.startHandle())
+
+    @property
+    def handle(self) -> int:
+        """The integer handle of this service"""
+        return self.__handle
 
     @property
     def uuid(self) -> str:

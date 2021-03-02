@@ -167,7 +167,7 @@ can use the keyword argument `use_cached`:
 .. code-block:: python
 
     async with BleakClient(address, use_cached=False) as client:
-        print(f"Connected: {await client.is_connected()}")
+        print(f"Connected: {client.is_connected}")
         // Do whatever it is you want to do.
 
 The keyword argument is also present in the :py:meth:`bleak.backends.client.BleakClient.connect` method to use if you
@@ -177,7 +177,7 @@ don't want to use the async context manager:
 
     client = BleakClient(address)
     await client.connect(use_cached=True)
-    print(f"Connected: {await client.is_connected()}")
+    print(f"Connected: {client.is_connected}")
     // Do whatever it is you want to do.
     await client.disconnect()
 

@@ -2,6 +2,7 @@
 """
 BLE Client for BlueZ on Linux
 """
+import inspect
 import logging
 import asyncio
 import os
@@ -22,7 +23,11 @@ from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
-from bleak.backends.bluezdbus.utils import assert_reply, unpack_variants
+from bleak.backends.bluezdbus.utils import (
+    assert_reply,
+    extract_service_handle_from_path,
+    unpack_variants,
+)
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
@@ -258,8 +263,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             defs.GATT_SERVICE_INTERFACE
                         ]
                         uuid = service["UUID"].value
+                        handle = extract_service_handle_from_path(obj["Service"])
                         self.services.add_characteristic(
-                            BleakGATTCharacteristicBlueZDBus(obj, path, uuid)
+                            BleakGATTCharacteristicBlueZDBus(obj, path, uuid, handle)
                         )
 
                     if defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
@@ -270,7 +276,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             defs.GATT_CHARACTERISTIC_INTERFACE
                         ]
                         uuid = characteristic["UUID"].value
-                        handle = int(obj["Characteristic"][-4:], 16)
+                        handle = extract_service_handle_from_path(obj["Characteristic"])
                         self.services.add_descriptor(
                             BleakGATTDescriptorBlueZDBus(obj, path, uuid, handle)
                         )
@@ -367,6 +373,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         free the DBus matches that have been established.
         """
         logger.debug(f"_remove_signal_handlers({self._device_path})")
+
+        if self._bus is None:
+            logger.debug("no bus object")
+            return
 
         self._bus.remove_message_handler(self._parse_msg)
 
@@ -857,6 +867,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 UUID or directly by the BleakGATTCharacteristicBlueZDBus object representing it.
             callback (function): The function to be called on notification.
         """
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.create_task(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -883,7 +901,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-        self._notification_callbacks[characteristic.path] = callback
+        self._notification_callbacks[characteristic.path] = bleak_callback
         self._subscriptions.append(characteristic.handle)
 
         reply = await self._bus.call(
@@ -958,12 +976,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     if x.path == obj["Service"]
                 )
                 self.services.add_characteristic(
-                    BleakGATTCharacteristicBlueZDBus(obj, path, service.uuid)
+                    BleakGATTCharacteristicBlueZDBus(
+                        obj, path, service.uuid, service.handle
+                    )
                 )
 
             if defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
                 obj = unpack_variants(interfaces[defs.GATT_DESCRIPTOR_INTERFACE])
-                handle = int(obj["Characteristic"][-4:], 16)
+                handle = extract_service_handle_from_path(obj["Characteristic"])
                 characteristic = self.services.characteristics[handle]
                 self.services.add_descriptor(
                     BleakGATTDescriptorBlueZDBus(obj, path, characteristic.uuid, handle)
@@ -977,8 +997,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
             if interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                 if message.path in self._notification_callbacks and "Value" in changed:
-                    handle = int(message.path[-4:], 16)
-                    self._notification_callbacks[message.path](handle, changed["Value"])
+                    handle = extract_service_handle_from_path(message.path)
+                    self._notification_callbacks[message.path](
+                        handle, bytearray(changed["Value"])
+                    )
             elif interface == defs.DEVICE_INTERFACE:
                 self._properties.update(changed)
 

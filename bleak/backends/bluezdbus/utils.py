@@ -6,6 +6,7 @@ from dbus_next.constants import MessageType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
 
+from bleak import BleakError
 from bleak.exc import BleakDBusError
 
 _mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
@@ -43,3 +44,10 @@ def unpack_variants(dictionary: Dict[str, Variant]) -> Dict[str, Any]:
             v = [x.value if isinstance(x, Variant) else x for x in v]
         unpacked[k] = v
     return unpacked
+
+
+def extract_service_handle_from_path(path):
+    try:
+        return int(path[-4:], 16)
+    except Exception as e:
+        raise BleakError(f"Could not parse service handle from path: {path}") from e

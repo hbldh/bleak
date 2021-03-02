@@ -3,7 +3,7 @@ BLE Client for CoreBluetooth on macOS
 
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
-
+import inspect
 import logging
 import uuid
 from typing import Callable, Union
@@ -369,6 +369,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.create_task(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         manager = self._central_manager_delegate
 
         if not isinstance(char_specifier, BleakGATTCharacteristic):
@@ -379,7 +387,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {0} not found!".format(char_specifier))
 
         success = await manager.connected_peripheral_delegate.startNotify_cb_(
-            characteristic.obj, callback
+            characteristic.obj, bleak_callback
         )
         if not success:
             raise BleakError(
