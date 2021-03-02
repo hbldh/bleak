@@ -1,6 +1,7 @@
 from uuid import UUID
 from typing import Union, List
 
+from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 
@@ -37,9 +38,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         self.__path = object_path
         self.__service_uuid = service_uuid
         self.__service_handle = service_handle
-
-        # D-Bus object path contains handle as last 4 characters of 'charYYYY'
-        self._handle = int(object_path[-4:], 16)
+        self._handle = extract_service_handle_from_path(object_path)
 
     @property
     def service_uuid(self) -> str:
@@ -48,6 +47,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
 
     @property
     def service_handle(self) -> int:
+        """The handle of the Service containing this characteristic"""
         return self.__service_handle
 
     @property

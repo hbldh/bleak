@@ -19,7 +19,7 @@ def run(addresses):
     loop.run_until_complete(tasks)
 
 
-async def connect_to_device(address, loop):
+async def connect_to_device(address):
     print("starting", address, "loop")
     async with BleakClient(address, timeout=5.0) as client:
 

@@ -30,11 +30,10 @@ async def show_disconnect_handling():
     ) as client:
         print("Sleeping until device disconnects...")
         await disconnected_event.wait()
-        print("Connected: {0}".format(await client.is_connected()))
-        await asyncio.sleep(
-            0.5
-        )  # Sleep a bit longer to allow _cleanup to remove all BlueZ notifications nicely...
+        print("Connected:", client.is_connected)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(show_disconnect_handling())
+# It is important to use asyncio.run() to get proper cleanup on KeyboardInterrupt.
+# This was introduced in Python 3.7. If you need it in Python 3.6, you can copy
+# it from https://github.com/python/cpython/blob/3.7/Lib/asyncio/runners.py
+asyncio.run(show_disconnect_handling())

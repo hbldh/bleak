@@ -23,7 +23,12 @@ Added
 * New example added: Async callbacks with a queue and external consumer
 * ``handle`` property on ``BleakGATTService`` objects
 * ``service_handle`` property on ``BleakGATTCharacteristic`` objects
-
+* Added more specific type hints for ``BleakGATTServiceCollection`` properties.
+* Added ``asyncio`` task to disconnect devices on event loop crash in BlueZ backend.
+* Added filtering on advertisement data callbacks on BlueZ backend so that
+  callbacks only occur when advertising data changes like on macOS backend.
+* Added fallback to try ``org.bluez.Adapter1.ConnectDevice`` when trying to connect
+  a device in BlueZ backend.
 
 Fixed
 ~~~~~
@@ -44,6 +49,10 @@ Changed
 
 * Using handles to identify the services. Added `handle` abstract property to `BleakGATTService`
   and storing the services by handle instead of UUID.
+* Changed ``BleakScanner.set_scanning_filter()`` from async method to normal method.
+* Changed BlueZ backend to use ``dbus-next`` instead of ``txdbus``.
+* Changed ``BleakClient.is_connected`` from async method to property.
+* Consolidated D-Bus signal debug messages in BlueZ backend.
 
 Removed
 ~~~~~~~

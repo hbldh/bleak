@@ -288,19 +288,19 @@ class BleakClientDotNet(BaseBleakClient):
 
         return True
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
         Returns:
             Boolean representing connection status.
 
         """
-        if self._requester:
-            return (
-                self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
-            )
-        else:
-            return False
+        return self._DeprecatedIsConnectedReturn(
+            False
+            if self._requester is None
+            else self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
+        )
 
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.
@@ -806,7 +806,7 @@ class BleakClientDotNet(BaseBleakClient):
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
-                asyncio.create_task(callback(s, d))
+                asyncio.ensure_future(callback(s, d))
 
         else:
             bleak_callback = callback

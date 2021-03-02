@@ -26,8 +26,7 @@ async def run(address, debug=False):
         log.addHandler(h)
 
     async with BleakClient(address) as client:
-        is_connected = await client.is_connected()
-        log.info(f"Connected: {is_connected}")
+        log.info(f"Connected: {client.is_connected}")
 
         for service in client.services:
             log.info(f"[Service] {service}")

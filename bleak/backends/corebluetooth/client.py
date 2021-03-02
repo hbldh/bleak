@@ -117,10 +117,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._services = None
         return True
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Checks for current active connection"""
         manager = self._central_manager_delegate
-        return False if manager is None else manager.isConnected
+        return self._DeprecatedIsConnectedReturn(
+            False if manager is None else manager.isConnected
+        )
 
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.
@@ -371,7 +374,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
-                asyncio.create_task(callback(s, d))
+                asyncio.ensure_future(callback(s, d))
 
         else:
             bleak_callback = callback

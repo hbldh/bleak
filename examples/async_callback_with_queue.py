@@ -36,7 +36,7 @@ async def run_ble_client(address: str, queue: asyncio.Queue):
         await queue.put((time.time(), data))
 
     async with BleakClient(address) as client:
-        log.info(f"Connected: {await client.is_connected()}")
+        log.info(f"Connected: {client.is_connected}")
         await client.start_notify(NOTIFICATION_UUID, callback_handler)
         await asyncio.sleep(10.0)
         await client.stop_notify(NOTIFICATION_UUID)
