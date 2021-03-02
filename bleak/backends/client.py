@@ -141,9 +141,9 @@ class BaseBleakClient(abc.ABC):
 
         def __call__(self) -> bool:
             warn(
-                FutureWarning(
-                    "is_connected has been changed to a property. Calling it as an async method will be removed in a future version"
-                )
+                "is_connected has been changed to a property. Calling it as an async method will be removed in a future version",
+                FutureWarning,
+                stacklevel=2,
             )
             f = asyncio.Future()
             f.set_result(self._value)
