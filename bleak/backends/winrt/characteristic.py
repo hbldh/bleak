@@ -11,7 +11,7 @@ from winrt.windows.devices.bluetooth.genericattributeprofile import (
 )
 
 
-_GattCharacteristicsPropertiesEnum = {
+_GattCharacteristicsPropertiesMap = {
     GattCharacteristicProperties.NONE: (
         "None",
         "The characteristic doesn’t have any properties that apply",
@@ -66,7 +66,7 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         super().__init__(obj)
         self.__descriptors = []
         self.__props = [
-            _GattCharacteristicsPropertiesEnum[v][0]
+            _GattCharacteristicsPropertiesMap[v][0]
             for v in [2 ** n for n in range(10)]
             if (self.obj.characteristic_properties & v)
         ]
@@ -97,7 +97,7 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         return self.obj.user_description
 
     @property
-    def properties(self) -> List:
+    def properties(self) -> List[str]:
         """Properties of this characteristic"""
         return self.__props
 
