@@ -6,8 +6,10 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
+import asyncio
 import uuid
 from typing import Callable, Union
+from warnings import warn
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -127,6 +129,28 @@ class BaseBleakClient(abc.ABC):
 
         """
         raise NotImplementedError()
+
+    class _DeprecatedIsConnectedReturn:
+        """Wrapper for ``is_connected`` return value to provide deprecation warning."""
+
+        def __init__(self, value: bool):
+            self._value = value
+
+        def __bool__(self):
+            return self._value
+
+        def __call__(self) -> bool:
+            warn(
+                FutureWarning(
+                    "is_connected has been changed to a property. Calling it as an async method will be removed in a future version"
+                )
+            )
+            f = asyncio.Future()
+            f.set_result(self._value)
+            return f
+
+        def __repr__(self) -> str:
+            return repr(self._value)
 
     # GATT services methods
 

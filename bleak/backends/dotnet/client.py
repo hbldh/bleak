@@ -296,12 +296,11 @@ class BleakClientDotNet(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        if self._requester:
-            return (
-                self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
-            )
-        else:
-            return False
+        return self._DeprecatedIsConnectedReturn(
+            False
+            if self._requester is None
+            else self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
+        )
 
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.

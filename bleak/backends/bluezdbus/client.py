@@ -568,10 +568,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        if not self._bus:
-            return False
-
-        return self._properties.get("Connected", False)
+        return self._DeprecatedIsConnectedReturn(
+            False if self._bus is None else self._properties.get("Connected", False)
+        )
 
     # GATT services methods
 
