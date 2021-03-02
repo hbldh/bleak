@@ -581,6 +581,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if self._services_resolved:
             return self.services
 
@@ -613,6 +616,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -691,6 +697,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
@@ -740,6 +749,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -823,6 +835,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             data (bytes or bytearray): The data to send.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
@@ -866,6 +881,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 UUID or directly by the BleakGATTCharacteristicBlueZDBus object representing it.
             callback (function): The function to be called on notification.
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
@@ -925,6 +943,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 directly by the BleakGATTCharacteristicBlueZDBus object representing it.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
