@@ -964,8 +964,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert_reply(reply)
 
         self._notification_callbacks.pop(characteristic.path, None)
-
-        self._subscriptions.remove(characteristic.handle)
+        try:
+            self._subscriptions.remove(characteristic.handle)
+        except ValueError:
+            pass
 
     # Internal Callbacks
 
