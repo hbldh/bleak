@@ -1040,7 +1040,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         self._disconnect_monitor_event.set()
                         self._disconnect_monitor_event = None
 
-                    task = asyncio.get_event_loop().ensure_future(self._cleanup_all())
+                    task = asyncio.ensure_future(self._cleanup_all())
                     if self._disconnected_callback is not None:
                         task.add_done_callback(
                             lambda _: self._disconnected_callback(self)
