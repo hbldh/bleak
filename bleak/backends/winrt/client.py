@@ -10,13 +10,14 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, Union
+from typing import Callable, Any, List, Union
 
 from winrt.windows.devices.enumeration import (
     DevicePairingKinds,
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
 )
+from winrt.windows.security.cryptography import CryptographicBuffer
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.scanner import BleakScannerWinRT
@@ -32,7 +33,6 @@ from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
 # Import of RT components needed.
 
-from winrt.windows.storage.streams import DataReader, DataWriter
 from winrt.windows.devices.bluetooth import (
     BluetoothLEDevice,
     BluetoothConnectionStatus,
@@ -98,8 +98,8 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             self._device_info = None
         self._requester = None
-        self._connect_events: list[asyncio.Event] = []
-        self._disconnect_events: list[asyncio.Event] = []
+        self._connect_events: List[asyncio.Event] = []
+        self._disconnect_events: List[asyncio.Event] = []
         self._session: GattSession = None
 
         self._address_type = (
@@ -529,11 +529,7 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         if read_result.status == GattCommunicationStatus.SUCCESS:
-            reader = DataReader.from_buffer(read_result.value)
-            # TODO: Figure out how to use read_bytes instead...
-            value = bytearray(
-                [reader.read_byte() for _ in range(reader.unconsumed_buffer_length)]
-            )
+            value = bytearray(CryptographicBuffer.copy_to_byte_array(read_result.value))
             logger.debug(
                 "Read Characteristic {0} : {1}".format(characteristic.uuid, value)
             )
@@ -581,11 +577,7 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         if read_result.status == GattCommunicationStatus.SUCCESS:
-            reader = DataReader.from_buffer(read_result.value)
-            # TODO: Figure out how to use read_bytes instead...
-            value = bytearray(
-                [reader.read_byte() for _ in range(reader.unconsumed_buffer_length)]
-            )
+            value = bytearray(CryptographicBuffer.copy_to_byte_array(read_result.value))
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
             if read_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
@@ -632,15 +624,13 @@ class BleakClientWinRT(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
-        writer = DataWriter()
-        writer.write_bytes(list(data))
         response = (
             GattWriteOption.WRITE_WITH_RESPONSE
             if response
             else GattWriteOption.WRITE_WITHOUT_RESPONSE
         )
         write_result = await characteristic.obj.write_value_with_result_async(
-            writer.detach_buffer(), response
+            CryptographicBuffer.create_from_byte_array(list(data)), response
         )
 
         if write_result.status == GattCommunicationStatus.SUCCESS:
@@ -681,9 +671,9 @@ class BleakClientWinRT(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
-        writer = DataWriter()
-        writer.write_bytes(list(data))
-        write_result = await descriptor.obj.write_value_async(writer.detach_buffer())
+        write_result = await descriptor.obj.write_value_async(
+            CryptographicBuffer.create_from_byte_array(list(data))
+        )
 
         if write_result.status == GattCommunicationStatus.SUCCESS:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
@@ -825,10 +815,8 @@ def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     def dotnet_notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
         # Also do a conversion from System.Bytes[] to bytearray.
-        reader = DataReader.from_buffer(args.characteristic_value)
-        # TODO: Figure out how to use read_bytes instead...
         value = bytearray(
-            [reader.read_byte() for _ in range(reader.unconsumed_buffer_length)]
+            CryptographicBuffer.copy_to_byte_array(args.characteristic_value)
         )
 
         return loop.call_soon_threadsafe(func, sender.attribute_handle, value)

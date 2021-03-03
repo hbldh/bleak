@@ -9,7 +9,7 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, Union
+from typing import Callable, Any, List, Union
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.scanner import BleakScannerDotNet
@@ -37,6 +37,7 @@ from BleakBridge import Bridge  # noqa: F401
 from System import UInt64, Object
 from System.Runtime.InteropServices.WindowsRuntime import EventRegistrationToken
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
+from Windows.Security.Cryptography import CryptographicBuffer
 from Windows.Devices.Enumeration import (
     DevicePairingResult,
     DevicePairingResultStatus,
@@ -113,8 +114,8 @@ class BleakClientDotNet(BaseBleakClient):
         else:
             self._device_info = None
         self._requester = None
-        self._connect_events: list[asyncio.Event] = []
-        self._disconnect_events: list[asyncio.Event] = []
+        self._connect_events: List[asyncio.Event] = []
+        self._disconnect_events: List[asyncio.Event] = []
         self._connection_status_changed_token: EventRegistrationToken = None
         self._session: GattSession = None
 
