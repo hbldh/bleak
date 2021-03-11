@@ -390,15 +390,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     f"Failed to remove match {rule.member} ({self._device_path}): {e}"
                 )
 
-        # avoid reentrancy issues by taking a copy of self._subscriptions
-        old_subscriptions, self._subscriptions = self._subscriptions, []
-        for handle in old_subscriptions:
-            try:
-                await self.stop_notify(handle)
-            except Exception as e:
-                logger.error(
-                    f"Failed to stop notifications on characteristic {handle} ({self._device_path}): {e}"
-                )
+        # There is no need to call stop_notify() here since the the device is
+        # already disconnected and we are about to close the D-Bus message bus
+        # which has the effect of clearing all notifications in BlueZ.
+        self._subscriptions = []
 
     def _disconnect_message_bus(self) -> None:
         """
