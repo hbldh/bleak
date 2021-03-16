@@ -7,8 +7,8 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
--------------
+`0.11.0`_ (2021-03-17)
+----------------------
 
 Added
 ~~~~~
@@ -475,14 +475,15 @@ Fixed
 
 
 .. _Unreleased: https://github.com/hbldh/bleak/compare/v0.10.0...develop
-.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.9.1
-.. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.1...v0.9.0
-.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.9.0...v0.8.0
-.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1
-.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
-.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
-.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
-.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.3
-.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.2
-.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.0...v0.6.1
-.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.5.1...v0.6.0
+.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...0.11.0
+.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.9.1...v0.10.0
+.. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.0...v0.9.1
+.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.9.0
+.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.7.1...v0.8.0
+.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.0...v0.7.1
+.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.6.4...v0.7.0
+.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.4...v0.6.3
+.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.2
+.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.1
+.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.0
+.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.6.0...v0.5.1
