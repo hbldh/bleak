@@ -78,7 +78,7 @@ elif platform.system() == "Windows":
         )
 
     py_major, py_minor, _ = platform.python_version_tuple()
-    if int(py_major) >= 3 and int(py_minor) >= 7:
+    if int(py_major) >= 3 and int(py_minor) >= 9:
         from bleak.backends.winrt.scanner import (
             BleakScannerWinRT as BleakScanner,
         )  # noqa
