@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
+* Updated ``dotnet.client.BleakClientDotNet`` connect method docstring.
 * Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
 * Protection levels (encryption) in Windows backend pairing. Solves #405.
 * Philips Hue lamp example script. Relates to #405.

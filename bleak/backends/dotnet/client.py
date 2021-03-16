@@ -142,6 +142,9 @@ class BleakClientDotNet(BaseBleakClient):
         Returns:
             Boolean representing connection status.
 
+        Raises:
+            BleakError: When device is not found.
+            TimeoutError: When connecting to the device takes too long.
         """
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
