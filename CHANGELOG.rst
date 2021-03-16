@@ -30,6 +30,7 @@ Added
   callbacks only occur when advertising data changes like on macOS backend.
 * Added fallback to try ``org.bluez.Adapter1.ConnectDevice`` when trying to connect
   a device in BlueZ backend.
+* Added UART service example.
 
 Fixed
 ~~~~~
