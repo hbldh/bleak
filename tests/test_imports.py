@@ -6,18 +6,10 @@
 import os
 import platform
 
-import pytest
 
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
-_IS_AZURE_PIPELINES = os.environ.get("SYSTEM_HOSTTYPE", "") == "build"
 
 
-@pytest.mark.skipif(
-    condition=_IS_AZURE_PIPELINES
-    and (platform.system().lower() in ("linux", "darwin")),
-    reason="""Cannot run on Azure Pipelines with
-    Ubuntu 16.04 or macOS installed.""",
-)
 def test_import():
     """Test by importing the client and assert correct client by OS."""
     if platform.system() == "Linux":
@@ -27,7 +19,11 @@ def test_import():
     elif platform.system() == "Windows":
         from bleak import BleakClient
 
-        assert BleakClient.__name__ == "BleakClientDotNet"
+        py_major, py_minor, *_ = platform.python_version_tuple()
+        if int(py_major) == 3 and int(py_minor) < 9:
+            assert BleakClient.__name__ == "BleakClientDotNet"
+        else:
+            assert BleakClient.__name__ == "BleakClientWinRT"
     elif platform.system() == "Darwin":
         from bleak import BleakClient
 
