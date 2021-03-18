@@ -11,6 +11,18 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+
+Added
+~~~~~
+
+* WinRT backend added
+
+Changed
+~~~~~~~
+
+* Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``
+
+
 Fixed
 ~~~~~
 
@@ -24,7 +36,6 @@ Fixed
 Added
 ~~~~~
 
-* WinRT backend added
 * Updated ``dotnet.client.BleakClientDotNet`` connect method docstring.
 * Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
 * Protection levels (encryption) in Windows backend pairing. Solves #405.
