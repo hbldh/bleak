@@ -142,7 +142,7 @@ class BaseBleakScanner(abc.ABC):
     @classmethod
     async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> BLEDevice:
+    ) -> Optional[BLEDevice]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
 
         Args:
