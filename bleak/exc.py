@@ -13,6 +13,22 @@ class BleakDotNetTaskError(BleakError):
     pass
 
 
+class BleakDBusError(BleakError):
+    """Specialized exception type for D-Bus errors."""
+
+    def __init__(self, dbus_error: str):
+        """
+        Args:
+            dbus_error (str): The D-Bus error, e.g. ``org.freedesktop.DBus.Error.UnknownObject``.
+        """
+        super().__init__(dbus_error)
+
+    @property
+    def dbus_error(self) -> str:
+        """Gets the D-Bus error name, e.g. ``org.freedesktop.DBus.Error.UnknownObject``."""
+        return self.args[0]
+
+
 CONTROLLER_ERROR_CODES = {
     0x00: "Success",
     0x01: "Unknown HCI Command",

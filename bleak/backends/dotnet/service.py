@@ -19,6 +19,11 @@ class BleakGATTServiceDotNet(BleakGATTService):
         ]
 
     @property
+    def handle(self) -> str:
+        """The handle of this service"""
+        return int(self.obj.AttributeHandle)
+
+    @property
     def uuid(self) -> str:
         """UUID for this service."""
         return self.obj.Uuid.ToString()

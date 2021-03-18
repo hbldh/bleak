@@ -3,7 +3,7 @@ BLE Client for CoreBluetooth on macOS
 
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
-
+import inspect
 import logging
 import uuid
 from typing import Callable, Union
@@ -117,10 +117,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._services = None
         return True
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Checks for current active connection"""
         manager = self._central_manager_delegate
-        return False if manager is None else manager.isConnected
+        return self._DeprecatedIsConnectedReturn(
+            False if manager is None else manager.isConnected
+        )
 
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.
@@ -151,7 +154,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:
@@ -368,6 +371,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         """
+        if inspect.iscoroutinefunction(callback):
+
+            def bleak_callback(s, d):
+                asyncio.ensure_future(callback(s, d))
+
+        else:
+            bleak_callback = callback
+
         manager = self._central_manager_delegate
 
         if not isinstance(char_specifier, BleakGATTCharacteristic):
@@ -378,7 +389,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {0} not found!".format(char_specifier))
 
         success = await manager.connected_peripheral_delegate.startNotify_cb_(
-            characteristic.obj, callback
+            characteristic.obj, bleak_callback
         )
         if not success:
             raise BleakError(

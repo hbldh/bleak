@@ -26,35 +26,36 @@ async def run(address, debug=False):
         log.addHandler(h)
 
     async with BleakClient(address) as client:
-        x = await client.is_connected()
-        log.info("Connected: {0}".format(x))
+        log.info(f"Connected: {client.is_connected}")
 
         for service in client.services:
-            log.info("[Service] {0}: {1}".format(service.uuid, service.description))
+            log.info(f"[Service] {service}")
             for char in service.characteristics:
                 if "read" in char.properties:
                     try:
                         value = bytes(await client.read_gatt_char(char.uuid))
+                        log.info(
+                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                        )
                     except Exception as e:
-                        value = str(e).encode()
+                        log.error(
+                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {e}"
+                        )
+
                 else:
                     value = None
-                log.info(
-                    "\t[Characteristic] {0}: (Handle: {1}) ({2}) | Name: {3}, Value: {4} ".format(
-                        char.uuid,
-                        char.handle,
-                        ",".join(char.properties),
-                        char.description,
-                        value,
-                    )
-                )
-                for descriptor in char.descriptors:
-                    value = await client.read_gatt_descriptor(descriptor.handle)
                     log.info(
-                        "\t\t[Descriptor] {0}: (Handle: {1}) | Value: {2} ".format(
-                            descriptor.uuid, descriptor.handle, bytes(value)
-                        )
+                        f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
                     )
+
+                for descriptor in char.descriptors:
+                    try:
+                        value = bytes(
+                            await client.read_gatt_descriptor(descriptor.handle)
+                        )
+                        log.info(f"\t\t[Descriptor] {descriptor}) | Value: {value}")
+                    except Exception as e:
+                        log.error(f"\t\t[Descriptor] {descriptor}) | Value: {e}")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,60 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`0.11.0`_ (2021-03-17)
+----------------------
+
+Added
+~~~~~
+
+* Updated ``dotnet.client.BleakClientDotNet`` connect method docstring.
+* Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
+* Protection levels (encryption) in Windows backend pairing. Solves #405.
+* Philips Hue lamp example script. Relates to #405.
+* Keyword arguments to ``get_services`` method on ``BleakClient``.
+* Keyword argument ``use_cached`` on .NET backend, to enable uncached reading
+  of services, characteristics and descriptors in Windows.
+* Documentation on troubleshooting OS level caches for services.
+* New example added: Async callbacks with a queue and external consumer
+* ``handle`` property on ``BleakGATTService`` objects
+* ``service_handle`` property on ``BleakGATTCharacteristic`` objects
+* Added more specific type hints for ``BleakGATTServiceCollection`` properties.
+* Added ``asyncio`` task to disconnect devices on event loop crash in BlueZ backend.
+* Added filtering on advertisement data callbacks on BlueZ backend so that
+  callbacks only occur when advertising data changes like on macOS backend.
+* Added fallback to try ``org.bluez.Adapter1.ConnectDevice`` when trying to connect
+  a device in BlueZ backend.
+* Added UART service example.
+
+Fixed
+~~~~~
+
+* Fixed wrong OS write method called in ``write_gatt_descriptor()`` in Windows
+  backend.  Merged #403.
+* Fixed ``BaseBleakClient.services_resolved`` not reset on disconnect on BlueZ
+  backend. Merged #401.
+* Fixed RSSI missing in discovered devices on macOS backend. Merged #400.
+* Fixed scan result shows 'Unknown' name of the ``BLEDevice``. Fixes #371.
+* Fixed a broken check for the correct adapter in ``BleakClientBlueZDBus``.
+* Fixed #445 and #362 for Windows.
+
+Changed
+~~~~~~~
+
+* Using handles to identify the services. Added `handle` abstract property to `BleakGATTService`
+  and storing the services by handle instead of UUID.
+* Changed ``BleakScanner.set_scanning_filter()`` from async method to normal method.
+* Changed BlueZ backend to use ``dbus-next`` instead of ``txdbus``.
+* Changed ``BleakClient.is_connected`` from async method to property.
+* Consolidated D-Bus signal debug messages in BlueZ backend.
+
+Removed
+~~~~~~~
+* Removed all ``__str__`` methods from backend service, characteristic and descriptor implementations
+  in favour of those in the abstract base classes.
+
+
+
 `0.10.0`_ (2020-12-11)
 ----------------------
 
@@ -419,14 +473,15 @@ Fixed
 
 
 .. _Unreleased: https://github.com/hbldh/bleak/compare/v0.10.0...develop
-.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.9.1
-.. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.1...v0.9.0
-.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.9.0...v0.8.0
-.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1
-.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
-.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
-.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
-.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.3
-.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.2
-.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.0...v0.6.1
-.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.5.1...v0.6.0
+.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...0.11.0
+.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.9.1...v0.10.0
+.. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.0...v0.9.1
+.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.9.0
+.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.7.1...v0.8.0
+.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.0...v0.7.1
+.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.6.4...v0.7.0
+.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.4...v0.6.3
+.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.2
+.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.1
+.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.0
+.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.6.0...v0.5.1
