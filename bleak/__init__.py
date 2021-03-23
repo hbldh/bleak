@@ -77,19 +77,21 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    py_major, py_minor, _ = platform.python_version_tuple()
-    if int(py_major) >= 3 and int(py_minor) >= 9:
+    # If the winrt package is installed, assume that the user has opted to use that backend
+    # instead of the pythonnet/BleakBridge implementation.
+    try:
         from bleak.backends.winrt.scanner import (
             BleakScannerWinRT as BleakScanner,
         )  # noqa
         from bleak.backends.winrt.client import BleakClientWinRT as BleakClient  # noqa
-    else:
+    except ImportError:
         from bleak.backends.dotnet.scanner import (
             BleakScannerDotNet as BleakScanner,
         )  # noqa
         from bleak.backends.dotnet.client import (
             BleakClientDotNet as BleakClient,
         )  # noqa
+
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 

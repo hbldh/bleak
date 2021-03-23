@@ -37,7 +37,6 @@ from BleakBridge import Bridge  # noqa: F401
 from System import UInt64, Object
 from System.Runtime.InteropServices.WindowsRuntime import EventRegistrationToken
 from Windows.Foundation import IAsyncOperation, TypedEventHandler
-from Windows.Security.Cryptography import CryptographicBuffer
 from Windows.Devices.Enumeration import (
     DevicePairingResult,
     DevicePairingResultStatus,

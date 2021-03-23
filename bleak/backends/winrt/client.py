@@ -74,10 +74,10 @@ _unpairing_statuses = {
 
 
 class BleakClientWinRT(BaseBleakClient):
-    """The native Windows Bleak Client.
+    """Native Windows Bleak Client.
 
-    Implemented using `winrt <https://pythonnet.github.io/>`_, a package that enables Python developers to access
-    Windows Runtime APIs directly from Python. Therefore, much of the code below has a distinct C# feel.
+    Implemented using `winrt <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection>`_,
+    a package that enables Python developers to access Windows Runtime APIs directly from Python.
 
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
@@ -214,7 +214,7 @@ class BleakClientWinRT(BaseBleakClient):
                 self._requester.bluetooth_device_id
             )
             # This keeps the device connected until we dispose the session or
-            # until we set MaintainConnection = False.
+            # until we set maintain_connection = False.
             self._session.maintain_connection = True
             await asyncio.wait_for(event.wait(), timeout=timeout)
         except BaseException:
@@ -236,8 +236,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         """
         logger.debug("Disconnecting from BLE device...")
-        # Remove notifications. Remove them first in the BleakBridge and then clear
-        # remaining notifications in Python as well.
+        # Remove notifications.
         for handle, (fcn, fcn_token) in list(self._notification_callbacks.items()):
             char = self.services.get_characteristic(handle)
             char.obj.remove_value_changed(fcn_token)
