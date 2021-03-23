@@ -310,7 +310,7 @@ class BleakClientDotNet(BaseBleakClient):
 
         Keyword Args:
             protection_level:
-                    DevicePairingProtectionLevel
+                    Windows.Devices.Enumeration.DevicePairingProtectionLevel
                         1: None - Pair the device using no levels of protection.
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
@@ -560,7 +560,6 @@ class BleakClientDotNet(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        use_cached=False,
         **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
@@ -569,6 +568,8 @@ class BleakClientDotNet(BaseBleakClient):
             char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
                 specified by either integer handle, UUID or directly by the
                 BleakGATTCharacteristic object representing it.
+
+        Keyword Args:
             use_cached (bool): ``False`` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
 
@@ -576,6 +577,9 @@ class BleakClientDotNet(BaseBleakClient):
             (bytearray) The read data.
 
         """
+
+        use_cached = kwargs.get("use_cached", False)
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -620,13 +624,13 @@ class BleakClientDotNet(BaseBleakClient):
                 )
         return value
 
-    async def read_gatt_descriptor(
-        self, handle: int, use_cached=False, **kwargs
-    ) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             handle (int): The handle of the descriptor to read from.
+
+        Keyword Args:
             use_cached (bool): ``False`` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
 
@@ -634,6 +638,8 @@ class BleakClientDotNet(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        use_cached = kwargs.get("use_cached", False)
+
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))

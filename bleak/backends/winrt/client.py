@@ -237,9 +237,9 @@ class BleakClientWinRT(BaseBleakClient):
         """
         logger.debug("Disconnecting from BLE device...")
         # Remove notifications.
-        for handle, (fcn, fcn_token) in list(self._notification_callbacks.items()):
+        for handle, event_handler_token in list(self._notification_callbacks.items()):
             char = self.services.get_characteristic(handle)
-            char.obj.remove_value_changed(fcn_token)
+            char.obj.remove_value_changed(event_handler_token)
         self._notification_callbacks.clear()
 
         # Dispose all service components that we have requested and created.
@@ -265,26 +265,27 @@ class BleakClientWinRT(BaseBleakClient):
 
         return True
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
         Returns:
             Boolean representing connection status.
 
         """
-        if self._requester:
-            return (
-                self._requester.connection_status == BluetoothConnectionStatus.CONNECTED
-            )
-        else:
-            return False
+        return self._DeprecatedIsConnectedReturn(
+            False
+            if self._requester is None
+            else self._requester.connection_status
+            == BluetoothConnectionStatus.CONNECTED
+        )
 
-    async def pair(self, protection_level=None, **kwargs) -> bool:
+    async def pair(self, protection_level: int = None, **kwargs) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
             protection_level:
-                    DevicePairingProtectionLevel
+                    Windows.Devices.Enumeration.DevicePairingProtectionLevel
                         1: None - Pair the device using no levels of protection.
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
@@ -500,7 +501,6 @@ class BleakClientWinRT(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        use_cached=False,
         **kwargs
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
@@ -509,6 +509,8 @@ class BleakClientWinRT(BaseBleakClient):
             char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
                 specified by either integer handle, UUID or directly by the
                 BleakGATTCharacteristic object representing it.
+
+        Keyword Args:
             use_cached (bool): ``False`` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
 
@@ -516,6 +518,8 @@ class BleakClientWinRT(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        use_cached = kwargs.get("use_cached", False)
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -553,13 +557,13 @@ class BleakClientWinRT(BaseBleakClient):
                 )
         return value
 
-    async def read_gatt_descriptor(
-        self, handle: int, use_cached=False, **kwargs
-    ) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             handle (int): The handle of the descriptor to read from.
+
+        Keyword Args:
             use_cached (bool): `False` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to `False`.
 
@@ -567,6 +571,8 @@ class BleakClientWinRT(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        use_cached = kwargs.get("use_cached", False)
+
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
@@ -755,20 +761,20 @@ class BleakClientWinRT(BaseBleakClient):
             cccd = GattClientCharacteristicConfigurationDescriptorValue.NONE
 
         fcn = _notification_wrapper(bleak_callback, asyncio.get_event_loop())
-        fcn_token = characteristic_obj.add_value_changed(fcn)
-        self._notification_callbacks[characteristic.handle] = fcn, fcn_token
+        event_handler_token = characteristic_obj.add_value_changed(fcn)
+        self._notification_callbacks[characteristic.handle] = event_handler_token
         status = await characteristic_obj.write_client_characteristic_configuration_descriptor_async(
             cccd
         )
 
         if status != GattCommunicationStatus.SUCCESS:
-            # This usually happens when a device reports that it support indicate,
+            # This usually happens when a device reports that it supports indicate,
             # but it actually doesn't.
             if characteristic.handle in self._notification_callbacks:
-                callback, token = self._notification_callbacks.pop(
+                event_handler_token = self._notification_callbacks.pop(
                     characteristic.handle
                 )
-                characteristic_obj.remove_value_changed(token)
+                characteristic_obj.remove_value_changed(event_handler_token)
 
             raise BleakError(
                 "Could not start notify on {0}: {1}".format(
@@ -805,8 +811,10 @@ class BleakClientWinRT(BaseBleakClient):
                 )
             )
         else:
-            callback, token = self._notification_callbacks.pop(characteristic.handle)
-            characteristic.obj.remove_value_changed(token)
+            event_handler_token = self._notification_callbacks.pop(
+                characteristic.handle
+            )
+            characteristic.obj.remove_value_changed(event_handler_token)
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
