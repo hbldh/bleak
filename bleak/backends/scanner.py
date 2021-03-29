@@ -2,15 +2,12 @@ import abc
 import asyncio
 import inspect
 from typing import (
-    Any,
     Awaitable,
     Callable,
-    Coroutine,
     Dict,
     List,
     Optional,
     Tuple,
-    Union,
 )
 
 from bleak.backends.device import BLEDevice
