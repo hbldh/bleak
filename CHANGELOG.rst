@@ -11,6 +11,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+* Added ``BleakScanner.discovered_devices`` property.
+
+Changed
+~~~~~~~
+
+* Deprecated ``BleakScanner.get_discovered_devices()`` async method.
+
 Fixed
 ~~~~~
 

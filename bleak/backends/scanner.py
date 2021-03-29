@@ -2,6 +2,7 @@ import abc
 import asyncio
 import inspect
 from typing import Callable, Dict, List, Optional, Tuple
+from warnings import warn
 
 from bleak.backends.device import BLEDevice
 
@@ -82,7 +83,7 @@ class BaseBleakScanner(abc.ABC):
         """
         async with cls(**kwargs) as scanner:
             await asyncio.sleep(timeout)
-            devices = await scanner.get_discovered_devices()
+            devices = scanner.discovered_devices
         return devices
 
     def register_detection_callback(
@@ -129,15 +130,32 @@ class BaseBleakScanner(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
+    @abc.abstractproperty
+    def discovered_devices(self) -> List[BLEDevice]:
+        """Gets the devices registered by the BleakScanner.
+
+        Returns:
+            A list of the devices that the scanner has discovered during the scanning.
+        """
+        raise NotImplementedError()
+
     async def get_discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.
+
+        .. deprecated:: 0.11.0
+            This method will be removed in a future version of Bleak. Use the
+            :attr:`.discovered_devices` property instead.
 
         Returns:
             A list of the devices that the scanner has discovered during the scanning.
 
         """
-        raise NotImplementedError()
+        warn(
+            "This method will be removed in a future version of Bleak. Use the `discovered_devices` property instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.discovered_devices
 
     @classmethod
     async def find_device_by_address(
@@ -172,6 +190,6 @@ class BaseBleakScanner(abc.ABC):
                 return None
             return next(
                 d
-                for d in await scanner.get_discovered_devices()
+                for d in scanner.discovered_devices
                 if d.address.lower() == device_identifier
             )
