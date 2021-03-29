@@ -1040,7 +1040,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         task.add_done_callback(
                             lambda _: self._disconnected_callback(self)
                         )
-                    if self._disconnecting_event:
-                        task.add_done_callback(
-                            lambda _: self._disconnecting_event.set()
-                        )
+                    disconnecting_event = self._disconnecting_event
+                    if disconnecting_event:
+                        task.add_done_callback(lambda _: disconnecting_event.set())
