@@ -15,7 +15,7 @@
 
 
 windows_autodoc_mock_import = ["clr", "Windows", "System", "BleakBridge"]
-linux_autodoc_mock_import = ["dbus-next"]
+linux_autodoc_mock_import = ["dbus_next"]
 macos_autodoc_mock_import = [
     "objc",
     "Foundation",
