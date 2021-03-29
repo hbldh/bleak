@@ -82,15 +82,17 @@ elif platform.system() == "Windows":
     try:
         from bleak.backends.winrt.scanner import (
             BleakScannerWinRT as BleakScanner,
-        )  # noqa
-        from bleak.backends.winrt.client import BleakClientWinRT as BleakClient  # noqa
+        )  # noqa: F401
+        from bleak.backends.winrt.client import (
+            BleakClientWinRT as BleakClient,
+        )  # noqa: F401
     except ImportError:
         from bleak.backends.dotnet.scanner import (
             BleakScannerDotNet as BleakScanner,
-        )  # noqa
+        )  # noqa: F401
         from bleak.backends.dotnet.client import (
             BleakClientDotNet as BleakClient,
-        )  # noqa
+        )  # noqa: F401
 
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")

@@ -96,6 +96,9 @@ setup(
         "winrt": [
             "winrt>=1.0.20330.1",
         ],
+        "pythonnet": [
+            "pythonnet>=2.5.1",
+        ],
     },
     include_package_data=True,
     license="MIT",
