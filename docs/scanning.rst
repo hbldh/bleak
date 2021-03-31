@@ -45,8 +45,7 @@ It can also be used as an object, either in an asynchronous context manager way:
     async def run():
         async with BleakScanner() as scanner:
             await asyncio.sleep(5.0)
-            devices = await scanner.get_discovered_devices()
-        for d in devices:
+        for d in scanner.discovered_devices:
             print(d)
 
     loop = asyncio.get_event_loop()
@@ -68,9 +67,8 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
         await scanner.start()
         await asyncio.sleep(5.0)
         await scanner.stop()
-        devices = await scanner.get_discovered_devices()
 
-        for d in devices:
+        for d in scanner.discovered_devices:
             print(d)
 
     loop = asyncio.get_event_loop()

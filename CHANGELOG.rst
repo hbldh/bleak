@@ -11,17 +11,23 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+
+* Added ``BleakScanner.discovered_devices`` property.
+
 Changed
 ~~~~~~~
 
+* Deprecated ``BleakScanner.get_discovered_devices()`` async method.
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
-
 
 Fixed
 ~~~~~
 
 * Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
+* Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
 * Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
 
 

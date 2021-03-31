@@ -210,7 +210,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if "Transport" not in self._filters:
             self._filters["Transport"] = Variant("s", "le")
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         # Reduce output.
         discovered_devices = []
         for path, props in self._devices.items():
