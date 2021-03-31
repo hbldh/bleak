@@ -20,6 +20,7 @@ Changed
 ~~~~~~~
 
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
+* Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 
 Fixed
 ~~~~~
@@ -27,6 +28,7 @@ Fixed
 * Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
 * Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
+* Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
 
 
 `0.11.0`_ (2021-03-17)

@@ -1,7 +1,14 @@
 import abc
 import asyncio
 import inspect
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import (
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+)
 from warnings import warn
 
 from bleak.backends.device import BLEDevice
@@ -49,7 +56,10 @@ class AdvertisementData:
         return f"AdvertisementData({', '.join(kwargs)})"
 
 
-AdvertisementDataCallback = Callable[[BLEDevice, AdvertisementData], None]
+AdvertisementDataCallback = Callable[
+    [BLEDevice, AdvertisementData],
+    Optional[Awaitable[None]],
+]
 
 
 class BaseBleakScanner(abc.ABC):
@@ -94,10 +104,12 @@ class BaseBleakScanner(abc.ABC):
         If another callback has already been registered, it will be replaced with ``callback``.
         ``None`` can be used to remove the current callback.
 
-        The ``callback`` is a function that takes two arguments: :class:`BLEDevice` and :class:`AdvertisementData`.
+        The ``callback`` is a function or coroutine that takes two arguments: :class:`BLEDevice`
+        and :class:`AdvertisementData`.
 
         Args:
-            callback: A function or ``None``.
+            callback: A function, coroutine or ``None``.
+
         """
         if callback is not None:
             error_text = "callback must be callable with 2 parameters"
@@ -108,7 +120,15 @@ class BaseBleakScanner(abc.ABC):
             if len(handler_signature.parameters) != 2:
                 raise TypeError(error_text)
 
-        self._callback = callback
+        if inspect.iscoroutinefunction(callback):
+
+            def detection_callback(s, d):
+                asyncio.ensure_future(callback(s, d))
+
+        else:
+            detection_callback = callback
+
+        self._callback = detection_callback
 
     @abc.abstractmethod
     async def start(self):
