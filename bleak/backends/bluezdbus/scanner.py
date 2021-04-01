@@ -178,7 +178,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             logger.error("Attempt to disconnect system bus failed: {0}".format(e))
 
         self._bus = None
-        self._reactor = None
 
     def set_scanning_filter(self, **kwargs):
         """Sets OS level scanning filters for the BleakScanner.
