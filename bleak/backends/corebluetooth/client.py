@@ -173,10 +173,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             logger.debug(
                 "Retrieving characteristics for service {}".format(serviceUUID)
             )
-            characteristics = (
-                await manager.connected_peripheral_delegate.discoverCharacteristics_(
-                    service
-                )
+            characteristics = await manager.connected_peripheral_delegate.discoverCharacteristics_(
+                service
             )
 
             self.services.add_service(BleakGATTServiceCoreBluetooth(service))
@@ -186,10 +184,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 logger.debug(
                     "Retrieving descriptors for characteristic {}".format(cUUID)
                 )
-                descriptors = (
-                    await manager.connected_peripheral_delegate.discoverDescriptors_(
-                        characteristic
-                    )
+                descriptors = await manager.connected_peripheral_delegate.discoverDescriptors_(
+                    characteristic
                 )
 
                 self.services.add_characteristic(
@@ -300,14 +296,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = (
-            await manager.connected_peripheral_delegate.writeCharacteristic_value_type_(
-                characteristic.obj,
-                value,
-                CBCharacteristicWriteWithResponse
-                if response
-                else CBCharacteristicWriteWithoutResponse,
-            )
+        success = await manager.connected_peripheral_delegate.writeCharacteristic_value_type_(
+            characteristic.obj,
+            value,
+            CBCharacteristicWriteWithResponse
+            if response
+            else CBCharacteristicWriteWithoutResponse,
         )
         if success:
             logger.debug(
@@ -320,7 +314,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 )
             )
 
-    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray]
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:

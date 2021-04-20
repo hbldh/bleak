@@ -219,11 +219,9 @@ class BleakClientDotNet(BaseBleakClient):
                 handle_connection_status_changed, sender.ConnectionStatus
             )
 
-        self._connection_status_changed_token = (
-            self._requester.add_ConnectionStatusChanged(
-                TypedEventHandler[BluetoothLEDevice, Object](
-                    _ConnectionStatusChanged_Handler
-                )
+        self._connection_status_changed_token = self._requester.add_ConnectionStatusChanged(
+            TypedEventHandler[BluetoothLEDevice, Object](
+                _ConnectionStatusChanged_Handler
             )
         )
 
@@ -683,7 +681,7 @@ class BleakClientDotNet(BaseBleakClient):
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: bytearray,
+        data: Union[bytes, bytearray],
         response: bool = False,
     ) -> None:
         """Perform a write operation of the specified GATT characteristic.
@@ -744,7 +742,9 @@ class BleakClientDotNet(BaseBleakClient):
                     )
                 )
 
-    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray]
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
