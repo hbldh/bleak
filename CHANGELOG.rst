@@ -29,6 +29,7 @@ Fixed
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
 * Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
 * Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
+* Corrections for the Philips Hue lamp example. Merged #505
 
 
 `0.11.0`_ (2021-03-17)
