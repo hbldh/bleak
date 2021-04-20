@@ -14,12 +14,10 @@ class BleakGATTServiceDotNet(BleakGATTService):
 
     def __init__(self, obj: GattDeviceService):
         super().__init__(obj)
-        self.__characteristics = [
-            # BleakGATTCharacteristicDotNet(c) for c in obj.GetAllCharacteristics()
-        ]
+        self.__characteristics = []
 
     @property
-    def handle(self) -> str:
+    def handle(self) -> int:
         """The handle of this service"""
         return int(self.obj.AttributeHandle)
 

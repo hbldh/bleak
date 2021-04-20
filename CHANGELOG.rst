@@ -14,11 +14,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
+* WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
 
 Changed
 ~~~~~~~
 
+* Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 

@@ -97,7 +97,7 @@ class BleakScannerDotNet(BaseBleakScanner):
             return
 
         # Get a "BLEDevice" from parse_event args
-        device = self.parse_eventargs(event_args)
+        device = self._parse_event_args(event_args)
 
         # Decode service data
         service_data = {}
@@ -209,7 +209,7 @@ class BleakScannerDotNet(BaseBleakScanner):
     def discovered_devices(self) -> List[BLEDevice]:
         found = []
         for event_args in list(self._devices.values()):
-            new_device = self.parse_eventargs(event_args)
+            new_device = self._parse_event_args(event_args)
             if (
                 not new_device.name
                 and event_args.BluetoothAddress in self._scan_responses
@@ -222,7 +222,7 @@ class BleakScannerDotNet(BaseBleakScanner):
         return found
 
     @staticmethod
-    def parse_eventargs(event_args):
+    def _parse_event_args(event_args):
         bdaddr = _format_bdaddr(event_args.BluetoothAddress)
         uuids = []
         for u in event_args.Advertisement.ServiceUuids:
