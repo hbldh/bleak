@@ -205,7 +205,8 @@ class BleakScannerDotNet(BaseBleakScanner):
             # TODO: Handle AdvertisementFilter parameters
             self._advertisement_filter = kwargs["AdvertisementFilter"]
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         found = []
         for event_args in list(self._devices.values()):
             new_device = self._parse_event_args(event_args)

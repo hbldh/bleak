@@ -178,7 +178,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             logger.error("Attempt to disconnect system bus failed: {0}".format(e))
 
         self._bus = None
-        self._reactor = None
 
     def set_scanning_filter(self, **kwargs):
         """Sets OS level scanning filters for the BleakScanner.
@@ -210,7 +209,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if "Transport" not in self._filters:
             self._filters["Transport"] = Variant("s", "le")
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         # Reduce output.
         discovered_devices = []
         for path, props in self._devices.items():

@@ -11,23 +11,27 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
-
 Added
 ~~~~~
 
 * WinRT backend added
+* Added ``BleakScanner.discovered_devices`` property.
 
 Changed
 ~~~~~~~
 
 * Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``
-
+* Deprecated ``BleakScanner.get_discovered_devices()`` async method.
+* Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 
 Fixed
 ~~~~~
 
 * Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
+* Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
+* Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
+* Corrections for the Philips Hue lamp example. Merged #505
 
 
 `0.11.0`_ (2021-03-17)

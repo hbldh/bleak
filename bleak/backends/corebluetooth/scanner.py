@@ -103,7 +103,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             "Need to evaluate which macOS versions to support first..."
         )
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         found = []
         peripherals = self._manager.central_manager.retrievePeripheralsWithIdentifiers_(
             NSArray(self._identifiers.keys()),

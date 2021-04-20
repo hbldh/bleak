@@ -1,7 +1,15 @@
 import abc
 import asyncio
 import inspect
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import (
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+)
+from warnings import warn
 
 from bleak.backends.device import BLEDevice
 
@@ -48,7 +56,10 @@ class AdvertisementData:
         return f"AdvertisementData({', '.join(kwargs)})"
 
 
-AdvertisementDataCallback = Callable[[BLEDevice, AdvertisementData], None]
+AdvertisementDataCallback = Callable[
+    [BLEDevice, AdvertisementData],
+    Optional[Awaitable[None]],
+]
 
 
 class BaseBleakScanner(abc.ABC):
@@ -82,7 +93,7 @@ class BaseBleakScanner(abc.ABC):
         """
         async with cls(**kwargs) as scanner:
             await asyncio.sleep(timeout)
-            devices = await scanner.get_discovered_devices()
+            devices = scanner.discovered_devices
         return devices
 
     def register_detection_callback(
@@ -93,10 +104,12 @@ class BaseBleakScanner(abc.ABC):
         If another callback has already been registered, it will be replaced with ``callback``.
         ``None`` can be used to remove the current callback.
 
-        The ``callback`` is a function that takes two arguments: :class:`BLEDevice` and :class:`AdvertisementData`.
+        The ``callback`` is a function or coroutine that takes two arguments: :class:`BLEDevice`
+        and :class:`AdvertisementData`.
 
         Args:
-            callback: A function or ``None``.
+            callback: A function, coroutine or ``None``.
+
         """
         if callback is not None:
             error_text = "callback must be callable with 2 parameters"
@@ -107,7 +120,15 @@ class BaseBleakScanner(abc.ABC):
             if len(handler_signature.parameters) != 2:
                 raise TypeError(error_text)
 
-        self._callback = callback
+        if inspect.iscoroutinefunction(callback):
+
+            def detection_callback(s, d):
+                asyncio.ensure_future(callback(s, d))
+
+        else:
+            detection_callback = callback
+
+        self._callback = detection_callback
 
     @abc.abstractmethod
     async def start(self):
@@ -129,15 +150,32 @@ class BaseBleakScanner(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
+    @abc.abstractproperty
+    def discovered_devices(self) -> List[BLEDevice]:
+        """Gets the devices registered by the BleakScanner.
+
+        Returns:
+            A list of the devices that the scanner has discovered during the scanning.
+        """
+        raise NotImplementedError()
+
     async def get_discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.
+
+        .. deprecated:: 0.11.0
+            This method will be removed in a future version of Bleak. Use the
+            :attr:`.discovered_devices` property instead.
 
         Returns:
             A list of the devices that the scanner has discovered during the scanning.
 
         """
-        raise NotImplementedError()
+        warn(
+            "This method will be removed in a future version of Bleak. Use the `discovered_devices` property instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.discovered_devices
 
     @classmethod
     async def find_device_by_address(
@@ -172,6 +210,6 @@ class BaseBleakScanner(abc.ABC):
                 return None
             return next(
                 d
-                for d in await scanner.get_discovered_devices()
+                for d in scanner.discovered_devices
                 if d.address.lower() == device_identifier
             )
