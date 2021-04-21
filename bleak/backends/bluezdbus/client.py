@@ -499,7 +499,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
         assert_reply(reply)
-        if reply.body[0]:
+        if reply.body[0].value:
+            logger.debug(
+                f"BLE device @ {self.address} already paired with {self._adapter}"
+            )
             return True
 
         # Set device as trusted.
@@ -510,7 +513,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.PROPERTIES_INTERFACE,
                 member="Set",
                 signature="ssv",
-                body=[defs.DEVICE_INTERFACE, "Trusted", True],
+                body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
             )
         )
         assert_reply(reply)
@@ -541,7 +544,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
 
-        return reply.body[0]
+        return reply.body[0].value
 
     async def unpair(self) -> bool:
         """Unpair with the peripheral.
