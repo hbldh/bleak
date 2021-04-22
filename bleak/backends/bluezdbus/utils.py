@@ -2,7 +2,9 @@
 import re
 from typing import Any, Dict
 
-from dbus_next.constants import MessageType
+from bleak.backends.bluezdbus import defs
+from dbus_next.aio import MessageBus
+from dbus_next.constants import MessageType, BusType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
 
@@ -51,3 +53,53 @@ def extract_service_handle_from_path(path):
         return int(path[-4:], 16)
     except Exception as e:
         raise BleakError(f"Could not parse service handle from path: {path}") from e
+
+
+async def get_default_adapter(bus: MessageBus = None) -> str:
+    """Get name of the first powered Bluetooth adapter
+
+     Args:
+         bus (`MessageBus`): Optional active (connected) D-Bus connection to avoid creating new.
+
+    Returns:
+        Name of the first found powered adapter on the system, available on D-Bus path "/org/bluez/<name>".
+
+    Raises:
+        OSError: if there are no Bluetooth adapters (D-Bus objects implementing org.bluez.Adapter1
+            interface) on the system.
+        OSError: if all found adapters are powered off - use `bluetoothctl power on` to power on the adapter.
+    """
+    bus_provided = bus and bus.connected
+    if not bus_provided:
+        bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+
+    reply = await bus.call(
+        Message(
+            destination=defs.BLUEZ_SERVICE,
+            path="/",
+            member="GetManagedObjects",
+            interface=defs.OBJECT_MANAGER_INTERFACE,
+        )
+    )
+    assert_reply(reply)
+
+    all_adapters = []
+    powered_adapters = []
+    for path, interfaces in reply.body[0].items():
+        for interface, properties in interfaces.items():
+            if interface == defs.ADAPTER_INTERFACE:
+                all_adapters.append(path)
+                if properties["Powered"].value:
+                    powered_adapters.append(path)
+
+    if not all_adapters:
+        raise OSError("No Bluetooth adapters found")
+    if not powered_adapters:
+        raise OSError(
+            f"All available adapters ({', '.join(all_adapters)}) are powered off"
+        )
+
+    if not bus_provided:
+        bus.disconnect()
+
+    return powered_adapters[0].rsplit("/", 1)[-1]

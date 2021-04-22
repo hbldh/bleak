@@ -27,6 +27,7 @@ from bleak.backends.bluezdbus.utils import (
     assert_reply,
     extract_service_handle_from_path,
     unpack_variants,
+    get_default_adapter,
 )
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.device import BLEDevice
@@ -56,7 +57,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
-        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
+        self._adapter = kwargs.get("adapter", kwargs.get("device"))
 
         # Backend specific, D-Bus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -114,6 +115,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError: If the connection timed out
         """
+        if not self._adapter:
+            self._adapter = await get_default_adapter()
+
         logger.debug(f"Connecting to device @ {self.address} with {self._adapter}")
 
         if self.is_connected:
@@ -487,6 +491,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean regarding success of pairing.
 
         """
+        if not self._adapter:
+            self._adapter = await get_default_adapter()
+
         # See if it is already paired.
         reply = await self._bus.call(
             Message(

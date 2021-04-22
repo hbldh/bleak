@@ -12,6 +12,7 @@ from bleak.backends.bluezdbus.utils import (
     assert_reply,
     unpack_variants,
     validate_mac_address,
+    get_default_adapter,
 )
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
@@ -62,13 +63,13 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     def __init__(self, **kwargs):
         super(BleakScannerBlueZDBus, self).__init__(**kwargs)
         # kwarg "device" is for backwards compatibility
-        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
+        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
         self._bus: Optional[MessageBus] = None
         self._cached_devices: Dict[str, Variant] = {}
         self._devices: Dict[str, Dict[str, Any]] = {}
         self._rules: List[MatchRules] = []
-        self._adapter_path: str = f"/org/bluez/{self._adapter}"
+        self._adapter_path: Optional[str] = None
 
         # Discovery filters
         self._filters: Dict[str, Variant] = {}
@@ -76,6 +77,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     async def start(self):
         self._bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+
+        if not self._adapter:
+            self._adapter = await get_default_adapter(self._bus)
+        self._adapter_path = f"/org/bluez/{self._adapter}"
 
         self._devices.clear()
         self._cached_devices.clear()
