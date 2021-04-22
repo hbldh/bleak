@@ -18,7 +18,9 @@ from typing import Union
 from bleak import BleakClient
 
 
-def get_passkey(device: str, pin: Union[None, str], passkey: Union[None, int]) -> Union[bool, int, str, None]:
+def get_passkey(
+    device: str, pin: Union[None, str], passkey: Union[None, int]
+) -> Union[bool, int, str, None]:
     if pin:
         print(f"Device {device} is displaying pin '{pin}'")
         return True
@@ -28,7 +30,9 @@ def get_passkey(device: str, pin: Union[None, str], passkey: Union[None, int]) -
         return True
 
     # Retrieve passkey using custom algorithm, web API or just ask the user like OS pairing wizard would do
-    psk = input(f"Provide pin (1-16 characters) or passkey (0-999999) for {device}, or nothing to reject pairing: ")
+    psk = input(
+        f"Provide pin (1-16 characters) or passkey (0-999999) for {device}, or nothing to reject pairing: "
+    )
 
     # Return None if psk is empty string (pincode 0 is valid pin, but "0" is True)
     return psk or None

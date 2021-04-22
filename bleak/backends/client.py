@@ -17,8 +17,7 @@ from bleak.backends.device import BLEDevice
 
 
 PairingCallback = Callable[
-    [str, Union[None, str], Union[None, int]],
-    Union[bool, int, str, None]
+    [str, Union[None, str], Union[None, int]], Union[bool, int, str, None]
 ]
 """Type of the pairing callback function
 

@@ -577,7 +577,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self.pairingAgent.set_callback(
                 self._device_path,
                 # "/org/bluez/hci0/dev_A1_B2_C3_D4_E5_F6" -> "A1:B2:C3:D4:E5:F6"
-                lambda dp, pin, psk: callback(":".join(dp.rsplit("_", maxsplit=6)[-6:]), pin, psk)
+                lambda dp, pin, psk: callback(
+                    ":".join(dp.rsplit("_", maxsplit=6)[-6:]), pin, psk
+                ),
             )
 
         # Set device as trusted.
@@ -608,7 +610,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         try:
             assert_reply(reply)
         except BleakDBusError as e:
-            logger.error(f"Pairing {self._device_path} with {self._adapter} failed ({e.dbus_error})")
+            logger.error(
+                f"Pairing {self._device_path} with {self._adapter} failed ({e.dbus_error})"
+            )
             # False could be returned here, but check again just to be sure
 
         reply = await self._bus.call(
