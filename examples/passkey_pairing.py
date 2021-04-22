@@ -24,6 +24,10 @@ async def main(mac_addr: str):
 
     # Pairing agent shall be registered before initiating the connection
     async with BleakClient(mac_addr, handle_pairing=True) as client:
+        if hasattr(client, "pairingAgent"):
+            client.pairingAgent.passkey = 123456
+        # else Passkey Entry pairing method is not supported
+
         print("Pairing...")
         print(await client.pair())
         print("Paired")

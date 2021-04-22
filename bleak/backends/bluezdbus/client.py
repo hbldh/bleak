@@ -38,10 +38,6 @@ from bleak.exc import BleakDBusError, BleakError
 logger = logging.getLogger(__name__)
 
 
-# Instantiate pairing agent (single agent per app) but don't register it yet
-pairingAgent = PairingAgentBlueZDBus()
-
-
 class BleakClientBlueZDBus(BaseBleakClient):
     """A native Linux Bleak Client
 
@@ -60,6 +56,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             (displaying, asking for, or confirming pins and passkeys) instead of the system/OS pairing wizard.
             Defaults to `False`.
     """
+
+    # Instantiate pairing agent (single agent per app) but don't register it yet
+    pairingAgent = PairingAgentBlueZDBus()
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
@@ -108,7 +107,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # Optionally register pairing agent if this application shall handle pairing instead of OS agent
         if kwargs.get("handle_pairing", False):
-            asyncio.ensure_future(pairingAgent.register())
+            asyncio.ensure_future(self.pairingAgent.register())
 
     @classmethod
     async def remove_device(
