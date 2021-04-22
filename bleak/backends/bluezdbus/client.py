@@ -110,6 +110,54 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if kwargs.get("handle_pairing", False):
             asyncio.ensure_future(pairingAgent.register())
 
+    @classmethod
+    async def remove_device(
+        cls, device: Union[BLEDevice, "BleakClientBlueZDBus", str], adapter: str = None
+    ) -> bool:
+        """Remove the remote device object and its pairing information
+
+        Args:
+            device (`BLEDevice`, `BleakClientBlueZDBus` or str): Device MAC address or class from which this
+                information can be extracted as `.address`.
+            adapter (str): Adapter to use instead of default hci0.
+
+        Returns:
+            Boolean representing if device was present and removed.
+        """
+        # Device path and adapter are required for invoking the API call
+
+        # Try to get .address attribute if object is provided, otherwise assume string and use it as it
+        address: str = getattr(device, "address", device)
+        if len(address) != 17 or address.count(":") != 5:
+            raise ValueError(
+                f"Device address shall be MAC address or Device/Client class, not '{address}'"
+            )
+        # Use provided value, try to extract adapter property from device or use default hci0
+        adapter = f"/org/bluez/{adapter or getattr(device, '_adapter', 'hci0')}"
+
+        # Create system bus
+        bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+        # Remove device
+        reply = await bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=adapter,
+                interface=defs.ADAPTER_INTERFACE,
+                member="RemoveDevice",
+                signature="o",
+                body=[f"{adapter}/dev_{address.replace(':', '_').upper()}"],
+            )
+        )
+        bus.disconnect()
+        # This method can be called multiple times or even "just to be sure", so it's normal that device doesn't exist
+        try:
+            assert_reply(reply)
+            return True
+        except BleakDBusError as e:
+            if e.dbus_error == f"{defs.BLUEZ_SERVICE}.Error.DoesNotExist":
+                return False
+            raise
+
     # Connectivity methods
 
     async def connect(self, **kwargs) -> bool:

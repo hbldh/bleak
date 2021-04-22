@@ -18,6 +18,10 @@ from bleak import BleakClient
 
 
 async def main(mac_addr: str):
+    # Remove this device if it is already paired (from previous runs)
+    if await BleakClient.remove_device(mac_addr):
+        print(f"Device {mac_addr} was unpaired")
+
     # Pairing agent shall be registered before initiating the connection
     async with BleakClient(mac_addr, handle_pairing=True) as client:
         print("Pairing...")
