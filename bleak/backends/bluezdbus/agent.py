@@ -6,7 +6,7 @@ import asyncio
 import enum
 import logging
 import time
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from dbus_next import DBusError
 from dbus_next.aio import MessageBus
@@ -16,6 +16,7 @@ from dbus_next.service import ServiceInterface, method
 
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.utils import assert_reply
+from bleak.backends.client import PairingCallback
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +56,8 @@ class PairingAgentBlueZDBus(ServiceInterface):
         # IO capabilities are required when the agent is registered
         self._io_capabilities = io_capabilities
 
-        self.pin: Optional[str] = None
-        """A string of 1-16 alphanumeric characters length for Pin Pairing, if supported."""
-        self.passkey: Optional[int] = None
-        """A numeric value between 0-999999 for Passkey Pairing, if supported."""
+        # Callback for every device (single agent handles all pairing requests)
+        self._callbacks: Dict[DBusObject, PairingCallback] = {}
 
     def __del__(self) -> None:
         if self._bus:
@@ -129,6 +128,37 @@ class PairingAgentBlueZDBus(ServiceInterface):
         self._bus = None
         logger.debug(f"Pairing Agent {self._path} unregistered")
 
+    def set_callback(
+        self, device: DBusObject, callback: Union[PairingCallback, None]
+    ) -> None:
+        """
+        Add pairing callback for specific device.
+
+        Single pairing agent handles all pairing requests for this application,
+        so every device shall have it's own callback.
+
+        Args:
+            device (`DBusObject`): D-Bus path to the device which will be paired and therefore requires callback.
+            callback (`PairingCallback` or `None`): Pairing callback invoked when this device is paired.
+                Any old callback registered for this device is replaced with this one.
+                If `None` then callback for this device is removed.
+        """
+        if callback:
+            self._callbacks[device] = callback
+        elif device in self._callbacks:
+            del self._callbacks[device]
+
+    def _get_callback(self, device: DBusObject) -> PairingCallback:
+        """Get pairing callback for this device or raise org.bluez.Error.Canceled if not present"""
+        cb = self._callbacks.get(device)
+        if cb:
+            return cb
+        logger.info(f"Pairing callback for {device} not present")
+        raise DBusError(
+            f"{defs.BLUEZ_SERVICE}.Error.Canceled",
+            "Pairing for this device not supported",
+        )
+
     @method(name="Release")
     def _release(self):
         """
@@ -152,14 +182,16 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        logger.debug(f"{self._path}::RequestPinCode({device})->{self.pin}")
+        pin = self._get_callback(device)(device, None, None)
 
-        if self.pin is None:
+        logger.debug(f"{self._path}::RequestPinCode({device})->{pin}")
+
+        if pin is None:
             raise DBusError(
                 f"{defs.BLUEZ_SERVICE}.Error.Rejected", "Pin pairing rejected"
             )
 
-        return self.pin
+        return str(pin)
 
     @method(name="DisplayPinCode")
     def _display_pin_code(self, device: DBusObject, pincode: DBusString):
@@ -186,7 +218,15 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        logger.debug(f"{self._path}::DisplayPinCode({device})->{pincode}")
+        accept = self._get_callback(device)(device, pincode, None)
+
+        logger.debug(
+            f"{self._path}::DisplayPinCode({device})->{pincode}"
+            f"->{'Accept' if accept else 'Reject'}"
+        )
+
+        if not accept:
+            raise DBusError(f"{defs.BLUEZ_SERVICE}.Error.Rejected", "Pin rejected")
 
     @method(name="RequestPasskey")
     def _request_passkey(self, device: DBusObject) -> DBusUInt32:
@@ -200,14 +240,16 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        logger.debug(f"{self._path}::RequestPasskey({device})->{self.passkey}")
+        passkey = self._get_callback(device)(device, None, None)
 
-        if self.passkey is None:
+        logger.debug(f"{self._path}::RequestPasskey({device})->{passkey}")
+
+        if passkey is None:
             raise DBusError(
                 f"{defs.BLUEZ_SERVICE}.Error.Rejected", "Passkey pairing rejected"
             )
 
-        return self.passkey
+        return int(passkey)
 
     @method(name="DisplayPasskey")
     def _display_passkey(
@@ -231,7 +273,15 @@ class PairingAgentBlueZDBus(ServiceInterface):
         so the display should be zero-padded at the start if
         the value contains less than 6 digits.
         """
-        logger.debug(f"{self._path}::DisplayPasskey({device}, {passkey}, {entered})")
+        accept = self._get_callback(device)(device, None, passkey)
+
+        logger.debug(
+            f"{self._path}::DisplayPasskey({device}, {passkey}, {entered})"
+            f"->{'Accept' if accept else 'Reject'}"
+        )
+
+        if not accept:
+            raise DBusError(f"{defs.BLUEZ_SERVICE}.Error.Rejected", "Passkey rejected")
 
     @method(name="RequestConfirmation")
     def _request_confirmation(self, device: DBusObject, passkey: DBusUInt32):
@@ -249,7 +299,7 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        confirm = True
+        confirm = self._get_callback(device)(device, None, passkey)
 
         logger.debug(
             f"{self._path}::RequestConfirmation({device}, {passkey:06d})->{confirm}"

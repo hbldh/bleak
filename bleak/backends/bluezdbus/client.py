@@ -29,7 +29,7 @@ from bleak.backends.bluezdbus.utils import (
     extract_service_handle_from_path,
     unpack_variants,
 )
-from bleak.backends.client import BaseBleakClient
+from bleak.backends.client import BaseBleakClient, PairingCallback
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakError
@@ -536,11 +536,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         return True
 
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(
+        self, *args, callback: Optional[PairingCallback] = None, **kwargs
+    ) -> bool:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+
+        Args:
+            callback: callback to be called to provide or confirm pairing pin or passkey.
+                If not provided and Bleak is registered as a pairing agent/manager instead
+                of system pairing manager, then the pairing will be canceled.
 
         Returns:
             Boolean regarding success of pairing.
@@ -563,6 +570,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 f"BLE device @ {self.address} already paired with {self._adapter}"
             )
             return True
+
+        if callback:
+            self.pairingAgent.set_callback(
+                self._device_path,
+                # "/org/bluez/hci0/dev_A1_B2_C3_D4_E5_F6" -> "A1:B2:C3:D4:E5:F6"
+                lambda dp, pin, psk: callback(":".join(dp.rsplit("_", maxsplit=6)[-6:]), pin, psk)
+            )
 
         # Set device as trusted.
         reply = await self._bus.call(
@@ -589,7 +603,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
-        assert_reply(reply)
+        try:
+            assert_reply(reply)
+        except BleakDBusError as e:
+            logger.error(f"Pairing {self._device_path} with {self._adapter} failed ({e.dbus_error})")
+            # False could be returned here, but check again just to be sure
 
         reply = await self._bus.call(
             Message(
@@ -602,6 +620,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
         assert_reply(reply)
+
+        if callback:
+            # Remove callback set above
+            self.pairingAgent.set_callback(self._device_path, None)
 
         return reply.body[0].value
 
