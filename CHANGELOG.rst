@@ -23,6 +23,7 @@ Changed
 * Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
+* Added error description in addition to error name when ``BleakDBusError`` is converted to string
 
 Fixed
 ~~~~~
