@@ -545,9 +545,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
 
         Args:
-            callback: callback to be called to provide or confirm pairing pin or passkey.
-                If not provided and Bleak is registered as a pairing agent/manager instead
-                of system pairing manager, then the pairing will be canceled.
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.

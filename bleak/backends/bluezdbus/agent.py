@@ -148,17 +148,6 @@ class PairingAgentBlueZDBus(ServiceInterface):
         elif device in self._callbacks:
             del self._callbacks[device]
 
-    def _get_callback(self, device: DBusObject) -> PairingCallback:
-        """Get pairing callback for this device or raise org.bluez.Error.Canceled if not present"""
-        cb = self._callbacks.get(device)
-        if cb:
-            return cb
-        logger.info(f"Pairing callback for {device} not present")
-        raise DBusError(
-            f"{defs.BLUEZ_SERVICE}.Error.Canceled",
-            "Pairing for this device not supported",
-        )
-
     @method(name="Release")
     def _release(self):
         """
@@ -182,7 +171,14 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        pin = self._get_callback(device)(device, None, None)
+        cb = self._callbacks.get(device)
+        if not cb:
+            logger.debug(f"{self._path}::RequestPinCode({device})->Cancel")
+            raise DBusError(
+                f"{defs.BLUEZ_SERVICE}.Error.Canceled",
+                "Pin pairing for this device not supported",
+            )
+        pin = cb(device, None, None)
 
         logger.debug(f"{self._path}::RequestPinCode({device})->{pin}")
 
@@ -218,12 +214,15 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        accept = self._get_callback(device)(device, pincode, None)
+        cb = self._callbacks.get(device)
+        if cb:
+            accept = cb(device, pincode, None)
+            info = "Accept" if accept else "Reject"
+        else:
+            accept = True
+            info = "<no callback>"
 
-        logger.debug(
-            f"{self._path}::DisplayPinCode({device})->{pincode}"
-            f"->{'Accept' if accept else 'Reject'}"
-        )
+        logger.debug(f"{self._path}::DisplayPinCode({device}, {pincode})->{info}")
 
         if not accept:
             raise DBusError(f"{defs.BLUEZ_SERVICE}.Error.Rejected", "Pin rejected")
@@ -240,7 +239,14 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        passkey = self._get_callback(device)(device, None, None)
+        cb = self._callbacks.get(device)
+        if not cb:
+            logger.debug(f"{self._path}::RequestPasskey({device})->Cancel")
+            raise DBusError(
+                f"{defs.BLUEZ_SERVICE}.Error.Canceled",
+                "Passkey pairing for this device not supported",
+            )
+        passkey = cb(device, None, None)
 
         logger.debug(f"{self._path}::RequestPasskey({device})->{passkey}")
 
@@ -273,11 +279,16 @@ class PairingAgentBlueZDBus(ServiceInterface):
         so the display should be zero-padded at the start if
         the value contains less than 6 digits.
         """
-        accept = self._get_callback(device)(device, None, passkey)
+        cb = self._callbacks.get(device)
+        if cb:
+            accept = cb(device, None, passkey)
+            info = "Accept" if accept else "Reject"
+        else:
+            accept = True
+            info = "<no callback>"
 
         logger.debug(
-            f"{self._path}::DisplayPasskey({device}, {passkey}, {entered})"
-            f"->{'Accept' if accept else 'Reject'}"
+            f"{self._path}::DisplayPasskey({device}, {passkey:06d}, {entered})->{info}"
         )
 
         if not accept:
@@ -299,10 +310,16 @@ class PairingAgentBlueZDBus(ServiceInterface):
         Possible errors: org.bluez.Error.Rejected
                          org.bluez.Error.Canceled
         """
-        confirm = self._get_callback(device)(device, None, passkey)
+        cb = self._callbacks.get(device)
+        if cb:
+            confirm = cb(device, None, passkey)
+            info = confirm
+        else:
+            confirm = True
+            info = "<no callback>"
 
         logger.debug(
-            f"{self._path}::RequestConfirmation({device}, {passkey:06d})->{confirm}"
+            f"{self._path}::RequestConfirmation({device}, {passkey:06d})->{info}"
         )
 
         if not confirm:

@@ -321,9 +321,11 @@ class BleakClientDotNet(BaseBleakClient):
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
                            encryption and authentication. (This will not work in Bleak...)
-            callback: callback to be called to provide or confirm pairing pin or passkey.
-                If not provided and Bleak is registered as a pairing agent/manager instead
-                of system pairing manager, then the pairing will be canceled.
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.
