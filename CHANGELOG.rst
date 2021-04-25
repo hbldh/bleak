@@ -16,6 +16,7 @@ Added
 
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
+* Added BlueZ Agent for pin and passkey pairing on Linux.
 
 Changed
 ~~~~~~~

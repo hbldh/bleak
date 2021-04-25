@@ -7,6 +7,8 @@ PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
 # Bluez specific DBUS
 BLUEZ_SERVICE = "org.bluez"
 ADAPTER_INTERFACE = "org.bluez.Adapter1"
+AGENT_MANAGER_INTERFACE = "org.bluez.AgentManager1"
+AGENT_INTERFACE = "org.bluez.Agent1"
 DEVICE_INTERFACE = "org.bluez.Device1"
 BATTERY_INTERFACE = "org.bluez.Battery1"
 
