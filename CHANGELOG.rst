@@ -14,6 +14,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
+* Change typing of data parameter to ``Union[bytes, bytearray]``
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
 
