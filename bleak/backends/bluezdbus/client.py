@@ -1046,3 +1046,33 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     disconnecting_event = self._disconnecting_event
                     if disconnecting_event:
                         task.add_done_callback(lambda _: disconnecting_event.set())
+
+
+    async def get_mtu_size(self, char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID]):
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
+        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
+            characteristic = self.services.get_characteristic(char_specifier)
+        else:
+            characteristic = char_specifier
+
+        member = "AcquireWrite"
+
+        if "notify" in characteristic.properties:
+            member="AcquireNotify"
+
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=characteristic.path,
+                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                member=member,
+                signature="a{sv}",
+                body=[{}],
+            )
+        )
+
+        assert_reply(reply)
+        return reply.body[1]
+
