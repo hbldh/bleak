@@ -816,8 +816,11 @@ class BleakClientWinRT(BaseBleakClient):
             )
             characteristic.obj.remove_value_changed(event_handler_token)
 
-    async def get_mtu_size(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]):
+    async def get_mtu_size(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ):
         return self._session.MaxPduSize
+
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     @wraps(func)

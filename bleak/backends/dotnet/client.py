@@ -914,8 +914,11 @@ class BleakClientDotNet(BaseBleakClient):
             self._notification_callbacks.pop(characteristic.handle)
         )
 
-    async def get_mtu_size(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]):
+    async def get_mtu_size(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ):
         return self._session.MaxPduSize
+
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     @wraps(func)

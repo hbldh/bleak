@@ -443,6 +443,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not RSSI:
             return None
 
-    async def get_mtu_size(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]):
+    async def get_mtu_size(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ):
         manager = self._central_manager_delegate
         return manager.connected_peripheral_delegate.getMtuSize()
