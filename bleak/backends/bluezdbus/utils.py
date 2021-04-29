@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from bleak.backends.bluezdbus import defs
 from dbus_next.aio import MessageBus
@@ -55,11 +55,15 @@ def extract_service_handle_from_path(path):
         raise BleakError(f"Could not parse service handle from path: {path}") from e
 
 
-async def get_default_adapter(bus: MessageBus = None) -> str:
+async def get_default_adapter(bus_or_reply: Union[Message, MessageBus] = None) -> str:
     """Get name of the first powered Bluetooth adapter
 
-     Args:
-         bus (`MessageBus`): Optional active (connected) D-Bus connection to avoid creating new.
+    Args:
+        bus_or_reply (`Message` or `MessageBus`): Optional reply of already executed ``GetManagedObjects``
+            D-Bus call to avoid executing this expensive operation again. Alternatively, if no such call
+            was executed yet, active (connected) D-Bus connection can be provided if available to at least
+            avoid creating new connection. Otherwise, new D-Bus connection will be created, used to call
+            ``GetManagedObjects`` and closed afterwards.
 
     Returns:
         Name of the first found powered adapter on the system, available on D-Bus path "/org/bluez/<name>".
@@ -69,18 +73,31 @@ async def get_default_adapter(bus: MessageBus = None) -> str:
             interface) on the system.
         OSError: if all found adapters are powered off - use `bluetoothctl power on` to power on the adapter.
     """
-    bus_provided = bus and bus.connected
-    if not bus_provided:
-        bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+    if isinstance(bus_or_reply, Message):
+        # No need to execute any D-Bus operation as its return message is already provided
+        reply = bus_or_reply
+    else:
+        # Ensure that the message bus is valid and connected
+        if isinstance(bus_or_reply, MessageBus) and bus_or_reply.connected:
+            bus_created = False
+        else:
+            bus_or_reply = await MessageBus(bus_type=BusType.SYSTEM).connect()
+            bus_created = True
 
-    reply = await bus.call(
-        Message(
-            destination=defs.BLUEZ_SERVICE,
-            path="/",
-            member="GetManagedObjects",
-            interface=defs.OBJECT_MANAGER_INTERFACE,
+        # Execute D-Bus operation
+        reply = await bus_or_reply.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path="/",
+                member="GetManagedObjects",
+                interface=defs.OBJECT_MANAGER_INTERFACE,
+            )
         )
-    )
+
+        if bus_created:
+            bus_or_reply.disconnect()
+
+    # D-Bus reply shall be valid in all cases
     assert_reply(reply)
 
     all_adapters = []
@@ -98,8 +115,5 @@ async def get_default_adapter(bus: MessageBus = None) -> str:
         raise OSError(
             f"All available adapters ({', '.join(all_adapters)}) are powered off"
         )
-
-    if not bus_provided:
-        bus.disconnect()
 
     return powered_adapters[0].rsplit("/", 1)[-1]
