@@ -78,12 +78,31 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     async def start(self):
         self._bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
 
+        # Find the HCI device to use for scanning and get cached device properties
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path="/",
+                member="GetManagedObjects",
+                interface=defs.OBJECT_MANAGER_INTERFACE,
+            )
+        )
+        assert_reply(reply)
+
         if not self._adapter:
-            self._adapter = await get_default_adapter(self._bus)
+            self._adapter = await get_default_adapter(reply)
         self._adapter_path = f"/org/bluez/{self._adapter}"
 
         self._devices.clear()
-        self._cached_devices.clear()
+
+        # Get cached devices by filtering device interfaces from all managed objects
+        self._cached_devices = {
+            path: unpack_variants(interfaces[defs.DEVICE_INTERFACE])
+            for path, interfaces in reply.body[0].items()
+            if defs.DEVICE_INTERFACE in interfaces
+        }
+
+        logger.debug(f"cached devices: {self._cached_devices}")
 
         # Add signal listeners
 
@@ -115,26 +134,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         reply = await add_match(self._bus, rules)
         assert_reply(reply)
         self._rules.append(rules)
-
-        # Find the HCI device to use for scanning and get cached device properties
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path="/",
-                member="GetManagedObjects",
-                interface=defs.OBJECT_MANAGER_INTERFACE,
-            )
-        )
-        assert_reply(reply)
-
-        # get only the device interface
-        self._cached_devices = {
-            path: unpack_variants(interfaces[defs.DEVICE_INTERFACE])
-            for path, interfaces in reply.body[0].items()
-            if defs.DEVICE_INTERFACE in interfaces
-        }
-
-        logger.debug(f"cached devices: {self._cached_devices}")
 
         # Apply the filters
         reply = await self._bus.call(
