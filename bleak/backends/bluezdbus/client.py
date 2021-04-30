@@ -98,6 +98,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             bluez_version[0] == 5 and bluez_version[1] >= 48
         )
 
+        # set default MTU size
+        self._mtu_size = 23
+
     # Connectivity methods
 
     async def connect(self, **kwargs) -> bool:
@@ -334,6 +337,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # Get all services. This means making the actual connection.
             await self.get_services()
 
+            # Get the MTU size, assuming the server has at least one
+            # notify or write-without-response characteristic
+            # If not, we use default ATT MTU size of 23
+            self._mtu_size = await self.get_mtu_size(self.services)
+
             return True
         except BaseException:
             await self._cleanup_all()
@@ -569,6 +577,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return self._DeprecatedIsConnectedReturn(
             False if self._bus is None else self._properties.get("Connected", False)
         )
+
+    @property
+    def mtu_size(self) -> bool:
+        """Get ATT MTU size for active connection"""
+        return self._mtu_size
 
     # GATT services methods
 
@@ -1047,32 +1060,38 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     if disconnecting_event:
                         task.add_done_callback(lambda _: disconnecting_event.set())
 
-    async def get_mtu_size(
-        self, char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID]
-    ):
-        if not self.is_connected:
-            raise BleakError("Not connected")
+    async def get_mtu_size(self, services : BleakGATTServiceCollection):
 
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
+        characteristic = None
 
-        member = "AcquireWrite"
+        for service in services:
+            for char in service.characteristics:
+                if "write-without-response" in char.properties:
+                    member = "AcquireWrite"
+                    characteristic = char
+                    break
+                elif "notify" in char.properties:
+                    member = "AcquireNotify"
+                    characteristic = char
+                    break
+            if (characteristic != None):
+                break
 
-        if "notify" in characteristic.properties:
-            member = "AcquireNotify"
-
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.path,
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member=member,
-                signature="a{sv}",
-                body=[{}],
+        if (characteristic != None):
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.path,
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member=member,
+                    signature="a{sv}",
+                    body=[{}],
+                )
             )
-        )
 
-        assert_reply(reply)
-        return reply.body[1]
+            assert_reply(reply)
+            fd = reply.body[0]
+            os.close(fd)
+            return reply.body[1]
+        else:
+            return 23

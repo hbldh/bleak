@@ -125,6 +125,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             False if manager is None else manager.isConnected
         )
 
+    @property
+    def mtu_size(self) -> bool:
+        """Get ATT MTU size for active connection"""
+        manager = self._central_manager_delegate
+        return manager.connected_peripheral_delegate.getMtuSize()
+
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.
 
@@ -442,9 +448,3 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         if not RSSI:
             return None
-
-    async def get_mtu_size(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
-    ):
-        manager = self._central_manager_delegate
-        return manager.connected_peripheral_delegate.getMtuSize()

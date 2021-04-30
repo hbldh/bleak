@@ -305,6 +305,11 @@ class BleakClientDotNet(BaseBleakClient):
             else self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
         )
 
+    @property
+    def mtu_size(self) -> bool:
+        """Get ATT MTU size for active connection"""
+        return self._session.MaxPduSize
+
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.
 
@@ -913,11 +918,6 @@ class BleakClientDotNet(BaseBleakClient):
         characteristic.obj.remove_ValueChanged(
             self._notification_callbacks.pop(characteristic.handle)
         )
-
-    async def get_mtu_size(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
-    ):
-        return self._session.MaxPduSize
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
