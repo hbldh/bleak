@@ -1060,7 +1060,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     if disconnecting_event:
                         task.add_done_callback(lambda _: disconnecting_event.set())
 
-    async def get_mtu_size(self, services : BleakGATTServiceCollection):
+    async def get_mtu_size(self, services: BleakGATTServiceCollection):
 
         characteristic = None
 
@@ -1074,10 +1074,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member = "AcquireNotify"
                     characteristic = char
                     break
-            if (characteristic != None):
+            if characteristic != None:
                 break
 
-        if (characteristic != None):
+        if characteristic != None:
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
