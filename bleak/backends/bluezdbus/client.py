@@ -1072,9 +1072,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         else:
             characteristic = char_specifier
 
-        if char_property is "notify":
+        if char_property == "notify":
             member = "AcquireNotify"
-        elif char_property is "write-without-response":
+        elif char_property == "write-without-response":
             member = "AcquireWrite"
         else:
             raise BleakError(
