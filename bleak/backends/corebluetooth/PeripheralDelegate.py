@@ -20,7 +20,10 @@ from Foundation import (
     NSData,
     NSError,
 )
-from CoreBluetooth import CBCharacteristicWriteWithResponse
+from CoreBluetooth import (
+    CBCharacteristicWriteWithResponse,
+    CBCharacteristicWriteWithoutResponse,
+)
 
 from bleak.exc import BleakError
 
@@ -128,6 +131,16 @@ class PeripheralDelegate(NSObject):
             return characteristic.value()
         else:
             return b""
+
+    def getMtuSize(self) -> int:
+        """Use type CBCharacteristicWriteWithoutResponse to get maximum write value length based on the
+        the negotiated ATT MTU size. Add the ATT header length (+3) to get the actual ATT MTU size"""
+        return (
+            self.peripheral.maximumWriteValueLengthForType_(
+                CBCharacteristicWriteWithoutResponse
+            )
+            + 3
+        )
 
     async def readDescriptor_(
         self, descriptor: CBDescriptor, use_cached=True
