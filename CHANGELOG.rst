@@ -14,7 +14,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
-* get_mtu_size for macOS client
+* add mtu_size property for clients
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
 
