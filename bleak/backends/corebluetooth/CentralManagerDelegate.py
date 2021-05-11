@@ -89,10 +89,10 @@ class CentralManagerDelegate(NSObject):
         # It doesn't take long for the callback to occur, so we should be able
         # to do a blocking wait here without anyone complaining.
         self._did_update_state_event.wait(1)
-        
+
         if self.central_manager.state() == CBManagerStateUnsupported:
             raise BleakError("BLE is unsupported")
-        
+
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
 
