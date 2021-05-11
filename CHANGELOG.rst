@@ -14,6 +14,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Fixed
 ~~~~~
 
+* Fixed ``KeyError`` when trying to connect to ``BLEDevice`` from advertising
+  data callback on macOS. Fixes #448.
 * Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
 
