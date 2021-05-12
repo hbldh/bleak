@@ -135,7 +135,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         if self._signal_strength_filter is not None:
             self.watcher.signal_strength_filter = self._signal_strength_filter
         if self._advertisement_filter is not None:
-            self.watcher._advertisement_filter = self._advertisement_filter
+            self.watcher.advertisement_filter = self._advertisement_filter
 
         self.watcher.start()
 
