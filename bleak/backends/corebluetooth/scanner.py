@@ -120,7 +120,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             NSArray(self._identifiers.keys()),
         )
 
-        for i, peripheral in enumerate(peripherals):
+        for peripheral in peripherals:
             address = peripheral.identifier().UUIDString()
             name = peripheral.name() or "Unknown"
             details = peripheral
