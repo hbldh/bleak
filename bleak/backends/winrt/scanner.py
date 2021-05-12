@@ -99,7 +99,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         # 0x21 is service data with 128-bit UUID
         for section in event_args.advertisement.get_sections_by_type(0x21):
             data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
-            service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+            service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
