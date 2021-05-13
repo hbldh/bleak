@@ -28,6 +28,8 @@ Changed
 Fixed
 ~~~~~
 
+* Fixed ``KeyError`` when trying to connect to ``BLEDevice`` from advertising
+  data callback on macOS. Fixes #448.
 * Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
 * Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.

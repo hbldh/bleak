@@ -63,17 +63,28 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_value = bytes(manufacturer_binary_data[2:])
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
+            service_uuids = [
+                cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
+            ]
+
             advertisement_data = AdvertisementData(
                 local_name=p.name(),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
-                service_uuids=[
-                    cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
-                ],
+                service_uuids=service_uuids,
                 platform_data=(p, a, r),
             )
 
-            device = BLEDevice(p.identifier().UUIDString(), p.name(), p, r)
+            device = BLEDevice(
+                p.identifier().UUIDString(),
+                p.name(),
+                p,
+                r,
+                uuids=service_uuids,
+                manufacturer_data=manufacturer_data,
+                service_data=service_data,
+                delegate=self._manager.central_manager.delegate(),
+            )
 
             self._callback(device, advertisement_data)
 
@@ -110,7 +121,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             NSArray(self._identifiers.keys()),
         )
 
-        for i, peripheral in enumerate(peripherals):
+        for peripheral in peripherals:
             address = peripheral.identifier().UUIDString()
             name = peripheral.name() or "Unknown"
             details = peripheral
