@@ -98,8 +98,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             bluez_version[0] == 5 and bluez_version[1] >= 48
         )
 
-        self._mtu_size = 0
-
     # Connectivity methods
 
     async def connect(self, **kwargs) -> bool:
@@ -477,8 +475,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self.services = BleakGATTServiceCollection()
         self._services_resolved = False
 
-        self._mtu_size = 0
-
         return True
 
     async def pair(self, *args, **kwargs) -> bool:
@@ -577,10 +573,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
     @property
     def mtu_size(self) -> bool:
         """Get ATT MTU size for active connection"""
-        if self._mtu_size == 0:
-            raise BleakError("Run discover_mtu_size before accessing mtu_size")
-        else:
-            return self._mtu_size
+        warnings.warn(
+            "MTU size not supported with BlueZ; this function returns the default value of 23. Note that the actual MTU size might be larger"
+        )
+        return 23
 
     # GATT services methods
 
@@ -1058,41 +1054,3 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     disconnecting_event = self._disconnecting_event
                     if disconnecting_event:
                         task.add_done_callback(lambda _: disconnecting_event.set())
-
-    async def discover_mtu_size(
-        self,
-        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
-        char_property,
-    ):
-        if not self.is_connected:
-            raise BleakError("Not connected")
-
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if char_property == "notify":
-            member = "AcquireNotify"
-        elif char_property == "write-without-response":
-            member = "AcquireWrite"
-        else:
-            raise BleakError(
-                "char_property must be 'notify' or 'write-without-response'"
-            )
-
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.path,
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member=member,
-                signature="a{sv}",
-                body=[{}],
-            )
-        )
-
-        assert_reply(reply)
-        fd = reply.body[0]
-        os.close(fd)
-        self._mtu_size = reply.body[1]
