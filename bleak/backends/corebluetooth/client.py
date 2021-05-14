@@ -126,7 +126,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
     @property
-    def mtu_size(self) -> bool:
+    def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         manager = self._central_manager_delegate
         return manager.connected_peripheral_delegate.getMtuSize()

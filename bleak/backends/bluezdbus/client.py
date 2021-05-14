@@ -571,7 +571,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
     @property
-    def mtu_size(self) -> bool:
+    def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         warnings.warn(
             "MTU size not supported with BlueZ; this function returns the default value of 23. Note that the actual MTU size might be larger"

@@ -306,7 +306,7 @@ class BleakClientDotNet(BaseBleakClient):
         )
 
     @property
-    def mtu_size(self) -> bool:
+    def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         return self._session.MaxPduSize
 
