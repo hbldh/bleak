@@ -570,6 +570,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
             False if self._bus is None else self._properties.get("Connected", False)
         )
 
+    @property
+    def mtu_size(self) -> int:
+        """Get ATT MTU size for active connection"""
+        warnings.warn(
+            "MTU size not supported with BlueZ; this function returns the default value of 23. Note that the actual MTU size might be larger"
+        )
+        return 23
+
     # GATT services methods
 
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
