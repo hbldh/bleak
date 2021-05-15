@@ -196,7 +196,7 @@ class PeripheralDelegate(NSObject):
         event = self._characteristic_notify_change_events.get_cleared(c_handle)
         self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
         # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
-        # await event.wait()
+        await event.wait()
 
         return True
 
@@ -208,7 +208,7 @@ class PeripheralDelegate(NSObject):
         event = self._characteristic_notify_change_events.get_cleared(c_handle)
         self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
         # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
-        # await event.wait()
+        await event.wait()
 
         self._characteristic_notify_callbacks.pop(c_handle)
 
