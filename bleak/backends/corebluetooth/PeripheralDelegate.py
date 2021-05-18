@@ -17,6 +17,7 @@ from Foundation import (
     CBService,
     CBCharacteristic,
     CBDescriptor,
+    NSArray,
     NSData,
     NSError,
 )
@@ -78,7 +79,7 @@ class PeripheralDelegate(NSObject):
 
         return self
 
-    async def discoverServices(self, use_cached=True) -> [CBService]:
+    async def discoverServices(self, use_cached=True) -> NSArray:
         event = self._services_discovered_event
         if event.is_set() and use_cached:
             return self.peripheral.services()
@@ -92,7 +93,7 @@ class PeripheralDelegate(NSObject):
 
     async def discoverCharacteristics_(
         self, service: CBService, use_cached=True
-    ) -> [CBCharacteristic]:
+    ) -> NSArray:
         if service.characteristics() is not None and use_cached:
             return service.characteristics()
 
@@ -105,7 +106,7 @@ class PeripheralDelegate(NSObject):
 
     async def discoverDescriptors_(
         self, characteristic: CBCharacteristic, use_cached=True
-    ) -> [CBDescriptor]:
+    ) -> NSArray:
         if characteristic.descriptors() is not None and use_cached:
             return characteristic.descriptors()
 
