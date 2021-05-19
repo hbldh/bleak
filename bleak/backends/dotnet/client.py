@@ -305,6 +305,11 @@ class BleakClientDotNet(BaseBleakClient):
             else self._requester.ConnectionStatus == BluetoothConnectionStatus.Connected
         )
 
+    @property
+    def mtu_size(self) -> int:
+        """Get ATT MTU size for active connection"""
+        return self._session.MaxPduSize
+
     async def pair(self, protection_level=None, **kwargs) -> bool:
         """Attempts to pair with the device.
 

@@ -499,7 +499,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
         assert_reply(reply)
-        if reply.body[0]:
+        if reply.body[0].value:
+            logger.debug(
+                f"BLE device @ {self.address} already paired with {self._adapter}"
+            )
             return True
 
         # Set device as trusted.
@@ -510,7 +513,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.PROPERTIES_INTERFACE,
                 member="Set",
                 signature="ssv",
-                body=[defs.DEVICE_INTERFACE, "Trusted", True],
+                body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
             )
         )
         assert_reply(reply)
@@ -541,7 +544,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
 
-        return reply.body[0]
+        return reply.body[0].value
 
     async def unpair(self) -> bool:
         """Unpair with the peripheral.
@@ -566,6 +569,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return self._DeprecatedIsConnectedReturn(
             False if self._bus is None else self._properties.get("Connected", False)
         )
+
+    @property
+    def mtu_size(self) -> int:
+        """Get ATT MTU size for active connection"""
+        warnings.warn(
+            "MTU size not supported with BlueZ; this function returns the default value of 23. Note that the actual MTU size might be larger"
+        )
+        return 23
 
     # GATT services methods
 
@@ -810,7 +821,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
             assert_reply(reply)
-            fd = reply.body[0]
+            fd = reply.unix_fds[0]
             try:
                 os.write(fd, data)
             finally:

@@ -99,7 +99,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         # 0x21 is service data with 128-bit UUID
         for section in event_args.advertisement.get_sections_by_type(0x21):
             data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
-            service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+            service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
@@ -135,7 +135,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         if self._signal_strength_filter is not None:
             self.watcher.signal_strength_filter = self._signal_strength_filter
         if self._advertisement_filter is not None:
-            self.watcher._advertisement_filter = self._advertisement_filter
+            self.watcher.advertisement_filter = self._advertisement_filter
 
         self.watcher.start()
 
@@ -172,7 +172,8 @@ class BleakScannerWinRT(BaseBleakScanner):
             # TODO: Handle AdvertisementFilter parameters
             self._advertisement_filter = kwargs["AdvertisementFilter"]
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         found = []
         for event_args in list(self._devices.values()):
             new_device = self._parse_event_args(event_args)

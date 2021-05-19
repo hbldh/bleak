@@ -20,7 +20,7 @@ def assert_reply(reply: Message):
         AssentationError: if the message type is not ``MessageType.METHOD_RETURN``
     """
     if reply.message_type == MessageType.ERROR:
-        raise BleakDBusError(reply.error_name)
+        raise BleakDBusError(reply.error_name, reply.body)
     assert reply.message_type == MessageType.METHOD_RETURN
 
 

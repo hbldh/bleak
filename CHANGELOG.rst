@@ -14,7 +14,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
-* Change typing of data parameter to ``Union[bytes, bytearray]``
+* add mtu_size property for clients
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
 
@@ -24,15 +24,21 @@ Changed
 * Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
+* Added error description in addition to error name when ``BleakDBusError`` is converted to string
+* Change typing of data parameter in write methods to ``Union[bytes, bytearray]``
 
 Fixed
 ~~~~~
 
+* Fixed ``KeyError`` when trying to connect to ``BLEDevice`` from advertising
+  data callback on macOS. Fixes #448.
 * Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
 * Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
 * Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
 * Corrections for the Philips Hue lamp example. Merged #505
+* Fixed BleakClientBlueZDBus.pair() method always returning True. Fixes #503.
+* Fixed write without response on BlueZ < 5.51.
 
 
 `0.11.0`_ (2021-03-17)
