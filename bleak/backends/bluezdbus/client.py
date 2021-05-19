@@ -731,7 +731,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
-        data: bytearray,
+        data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
@@ -833,7 +833,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
 
-    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
