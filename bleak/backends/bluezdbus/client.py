@@ -821,7 +821,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
             assert_reply(reply)
-            fd = reply.body[0]
+            fd = reply.unix_fds[0]
             try:
                 os.write(fd, data)
             finally:
