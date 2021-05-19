@@ -688,7 +688,7 @@ class BleakClientDotNet(BaseBleakClient):
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: Union[bytes, bytearray],
+        data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
         """Perform a write operation of the specified GATT characteristic.
@@ -750,7 +750,7 @@ class BleakClientDotNet(BaseBleakClient):
                 )
 
     async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray]
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
