@@ -202,6 +202,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         for m in event_args.advertisement.manufacturer_data:
             data[m.company_id] = bytes(CryptographicBuffer.copy_to_byte_array(m.data))
         local_name = event_args.advertisement.local_name
+        rssi = event_args.raw_signal_strength_in_d_bm
         return BLEDevice(
-            bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
+            bdaddr, local_name, event_args, rssi, uuids=uuids, manufacturer_data=data
         )
