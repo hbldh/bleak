@@ -17,6 +17,7 @@ from Foundation import (
     CBService,
     CBCharacteristic,
     CBDescriptor,
+    NSArray,
     NSData,
     NSError,
 )
@@ -78,9 +79,9 @@ class PeripheralDelegate(NSObject):
 
         return self
 
-    async def discoverServices(self, use_cached=True) -> [CBService]:
+    async def discoverServices(self, use_cached=True) -> NSArray:
         event = self._services_discovered_event
-        if event.is_set() and (use_cached is True):
+        if event.is_set() and use_cached:
             return self.peripheral.services()
 
         event.clear()
@@ -92,8 +93,8 @@ class PeripheralDelegate(NSObject):
 
     async def discoverCharacteristics_(
         self, service: CBService, use_cached=True
-    ) -> [CBCharacteristic]:
-        if service.characteristics() is not None and use_cached is True:
+    ) -> NSArray:
+        if service.characteristics() is not None and use_cached:
             return service.characteristics()
 
         sUUID = service.UUID().UUIDString()
@@ -105,8 +106,8 @@ class PeripheralDelegate(NSObject):
 
     async def discoverDescriptors_(
         self, characteristic: CBCharacteristic, use_cached=True
-    ) -> [CBDescriptor]:
-        if characteristic.descriptors() is not None and use_cached is True:
+    ) -> NSArray:
+        if characteristic.descriptors() is not None and use_cached:
             return characteristic.descriptors()
 
         cUUID = characteristic.UUID().UUIDString()
@@ -119,7 +120,7 @@ class PeripheralDelegate(NSObject):
     async def readCharacteristic_(
         self, characteristic: CBCharacteristic, use_cached=True
     ) -> NSData:
-        if characteristic.value() is not None and use_cached is True:
+        if characteristic.value() is not None and use_cached:
             return characteristic.value()
 
         cUUID = characteristic.UUID().UUIDString()
@@ -145,7 +146,7 @@ class PeripheralDelegate(NSObject):
     async def readDescriptor_(
         self, descriptor: CBDescriptor, use_cached=True
     ) -> NSData:
-        if descriptor.value() is not None and use_cached is True:
+        if descriptor.value() is not None and use_cached:
             return descriptor.value()
 
         dUUID = descriptor.UUID().UUIDString()
@@ -196,7 +197,7 @@ class PeripheralDelegate(NSObject):
         event = self._characteristic_notify_change_events.get_cleared(c_handle)
         self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
         # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
-        # await event.wait()
+        await event.wait()
 
         return True
 
@@ -208,7 +209,7 @@ class PeripheralDelegate(NSObject):
         event = self._characteristic_notify_change_events.get_cleared(c_handle)
         self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
         # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
-        # await event.wait()
+        await event.wait()
 
         self._characteristic_notify_callbacks.pop(c_handle)
 

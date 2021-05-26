@@ -38,6 +38,7 @@ Fixed
 * Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
 * Corrections for the Philips Hue lamp example. Merged #505
 * Fixed BleakClientBlueZDBus.pair() method always returning True. Fixes #503.
+* Fixed waiting for notification start/stop to complete in CoreBluetooth backend.
 * Fixed write without response on BlueZ < 5.51.
 
 
