@@ -38,6 +38,7 @@ Fixed
 * Corrections for the Philips Hue lamp example. Merged #505
 * Fixed BleakClientBlueZDBus.pair() method always returning True. Fixes #503.
 * Fixed write without response on BlueZ < 5.51.
+* Fixed failed import on CI server when BlueZ is not installed.
 
 
 `0.11.0`_ (2021-03-17)
