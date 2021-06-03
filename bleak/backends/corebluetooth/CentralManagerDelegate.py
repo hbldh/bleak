@@ -7,11 +7,12 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import asyncio
+import itertools
 import logging
 import platform
 import threading
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 import objc
 from CoreBluetooth import (
@@ -68,7 +69,7 @@ class CentralManagerDelegate(NSObject):
             return None
 
         self.event_loop = asyncio.get_event_loop()
-        self.connected_peripheral_delegate = None
+        self.connected_peripheral_delegate: Optional[PeripheralDelegate] = None
         self.connected_peripheral = None
         self._connection_state = CMDConnectionState.DISCONNECTED
 
@@ -269,8 +270,8 @@ class CentralManagerDelegate(NSObject):
             )
         )
         if self._connection_state != CMDConnectionState.CONNECTED:
-            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(
-                peripheral
+            peripheralDelegate: PeripheralDelegate = (
+                PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
             )
             self.connected_peripheral_delegate = peripheralDelegate
             self._connection_state = CMDConnectionState.CONNECTED
@@ -312,6 +313,27 @@ class CentralManagerDelegate(NSObject):
         self, central: CBCentralManager, peripheral: CBPeripheral, error: NSError
     ):
         logger.debug("Peripheral Device disconnected!")
+
+        # If there are any pending futures waiting for delegate callbacks, we
+        # need to raise an exception since the callback will no longer be
+        # called because the device is disconnected.
+        delegate = self.connected_peripheral_delegate
+        for future in itertools.chain(
+            (delegate._services_discovered_future,),
+            delegate._service_characteristic_discovered_futures.values(),
+            delegate._characteristic_descriptor_discover_futures.values(),
+            delegate._characteristic_read_futures.values(),
+            delegate._characteristic_write_futures.values(),
+            delegate._characteristic_notify_change_futures.values(),
+            delegate._descriptor_read_futures.values(),
+            delegate._descriptor_write_futures.values(),
+        ):
+            try:
+                future.set_exception(BleakError("disconnected"))
+            except asyncio.InvalidStateError:
+                # the future was already done
+                pass
+
         self.connected_peripheral_delegate = None
         self.connected_peripheral = None
         self._connection_state = CMDConnectionState.DISCONNECTED
