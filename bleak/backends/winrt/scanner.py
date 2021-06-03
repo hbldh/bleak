@@ -113,11 +113,13 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._callback(device, advertisement_data)
 
     def _stopped_handler(self, sender, e):
-        logger.debug(
-            "{0} devices found. Watcher status: {1}.".format(
-                len(self._devices), self.watcher.status
+        # self.watcher can be None if we stopped the watcher in stop()
+        if self.watcher is not None:
+            logger.debug(
+                "{0} devices found. Watcher status: {1}.".format(
+                    len(self._devices), self.watcher.status
+                )
             )
-        )
 
     async def start(self):
         self.watcher = BluetoothLEAdvertisementWatcher()
