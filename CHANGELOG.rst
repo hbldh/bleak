@@ -41,6 +41,7 @@ Fixed
 * Fixed waiting for notification start/stop to complete in CoreBluetooth backend.
 * Fixed write without response on BlueZ < 5.51.
 * Fixed error propagation for CoreBluetooth events
+* Fixed failed import on CI server when BlueZ is not installed.
 
 
 `0.11.0`_ (2021-03-17)

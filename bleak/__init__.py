@@ -17,6 +17,7 @@ from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
+_on_ci = "CI" in os.environ
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -29,7 +30,7 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.setLevel(logging.DEBUG)
 
 if platform.system() == "Linux":
-    if not _on_rtd:
+    if not _on_rtd and not _on_ci:
         # TODO: Check if BlueZ version 5.43 is sufficient.
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
