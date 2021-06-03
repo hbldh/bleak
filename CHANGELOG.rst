@@ -25,6 +25,7 @@ Changed
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 * Added error description in addition to error name when ``BleakDBusError`` is converted to string
+* Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
 
 Fixed
 ~~~~~
@@ -37,7 +38,9 @@ Fixed
 * Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
 * Corrections for the Philips Hue lamp example. Merged #505
 * Fixed BleakClientBlueZDBus.pair() method always returning True. Fixes #503.
+* Fixed waiting for notification start/stop to complete in CoreBluetooth backend.
 * Fixed write without response on BlueZ < 5.51.
+* Fixed error propagation for CoreBluetooth events
 * Fixed failed import on CI server when BlueZ is not installed.
 
 

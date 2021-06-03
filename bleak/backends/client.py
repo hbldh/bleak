@@ -202,7 +202,7 @@ class BaseBleakClient(abc.ABC):
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: bytearray,
+        data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
@@ -218,7 +218,9 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
