@@ -42,6 +42,7 @@ Fixed
 * Fixed write without response on BlueZ < 5.51.
 * Fixed error propagation for CoreBluetooth events
 * Fixed failed import on CI server when BlueZ is not installed.
+* Fixed notification ``value`` should be ``bytearray`` on CoreBluetooth. Fixes #560.
 
 
 `0.11.0`_ (2021-03-17)

@@ -298,7 +298,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        value: bytes,
+        value: NSData,
         error: NSError,
     ):
         cUUID = characteristic.UUID().UUIDString()
@@ -307,7 +307,7 @@ class PeripheralDelegate(NSObject):
         if error is None:
             notify_callback = self._characteristic_notify_callbacks.get(c_handle)
             if notify_callback:
-                notify_callback(c_handle, value)
+                notify_callback(c_handle, bytearray(value))
 
         future = self._characteristic_read_futures.get(cUUID)
         if not future:
