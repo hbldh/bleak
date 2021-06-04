@@ -14,6 +14,7 @@ from CoreBluetooth import (
     CBCharacteristicWriteWithResponse,
     CBCharacteristicWriteWithoutResponse,
     CBPeripheral,
+    CBPeripheralStateConnected,
 )
 
 from bleak.backends.client import BaseBleakClient
@@ -88,7 +89,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         manager = self._central_manager_delegate
         logger.debug("CentralManagerDelegate  at {}".format(manager))
         logger.debug("Connecting to BLE device @ {}".format(self.address))
-        await manager.connect_(self._device_info, timeout=timeout)
+        await manager.connect(self._device_info, timeout=timeout)
         manager.disconnected_callback = self._disconnected_callback_client
 
         # Now get services
@@ -123,7 +124,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Checks for current active connection"""
         manager = self._central_manager_delegate
         return self._DeprecatedIsConnectedReturn(
-            False if manager is None else manager.isConnected
+            False
+            if manager is None
+            else manager.connected_peripheral.state() == CBPeripheralStateConnected
         )
 
     @property

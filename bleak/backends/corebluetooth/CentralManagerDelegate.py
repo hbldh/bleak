@@ -10,7 +10,6 @@ import asyncio
 import logging
 import platform
 import threading
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
 import objc
@@ -31,6 +30,7 @@ from Foundation import (
     NSError,
     NSNumber,
     NSObject,
+    NSUUID,
 )
 from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 
@@ -49,12 +49,6 @@ except Exception:
     _IS_PRE_10_13 = False
 
 
-class CMDConnectionState(Enum):
-    DISCONNECTED = 0
-    PENDING = 1
-    CONNECTED = 2
-
-
 class CentralManagerDelegate(NSObject):
     """macOS conforming python class for managing the CentralManger for BLE"""
 
@@ -70,7 +64,7 @@ class CentralManagerDelegate(NSObject):
         self.event_loop = asyncio.get_event_loop()
         self.connected_peripheral_delegate: Optional[PeripheralDelegate] = None
         self.connected_peripheral: Optional[CBPeripheral] = None
-        self._connection_state = CMDConnectionState.DISCONNECTED
+        self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
 
         self.devices: Dict[str, BLEDeviceCoreBluetooth] = {}
 
@@ -78,7 +72,7 @@ class CentralManagerDelegate(NSObject):
             int, Callable[[CBPeripheral, Dict[str, Any], int], None]
         ] = {}
         self.disconnected_callback: Optional[Callable[[], None]] = None
-        self._connection_state_changed = asyncio.Event()
+        self._disconnect_futures: Dict[NSUUID, asyncio.Future] = {}
 
         self._did_update_state_event = threading.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
@@ -101,10 +95,6 @@ class CentralManagerDelegate(NSObject):
         return self
 
     # User defined functions
-
-    @property
-    def isConnected(self) -> bool:
-        return self._connection_state == CMDConnectionState.CONNECTED
 
     @objc.python_method
     def start_scan(self, scan_options) -> None:
@@ -148,36 +138,36 @@ class CentralManagerDelegate(NSObject):
         await asyncio.sleep(float(scan_options.get("timeout", 0.0)))
         return await self.stop_scan()
 
-    async def connect_(self, peripheral: CBPeripheral, timeout=10.0) -> bool:
-        self._connection_state = CMDConnectionState.PENDING
-        self._connection_state_changed.clear()
-        self.central_manager.connectPeripheral_options_(peripheral, None)
+    @objc.python_method
+    async def connect(self, peripheral: CBPeripheral, timeout=10.0) -> None:
+        delegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
 
         try:
-            await asyncio.wait_for(
-                self._connection_state_changed.wait(), timeout=timeout
-            )
+            future = self.event_loop.create_future()
+            self._connect_futures[peripheral.identifier()] = future
+            self.central_manager.connectPeripheral_options_(peripheral, None)
+            await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
             logger.debug(f"Connection timed out after {timeout} seconds.")
+            future = self.event_loop.create_future()
+            self._disconnect_futures[peripheral.identifier()] = future
             self.central_manager.cancelPeripheralConnection_(peripheral)
+            await future
             raise
 
         self.connected_peripheral = peripheral
+        self.connected_peripheral_delegate = delegate
 
-        return self._connection_state == CMDConnectionState.CONNECTED
-
-    async def disconnect(self) -> bool:
+    @objc.python_method
+    async def disconnect(self) -> None:
         # Is a peripheral even connected?
         if self.connected_peripheral is None:
             return True
 
-        self._connection_state = CMDConnectionState.PENDING
+        future = self.event_loop.create_future()
+        self._disconnect_futures[self.connected_peripheral.identifier()] = future
         self.central_manager.cancelPeripheralConnection_(self.connected_peripheral)
-
-        while self._connection_state == CMDConnectionState.PENDING:
-            await asyncio.sleep(0)
-
-        return self._connection_state == CMDConnectionState.DISCONNECTED
+        await future
 
     # Protocol Functions
 
@@ -267,18 +257,9 @@ class CentralManagerDelegate(NSObject):
     def did_connect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral
     ) -> None:
-        logger.debug(
-            "Successfully connected to device uuid {}".format(
-                peripheral.identifier().UUIDString()
-            )
-        )
-        if self._connection_state != CMDConnectionState.CONNECTED:
-            peripheralDelegate = PeripheralDelegate.alloc().initWithPeripheral_(
-                peripheral
-            )
-            self.connected_peripheral_delegate = peripheralDelegate
-            self._connection_state = CMDConnectionState.CONNECTED
-            self._connection_state_changed.set()
+        future = self._connect_futures.pop(peripheral.identifier(), None)
+        if future is not None:
+            future.set_result(True)
 
     def centralManager_didConnectPeripheral_(
         self, central: CBCentralManager, peripheral: CBPeripheral
@@ -297,13 +278,12 @@ class CentralManagerDelegate(NSObject):
         peripheral: CBPeripheral,
         error: Optional[NSError],
     ) -> None:
-        logger.debug(
-            "Failed to connect to device uuid {}".format(
-                peripheral.identifier().UUIDString()
-            )
-        )
-        self._connection_state = CMDConnectionState.DISCONNECTED
-        self._connection_state_changed.set()
+        future = self._connect_futures.pop(peripheral.identifier(), None)
+        if future is not None:
+            if error is not None:
+                future.set_exception(BleakError(f"failed to connect: {error}"))
+            else:
+                future.set_result(False)
 
     def centralManager_didFailToConnectPeripheral_error_(
         self,
@@ -329,7 +309,13 @@ class CentralManagerDelegate(NSObject):
         logger.debug("Peripheral Device disconnected!")
         self.connected_peripheral_delegate = None
         self.connected_peripheral = None
-        self._connection_state = CMDConnectionState.DISCONNECTED
+
+        future = self._disconnect_futures.pop(peripheral.identifier(), None)
+        if future is not None:
+            if error is not None:
+                future.set_exception(BleakError(f"disconnect failed: {error}"))
+            else:
+                future.set_result(None)
 
         if self.disconnected_callback is not None:
             self.disconnected_callback()

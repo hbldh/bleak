@@ -43,6 +43,8 @@ Fixed
 * Fixed write without response on BlueZ < 5.51.
 * Fixed error propagation for CoreBluetooth events
 * Fixed failed import on CI server when BlueZ is not installed.
+* Fixed crash when cancelling connection when Python runtime shuts down on
+  CoreBluetooth backend. Fixes #538
 
 
 `0.11.0`_ (2021-03-17)
