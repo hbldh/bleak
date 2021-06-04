@@ -3,19 +3,21 @@ BLE Client for CoreBluetooth on macOS
 
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
+import asyncio
 import inspect
 import logging
 import uuid
-from typing import Callable, Union
-import asyncio
+from typing import Callable, Optional, Union
 
-from Foundation import NSData
+from Foundation import NSArray, NSData
 from CoreBluetooth import (
     CBCharacteristicWriteWithResponse,
     CBCharacteristicWriteWithoutResponse,
+    CBPeripheral,
 )
 
 from bleak.backends.client import BaseBleakClient
+from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.characteristic import (
     BleakGATTCharacteristicCoreBluetooth,
 )
@@ -46,15 +48,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
 
+        self._device_info: Optional[CBPeripheral] = None
+        self._central_manager_delegate: Optional[CentralManagerDelegate] = None
+
         if isinstance(address_or_ble_device, BLEDevice):
             self._device_info = address_or_ble_device.details
             self._central_manager_delegate = address_or_ble_device.metadata["delegate"]
-        else:
-            self._device_info = None
-            self._central_manager_delegate = None
-        self._requester = None
-        self._callbacks = {}
-        self._services = None
+
+        self._services: Optional[NSArray] = None
 
     def __str__(self):
         return "BleakClientCoreBluetooth ({})".format(self.address)

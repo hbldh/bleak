@@ -26,6 +26,7 @@ Changed
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 * Added error description in addition to error name when ``BleakDBusError`` is converted to string
 * Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
+* Improved type hints in CoreBluetooth backend.
 
 Fixed
 ~~~~~

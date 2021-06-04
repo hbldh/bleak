@@ -1,7 +1,7 @@
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from typing import List
 
-from Foundation import CBService
+from CoreBluetooth import CBService
 
 from bleak.backends.corebluetooth.characteristic import (
     BleakGATTCharacteristicCoreBluetooth,
@@ -14,10 +14,10 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
 
     def __init__(self, obj: CBService):
         super().__init__(obj)
-        self.__characteristics = []
+        self.__characteristics: List[BleakGATTCharacteristicCoreBluetooth] = []
         # N.B. the `startHandle` method of the CBService is an undocumented Core Bluetooth feature,
         # which Bleak takes advantage of in order to have a service handle to use.
-        self.__handle = int(self.obj.startHandle())
+        self.__handle: int = int(self.obj.startHandle())
 
     @property
     def handle(self) -> int:
