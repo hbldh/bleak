@@ -99,11 +99,11 @@ class CentralManagerDelegate(NSObject):
     def start_scan(self, scan_options) -> None:
         # remove old
         self.devices = {}
-        service_uuids = []
+        service_uuids = None
         if "service_uuids" in scan_options:
             service_uuids_str = scan_options["service_uuids"]
             service_uuids = NSArray.alloc().initWithArray_(
-                list(map(string2uuid, service_uuids_str))
+                list(map(CBUUID.UUIDWithString_, service_uuids_str))
             )
 
         self.central_manager.scanForPeripheralsWithServices_options_(
@@ -330,8 +330,3 @@ class CentralManagerDelegate(NSObject):
             peripheral,
             error,
         )
-
-
-def string2uuid(uuid_str: str) -> CBUUID:
-    """Convert a string to a uuid"""
-    return CBUUID.UUIDWithString_(uuid_str)
