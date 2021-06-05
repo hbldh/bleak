@@ -62,7 +62,7 @@ AdvertisementDataCallback = Callable[
 ]
 
 AdvertisementDataFilter = Callable[
-    [BLEDevice, AdvertisementData],
+    [BLEDevice, Optional[AdvertisementData]],
     bool,
 ]
 
@@ -204,12 +204,12 @@ class BaseBleakScanner(abc.ABC):
 
     @classmethod
     async def find_device_by_filter(
-        cls, filterfunc, timeout: float = 10.0, **kwargs
+        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
     ) -> Optional[BLEDevice]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
 
         Args:
-            filterfunc: A function that is called for every peripheral found. It should return True only for the wanted device.
+            filterfunc (AdvertisementDataFilter): A function that is called for every BLEDevice found. It should return True only for the wanted device.
             timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
 
         Keyword Args:
