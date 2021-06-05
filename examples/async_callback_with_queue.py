@@ -29,6 +29,9 @@ ADDRESS = (
     else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
 )
 NOTIFICATION_UUID = f"0000{0xFFE1:x}-0000-1000-8000-00805f9b34fb"
+if len(sys.argv) == 3:
+    ADDRESS = sys.argv[1]
+    NOTIFICATION_UUID = sys.argv[2]
 
 
 async def run_ble_client(address: str, queue: asyncio.Queue):
