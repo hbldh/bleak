@@ -200,7 +200,9 @@ class BaseBleakScanner(abc.ABC):
 
         """
         device_identifier = device_identifier.lower()
-        return await cls.find_device_by_filter(lambda d, ad : d.address.lower() == device_identifier)
+        return await cls.find_device_by_filter(
+            lambda d, ad: d.address.lower() == device_identifier
+        )
 
     @classmethod
     async def find_device_by_filter(
@@ -232,8 +234,4 @@ class BaseBleakScanner(abc.ABC):
                 await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 return None
-            return next(
-                d
-                for d in scanner.discovered_devices
-                if filterfunc(d, None)
-            )
+            return next(d for d in scanner.discovered_devices if filterfunc(d, None))
