@@ -425,15 +425,4 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     async def get_rssi(self) -> int:
         """To get RSSI value in dBm of the connected Peripheral"""
-
-        self._peripheral.readRSSI()
-        RSSI = self._peripheral.RSSI()
-        for i in range(20):  # First time takes a little otherwise returns None
-            RSSI = self._peripheral.RSSI()
-            if not RSSI:
-                await asyncio.sleep(0.1)
-            else:
-                return int(RSSI)
-
-        if not RSSI:
-            return None
+        return int(await self._delegate.read_rssi())

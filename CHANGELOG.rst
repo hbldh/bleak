@@ -27,6 +27,7 @@ Changed
 * Added error description in addition to error name when ``BleakDBusError`` is converted to string
 * Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
 * Improved type hints in CoreBluetooth backend.
+* Use delegate callbacks for get_rssi() on CoreBluetooth backend.
 
 Fixed
 ~~~~~

@@ -11,7 +11,7 @@ import logging
 from typing import Callable, Any, Dict, NewType, Optional
 
 import objc
-from Foundation import NSObject, NSArray, NSData, NSError, NSString
+from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSString, NSUUID
 from CoreBluetooth import (
     CBPeripheral,
     CBService,
@@ -63,6 +63,8 @@ class PeripheralDelegate(NSObject):
 
         self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
         self._characteristic_notify_callbacks: Dict[int, Callable[[str, Any], Any]] = {}
+
+        self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
 
         return self
 
@@ -199,6 +201,13 @@ class PeripheralDelegate(NSObject):
         self._characteristic_notify_callbacks.pop(c_handle)
 
         return True
+
+    @objc.python_method
+    async def read_rssi(self) -> NSNumber:
+        future = self._event_loop.create_future()
+        self._read_rssi_futures[self.peripheral.identifier()] = future
+        self.peripheral.readRSSI()
+        return await future
 
     # Protocol Functions
 
@@ -468,3 +477,58 @@ class PeripheralDelegate(NSObject):
             characteristic,
             error,
         )
+
+    @objc.python_method
+    def did_read_rssi(
+        self, peripheral: CBPeripheral, rssi: NSNumber, error: Optional[NSError]
+    ) -> None:
+        future = self._read_rssi_futures.pop(peripheral.identifier(), None)
+
+        if not future:
+            logger.warning("Unexpected event did_read_rssi")
+            return
+
+        if error is not None:
+            exception = BleakError(f"Failed to read RSSI: {error}")
+            future.set_exception(exception)
+        else:
+            future.set_result(rssi)
+
+
+# peripheralDidUpdateRSSI:error: was deprecated and replaced with
+# peripheral:didReadRSSI:error: in macOS 10.13
+if objc.macos_available(10, 13):
+
+    def peripheral_didReadRSSI_error_(
+        self: PeripheralDelegate,
+        peripheral: CBPeripheral,
+        rssi: NSNumber,
+        error: Optional[NSError],
+    ) -> None:
+        logger.debug("peripheral_didReadRSSI_error_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_read_rssi, peripheral, rssi, error
+        )
+
+    objc.classAddMethod(
+        PeripheralDelegate,
+        b"peripheral:didReadRSSI:error:",
+        peripheral_didReadRSSI_error_,
+    )
+
+
+else:
+
+    def peripheralDidUpdateRSSI_error_(
+        self: PeripheralDelegate, peripheral: CBPeripheral, error: Optional[NSError]
+    ) -> None:
+        logger.debug("peripheralDidUpdateRSSI_error_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_read_rssi, peripheral, peripheral.RSSI(), error
+        )
+
+    objc.classAddMethod(
+        PeripheralDelegate,
+        b"peripheralDidUpdateRSSI:error:",
+        peripheralDidUpdateRSSI_error_,
+    )
