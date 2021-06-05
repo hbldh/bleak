@@ -50,6 +50,8 @@ Fixed
   CoreBluetooth backend.
 * Fixed deadlock in CoreBluetooth backend when device disconnects while
   callbacks are pending. Fixes #535.
+* Fixed deadlock when using more than one service, characteristic or descriptor
+  with the same UUID on CoreBluetooth backend.
 
 
 `0.11.0`_ (2021-03-17)
