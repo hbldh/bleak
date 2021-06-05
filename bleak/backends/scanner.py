@@ -61,6 +61,11 @@ AdvertisementDataCallback = Callable[
     Optional[Awaitable[None]],
 ]
 
+AdvertisementDataFilter = Callable[
+    [BLEDevice, AdvertisementData],
+    bool,
+]
+
 
 class BaseBleakScanner(abc.ABC):
     """Interface for Bleak Bluetooth LE Scanners"""
@@ -195,10 +200,29 @@ class BaseBleakScanner(abc.ABC):
 
         """
         device_identifier = device_identifier.lower()
+        return await cls.find_device_by_filter(lambda d, ad : d.address.lower() == device_identifier)
+
+    @classmethod
+    async def find_device_by_filter(
+        cls, filterfunc, timeout: float = 10.0, **kwargs
+    ) -> Optional[BLEDevice]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
+
+        Args:
+            filterfunc: A function that is called for every peripheral found. It should return True only for the wanted device.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Keyword Args:
+            adapter (str): Bluetooth adapter to use for discovery.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
         stop_scanning_event = asyncio.Event()
 
         def stop_if_detected(d: BLEDevice, ad: AdvertisementData):
-            if d.address.lower() == device_identifier:
+            if filterfunc(d, ad):
                 stop_scanning_event.set()
 
         async with cls(
@@ -211,5 +235,5 @@ class BaseBleakScanner(abc.ABC):
             return next(
                 d
                 for d in scanner.discovered_devices
-                if d.address.lower() == device_identifier
+                if filterfunc(d, None)
             )
