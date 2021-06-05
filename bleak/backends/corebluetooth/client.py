@@ -136,7 +136,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     @property
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
-        return self._delegate.getMtuSize()
+        # Use type CBCharacteristicWriteWithoutResponse to get maximum write
+        # value length based on the negotiated ATT MTU size. Add the ATT header
+        # length (+3) to get the actual ATT MTU size.
+        return (
+            self._peripheral.maximumWriteValueLengthForType_(
+                CBCharacteristicWriteWithoutResponse
+            )
+            + 3
+        )
 
     async def pair(self, *args, **kwargs) -> bool:
         """Attempt to pair with a peripheral.
