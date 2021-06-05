@@ -84,7 +84,8 @@ class PeripheralDelegate(NSObject):
             self._read_rssi_futures.values(),
         )
 
-    async def discoverServices(self, use_cached: bool = True) -> NSArray:
+    @objc.python_method
+    async def discover_services(self, use_cached: bool = True) -> NSArray:
         if self._services_discovered_future.done() and use_cached:
             return self.peripheral.services()
 
@@ -95,7 +96,8 @@ class PeripheralDelegate(NSObject):
 
         return self.peripheral.services()
 
-    async def discoverCharacteristics_(
+    @objc.python_method
+    async def discover_characteristics(
         self, service: CBService, use_cached: bool = True
     ) -> NSArray:
         if service.characteristics() is not None and use_cached:
@@ -108,7 +110,8 @@ class PeripheralDelegate(NSObject):
 
         return service.characteristics()
 
-    async def discoverDescriptors_(
+    @objc.python_method
+    async def discover_descriptors(
         self, characteristic: CBCharacteristic, use_cached: bool = True
     ) -> NSArray:
         if characteristic.descriptors() is not None and use_cached:
@@ -123,7 +126,8 @@ class PeripheralDelegate(NSObject):
 
         return characteristic.descriptors()
 
-    async def readCharacteristic_(
+    @objc.python_method
+    async def read_characteristic(
         self, characteristic: CBCharacteristic, use_cached: bool = True
     ) -> NSData:
         if characteristic.value() is not None and use_cached:
@@ -138,7 +142,8 @@ class PeripheralDelegate(NSObject):
         else:
             return b""
 
-    async def readDescriptor_(
+    @objc.python_method
+    async def read_descriptor(
         self, descriptor: CBDescriptor, use_cached: bool = True
     ) -> Any:
         if descriptor.value() is not None and use_cached:
@@ -151,7 +156,8 @@ class PeripheralDelegate(NSObject):
 
         return descriptor.value()
 
-    async def writeCharacteristic_value_type_(
+    @objc.python_method
+    async def write_characteristic(
         self,
         characteristic: CBCharacteristic,
         value: NSData,
@@ -168,9 +174,8 @@ class PeripheralDelegate(NSObject):
 
         return True
 
-    async def writeDescriptor_value_(
-        self, descriptor: CBDescriptor, value: NSData
-    ) -> bool:
+    @objc.python_method
+    async def write_descriptor(self, descriptor: CBDescriptor, value: NSData) -> bool:
         future = self._event_loop.create_future()
         self._descriptor_write_futures[descriptor.handle()] = future
         self.peripheral.writeValue_forDescriptor_(value, descriptor)
@@ -178,7 +183,8 @@ class PeripheralDelegate(NSObject):
 
         return True
 
-    async def startNotify_cb_(
+    @objc.python_method
+    async def start_notifications(
         self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any]
     ) -> bool:
         c_handle = characteristic.handle()
@@ -194,7 +200,8 @@ class PeripheralDelegate(NSObject):
 
         return True
 
-    async def stopNotify_(self, characteristic: CBCharacteristic) -> bool:
+    @objc.python_method
+    async def stop_notifications(self, characteristic: CBCharacteristic) -> bool:
         c_handle = characteristic.handle()
         if c_handle not in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notification never started")

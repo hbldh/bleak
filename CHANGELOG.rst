@@ -28,6 +28,7 @@ Changed
 * Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
 * Improved type hints in CoreBluetooth backend.
 * Use delegate callbacks for get_rssi() on CoreBluetooth backend.
+* Use ``@objc.python_method`` where possible in ``PeripheralDelegate`` class.
 
 Fixed
 ~~~~~

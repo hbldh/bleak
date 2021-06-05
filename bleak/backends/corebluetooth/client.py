@@ -196,14 +196,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             return self.services
 
         logger.debug("Retrieving services...")
-        services = await self._delegate.discoverServices()
+        services = await self._delegate.discover_services()
 
         for service in services:
             serviceUUID = service.UUID().UUIDString()
             logger.debug(
                 "Retrieving characteristics for service {}".format(serviceUUID)
             )
-            characteristics = await self._delegate.discoverCharacteristics_(service)
+            characteristics = await self._delegate.discover_characteristics(service)
 
             self.services.add_service(BleakGATTServiceCoreBluetooth(service))
 
@@ -212,7 +212,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 logger.debug(
                     "Retrieving descriptors for characteristic {}".format(cUUID)
                 )
-                descriptors = await self._delegate.discoverDescriptors_(characteristic)
+                descriptors = await self._delegate.discover_descriptors(characteristic)
 
                 self.services.add_characteristic(
                     BleakGATTCharacteristicCoreBluetooth(characteristic)
@@ -256,7 +256,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
-        output = await self._delegate.readCharacteristic_(
+        output = await self._delegate.read_characteristic(
             characteristic.obj, use_cached=use_cached
         )
         value = bytearray(output)
@@ -280,7 +280,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor {} was not found!".format(handle))
 
-        output = await self._delegate.readDescriptor_(
+        output = await self._delegate.read_descriptor(
             descriptor.obj, use_cached=use_cached
         )
         if isinstance(
@@ -316,7 +316,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = await self._delegate.writeCharacteristic_value_type_(
+        success = await self._delegate.write_characteristic(
             characteristic.obj,
             value,
             CBCharacteristicWriteWithResponse
@@ -349,7 +349,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Descriptor {} was not found!".format(handle))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = await self._delegate.writeDescriptor_value_(descriptor.obj, value)
+        success = await self._delegate.write_descriptor(descriptor.obj, value)
         if success:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
         else:
@@ -398,7 +398,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {0} not found!".format(char_specifier))
 
-        success = await self._delegate.startNotify_cb_(
+        success = await self._delegate.start_notifications(
             characteristic.obj, bleak_callback
         )
         if not success:
@@ -427,7 +427,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(char_specifier))
 
-        success = await self._delegate.stopNotify_(characteristic.obj)
+        success = await self._delegate.stop_notifications(characteristic.obj)
         if not success:
             raise BleakError(
                 "Could not stop notify on {0}: {1}".format(characteristic.uuid, success)
