@@ -48,6 +48,8 @@ Fixed
   CoreBluetooth backend. Fixes #538
 * Fixed connecting to multiple devices using a single ``BleakScanner`` on
   CoreBluetooth backend.
+* Fixed deadlock in CoreBluetooth backend when device disconnects while
+  callbacks are pending. Fixes #535.
 
 
 `0.11.0`_ (2021-03-17)

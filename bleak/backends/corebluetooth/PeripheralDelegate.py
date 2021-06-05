@@ -7,8 +7,9 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import asyncio
+import itertools
 import logging
-from typing import Callable, Any, Dict, NewType, Optional
+from typing import Callable, Any, Dict, Iterable, NewType, Optional
 
 import objc
 from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSString, NSUUID
@@ -67,6 +68,25 @@ class PeripheralDelegate(NSObject):
         self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
 
         return self
+
+    @objc.python_method
+    def futures(self) -> Iterable[asyncio.Future]:
+        """
+        Gets all futures for this delegate.
+
+        These can be used to handle any pending futures when a peripheral is disconnected.
+        """
+        return itertools.chain(
+            (self._services_discovered_future,),
+            self._service_characteristic_discovered_futures.values(),
+            self._characteristic_descriptor_discover_futures.values(),
+            self._characteristic_read_futures.values(),
+            self._characteristic_write_futures.values(),
+            self._descriptor_read_futures.values(),
+            self._descriptor_write_futures.values(),
+            self._characteristic_notify_change_futures.values(),
+            self._read_rssi_futures.values(),
+        )
 
     async def discoverServices(self, use_cached: bool = True) -> NSArray:
         if self._services_discovered_future.done() and use_cached:

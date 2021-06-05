@@ -99,6 +99,16 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             self._services_resolved = False
             self._services = None
 
+            # If there are any pending futures waiting for delegate callbacks, we
+            # need to raise an exception since the callback will no longer be
+            # called because the device is disconnected.
+            for future in self._delegate.futures():
+                try:
+                    future.set_exception(BleakError("disconnected"))
+                except asyncio.InvalidStateError:
+                    # the future was already done
+                    pass
+
             if self._disconnected_callback:
                 self._disconnected_callback(self)
 
