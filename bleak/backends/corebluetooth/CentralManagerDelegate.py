@@ -127,17 +127,6 @@ class CentralManagerDelegate(NSObject):
         return []
 
     @objc.python_method
-    async def scanForPeripherals_(self, scan_options) -> List[CBPeripheral]:
-        """
-        Scan for peripheral devices
-        scan_options = { service_uuids, timeout }
-        """
-
-        self.start_scan(scan_options)
-        await asyncio.sleep(float(scan_options.get("timeout", 0.0)))
-        return await self.stop_scan()
-
-    @objc.python_method
     async def connect(
         self,
         peripheral: CBPeripheral,
