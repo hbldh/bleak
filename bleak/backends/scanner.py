@@ -62,7 +62,7 @@ AdvertisementDataCallback = Callable[
 ]
 
 AdvertisementDataFilter = Callable[
-    [BLEDevice, Optional[AdvertisementData]],
+    [BLEDevice, AdvertisementData],
     bool,
 ]
 
@@ -222,9 +222,11 @@ class BaseBleakScanner(abc.ABC):
 
         """
         stop_scanning_event = asyncio.Event()
+        found_device_queue = asyncio.Queue()
 
         def stop_if_detected(d: BLEDevice, ad: AdvertisementData):
             if filterfunc(d, ad):
+                found_device_queue.put_nowait(d)
                 stop_scanning_event.set()
 
         async with cls(
@@ -234,4 +236,6 @@ class BaseBleakScanner(abc.ABC):
                 await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 return None
-            return next(d for d in scanner.discovered_devices if filterfunc(d, None))
+            if found_device_queue.empty():
+                return None
+            return found_device_queue.get_nowait()
