@@ -34,7 +34,6 @@ from Foundation import (
 )
 from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 
-from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
 from bleak.exc import BleakError
 
@@ -47,6 +46,8 @@ try:
 except Exception:
     _mac_version = ""
     _IS_PRE_10_13 = False
+
+DisconnectCallback = Callable[[], None]
 
 
 class CentralManagerDelegate(NSObject):
@@ -62,8 +63,6 @@ class CentralManagerDelegate(NSObject):
             return None
 
         self.event_loop = asyncio.get_event_loop()
-        self.connected_peripheral_delegate: Optional[PeripheralDelegate] = None
-        self.connected_peripheral: Optional[CBPeripheral] = None
         self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
 
         self.devices: Dict[str, BLEDeviceCoreBluetooth] = {}
@@ -71,7 +70,7 @@ class CentralManagerDelegate(NSObject):
         self.callbacks: Dict[
             int, Callable[[CBPeripheral, Dict[str, Any], int], None]
         ] = {}
-        self.disconnected_callback: Optional[Callable[[], None]] = None
+        self._disconnect_callbacks: Dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: Dict[NSUUID, asyncio.Future] = {}
 
         self._did_update_state_event = threading.Event()
@@ -139,35 +138,34 @@ class CentralManagerDelegate(NSObject):
         return await self.stop_scan()
 
     @objc.python_method
-    async def connect(self, peripheral: CBPeripheral, timeout=10.0) -> None:
-        delegate = PeripheralDelegate.alloc().initWithPeripheral_(peripheral)
-
+    async def connect(
+        self,
+        peripheral: CBPeripheral,
+        disconnect_callback: DisconnectCallback,
+        timeout=10.0,
+    ) -> None:
         try:
+            self._disconnect_callbacks[peripheral.identifier()] = disconnect_callback
             future = self.event_loop.create_future()
             self._connect_futures[peripheral.identifier()] = future
             self.central_manager.connectPeripheral_options_(peripheral, None)
             await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
             logger.debug(f"Connection timed out after {timeout} seconds.")
+            del self._disconnect_callbacks[peripheral.identifier()]
             future = self.event_loop.create_future()
             self._disconnect_futures[peripheral.identifier()] = future
             self.central_manager.cancelPeripheralConnection_(peripheral)
             await future
             raise
 
-        self.connected_peripheral = peripheral
-        self.connected_peripheral_delegate = delegate
-
     @objc.python_method
-    async def disconnect(self) -> None:
-        # Is a peripheral even connected?
-        if self.connected_peripheral is None:
-            return True
-
+    async def disconnect(self, peripheral: CBPeripheral) -> None:
         future = self.event_loop.create_future()
-        self._disconnect_futures[self.connected_peripheral.identifier()] = future
-        self.central_manager.cancelPeripheralConnection_(self.connected_peripheral)
+        self._disconnect_futures[peripheral.identifier()] = future
+        self.central_manager.cancelPeripheralConnection_(peripheral)
         await future
+        del self._disconnect_callbacks[peripheral.identifier()]
 
     # Protocol Functions
 
@@ -307,8 +305,6 @@ class CentralManagerDelegate(NSObject):
         error: Optional[NSError],
     ) -> None:
         logger.debug("Peripheral Device disconnected!")
-        self.connected_peripheral_delegate = None
-        self.connected_peripheral = None
 
         future = self._disconnect_futures.pop(peripheral.identifier(), None)
         if future is not None:
@@ -317,8 +313,9 @@ class CentralManagerDelegate(NSObject):
             else:
                 future.set_result(None)
 
-        if self.disconnected_callback is not None:
-            self.disconnected_callback()
+        callback = self._disconnect_callbacks.get(peripheral.identifier())
+        if callback is not None:
+            callback()
 
     def centralManager_didDisconnectPeripheral_error_(
         self,

@@ -45,6 +45,8 @@ Fixed
 * Fixed failed import on CI server when BlueZ is not installed.
 * Fixed crash when cancelling connection when Python runtime shuts down on
   CoreBluetooth backend. Fixes #538
+* Fixed connecting to multiple devices using a single ``BleakScanner`` on
+  CoreBluetooth backend.
 
 
 `0.11.0`_ (2021-03-17)
