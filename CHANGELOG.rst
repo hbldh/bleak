@@ -17,6 +17,7 @@ Added
 * add mtu_size property for clients
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
+* Added ``register_uuids`` to augment the uuid-to-description mapping.
 
 Changed
 ~~~~~~~

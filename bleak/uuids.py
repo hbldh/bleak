@@ -863,3 +863,12 @@ def uuidstr_to_str(uuid_):
         return "Unknown"
 
     return s
+
+def register_uuids(uuids_to_descriptions):
+    """Add or modify the mapping of 128bit UUIDs for services and characteristics to descriptions.
+
+    Args:
+        uuids_to_descriptions (dict): A dictionary of new mappings
+
+    """
+    uuid128_dict.update(uuids_to_descriptions)
