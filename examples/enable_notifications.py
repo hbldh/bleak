@@ -9,6 +9,7 @@ Updated on 2019-07-03 by hbldh <henrik.blidh@gmail.com>
 
 """
 
+import sys
 import logging
 import asyncio
 import platform
@@ -18,6 +19,14 @@ from bleak import _logger as logger
 
 
 CHARACTERISTIC_UUID = "f000aa65-0451-4000-b000-000000000000"  # <--- Change to the characteristic you want to enable notifications from.
+ADDRESS = (
+    "24:71:89:cc:09:05"  # <--- Change to your device's address here if you are using Windows or Linux
+    if platform.system() != "Darwin"
+    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"  # <--- Change to your device's address here if you are using macOS
+)
+if len(sys.argv) == 3:
+    ADDRESS = sys.argv[1]
+    CHARACTERISTIC_UUID = sys.argv[2]
 
 
 def notification_handler(sender, data):
@@ -48,11 +57,6 @@ if __name__ == "__main__":
     import os
 
     os.environ["PYTHONASYNCIODEBUG"] = str(1)
-    address = (
-        "24:71:89:cc:09:05"  # <--- Change to your device's address here if you are using Windows or Linux
-        if platform.system() != "Darwin"
-        else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"  # <--- Change to your device's address here if you are using macOS
-    )
     loop = asyncio.get_event_loop()
     # loop.set_debug(True)
-    loop.run_until_complete(run(address, True))
+    loop.run_until_complete(run(ADDRESS, True))

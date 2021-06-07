@@ -17,6 +17,9 @@ Added
 * add mtu_size property for clients
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
+* Added ``BleakScanner.find_device_by_filter`` static method.
+* Added ``scanner_byname.py`` example.
+* Added optional command line argument to specify device to all applicable examples.
 
 Changed
 ~~~~~~~
