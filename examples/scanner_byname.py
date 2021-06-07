@@ -9,7 +9,6 @@ Updated on 2020-08-12 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
-import platform
 import sys
 
 from bleak import BleakScanner
