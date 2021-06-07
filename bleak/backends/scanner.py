@@ -221,21 +221,14 @@ class BaseBleakScanner(abc.ABC):
             The ``BLEDevice`` sought or ``None`` if not detected.
 
         """
-        stop_scanning_event = asyncio.Event()
         found_device_queue = asyncio.Queue()
 
-        def stop_if_detected(d: BLEDevice, ad: AdvertisementData):
+        def apply_filter(d: BLEDevice, ad: AdvertisementData):
             if filterfunc(d, ad):
                 found_device_queue.put_nowait(d)
-                stop_scanning_event.set()
 
-        async with cls(
-            timeout=timeout, detection_callback=stop_if_detected, **kwargs
-        ) as scanner:
+        async with cls(detection_callback=apply_filter, **kwargs):
             try:
-                await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+                return await asyncio.wait_for(found_device_queue.get(), timeout=timeout)
             except asyncio.TimeoutError:
                 return None
-            if found_device_queue.empty():
-                return None
-            return found_device_queue.get_nowait()
