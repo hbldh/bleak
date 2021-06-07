@@ -17,6 +17,9 @@ Added
 * add mtu_size property for clients
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
+* Added ``BleakScanner.find_device_by_filter`` static method.
+* Added ``scanner_byname.py`` example.
+* Added optional command line argument to specify device to all applicable examples.
 
 Changed
 ~~~~~~~
@@ -45,6 +48,7 @@ Fixed
 * Fixed write without response on BlueZ < 5.51.
 * Fixed error propagation for CoreBluetooth events
 * Fixed failed import on CI server when BlueZ is not installed.
+* Fixed notification ``value`` should be ``bytearray`` on CoreBluetooth. Fixes #560.
 * Fixed crash when cancelling connection when Python runtime shuts down on
   CoreBluetooth backend. Fixes #538
 * Fixed connecting to multiple devices using a single ``BleakScanner`` on

@@ -22,10 +22,15 @@ Created on 2020-01-13 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 
+import sys
 import asyncio
 import logging
 
 from bleak import BleakClient
+
+ADDRESS = "EB:F0:49:21:95:4F"
+if len(sys.argv) == 2:
+    ADDRESS = sys.argv[1]
 
 
 LIGHT_CHARACTERISTIC = "932c32bd-0002-47a2-835a-a8d455b859dd"
@@ -106,7 +111,6 @@ async def run(address, debug=False):
 
 
 if __name__ == "__main__":
-    address = "EB:F0:49:21:95:4F"
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
-    loop.run_until_complete(run(address, True))
+    loop.run_until_complete(run(ADDRESS, True))
