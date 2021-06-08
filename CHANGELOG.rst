@@ -29,6 +29,9 @@ Changed
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 * Added error description in addition to error name when ``BleakDBusError`` is converted to string
 * Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
+* Improved type hints in CoreBluetooth backend.
+* Use delegate callbacks for get_rssi() on CoreBluetooth backend.
+* Use ``@objc.python_method`` where possible in ``PeripheralDelegate`` class.
 
 Fixed
 ~~~~~
@@ -46,6 +49,14 @@ Fixed
 * Fixed error propagation for CoreBluetooth events
 * Fixed failed import on CI server when BlueZ is not installed.
 * Fixed notification ``value`` should be ``bytearray`` on CoreBluetooth. Fixes #560.
+* Fixed crash when cancelling connection when Python runtime shuts down on
+  CoreBluetooth backend. Fixes #538
+* Fixed connecting to multiple devices using a single ``BleakScanner`` on
+  CoreBluetooth backend.
+* Fixed deadlock in CoreBluetooth backend when device disconnects while
+  callbacks are pending. Fixes #535.
+* Fixed deadlock when using more than one service, characteristic or descriptor
+  with the same UUID on CoreBluetooth backend.
 
 
 `0.11.0`_ (2021-03-17)

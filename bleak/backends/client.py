@@ -8,7 +8,7 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 import asyncio
 import uuid
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 from warnings import warn
 
 from bleak.backends.service import BleakGATTServiceCollection
@@ -67,7 +67,7 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Union[Callable[["BaseBleakClient"], None], None], **kwargs
+        self, callback: Optional[Callable[["BaseBleakClient"], None]], **kwargs
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.

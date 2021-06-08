@@ -1,8 +1,8 @@
 import logging
 import pathlib
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from Foundation import NSArray
+from Foundation import NSArray, NSUUID
 from CoreBluetooth import CBPeripheral
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -33,14 +33,14 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(self, **kwargs):
         super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
-        self._identifiers = None
+        self._identifiers: Optional[Dict[NSUUID, Dict[str, Any]]] = None
         self._manager = CentralManagerDelegate.alloc().init()
-        self._timeout = kwargs.get("timeout", 5.0)
+        self._timeout: float = kwargs.get("timeout", 5.0)
 
     async def start(self):
         self._identifiers = {}
 
-        def callback(p: CBPeripheral, a: Dict[str, Any], r: int):
+        def callback(p: CBPeripheral, a: Dict[str, Any], r: int) -> None:
             # update identifiers for scanned device
             self._identifiers.setdefault(p.identifier(), {}).update(a)
 
