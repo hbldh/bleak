@@ -8,9 +8,8 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 
 import asyncio
 import logging
-import platform
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 import objc
 from CoreBluetooth import (
@@ -28,8 +27,11 @@ from Foundation import (
     NSArray,
     NSDictionary,
     NSError,
+    NSKeyValueChangeNewKey,
+    NSKeyValueObservingOptionNew,
     NSNumber,
     NSObject,
+    NSString,
     NSUUID,
 )
 from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
@@ -40,12 +42,6 @@ from bleak.exc import BleakError
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
-try:
-    _mac_version = list(map(int, platform.mac_ver()[0].split(".")))
-    _IS_PRE_10_13 = _mac_version[0] == 10 and _mac_version[1] < 13
-except Exception:
-    _mac_version = ""
-    _IS_PRE_10_13 = False
 
 DisconnectCallback = Callable[[], None]
 
@@ -91,12 +87,24 @@ class CentralManagerDelegate(NSObject):
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
 
+        # isScanning property was added in 10.13
+        if objc.macos_available(10, 13):
+            self.central_manager.addObserver_forKeyPath_options_context_(
+                self, "isScanning", NSKeyValueObservingOptionNew, 0
+            )
+            self._did_start_scanning_event: Optional[asyncio.Event] = None
+            self._did_stop_scanning_event: Optional[asyncio.Event] = None
+
         return self
+
+    def __del__(self):
+        if objc.macos_available(10, 13):
+            self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
 
     # User defined functions
 
     @objc.python_method
-    def start_scan(self, scan_options) -> None:
+    async def start_scan(self, scan_options) -> None:
         # remove old
         self.devices = {}
         service_uuids = None
@@ -110,21 +118,29 @@ class CentralManagerDelegate(NSObject):
             service_uuids, None
         )
 
+        # The `isScanning` property was added in macOS 10.13, so before that
+        # just waiting some will have to do.
+        if objc.macos_available(10, 13):
+            event = asyncio.Event()
+            self._did_start_scanning_event = event
+            if not self.central_manager.isScanning():
+                await event.wait()
+        else:
+            await asyncio.sleep(0.1)
+
     @objc.python_method
-    async def stop_scan(self) -> List[CBPeripheral]:
+    async def stop_scan(self) -> None:
         self.central_manager.stopScan()
 
-        # Wait a while to allow central manager to stop scanning.
-        # The `isScanning` attribute is added in macOS 10.13, so before that
-        # just waiting some will have to do. In 10.13+ I have never seen
-        # bleak enter the while-loop, so this fix is most probably safe.
-        if _IS_PRE_10_13:
-            await asyncio.sleep(0.1)
+        # The `isScanning` property was added in macOS 10.13, so before that
+        # just waiting some will have to do.
+        if objc.macos_available(10, 13):
+            event = asyncio.Event()
+            self._did_stop_scanning_event = event
+            if self.central_manager.isScanning():
+                await event.wait()
         else:
-            while self.central_manager.isScanning():
-                await asyncio.sleep(0.1)
-
-        return []
+            await asyncio.sleep(0.1)
 
     @objc.python_method
     async def connect(
@@ -155,6 +171,26 @@ class CentralManagerDelegate(NSObject):
         self.central_manager.cancelPeripheralConnection_(peripheral)
         await future
         del self._disconnect_callbacks[peripheral.identifier()]
+
+    @objc.python_method
+    def _changed_is_scanning(self, is_scanning: bool) -> None:
+        if is_scanning:
+            if self._did_start_scanning_event:
+                self._did_start_scanning_event.set()
+        else:
+            if self._did_stop_scanning_event:
+                self._did_stop_scanning_event.set()
+
+    def observeValueForKeyPath_ofObject_change_context_(
+        self, keyPath: NSString, object: Any, change: NSDictionary, context: int
+    ) -> None:
+        logger.debug("'%s' changed", keyPath)
+
+        if keyPath != "isScanning":
+            return
+
+        is_scanning = bool(change[NSKeyValueChangeNewKey])
+        self.event_loop.call_soon_threadsafe(self._changed_is_scanning, is_scanning)
 
     # Protocol Functions
 

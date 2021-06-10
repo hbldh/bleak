@@ -1,4 +1,4 @@
-from typing import Optional, Type, TypeVar
+from typing import NewType, Optional, Type, TypeVar
 
 TNSObject = TypeVar("TNSObject", bound=NSObject)
 
@@ -6,6 +6,16 @@ class NSObject:
     @classmethod
     def alloc(cls: Type[TNSObject]) -> TNSObject: ...
     def init(self: TNSObject) -> Optional[TNSObject]: ...
+    def addObserver_forKeyPath_options_context_(
+        self,
+        observer: NSObject,
+        keyPath: NSString,
+        options: NSKeyValueObservingOptions,
+        context: int,
+    ) -> None: ...
+    def removeObserver_forKeyPath_(
+        self, observer: NSObject, keyPath: NSString
+    ) -> None: ...
 
 class NSDictionary(NSObject): ...
 class NSUUID(NSObject): ...
@@ -15,3 +25,16 @@ class NSData(NSObject): ...
 class NSArray(NSObject): ...
 class NSNumber(NSValue): ...
 class NSValue(NSObject): ...
+
+NSKeyValueObservingOptions = NewType("NSKeyValueObservingOptions", int)
+NSKeyValueObservingOptionNew: NSKeyValueObservingOptions
+NSKeyValueObservingOptionOld: NSKeyValueObservingOptions
+NSKeyValueObservingOptionInitial: NSKeyValueObservingOptions
+NSKeyValueObservingOptionPrior: NSKeyValueObservingOptions
+
+NSKeyValueChangeKey = NewType("NSKeyValueChangeKey", NSString)
+NSKeyValueChangeIndexesKey: NSKeyValueChangeKey
+NSKeyValueChangeKindKey: NSKeyValueChangeKey
+NSKeyValueChangeNewKey: NSKeyValueChangeKey
+NSKeyValueChangeNotificationIsPriorKey: NSKeyValueChangeKey
+NSKeyValueChangeOldKey: NSKeyValueChangeKey

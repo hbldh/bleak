@@ -32,6 +32,8 @@ Changed
 * Improved type hints in CoreBluetooth backend.
 * Use delegate callbacks for get_rssi() on CoreBluetooth backend.
 * Use ``@objc.python_method`` where possible in ``PeripheralDelegate`` class.
+* Using ObjC key-value observer to wait for ``BleakScanner.start()`` and ``stop()``
+  in CoreBluetooth backend.
 
 Fixed
 ~~~~~
@@ -57,6 +59,8 @@ Fixed
   callbacks are pending. Fixes #535.
 * Fixed deadlock when using more than one service, characteristic or descriptor
   with the same UUID on CoreBluetooth backend.
+* Fixed exception raised when calling ``BleakScanner.stop()`` when already
+  stopped in CoreBluetooth backend.
 
 
 `0.11.0`_ (2021-03-17)

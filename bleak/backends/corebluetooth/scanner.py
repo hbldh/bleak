@@ -89,14 +89,11 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             self._callback(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
-        self._manager.start_scan({})
+        await self._manager.start_scan({})
 
     async def stop(self):
-        del self._manager.callbacks[id(self)]
-        try:
-            await self._manager.stop_scan()
-        except Exception as e:
-            logger.warning("stopScan method could not be called: {0}".format(e))
+        await self._manager.stop_scan()
+        self._manager.callbacks.pop(id(self), None)
 
     def set_scanning_filter(self, **kwargs):
         """Set scanning filter for the scanner.
