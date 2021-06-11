@@ -17,6 +17,7 @@ Added
 * add mtu_size property for clients
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
+* Added an event to await when stopping scanners in WinRT and pythonnet backends. Fixes #556.
 
 Changed
 ~~~~~~~
