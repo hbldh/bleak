@@ -61,6 +61,7 @@ class BleakScannerDotNet(BaseBleakScanner):
         super(BleakScannerDotNet, self).__init__(**kwargs)
 
         self.watcher = None
+        self._stopped_event = None
         self._devices = {}
         self._scan_responses = {}
 
@@ -143,12 +144,14 @@ class BleakScannerDotNet(BaseBleakScanner):
                     len(self._devices), self.watcher.Status
                 )
             )
+            self._stopped_event.set()
 
     async def start(self):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.ScanningMode = self._scanning_mode
 
         event_loop = asyncio.get_event_loop()
+        self._stopped_event = asyncio.Event()
 
         self._received_token = self.watcher.add_Received(
             TypedEventHandler[
@@ -176,6 +179,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
     async def stop(self):
         self.watcher.Stop()
+        await self._stopped_event.wait()
 
         if self._received_token:
             self.watcher.remove_Received(self._received_token)
