@@ -61,6 +61,11 @@ AdvertisementDataCallback = Callable[
     Optional[Awaitable[None]],
 ]
 
+AdvertisementDataFilter = Callable[
+    [BLEDevice, AdvertisementData],
+    bool,
+]
+
 
 class BaseBleakScanner(abc.ABC):
     """Interface for Bleak Bluetooth LE Scanners"""
@@ -195,21 +200,35 @@ class BaseBleakScanner(abc.ABC):
 
         """
         device_identifier = device_identifier.lower()
-        stop_scanning_event = asyncio.Event()
+        return await cls.find_device_by_filter(
+            lambda d, ad: d.address.lower() == device_identifier
+        )
 
-        def stop_if_detected(d: BLEDevice, ad: AdvertisementData):
-            if d.address.lower() == device_identifier:
-                stop_scanning_event.set()
+    @classmethod
+    async def find_device_by_filter(
+        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
+    ) -> Optional[BLEDevice]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
 
-        async with cls(
-            timeout=timeout, detection_callback=stop_if_detected, **kwargs
-        ) as scanner:
+        Args:
+            filterfunc (AdvertisementDataFilter): A function that is called for every BLEDevice found. It should return True only for the wanted device.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Keyword Args:
+            adapter (str): Bluetooth adapter to use for discovery.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        found_device_queue = asyncio.Queue()
+
+        def apply_filter(d: BLEDevice, ad: AdvertisementData):
+            if filterfunc(d, ad):
+                found_device_queue.put_nowait(d)
+
+        async with cls(detection_callback=apply_filter, **kwargs):
             try:
-                await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+                return await asyncio.wait_for(found_device_queue.get(), timeout=timeout)
             except asyncio.TimeoutError:
                 return None
-            return next(
-                d
-                for d in scanner.discovered_devices
-                if d.address.lower() == device_identifier
-            )

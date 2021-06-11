@@ -18,6 +18,10 @@ Added
 * WinRT backend added
 * Added ``BleakScanner.discovered_devices`` property.
 * Added an event to await when stopping scanners in WinRT and pythonnet backends. Fixes #556.
+* Added ``BleakScanner.find_device_by_filter`` static method.
+* Added ``scanner_byname.py`` example.
+* Added optional command line argument to specify device to all applicable examples.
+
 
 Changed
 ~~~~~~~
@@ -27,6 +31,9 @@ Changed
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
 * Added error description in addition to error name when ``BleakDBusError`` is converted to string
 * Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
+* Improved type hints in CoreBluetooth backend.
+* Use delegate callbacks for get_rssi() on CoreBluetooth backend.
+* Use ``@objc.python_method`` where possible in ``PeripheralDelegate`` class.
 
 Fixed
 ~~~~~
@@ -43,6 +50,15 @@ Fixed
 * Fixed write without response on BlueZ < 5.51.
 * Fixed error propagation for CoreBluetooth events
 * Fixed failed import on CI server when BlueZ is not installed.
+* Fixed notification ``value`` should be ``bytearray`` on CoreBluetooth. Fixes #560.
+* Fixed crash when cancelling connection when Python runtime shuts down on
+  CoreBluetooth backend. Fixes #538
+* Fixed connecting to multiple devices using a single ``BleakScanner`` on
+  CoreBluetooth backend.
+* Fixed deadlock in CoreBluetooth backend when device disconnects while
+  callbacks are pending. Fixes #535.
+* Fixed deadlock when using more than one service, characteristic or descriptor
+  with the same UUID on CoreBluetooth backend.
 
 
 `0.11.0`_ (2021-03-17)

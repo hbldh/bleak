@@ -35,14 +35,14 @@ class BLEDeviceCoreBluetooth(BLEDevice):
     def __init__(self, *args, **kwargs):
         super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
 
-    def _update(self, advertisementData: NSDictionary):
+    def _update(self, advertisementData: NSDictionary) -> None:
         self._update_uuids(advertisementData)
         self._update_manufacturer(advertisementData)
 
-    def _update_rssi(self, RSSI: NSNumber):
+    def _update_rssi(self, RSSI: NSNumber) -> None:
         self.rssi = RSSI
 
-    def _update_uuids(self, advertisementData: NSDictionary):
+    def _update_uuids(self, advertisementData: NSDictionary) -> None:
         cbuuids = advertisementData.get("kCBAdvDataServiceUUIDs", [])
         if not cbuuids:
             return
@@ -54,7 +54,7 @@ class BLEDeviceCoreBluetooth(BLEDevice):
         else:
             self.metadata["uuids"] = chuuids
 
-    def _update_manufacturer(self, advertisementData: NSDictionary):
+    def _update_manufacturer(self, advertisementData: NSDictionary) -> None:
         mfg_bytes = advertisementData.get("kCBAdvDataManufacturerData")
         if not mfg_bytes:
             return
