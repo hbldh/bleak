@@ -4,7 +4,7 @@ Interface class for the Bleak representation of a GATT Descriptor
 Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
-from Foundation import CBDescriptor
+from CoreBluetooth import CBDescriptor
 
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.descriptor import BleakGATTDescriptor
@@ -17,9 +17,9 @@ class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):
         self, obj: CBDescriptor, characteristic_uuid: str, characteristic_handle: int
     ):
         super(BleakGATTDescriptorCoreBluetooth, self).__init__(obj)
-        self.obj = obj
-        self.__characteristic_uuid = characteristic_uuid
-        self.__characteristic_handle = characteristic_handle
+        self.obj: CBDescriptor = obj
+        self.__characteristic_uuid: str = characteristic_uuid
+        self.__characteristic_handle: int = characteristic_handle
 
     @property
     def characteristic_handle(self) -> int:

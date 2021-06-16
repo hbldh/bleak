@@ -4,9 +4,19 @@ Connect by BLEDevice
 
 import asyncio
 import platform
+import sys
 
 from bleak import BleakClient, BleakScanner
 from bleak.exc import BleakError
+
+
+ADDRESS = (
+    "24:71:89:cc:09:05"
+    if platform.system() != "Darwin"
+    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
+)
+if len(sys.argv) == 2:
+    ADDRESS = sys.argv[1]
 
 
 async def print_services(ble_address: str):
@@ -20,10 +30,5 @@ async def print_services(ble_address: str):
             print(service)
 
 
-ble_address = (
-    "24:71:89:cc:09:05"
-    if platform.system() != "Darwin"
-    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
-)
 loop = asyncio.get_event_loop()
-loop.run_until_complete(print_services(ble_address))
+loop.run_until_complete(print_services(ADDRESS))
