@@ -531,8 +531,8 @@ Fixed
 
 
 .. _Unreleased: https://github.com/hbldh/bleak/compare/v0.12.0...develop
-.. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...0.12.0
-.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...0.11.0
+.. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0
+.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.11.0
 .. _0.10.0: https://github.com/hbldh/bleak/compare/v0.9.1...v0.10.0
 .. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.0...v0.9.1
 .. _0.9.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.9.0
