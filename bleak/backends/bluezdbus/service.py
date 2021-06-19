@@ -20,7 +20,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         return self.obj["UUID"]
 
     @property
-    def handle(self) -> str:
+    def handle(self) -> int:
         """The integer handle of this service"""
         return self.__handle
 

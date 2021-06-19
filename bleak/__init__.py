@@ -17,6 +17,7 @@ from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
+_on_ci = "CI" in os.environ
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -29,7 +30,7 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.setLevel(logging.DEBUG)
 
 if platform.system() == "Linux":
-    if not _on_rtd:
+    if not _on_rtd and not _on_ci:
         # TODO: Check if BlueZ version 5.43 is sufficient.
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
@@ -77,8 +78,23 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    from bleak.backends.dotnet.scanner import BleakScannerDotNet as BleakScanner  # noqa
-    from bleak.backends.dotnet.client import BleakClientDotNet as BleakClient  # noqa
+    # If the winrt package is installed, assume that the user has opted to use that backend
+    # instead of the pythonnet/BleakBridge implementation.
+    try:
+        from bleak.backends.winrt.scanner import (
+            BleakScannerWinRT as BleakScanner,
+        )  # noqa: F401
+        from bleak.backends.winrt.client import (
+            BleakClientWinRT as BleakClient,
+        )  # noqa: F401
+    except ImportError:
+        from bleak.backends.dotnet.scanner import (
+            BleakScannerDotNet as BleakScanner,
+        )  # noqa: F401
+        from bleak.backends.dotnet.client import (
+            BleakClientDotNet as BleakClient,
+        )  # noqa: F401
+
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 

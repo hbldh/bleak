@@ -26,7 +26,8 @@ REQUIRED = [
     'pyobjc-framework-CoreBluetooth;platform_system=="Darwin"',
     'pyobjc-framework-libdispatch;platform_system=="Darwin"',
     # Windows reqs
-    'pythonnet;platform_system=="Windows"',
+    'pythonnet;platform_system=="Windows" and python_version < "3.9.0"',
+    'winrt>=1.0.20330.1;platform_system=="Windows" and python_version >= "3.9.0"',
 ]
 
 TEST_REQUIRED = ["pytest", "pytest-cov"]
@@ -91,6 +92,14 @@ setup(
     install_requires=REQUIRED,
     test_suite="tests",
     tests_require=TEST_REQUIRED,
+    extras_require={
+        "winrt": [
+            "winrt>=1.0.20330.1",
+        ],
+        "pythonnet": [
+            "pythonnet>=2.5.1",
+        ],
+    },
     include_package_data=True,
     license="MIT",
     classifiers=[
@@ -110,6 +119,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     # $ setup.py publish support.

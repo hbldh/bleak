@@ -81,6 +81,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to ensure device gets disconnected if event loop crashes
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
 
+        # used to override mtu_size property
+        self._mtu_size: Optional[int] = None
+
         # get BlueZ version
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
@@ -137,8 +140,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # Create system bus
         self._bus = await MessageBus(
-            bus_type=BusType.SYSTEM,
-            negotiate_unix_fd=self._write_without_response_workaround_needed,
+            bus_type=BusType.SYSTEM, negotiate_unix_fd=True
         ).connect()
 
         try:
@@ -499,7 +501,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
         assert_reply(reply)
-        if reply.body[0]:
+        if reply.body[0].value:
+            logger.debug(
+                f"BLE device @ {self.address} already paired with {self._adapter}"
+            )
             return True
 
         # Set device as trusted.
@@ -510,7 +515,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 interface=defs.PROPERTIES_INTERFACE,
                 member="Set",
                 signature="ssv",
-                body=[defs.DEVICE_INTERFACE, "Trusted", True],
+                body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
             )
         )
         assert_reply(reply)
@@ -541,7 +546,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
 
-        return reply.body[0]
+        return reply.body[0].value
 
     async def unpair(self) -> bool:
         """Unpair with the peripheral.
@@ -566,6 +571,60 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return self._DeprecatedIsConnectedReturn(
             False if self._bus is None else self._properties.get("Connected", False)
         )
+
+    async def _acquire_mtu(self) -> None:
+        """Acquires the MTU for this device by calling the "AcquireWrite" or
+        "AcquireNotify" method of the first characteristic that has such a method.
+
+        This method only needs to be called once, after connecting to the device
+        but before accessing the ``mtu_size`` property.
+
+        If a device uses encryption on characteristics, it will need to be bonded
+        first before calling this method.
+        """
+        # This will try to get the "best" characteristic for getting the MTU.
+        # We would rather not start notifications if we don't have to.
+        try:
+            method = "AcquireWrite"
+            char = next(
+                c
+                for c in self.services.characteristics.values()
+                if "write-without-response" in c.properties
+            )
+        except StopIteration:
+            method = "AcquireNotify"
+            char = next(
+                c
+                for c in self.services.characteristics.values()
+                if "notify" in c.properties
+            )
+
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=char.path,
+                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                member=method,
+                signature="a{sv}",
+                body=[{}],
+            )
+        )
+        assert_reply(reply)
+
+        # we aren't actually using the write or notify, we just want the MTU
+        os.close(reply.unix_fds[0])
+        self._mtu_size = reply.body[1]
+
+    @property
+    def mtu_size(self) -> int:
+        """Get ATT MTU size for active connection"""
+        if self._mtu_size is None:
+            warnings.warn(
+                "Using default MTU value. Call _assign_mtu() or set _mtu_size first to avoid this warning."
+            )
+            return 23
+
+        return self._mtu_size
 
     # GATT services methods
 
@@ -720,7 +779,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
-        data: bytearray,
+        data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
@@ -810,7 +869,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
             assert_reply(reply)
-            fd = reply.body[0]
+            fd = reply.unix_fds[0]
             try:
                 os.write(fd, data)
             finally:
@@ -822,7 +881,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
 
-    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
@@ -1040,7 +1101,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         task.add_done_callback(
                             lambda _: self._disconnected_callback(self)
                         )
-                    if self._disconnecting_event:
-                        task.add_done_callback(
-                            lambda _: self._disconnecting_event.set()
-                        )
+                    disconnecting_event = self._disconnecting_event
+                    if disconnecting_event:
+                        task.add_done_callback(lambda _: disconnecting_event.set())

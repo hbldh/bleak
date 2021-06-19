@@ -8,7 +8,7 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 import asyncio
 import uuid
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 from warnings import warn
 
 from bleak.backends.service import BleakGATTServiceCollection
@@ -67,7 +67,7 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Union[Callable[["BaseBleakClient"], None], None], **kwargs
+        self, callback: Optional[Callable[["BaseBleakClient"], None]], **kwargs
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.
@@ -202,7 +202,7 @@ class BaseBleakClient(abc.ABC):
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: bytearray,
+        data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
@@ -218,7 +218,9 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write_gatt_descriptor(self, handle: int, data: bytearray) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:

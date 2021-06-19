@@ -26,7 +26,7 @@ class BleakGATTService(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def handle(self) -> str:
+    def handle(self) -> int:
         """The handle of this service"""
         raise NotImplementedError()
 

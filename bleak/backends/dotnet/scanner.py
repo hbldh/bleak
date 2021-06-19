@@ -61,6 +61,7 @@ class BleakScannerDotNet(BaseBleakScanner):
         super(BleakScannerDotNet, self).__init__(**kwargs)
 
         self.watcher = None
+        self._stopped_event = None
         self._devices = {}
         self._scan_responses = {}
 
@@ -97,7 +98,7 @@ class BleakScannerDotNet(BaseBleakScanner):
             return
 
         # Get a "BLEDevice" from parse_event args
-        device = self.parse_eventargs(event_args)
+        device = self._parse_event_args(event_args)
 
         # Decode service data
         service_data = {}
@@ -143,12 +144,14 @@ class BleakScannerDotNet(BaseBleakScanner):
                     len(self._devices), self.watcher.Status
                 )
             )
+            self._stopped_event.set()
 
     async def start(self):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.ScanningMode = self._scanning_mode
 
         event_loop = asyncio.get_event_loop()
+        self._stopped_event = asyncio.Event()
 
         self._received_token = self.watcher.add_Received(
             TypedEventHandler[
@@ -176,6 +179,7 @@ class BleakScannerDotNet(BaseBleakScanner):
 
     async def stop(self):
         self.watcher.Stop()
+        await self._stopped_event.wait()
 
         if self._received_token:
             self.watcher.remove_Received(self._received_token)
@@ -205,10 +209,11 @@ class BleakScannerDotNet(BaseBleakScanner):
             # TODO: Handle AdvertisementFilter parameters
             self._advertisement_filter = kwargs["AdvertisementFilter"]
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         found = []
         for event_args in list(self._devices.values()):
-            new_device = self.parse_eventargs(event_args)
+            new_device = self._parse_event_args(event_args)
             if (
                 not new_device.name
                 and event_args.BluetoothAddress in self._scan_responses
@@ -221,7 +226,7 @@ class BleakScannerDotNet(BaseBleakScanner):
         return found
 
     @staticmethod
-    def parse_eventargs(event_args):
+    def _parse_event_args(event_args):
         bdaddr = _format_bdaddr(event_args.BluetoothAddress)
         uuids = []
         for u in event_args.Advertisement.ServiceUuids:
