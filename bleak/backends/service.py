@@ -69,7 +69,7 @@ class BleakGATTService(abc.ABC):
         """
         if type(uuid) == str and len(uuid) == 4:
             # Convert 16-bit uuid to 128-bit uuid
-            uuid = f'0000{uuid}-0000-1000-8000-00805f9b34fb'
+            uuid = f"0000{uuid}-0000-1000-8000-00805f9b34fb"
         try:
             return next(
                 filter(lambda x: x.uuid == str(uuid).lower(), self.characteristics)
@@ -138,7 +138,7 @@ class BleakGATTServiceCollection(object):
             # Assume uuid usage.
             # Convert 16-bit uuid to 128-bit uuid
             if len(_specifier) == 4:
-                _specifier = f'0000{_specifier}-0000-1000-8000-00805f9b34fb'
+                _specifier = f"0000{_specifier}-0000-1000-8000-00805f9b34fb"
             x = list(
                 filter(
                     lambda x: x.uuid.lower() == _specifier,
