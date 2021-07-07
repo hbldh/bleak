@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from typing import Dict
+
+
 uuid16_dict = {
     0x0001: "SDP",
     0x0003: "RFCOMM",
@@ -865,11 +868,11 @@ def uuidstr_to_str(uuid_):
     return s
 
 
-def register_uuids(uuids_to_descriptions):
-    """Add or modify the mapping of 128bit UUIDs for services and characteristics to descriptions.
+def register_uuids(uuids_to_descriptions: Dict[str, str]) -> None:
+    """Add or modify the mapping of 128-bit UUIDs for services and characteristics to descriptions.
 
     Args:
-        uuids_to_descriptions (dict): A dictionary of new mappings
+        uuids_to_descriptions: A dictionary of new mappings
 
     """
     uuid128_dict.update(uuids_to_descriptions)
