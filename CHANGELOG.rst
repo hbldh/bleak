@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Added
+~~~~~
+- Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+
 
 `0.12.1`_ (2021-07-07)
 ----------------------
