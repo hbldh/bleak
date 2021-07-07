@@ -163,8 +163,12 @@ class PeripheralDelegate(NSObject):
         value: NSData,
         response: CBCharacteristicWriteType,
     ) -> bool:
-        future = self._event_loop.create_future()
-        self._characteristic_write_futures[characteristic.handle()] = future
+        # in CoreBluetooth there is no indication of success or failure of
+        # CBCharacteristicWriteWithoutResponse
+        if response == CBCharacteristicWriteWithResponse:
+            future = self._event_loop.create_future()
+            self._characteristic_write_futures[characteristic.handle()] = future
+
         self.peripheral.writeValue_forCharacteristic_type_(
             value, characteristic, response
         )
@@ -397,7 +401,7 @@ class PeripheralDelegate(NSObject):
         characteristic: CBCharacteristic,
         error: Optional[NSError],
     ):
-        future = self._characteristic_write_futures.get(characteristic.handle())
+        future = self._characteristic_write_futures.pop(characteristic.handle(), None)
         if not future:
             return  # event only expected on write with response
         if error is not None:
