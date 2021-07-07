@@ -9,7 +9,7 @@ pyobjc-core = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pyobjc-framework-CoreBluetooth = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pyobjc-framework-libdispatch = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pythonnet = {version = ">=2.5.1", sys_platform = "== 'win32'", python_version = "< '3.9.0'"}
-winrt = {version = ">=1.0.20330.1", sys_platform = "== 'win32'", python_version = ">= '3.9.0'"}
+winrt = {version = ">=1.0.21033.1", sys_platform = "== 'win32'", python_version = ">= '3.9.0'"}
 
 [dev-packages]
 pytest = "*"
