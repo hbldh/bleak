@@ -12,7 +12,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 ~~~~~
-- Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+* Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+* Added ``register_uuids()`` to augment the uuid-to-description mapping.
 
 
 `0.12.1`_ (2021-07-07)
@@ -42,7 +43,6 @@ Added
 * Added ``BleakScanner.find_device_by_filter`` static method.
 * Added ``scanner_byname.py`` example.
 * Added optional command line argument to specify device to all applicable examples.
-
 
 Changed
 ~~~~~~~
