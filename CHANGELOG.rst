@@ -7,32 +7,53 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-
 `Unreleased`_
 -------------
 
 Added
 ~~~~~
+* Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+* Added ``register_uuids()`` to augment the uuid-to-description mapping.
 
-* add mtu_size property for clients
-* WinRT backend added
+
+`0.12.1`_ (2021-07-07)
+----------------------
+
+Changed
+~~~~~~~
+* Changed minimum ``winrt`` package version to 1.0.21033.1. Fixes #589.
+
+Fixed
+~~~~~
+
+* Fixed unawaited future when writing without response on CoreBluetooth backend.
+  Fixes #586.
+
+
+`0.12.0`_  (2021-06-19)
+-----------------------
+
+Added
+~~~~~
+
+* Added ``mtu_size`` property for clients.
+* Added WinRT backend.
 * Added ``BleakScanner.discovered_devices`` property.
 * Added an event to await when stopping scanners in WinRT and pythonnet backends. Fixes #556.
 * Added ``BleakScanner.find_device_by_filter`` static method.
 * Added ``scanner_byname.py`` example.
 * Added optional command line argument to specify device to all applicable examples.
-* Added ``register_uuids`` to augment the uuid-to-description mapping.
 
 Changed
 ~~~~~~~
 
-* Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``
+* Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``.
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
 * Added capability to handle async functions as detection callbacks in ``BleakScanner``.
-* Added error description in addition to error name when ``BleakDBusError`` is converted to string
-* Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``
+* Added error description in addition to error name when ``BleakDBusError`` is converted to string.
+* Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``.
 * Improved type hints in CoreBluetooth backend.
-* Use delegate callbacks for get_rssi() on CoreBluetooth backend.
+* Use delegate callbacks for ``get_rssi()`` on CoreBluetooth backend.
 * Use ``@objc.python_method`` where possible in ``PeripheralDelegate`` class.
 * Using ObjC key-value observer to wait for ``BleakScanner.start()`` and ``stop()``
   in CoreBluetooth backend.
@@ -46,15 +67,15 @@ Fixed
 * Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
 * Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
 * Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
-* Corrections for the Philips Hue lamp example. Merged #505
-* Fixed BleakClientBlueZDBus.pair() method always returning True. Fixes #503.
+* Corrections for the Philips Hue lamp example. Merged #505.
+* Fixed ``BleakClientBlueZDBus.pair()`` method always returning ``True``. Fixes #503.
 * Fixed waiting for notification start/stop to complete in CoreBluetooth backend.
 * Fixed write without response on BlueZ < 5.51.
-* Fixed error propagation for CoreBluetooth events
+* Fixed error propagation for CoreBluetooth events.
 * Fixed failed import on CI server when BlueZ is not installed.
 * Fixed notification ``value`` should be ``bytearray`` on CoreBluetooth. Fixes #560.
 * Fixed crash when cancelling connection when Python runtime shuts down on
-  CoreBluetooth backend. Fixes #538
+  CoreBluetooth backend. Fixes #538.
 * Fixed connecting to multiple devices using a single ``BleakScanner`` on
   CoreBluetooth backend.
 * Fixed deadlock in CoreBluetooth backend when device disconnects while
@@ -530,8 +551,10 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.11.0...develop
-.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...0.11.0
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.12.1...develop
+.. _0.12.1: https://github.com/hbldh/bleak/compare/v0.12.0...v0.12.1
+.. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0
+.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.11.0
 .. _0.10.0: https://github.com/hbldh/bleak/compare/v0.9.1...v0.10.0
 .. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.0...v0.9.1
 .. _0.9.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.9.0
