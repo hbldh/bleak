@@ -7,13 +7,27 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-
-`unreleased`_
+`Unreleased`_
 -------------
 
 Added
 ~~~~~
-- Allow 16bit UUID arguments to get_service() and get_characteristic()
+- Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+
+
+`0.12.1`_ (2021-07-07)
+----------------------
+
+Changed
+~~~~~~~
+* Changed minimum ``winrt`` package version to 1.0.21033.1. Fixes #589.
+
+Fixed
+~~~~~
+
+* Fixed unawaited future when writing without response on CoreBluetooth backend.
+  Fixes #586.
+
 
 `0.12.0`_  (2021-06-19)
 -----------------------
@@ -537,7 +551,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.12.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.12.1...develop
+.. _0.12.1: https://github.com/hbldh/bleak/compare/v0.12.0...v0.12.1
 .. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0
 .. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.11.0
 .. _0.10.0: https://github.com/hbldh/bleak/compare/v0.9.1...v0.10.0
