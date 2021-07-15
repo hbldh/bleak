@@ -28,6 +28,7 @@ Fixed
 
 * Fixed unawaited future when writing without response on CoreBluetooth backend.
   Fixes #586.
+* Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function. 
 
 
 `0.12.0`_  (2021-06-19)
