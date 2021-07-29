@@ -15,6 +15,11 @@ Added
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
 
+Fixed
+~~~~~
+
+* Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
+
 
 `0.12.1`_ (2021-07-07)
 ----------------------
