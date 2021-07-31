@@ -203,7 +203,7 @@ class BaseBleakScanner(abc.ABC):
         return await cls.find_device_by_filter(
             lambda d, ad: d.address.lower() == device_identifier,
             timeout=timeout,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
