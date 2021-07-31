@@ -17,7 +17,8 @@ Added
 
 Fixed
 ~~~~~
-* Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function. 
+* Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
+* Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
 
 
 `0.12.1`_ (2021-07-07)
