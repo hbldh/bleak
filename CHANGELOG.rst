@@ -15,6 +15,10 @@ Added
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
 
+Fixed
+~~~~~
+* Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function. 
+
 
 `0.12.1`_ (2021-07-07)
 ----------------------
