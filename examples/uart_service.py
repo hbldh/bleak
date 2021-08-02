@@ -28,19 +28,17 @@ async def uart_terminal():
     (nRF) UART service. It reads from stdin and sends each line of data to the
     remote device. Any data received from the device is printed to stdout.
     """
-    queue = asyncio.Queue()
 
-    def find_uart_device(device: BLEDevice, adv: AdvertisementData):
+    def match_nus_uuid(device: BLEDevice, adv: AdvertisementData):
         # This assumes that the device includes the UART service UUID in the
         # advertising data. This test may need to be adjusted depending on the
         # actual advertising data supplied by the device.
         if UART_SERVICE_UUID.lower() in adv.service_uuids:
-            queue.put_nowait(device)
+            return True
 
-    async with BleakScanner(detection_callback=find_uart_device):
-        print("Scanning for a device...")
-        # this just gets the first device that was queued, then we stop scanning
-        device: BLEDevice = await queue.get()
+        return False
+
+    device = await BleakScanner.find_device_by_filter(match_nus_uuid)
 
     def handle_disconnect(_: BleakClient):
         print("Device was disconnected, goodbye.")
