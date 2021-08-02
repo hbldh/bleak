@@ -18,6 +18,11 @@ Added
 Changed
 ~~~~~~~
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
+
+Removed
+~~~~~~~
+* Removed ``dotnet`` backend.
+
 Fixed
 ~~~~~
 * Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.

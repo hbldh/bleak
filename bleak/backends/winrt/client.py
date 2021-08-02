@@ -34,7 +34,7 @@ from bleak_winrt.windows.storage.streams import Buffer
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.scanner import BleakScannerWinRT
-from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
+from bleak.exc import BleakError, CONTROLLER_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -400,7 +400,7 @@ class BleakClientWinRT(BaseBleakClient):
 
             if services_result.status != GattCommunicationStatus.SUCCESS:
                 if services_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                    raise BleakDotNetTaskError(
+                    raise BleakError(
                         "Could not get GATT services: {0} (Error: 0x{1:02X}: {2})".format(
                             _communication_statues.get(services_result.status, ""),
                             services_result.protocol_error,
@@ -410,7 +410,7 @@ class BleakClientWinRT(BaseBleakClient):
                         )
                     )
                 else:
-                    raise BleakDotNetTaskError(
+                    raise BleakError(
                         "Could not get GATT services: {0}".format(
                             _communication_statues.get(services_result.status, "")
                         )
@@ -428,7 +428,7 @@ class BleakClientWinRT(BaseBleakClient):
                         characteristics_result.status
                         == GattCommunicationStatus.PROTOCOL_ERROR
                     ):
-                        raise BleakDotNetTaskError(
+                        raise BleakError(
                             "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                                 service,
                                 _communication_statues.get(
@@ -441,7 +441,7 @@ class BleakClientWinRT(BaseBleakClient):
                             )
                         )
                     else:
-                        raise BleakDotNetTaskError(
+                        raise BleakError(
                             "Could not get GATT characteristics for {0}: {1}".format(
                                 service,
                                 _communication_statues.get(
@@ -463,7 +463,7 @@ class BleakClientWinRT(BaseBleakClient):
                             characteristics_result.status
                             == GattCommunicationStatus.PROTOCOL_ERROR
                         ):
-                            raise BleakDotNetTaskError(
+                            raise BleakError(
                                 "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                                     service,
                                     _communication_statues.get(
@@ -476,7 +476,7 @@ class BleakClientWinRT(BaseBleakClient):
                                 )
                             )
                         else:
-                            raise BleakDotNetTaskError(
+                            raise BleakError(
                                 "Could not get GATT descriptors for {0}: {1}".format(
                                     characteristic,
                                     _communication_statues.get(
@@ -539,7 +539,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
         else:
             if read_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                raise BleakDotNetTaskError(
+                raise BleakError(
                     "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                         characteristic.uuid,
                         _communication_statues.get(read_result.status, ""),
@@ -587,7 +587,7 @@ class BleakClientWinRT(BaseBleakClient):
             logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         else:
             if read_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                raise BleakDotNetTaskError(
+                raise BleakError(
                     "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
                         descriptor.uuid,
                         _communication_statues.get(read_result.status, ""),
@@ -828,11 +828,11 @@ class BleakClientWinRT(BaseBleakClient):
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
     @wraps(func)
-    def dotnet_notification_parser(sender: Any, args: Any):
+    def notification_parser(sender: Any, args: Any):
         # Return only the UUID string representation as sender.
         # Also do a conversion from System.Bytes[] to bytearray.
         value = bytearray(args.characteristic_value)
 
         return loop.call_soon_threadsafe(func, sender.attribute_handle, value)
 
-    return dotnet_notification_parser
+    return notification_parser
