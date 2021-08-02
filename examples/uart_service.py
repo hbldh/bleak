@@ -54,18 +54,15 @@ async def uart_terminal():
     async with BleakClient(device, disconnected_callback=handle_disconnect) as client:
         await client.start_notify(UART_TX_CHAR_UUID, handle_rx)
 
-        loop = asyncio.get_event_loop()
-        reader = asyncio.StreamReader()
-        protocol = asyncio.StreamReaderProtocol(reader)
-        await loop.connect_read_pipe(lambda: protocol, sys.stdin)
-
         print("Connected, start typing and press ENTER...")
+
+        loop = asyncio.get_event_loop()
 
         while True:
             # This waits until you type a line and press ENTER.
             # A real terminal program might put stdin in raw mode so that things
             # like CTRL+C get passed to the remote device.
-            data = await reader.read(UART_SAFE_SIZE)
+            data = await loop.run_in_executor(None, sys.stdin.buffer.readline)
 
             # data will be empty on EOF (e.g. CTRL+D on *nix)
             if not data:
