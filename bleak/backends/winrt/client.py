@@ -683,7 +683,7 @@ class BleakClientWinRT(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
-        write_result = await descriptor.obj.write_value_async(
+        write_result = await descriptor.obj.write_value_with_result_async(
             CryptographicBuffer.create_from_byte_array(list(data))
         )
 
