@@ -687,7 +687,7 @@ class BleakClientWinRT(BaseBleakClient):
         buf.length = buf.capacity
         with memoryview(buf) as mv:
             mv[:] = data
-        write_result = await descriptor.obj.write_value_async(buf)
+        write_result = await descriptor.obj.write_value_with_result_async(buf)
 
         if write_result.status == GattCommunicationStatus.SUCCESS:
             logger.debug("Write Descriptor {0} : {1}".format(handle, data))
