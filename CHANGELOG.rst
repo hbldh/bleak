@@ -14,6 +14,7 @@ Added
 ~~~~~
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
+* Caching of BlueZ version in environment variables. Fixes #602.
 
 Fixed
 ~~~~~

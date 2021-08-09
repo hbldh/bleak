@@ -85,10 +85,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._mtu_size: Optional[int] = None
 
         # get BlueZ version
-        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
-        out, _ = p.communicate()
-        s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
-        bluez_version = tuple(map(int, s.groups()))
+        if os.environ.get("BLEAK_BLUEZ_MAJOR_VERSION") and os.environ.get(
+            "BLEAK_BLUEZ_MINOR_VERSION"
+        ):
+            bluez_version = (
+                int(os.environ["BLEAK_BLUEZ_MAJOR_VERSION"]),
+                int(os.environ["BLEAK_BLUEZ_MINOR_VERSION"]),
+            )
+        else:
+            p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
+            out, _ = p.communicate()
+            s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
+            bluez_version = tuple(map(int, s.groups()))
 
         # BlueZ version features
         self._can_write_without_response = (

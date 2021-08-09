@@ -44,6 +44,8 @@ if platform.system() == "Linux":
             raise BleakError(
                 "Bleak requires BlueZ >= 5.43. Found version {0} installed.".format(out)
             )
+        os.environ["BLEAK_BLUEZ_MAJOR_VERSION"] = major
+        os.environ["BLEAK_BLUEZ_MINOR_VERSION"] = minor
 
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as BleakScanner,
