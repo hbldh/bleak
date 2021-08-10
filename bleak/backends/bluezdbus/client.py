@@ -83,6 +83,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
+        # setup a lock to handle concurrency
+        self._cleanup_lock = asyncio.Lock()
 
         # get BlueZ version
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
@@ -382,9 +384,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         self._bus.remove_message_handler(self._parse_msg)
 
-        # avoid reentrancy issues by taking a copy of self._rules
-        old_rules, self._rules = self._rules, []
-        for rule in old_rules:
+        for rule in self._rules:
             try:
                 await remove_match(self._bus, rule)
             except Exception as e:
@@ -426,8 +426,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Free all the allocated resource in DBus. Use this method to
         eventually cleanup all otherwise leaked resources.
         """
-        await self._remove_signal_handlers()
-        self._disconnect_message_bus()
+        async with self._cleanup_lock:
+            await self._remove_signal_handlers()
+            self._disconnect_message_bus()
+
+            # Reset all stored services.
+            self.services = BleakGATTServiceCollection()
+            self._services_resolved = False
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -472,10 +477,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
-
-        # Reset all stored services.
-        self.services = BleakGATTServiceCollection()
-        self._services_resolved = False
 
         return True
 
