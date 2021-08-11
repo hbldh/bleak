@@ -20,6 +20,7 @@ Fixed
 * Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
 * Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
 * Fixed writing descriptors in WinRT backend. Fixes #615.
+* Fixed race on disconnect and cleanup of bluez matches when device disconnects early. Fixes #603.
 
 
 `0.12.1`_ (2021-07-07)
