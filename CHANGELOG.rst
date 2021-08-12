@@ -14,7 +14,7 @@ Added
 ~~~~~
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
-* Added ``force_notify`` keyword argument for WinRT backend client's ``start_notify`` method. Fixes #526.
+* Added ``force_indicate`` keyword argument for WinRT backend client's ``start_notify`` method. Fixes #526.
 
 Fixed
 ~~~~~

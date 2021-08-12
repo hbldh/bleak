@@ -735,8 +735,8 @@ class BleakClientWinRT(BaseBleakClient):
             callback (function): The function to be called on notification.
 
         Keyword Args:
-            force_notify (bool): If this is set to True, then Bleak will set up notification request instead of a
-                indication request, given that the characteristic supports notifications as well as indications.
+            force_indicate (bool): If this is set to True, then Bleak will set up a indication request instead of a
+                notification request, given that the characteristic supports notifications as well as indications.
 
         """
         if inspect.iscoroutinefunction(callback):
@@ -760,22 +760,22 @@ class BleakClientWinRT(BaseBleakClient):
         characteristic_obj = characteristic.obj
         if (
             characteristic_obj.characteristic_properties
-            & GattCharacteristicProperties.INDICATE
-        ):
-            if kwargs.get("force_notify", False) and (
-                characteristic_obj.characteristic_properties
-                & GattCharacteristicProperties.NOTIFY
-            ):
-                # If we want to force notify even when indicate is available, also check if the device
-                # actually supports notify as well.
-                cccd = GattClientCharacteristicConfigurationDescriptorValue.NOTIFY
-            else:
-                cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
-        elif (
-            characteristic_obj.characteristic_properties
             & GattCharacteristicProperties.NOTIFY
         ):
-            cccd = GattClientCharacteristicConfigurationDescriptorValue.NOTIFY
+            if kwargs.get("force_indicate", False) and (
+                characteristic_obj.characteristic_properties
+                & GattCharacteristicProperties.INDICATE
+            ):
+                # If we want to force indicate even when notify is available, also check if the device
+                # actually supports indicate as well.
+                cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
+            else:
+                cccd = GattClientCharacteristicConfigurationDescriptorValue.NOTIFY
+        elif (
+            characteristic_obj.characteristic_properties
+            & GattCharacteristicProperties.INDICATE
+        ):
+            cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
         else:
             cccd = GattClientCharacteristicConfigurationDescriptorValue.NONE
 
