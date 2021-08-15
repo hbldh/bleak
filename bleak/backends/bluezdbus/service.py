@@ -36,6 +36,22 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         """
         self.__characteristics.append(characteristic)
 
+    def del_characteristic(self, handle: int):
+        """Remove a :py:class:`~BleakGATTCharacteristicBlueZDBus` characteristics from service.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
+        for index, desc in enumerate(self.__characteristics):
+            if desc.handle == handle:
+                del self.__characteristics[index]
+                break
+        else:
+            raise ValueError(
+                "Characteristics {} doesn't exists on service {}".format(
+                    handle, self.__handle
+                )
+            )
+
     @property
     def path(self):
         """The DBus path. Mostly needed by `bleak`, not by end user"""

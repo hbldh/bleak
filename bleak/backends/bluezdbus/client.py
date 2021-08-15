@@ -25,6 +25,7 @@ from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
 from bleak.backends.bluezdbus.utils import (
     assert_reply,
+    extract_handles_from_path,
     extract_service_handle_from_path,
     unpack_variants,
 )
@@ -1068,6 +1069,24 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
         elif message.member == "InterfacesRemoved":
             path, interfaces = message.body
+            (
+                _,
+                service_handle,
+                characteristic_handle,
+                descriptor_handle,
+            ) = extract_handles_from_path(path)
+
+            if defs.GATT_SERVICE_INTERFACE in interfaces:
+                assert service_handle is not None
+                self.services.del_service(service_handle)
+
+            if defs.GATT_CHARACTERISTIC_INTERFACE in interfaces:
+                assert characteristic_handle is not None
+                self.services.del_characteristic(characteristic_handle)
+
+            if defs.GATT_DESCRIPTOR_INTERFACE in interfaces:
+                assert descriptor_handle is not None
+                self.services.del_descriptor(descriptor_handle)
 
         elif message.member == "PropertiesChanged":
             interface, changed, _ = message.body

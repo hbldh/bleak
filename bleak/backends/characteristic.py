@@ -91,3 +91,11 @@ class BleakGATTCharacteristic(abc.ABC):
         Should not be used by end user, but rather by `bleak` itself.
         """
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def del_descriptor(self, handle: int):
+        """Remove a :py:class:`~BleakGATTDescriptor` to the characteristic.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
+        raise NotImplementedError()

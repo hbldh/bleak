@@ -51,3 +51,33 @@ def extract_service_handle_from_path(path):
         return int(path[-4:], 16)
     except Exception as e:
         raise BleakError(f"Could not parse service handle from path: {path}") from e
+
+
+def extract_handles_from_path(path: str):
+    segments = reversed(path.split("/"))
+    segment = next(segments)
+    if segment.startswith("desc"):
+        desc = int(segment[4:], 16)
+        segment = next(segments)
+    else:
+        desc = None
+
+    if segment.startswith("char"):
+        char = int(segment[4:], 16)
+        segment = next(segments)
+    else:
+        char = None
+
+    if segment.startswith("service"):
+        service = int(segment[7:], 16)
+        segment = next(segments)
+    else:
+        service = None
+
+    if segment.startswith("dev_"):
+        device = segment[4:]
+        segment = next(segments)
+    else:
+        device = None
+
+    return device, service, char, desc

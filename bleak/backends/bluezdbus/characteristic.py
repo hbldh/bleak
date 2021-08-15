@@ -94,6 +94,22 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         """
         self.__descriptors.append(descriptor)
 
+    def del_descriptor(self, handle: int):
+        """Remove a :py:class:`~BleakGATTDescriptor` to the characteristic.
+
+        Should not be used by end user, but rather by `bleak` itself.
+        """
+        for index, desc in enumerate(self.__descriptors):
+            if desc.handle == handle:
+                del self.__descriptors[index]
+                break
+        else:
+            raise ValueError(
+                "Descriptor {} doesn't exists on characteristics {}".format(
+                    handle, self.__service_handle
+                )
+            )
+
     @property
     def path(self) -> str:
         """The DBus path. Mostly needed by `bleak`, not by end user"""
