@@ -391,6 +391,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 logger.error(
                     f"Failed to remove match {rule.member} ({self._device_path}): {e}"
                 )
+        self._rules = []
 
         # There is no need to call stop_notify() here since the the device is
         # already disconnected and we are about to close the D-Bus message bus
