@@ -26,6 +26,8 @@ jobs:
                 run: pip install -r requirements.txt
             -   name: Install development dependencies
                 run: pip install -r requirements_dev.txt
+            -   name: Install module self
+                run: pip install -e .
             -   name: Test with pytest
                 run: |
                     pytest tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
