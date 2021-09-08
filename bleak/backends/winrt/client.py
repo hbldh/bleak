@@ -225,7 +225,7 @@ class BleakClientWinRT(BaseBleakClient):
         finally:
             self._connect_events.remove(event)
 
-        
+
 
         return True
 
@@ -286,7 +286,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
 
-    async def pair(self, protection_level: int = None, **kwargs) -> bool:
+    async def pair(self,
+        protection_level=None,
+        *args,
+        callback: Optional[PairingCallback] = None,
+        **kwargs,
+    ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -296,6 +301,11 @@ class BleakClientWinRT(BaseBleakClient):
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
                            encryption and authentication. (This will not work in Bleak...)
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.
@@ -307,14 +317,41 @@ class BleakClientWinRT(BaseBleakClient):
             and not self._requester.device_information.pairing.is_paired
         ):
 
-            # Currently only supporting Just Works solutions...
-            ceremony = DevicePairingKinds.CONFIRM_ONLY
-            custom_pairing = self._requester.device_information.pairing.custom
+            if callback:
+                # TODO: All BLE pairing methods are supported
+                ceremony = (
+                    DevicePairingKinds.ConfirmOnly
+                    + DevicePairingKinds.ConfirmPinMatch
+                    + DevicePairingKinds.DisplayPin
+                    + DevicePairingKinds.ProvidePin
+                )
+            else:
+                ceremony = DevicePairingKinds.ConfirmOnly
+            custom_pairing = self._requester.DeviceInformation.Pairing.Custom
 
             def handler(sender, args):
-                args.accept()
+                if callback:
+                    if args.PairingKind == DevicePairingKinds.ConfirmOnly:
+                        args.Accept()
+                    # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
+                    elif (
+                        args.PairingKind == DevicePairingKinds.ConfirmPinMatch
+                        or args.PairingKind == DevicePairingKinds.DisplayPin
+                    ):
+                        if callback("", args.Pin, None) is True:
+                            args.Accept()
+                    elif args.PairingKind == DevicePairingKinds.ProvidePin:
+                        pin = callback("", None, None)
+                        if pin:
+                            args.Accept(pin)
+                else:
+                    args.Accept()
 
-            pairing_requested_token = custom_pairing.add_pairing_requested(handler)
+            pairing_requested_token = custom_pairing.add_PairingRequested(
+                TypedEventHandler[
+                    DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
+                ](handler)
+            )
             try:
                 if protection_level:
                     pairing_result = await custom_pairing.pair_async(

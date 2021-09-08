@@ -50,6 +50,7 @@ Added
 * Added ``BleakScanner.find_device_by_filter`` static method.
 * Added ``scanner_byname.py`` example.
 * Added optional command line argument to specify device to all applicable examples.
+* Added BlueZ Agent for pin and passkey pairing on Linux.
 
 Changed
 ~~~~~~~

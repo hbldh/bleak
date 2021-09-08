@@ -8,12 +8,48 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 import asyncio
 import uuid
-from typing import Callable, Optional, Union
+from typing import Callable, Union, Optional
 from warnings import warn
 
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
+
+
+PairingCallback = Callable[
+    [str, Union[None, str], Union[None, int]], Union[bool, int, str, None]
+]
+"""Type of the pairing callback function
+
+Args:
+    device (str): Address of the peer device participating in the pairing process.
+    pin (None or str): If this parameter is not `None`, then this callback is invoked
+        because the service daemon needs to display a pincode for an authentication.
+        The application must display the given PIN to the user, who will then need to
+        either enter this PIN on the peer device that is being paired (if such device
+        has input but no output capabilities), or confirm that the PIN matches the one
+        shown on the peer device.
+        Return `True` to proceed with the pairing or `False` to reject/cancel it. Note,
+        however, that canceling the pairing at this point might still result in device
+        being paired, because for some pairing methods, the system and the target
+        device don't need any confirmation.
+    passkey (None or int): Very similar to `pin` argument, just that this value is used
+        on some systems when Passkey Entry pairing method is initiated. On some systems
+        this will always be `None` and passkey is provided as `pin` argument.
+        If not `None`, the passkey will always represent a 6-digit number, so the
+        display should be zero-padded at the start if the value contains less than 6
+        digits.
+        Return value logic is the same as for `pin` - return `True` to proceed with the
+        pairing or `False` to reject/cancel it.
+
+Returns:
+    `True` to confirm pairing with provided `pin` or `passkey`, if any of them is not `None`.
+    If `pin` and `passkey` are both `None`, it means that this callback got invoked because
+    the service daemon needs to get the pincode or passkey for an authentication. The return
+    value should be an alphanumeric string of 1-16 characters length (pincode) or a numeric
+    value between 0-999999 (passkey).
+    Pairing is rejected if `None` is returned.
+"""
 
 
 class BaseBleakClient(abc.ABC):
@@ -111,8 +147,21 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def pair(self, *args, **kwargs) -> bool:
-        """Pair with the peripheral."""
+    async def pair(
+        self, *args, callback: Optional[PairingCallback] = None, **kwargs
+    ) -> bool:
+        """Pair with the peripheral.
+
+        Args:
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
+
+        Returns:
+            Boolean representing success of pairing.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -141,7 +190,8 @@ class BaseBleakClient(abc.ABC):
 
         def __call__(self) -> bool:
             warn(
-                "is_connected has been changed to a property. Calling it as an async method will be removed in a future version",
+                "is_connected has been changed to a property. Calling it as an async method will be removed in a "
+                "future version",
                 FutureWarning,
                 stacklevel=2,
             )

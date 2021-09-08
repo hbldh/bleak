@@ -9,12 +9,12 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, List, Union
+from typing import Callable, Any, List, Union, Optional
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.scanner import BleakScannerDotNet
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
-from bleak.backends.client import BaseBleakClient
+from bleak.backends.client import BaseBleakClient, PairingCallback
 from bleak.backends.dotnet.utils import (
     BleakDataReader,
     BleakDataWriter,
@@ -26,7 +26,6 @@ from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.dotnet.service import BleakGATTServiceDotNet
 from bleak.backends.dotnet.characteristic import BleakGATTCharacteristicDotNet
 from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
-
 
 # CLR imports
 
@@ -121,7 +120,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
-            and kwargs["address_type"] in ("public", "random")
+               and kwargs["address_type"] in ("public", "random")
             else None
         )
         self._use_cached = kwargs.get("use_cached", True)
@@ -248,7 +247,6 @@ class BleakClientDotNet(BaseBleakClient):
         finally:
             self._connect_events.remove(event)
 
-        
         return True
 
     async def disconnect(self) -> bool:
@@ -310,7 +308,13 @@ class BleakClientDotNet(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.MaxPduSize
 
-    async def pair(self, protection_level=None, **kwargs) -> bool:
+    async def pair(
+        self,
+        protection_level=None,
+        *args,
+        callback: Optional[PairingCallback] = None,
+        **kwargs,
+    ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -320,6 +324,11 @@ class BleakClientDotNet(BaseBleakClient):
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
                            encryption and authentication. (This will not work in Bleak...)
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.
@@ -330,12 +339,35 @@ class BleakClientDotNet(BaseBleakClient):
             and not self._requester.DeviceInformation.Pairing.IsPaired
         ):
 
-            # Currently only supporting Just Works solutions...
-            ceremony = DevicePairingKinds.ConfirmOnly
+            if callback:
+                # TODO: All BLE pairing methods are supported
+                ceremony = (
+                    DevicePairingKinds.ConfirmOnly
+                    + DevicePairingKinds.ConfirmPinMatch
+                    + DevicePairingKinds.DisplayPin
+                    + DevicePairingKinds.ProvidePin
+                )
+            else:
+                ceremony = DevicePairingKinds.ConfirmOnly
             custom_pairing = self._requester.DeviceInformation.Pairing.Custom
 
             def handler(sender, args):
-                args.Accept()
+                if callback:
+                    if args.PairingKind == DevicePairingKinds.ConfirmOnly:
+                        args.Accept()
+                    # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
+                    elif (
+                        args.PairingKind == DevicePairingKinds.ConfirmPinMatch
+                        or args.PairingKind == DevicePairingKinds.DisplayPin
+                    ):
+                        if callback("", args.Pin, None) is True:
+                            args.Accept()
+                    elif args.PairingKind == DevicePairingKinds.ProvidePin:
+                        pin = callback("", None, None)
+                        if pin:
+                            args.Accept(pin)
+                else:
+                    args.Accept()
 
             pairing_requested_token = custom_pairing.add_PairingRequested(
                 TypedEventHandler[
