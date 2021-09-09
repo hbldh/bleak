@@ -342,13 +342,15 @@ class BleakClientDotNet(BaseBleakClient):
             if callback:
                 # TODO: All BLE pairing methods are supported
                 ceremony = (
+                   DevicePairingKinds.ProvidePin
+                )
+            else:
+                ceremony = (
                     DevicePairingKinds.ConfirmOnly
                     + DevicePairingKinds.ConfirmPinMatch
                     + DevicePairingKinds.DisplayPin
                     + DevicePairingKinds.ProvidePin
                 )
-            else:
-                ceremony = DevicePairingKinds.ConfirmOnly
             custom_pairing = self._requester.DeviceInformation.Pairing.Custom
 
             def handler(sender, args):
@@ -375,7 +377,7 @@ class BleakClientDotNet(BaseBleakClient):
                 ](handler)
             )
             try:
-                if protection_level:
+                if protection_level != None:
                     pairing_result = await wrap_IAsyncOperation(
                         IAsyncOperation[DevicePairingResult](
                             custom_pairing.PairAsync.Overloads[

@@ -10,7 +10,7 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, List, Union
+from typing import Callable, Any, List, Union, Optional
 
 from winrt.windows.devices.enumeration import (
     DevicePairingKinds,
@@ -22,7 +22,7 @@ from winrt.windows.security.cryptography import CryptographicBuffer
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.scanner import BleakScannerWinRT
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
-from bleak.backends.client import BaseBleakClient
+from bleak.backends.client import BaseBleakClient, PairingCallback
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
@@ -32,6 +32,7 @@ from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
 
 # Import of RT components needed.
+from winrt.windows.foundation import IAsyncOperation, TypedEventHandler
 
 from winrt.windows.devices.bluetooth import (
     BluetoothLEDevice,
@@ -320,34 +321,34 @@ class BleakClientWinRT(BaseBleakClient):
             if callback:
                 # TODO: All BLE pairing methods are supported
                 ceremony = (
-                    DevicePairingKinds.ConfirmOnly
-                    + DevicePairingKinds.ConfirmPinMatch
-                    + DevicePairingKinds.DisplayPin
-                    + DevicePairingKinds.ProvidePin
+                    DevicePairingKinds.CONFIRM_ONLY
+                    + DevicePairingKinds.CONFIRM_PIN_MATCH
+                    + DevicePairingKinds.DISPLAY_PIN
+                    + DevicePairingKinds.PROVIDE_PIN
                 )
             else:
-                ceremony = DevicePairingKinds.ConfirmOnly
-            custom_pairing = self._requester.DeviceInformation.Pairing.Custom
+                ceremony = DevicePairingKinds.CONFIRM_ONLY
+            custom_pairing = self._requester.device_information.pairing
 
             def handler(sender, args):
                 if callback:
-                    if args.PairingKind == DevicePairingKinds.ConfirmOnly:
+                    if args.PairingKind == DevicePairingKinds.CONFIRM_ONLY:
                         args.Accept()
                     # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
                     elif (
-                        args.PairingKind == DevicePairingKinds.ConfirmPinMatch
-                        or args.PairingKind == DevicePairingKinds.DisplayPin
+                        args.PairingKind == DevicePairingKinds.CONFIRM_PIN_MATCH
+                        or args.PairingKind == DevicePairingKinds.DISPLAY_PIN
                     ):
                         if callback("", args.Pin, None) is True:
                             args.Accept()
-                    elif args.PairingKind == DevicePairingKinds.ProvidePin:
+                    elif args.PairingKind == DevicePairingKinds.PROVIDE_PIN:
                         pin = callback("", None, None)
                         if pin:
                             args.Accept(pin)
                 else:
                     args.Accept()
 
-            pairing_requested_token = custom_pairing.add_PairingRequested(
+            pairing_requested_token = custom_pairing.pair_async(
                 TypedEventHandler[
                     DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
                 ](handler)
