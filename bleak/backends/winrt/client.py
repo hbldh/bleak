@@ -32,10 +32,6 @@ from bleak.backends.winrt.service import BleakGATTServiceWinRT
 from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
 from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
-
-# Import of RT components needed.
-from winrt.windows.foundation import IAsyncOperation #, TypedEventHandler
-
 from winrt.windows.devices.bluetooth import (
     BluetoothLEDevice,
     BluetoothConnectionStatus,
@@ -50,7 +46,6 @@ from winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattSession,
 )
 
-
 logger = logging.getLogger(__name__)
 
 _communication_statues = {
@@ -61,13 +56,11 @@ _communication_statues = {
     )
 }
 
-
 _pairing_statuses = {
     getattr(DevicePairingResultStatus, v): v
     for v in dir(DevicePairingResultStatus)
     if "_" not in v and isinstance(getattr(DevicePairingResultStatus, v), int)
 }
-
 
 _unpairing_statuses = {
     getattr(DeviceUnpairingResultStatus, v): v
@@ -108,7 +101,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
-            and kwargs["address_type"] in ("public", "random")
+               and kwargs["address_type"] in ("public", "random")
             else None
         )
 
@@ -228,8 +221,6 @@ class BleakClientWinRT(BaseBleakClient):
         finally:
             self._connect_events.remove(event)
 
-
-
         return True
 
     async def disconnect(self) -> bool:
@@ -280,8 +271,7 @@ class BleakClientWinRT(BaseBleakClient):
         return self._DeprecatedIsConnectedReturn(
             False
             if self._requester is None
-            else self._requester.connection_status
-            == BluetoothConnectionStatus.CONNECTED
+            else self._requester.connection_status == BluetoothConnectionStatus.CONNECTED
         )
 
     @property
@@ -290,11 +280,11 @@ class BleakClientWinRT(BaseBleakClient):
         return self._session.max_pdu_size
 
     async def pair(self,
-        protection_level=None,
-        *args,
-        callback: Optional[PairingCallback] = None,
-        **kwargs,
-    ) -> bool:
+                   protection_level=None,
+                   *args,
+                   callback: Optional[PairingCallback] = None,
+                   **kwargs,
+                   ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -321,7 +311,6 @@ class BleakClientWinRT(BaseBleakClient):
         ):
 
             if callback:
-                # TODO: All BLE pairing methods are supported
                 ceremony = (
                     DevicePairingKinds.CONFIRM_ONLY
                     + DevicePairingKinds.CONFIRM_PIN_MATCH
@@ -354,7 +343,7 @@ class BleakClientWinRT(BaseBleakClient):
                 deferral.complete()
 
             pairing_requested_token = custom_pairing.add_pairing_requested(
-               handler
+                handler
             )
             try:
                 if protection_level:

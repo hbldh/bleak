@@ -357,7 +357,7 @@ class BleakClientDotNet(BaseBleakClient):
                 logger.debug(f"sender: {sender}, args: {args}")
                 logger.debug(f"args.PairingKind: {args.PairingKind}")
                 logger.debug(f"args.DeviceInformation.Pairing.ProtectionLevel: "
-                      f"{args.DeviceInformation.Pairing.ProtectionLevel}")
+                             f"{args.DeviceInformation.Pairing.ProtectionLevel}")
                 deferral = args.GetDeferral()
                 if callback:
                     if args.PairingKind == DevicePairingKinds.ConfirmOnly:
@@ -375,7 +375,7 @@ class BleakClientDotNet(BaseBleakClient):
                             args.Accept()
                     elif args.PairingKind == DevicePairingKinds.ProvidePin:
                         logger.debug("provide")
-                        pin = callback("", None, None) # This pin should return as a string
+                        pin = callback("", None, None)  # This pin should return as a string
                         logger.debug(f"pin {str(pin)}")
                         if pin:
                             logger.debug("calling accept with pin.")
@@ -415,9 +415,9 @@ class BleakClientDotNet(BaseBleakClient):
             finally:
                 custom_pairing.remove_PairingRequested(pairing_requested_token)
 
-            print (
+            print(
                 f"Could not pair with device: {pairing_result.Status}: {_pairing_statuses.get(pairing_result.Status)}"
-                )
+            )
             if pairing_result.Status not in (
                 DevicePairingResultStatus.Paired,
                 DevicePairingResultStatus.AlreadyPaired,
