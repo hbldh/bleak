@@ -14,6 +14,8 @@ Added
 ~~~~~
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
+* Added BlueZ Agent for pin and passkey pairing on Linux.
+* Added pairing support for .NET and WinRT.
 
 Fixed
 ~~~~~
