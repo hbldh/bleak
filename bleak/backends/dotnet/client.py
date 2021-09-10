@@ -350,30 +350,41 @@ class BleakClientDotNet(BaseBleakClient):
             else:
                 ceremony = (
                     DevicePairingKinds.ConfirmOnly
-                    + DevicePairingKinds.ConfirmPinMatch
-                    + DevicePairingKinds.DisplayPin
-                    + DevicePairingKinds.ProvidePin
                 )
             custom_pairing = self._requester.DeviceInformation.Pairing.Custom
 
             def handler(sender, args):
-                print(f"*** sender: {sender}, args: {args}")
+                logger.debug(f"sender: {sender}, args: {args}")
+                logger.debug(f"args.PairingKind: {args.PairingKind}")
+                logger.debug(f"args.DeviceInformation.Pairing.ProtectionLevel: "
+                      f"{args.DeviceInformation.Pairing.ProtectionLevel}")
+                deferral = args.GetDeferral()
                 if callback:
                     if args.PairingKind == DevicePairingKinds.ConfirmOnly:
+                        logger.debug("confirm only")
                         args.Accept()
                     # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
+                    # _JP_ I'm not sure we care about this, but if we were to request this code be sent to the main repo,
+                    # it might be useful to have all of this figured correctly.
                     elif (
                         args.PairingKind == DevicePairingKinds.ConfirmPinMatch
                         or args.PairingKind == DevicePairingKinds.DisplayPin
                     ):
+                        logger.debug("match/display")
                         if callback("", args.Pin, None) is True:
                             args.Accept()
                     elif args.PairingKind == DevicePairingKinds.ProvidePin:
-                        pin = callback("", None, None)
+                        logger.debug("provide")
+                        pin = callback("", None, None) # This pin should return as a string
+                        logger.debug(f"pin {str(pin)}")
                         if pin:
+                            logger.debug("calling accept with pin.")
                             args.Accept(pin)
                 else:
                     args.Accept()
+
+                logger.debug("calling deferral.Complete()")
+                deferral.Complete()
 
             pairing_requested_token = custom_pairing.add_PairingRequested(
                 TypedEventHandler[
@@ -404,6 +415,9 @@ class BleakClientDotNet(BaseBleakClient):
             finally:
                 custom_pairing.remove_PairingRequested(pairing_requested_token)
 
+            print (
+                f"Could not pair with device: {pairing_result.Status}: {_pairing_statuses.get(pairing_result.Status)}"
+                )
             if pairing_result.Status not in (
                 DevicePairingResultStatus.Paired,
                 DevicePairingResultStatus.AlreadyPaired,
@@ -415,7 +429,7 @@ class BleakClientDotNet(BaseBleakClient):
                     )
                 )
             else:
-                logger.info(
+                print(
                     "Paired to device with protection level {0}.".format(
                         pairing_result.ProtectionLevelUsed
                     )
