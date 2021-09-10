@@ -13,9 +13,11 @@ from functools import wraps
 from typing import Callable, Any, List, Union, Optional
 
 from winrt.windows.devices.enumeration import (
+    DeviceInformationCustomPairing,
     DevicePairingKinds,
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
+    DevicePairingRequestedEventArgs
 )
 from winrt.windows.security.cryptography import CryptographicBuffer
 
@@ -32,7 +34,7 @@ from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
 
 # Import of RT components needed.
-from winrt.windows.foundation import IAsyncOperation, TypedEventHandler
+from winrt.windows.foundation import IAsyncOperation #, TypedEventHandler
 
 from winrt.windows.devices.bluetooth import (
     BluetoothLEDevice,
@@ -328,30 +330,31 @@ class BleakClientWinRT(BaseBleakClient):
                 )
             else:
                 ceremony = DevicePairingKinds.CONFIRM_ONLY
-            custom_pairing = self._requester.device_information.pairing
+            custom_pairing = self._requester.device_information.pairing.custom
 
-            def handler(sender, args):
+            def handler(sender: DeviceInformationCustomPairing, args: DevicePairingRequestedEventArgs):
+                deferral = args.get_deferral()
                 if callback:
-                    if args.PairingKind == DevicePairingKinds.CONFIRM_ONLY:
-                        args.Accept()
+                    if args.pairing_kind == DevicePairingKinds.CONFIRM_ONLY:
+                        args.accept()
                     # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
                     elif (
-                        args.PairingKind == DevicePairingKinds.CONFIRM_PIN_MATCH
-                        or args.PairingKind == DevicePairingKinds.DISPLAY_PIN
+                        args.pairing_kind == DevicePairingKinds.CONFIRM_PIN_MATCH
+                        or args.pairing_kind == DevicePairingKinds.DISPLAY_PIN
                     ):
                         if callback("", args.Pin, None) is True:
-                            args.Accept()
-                    elif args.PairingKind == DevicePairingKinds.PROVIDE_PIN:
+                            args.accept()
+                    elif args.pairing_kind == DevicePairingKinds.PROVIDE_PIN:
                         pin = callback("", None, None)
                         if pin:
-                            args.Accept(pin)
+                            args.accept(pin)
                 else:
-                    args.Accept()
+                    args.accept()
 
-            pairing_requested_token = custom_pairing.pair_async(
-                TypedEventHandler[
-                    DeviceInformationCustomPairing, DevicePairingRequestedEventArgs
-                ](handler)
+                deferral.complete()
+
+            pairing_requested_token = custom_pairing.add_pairing_requested(
+               handler
             )
             try:
                 if protection_level:
