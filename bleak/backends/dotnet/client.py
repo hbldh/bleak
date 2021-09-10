@@ -392,7 +392,7 @@ class BleakClientDotNet(BaseBleakClient):
                 ](handler)
             )
             try:
-                if protection_level != None:
+                if protection_level:
                     pairing_result = await wrap_IAsyncOperation(
                         IAsyncOperation[DevicePairingResult](
                             custom_pairing.PairAsync.Overloads[
