@@ -212,14 +212,16 @@ class BleakClientWinRT(BaseBleakClient):
             # This keeps the device connected until we dispose the session or
             # until we set maintain_connection = False.
             self._session.maintain_connection = True
-            # Obtain services, which also leads to connection being established.
-            await self.get_services(use_cached=use_cached)
+
             await asyncio.wait_for(event.wait(), timeout=timeout)
         except BaseException:
             handle_disconnect()
             raise
         finally:
             self._connect_events.remove(event)
+
+        # Obtain services, which also leads to connection being established.
+        await self.get_services(use_cached=use_cached)
 
         return True
 
@@ -376,6 +378,7 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 return True
         else:
+            logger.debug(f"Device ({self._requester.device_information}) is already paired.")
             return self._requester.device_information.pairing.is_paired
 
     async def unpair(self) -> bool:
