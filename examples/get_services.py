@@ -8,10 +8,19 @@ Updated on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 
+import sys
 import asyncio
 import platform
 
 from bleak import BleakClient
+
+ADDRESS = (
+    "24:71:89:cc:09:05"
+    if platform.system() != "Darwin"
+    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
+)
+if len(sys.argv) == 2:
+    ADDRESS = sys.argv[1]
 
 
 async def print_services(mac_addr: str):
@@ -22,10 +31,5 @@ async def print_services(mac_addr: str):
             print(service)
 
 
-mac_addr = (
-    "24:71:89:cc:09:05"
-    if platform.system() != "Darwin"
-    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
-)
 loop = asyncio.get_event_loop()
-loop.run_until_complete(print_services(mac_addr))
+loop.run_until_complete(print_services(ADDRESS))

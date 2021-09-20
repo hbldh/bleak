@@ -9,12 +9,12 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, List, Union
+from typing import Callable, Any, List, Union, Optional
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.dotnet.scanner import BleakScannerDotNet
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
-from bleak.backends.client import BaseBleakClient
+from bleak.backends.client import BaseBleakClient, PairingCallback
 from bleak.backends.dotnet.utils import (
     BleakDataReader,
     BleakDataWriter,
@@ -26,7 +26,6 @@ from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.dotnet.service import BleakGATTServiceDotNet
 from bleak.backends.dotnet.characteristic import BleakGATTCharacteristicDotNet
 from bleak.backends.dotnet.descriptor import BleakGATTDescriptorDotNet
-
 
 # CLR imports
 
@@ -121,7 +120,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
-            and kwargs["address_type"] in ("public", "random")
+               and kwargs["address_type"] in ("public", "random")
             else None
         )
         self._use_cached = kwargs.get("use_cached", True)
@@ -248,7 +247,6 @@ class BleakClientDotNet(BaseBleakClient):
             self._connect_events.remove(event)
 
         await self.get_services(use_cached=use_cached)
-
         return True
 
     async def disconnect(self) -> bool:
@@ -310,7 +308,13 @@ class BleakClientDotNet(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.MaxPduSize
 
-    async def pair(self, protection_level=None, **kwargs) -> bool:
+    async def pair(
+        self,
+        protection_level=None,
+        *args,
+        callback: Optional[PairingCallback] = None,
+        **kwargs,
+    ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -320,6 +324,11 @@ class BleakClientDotNet(BaseBleakClient):
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
                            encryption and authentication. (This will not work in Bleak...)
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.
@@ -330,12 +339,52 @@ class BleakClientDotNet(BaseBleakClient):
             and not self._requester.DeviceInformation.Pairing.IsPaired
         ):
 
-            # Currently only supporting Just Works solutions...
-            ceremony = DevicePairingKinds.ConfirmOnly
+            if callback:
+                # TODO: All BLE pairing methods are supported
+                ceremony = (
+                    DevicePairingKinds.ConfirmOnly
+                    + DevicePairingKinds.ConfirmPinMatch
+                    + DevicePairingKinds.DisplayPin
+                    + DevicePairingKinds.ProvidePin
+                )
+            else:
+                ceremony = (
+                    DevicePairingKinds.ConfirmOnly
+                )
             custom_pairing = self._requester.DeviceInformation.Pairing.Custom
 
             def handler(sender, args):
-                args.Accept()
+                logger.debug(f"sender: {sender}, args: {args}")
+                logger.debug(f"args.PairingKind: {args.PairingKind}")
+                logger.debug(f"args.DeviceInformation.Pairing.ProtectionLevel: "
+                             f"{args.DeviceInformation.Pairing.ProtectionLevel}")
+                deferral = args.GetDeferral()
+                if callback:
+                    if args.PairingKind == DevicePairingKinds.ConfirmOnly:
+                        logger.debug("confirm only")
+                        args.Accept()
+                    # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
+                    # _JP_ I'm not sure we care about this, but if we were to request this code be sent to the main repo,
+                    # it might be useful to have all of this figured correctly.
+                    elif (
+                        args.PairingKind == DevicePairingKinds.ConfirmPinMatch
+                        or args.PairingKind == DevicePairingKinds.DisplayPin
+                    ):
+                        logger.debug("match/display")
+                        if callback("", args.Pin, None) is True:
+                            args.Accept()
+                    elif args.PairingKind == DevicePairingKinds.ProvidePin:
+                        logger.debug("provide")
+                        pin = callback("", None, None)  # This pin should return as a string
+                        logger.debug(f"pin {str(pin)}")
+                        if pin:
+                            logger.debug("calling accept with pin.")
+                            args.Accept(pin)
+                else:
+                    args.Accept()
+
+                logger.debug("calling deferral.Complete()")
+                deferral.Complete()
 
             pairing_requested_token = custom_pairing.add_PairingRequested(
                 TypedEventHandler[
@@ -366,6 +415,9 @@ class BleakClientDotNet(BaseBleakClient):
             finally:
                 custom_pairing.remove_PairingRequested(pairing_requested_token)
 
+            print(
+                f"Could not pair with device: {pairing_result.Status}: {_pairing_statuses.get(pairing_result.Status)}"
+            )
             if pairing_result.Status not in (
                 DevicePairingResultStatus.Paired,
                 DevicePairingResultStatus.AlreadyPaired,
@@ -377,13 +429,14 @@ class BleakClientDotNet(BaseBleakClient):
                     )
                 )
             else:
-                logger.info(
+                print(
                     "Paired to device with protection level {0}.".format(
                         pairing_result.ProtectionLevelUsed
                     )
                 )
                 return True
         else:
+            logger.debug(f"Device ({self._requester.DeviceInformation}) is already paired.")
             return self._requester.DeviceInformation.Pairing.IsPaired
 
     async def unpair(self) -> bool:

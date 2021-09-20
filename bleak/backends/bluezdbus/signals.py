@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import asyncio
 import re
 from typing import Any, Coroutine, Dict, Optional
 
@@ -12,8 +11,6 @@ from dbus_next.validators import (
     assert_member_name_valid,
     assert_object_path_valid,
 )
-
-from bleak.backends.bluezdbus.defs import PROPERTIES_INTERFACE
 
 # TODO: this stuff should be improved and submitted upstream to dbus-next
 # https://github.com/altdesktop/python-dbus-next/issues/53
@@ -202,22 +199,3 @@ def remove_match(bus: MessageBus, rules: MatchRules) -> Coroutine[Any, Any, Mess
             body=[str(rules)],
         )
     )
-
-
-def listen_properties_changed(bus, callback):
-    """Create a future for a PropertiesChanged signal listener.
-
-    Args:
-        bus: The system bus object to use.
-        callback: The callback function to run when signal is received.
-
-    Returns:
-        Integer rule id.
-
-    """
-    return bus.addMatch(
-        callback,
-        interface=PROPERTIES_INTERFACE,
-        member="PropertiesChanged",
-        path_namespace="/org/bluez",
-    ).asFuture(asyncio.get_event_loop())

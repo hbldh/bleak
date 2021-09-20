@@ -18,6 +18,7 @@ from dbus_next.message import Message
 from dbus_next.signature import Variant
 
 from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.agent import PairingAgentBlueZDBus
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
@@ -28,7 +29,7 @@ from bleak.backends.bluezdbus.utils import (
     extract_service_handle_from_path,
     unpack_variants,
 )
-from bleak.backends.client import BaseBleakClient
+from bleak.backends.client import BaseBleakClient, PairingCallback
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakError
@@ -51,7 +52,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
         adapter (str): Bluetooth adapter to use for discovery.
+        handle_pairing (bool): If set to `True`, this application is responsible for handling the pairing events
+            (displaying, asking for, or confirming pins and passkeys) instead of the system/OS pairing wizard.
+            Defaults to `False`.
     """
+
+    # Instantiate pairing agent (single agent per app) but don't register it yet
+    pairingAgent = PairingAgentBlueZDBus()
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
@@ -81,6 +88,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to ensure device gets disconnected if event loop crashes
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
 
+        # used to override mtu_size property
+        self._mtu_size: Optional[int] = None
+        # setup a lock to handle concurrency
+        self._cleanup_lock = asyncio.Lock()
+
         # get BlueZ version
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
@@ -97,6 +109,58 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._hides_battery_characteristic = self._hides_device_name_characteristic = (
             bluez_version[0] == 5 and bluez_version[1] >= 48
         )
+
+        # Optionally register pairing agent if this application shall handle pairing instead of OS agent
+        if kwargs.get("handle_pairing", False):
+            asyncio.ensure_future(self.pairingAgent.register())
+
+    @classmethod
+    async def remove_device(
+        cls, device: Union[BLEDevice, "BleakClientBlueZDBus", str], adapter: str = None
+    ) -> bool:
+        """Remove the remote device object and its pairing information
+
+        Args:
+            device (`BLEDevice`, `BleakClientBlueZDBus` or str): Device MAC address or class from which this
+                information can be extracted as `.address`.
+            adapter (str): Adapter to use instead of default hci0.
+
+        Returns:
+            Boolean representing if device was present and removed.
+        """
+        # Device path and adapter are required for invoking the API call
+
+        # Try to get .address attribute if object is provided, otherwise assume string and use it as it
+        address: str = getattr(device, "address", device)
+        if len(address) != 17 or address.count(":") != 5:
+            raise ValueError(
+                f"Device address shall be MAC address or Device/Client class, not '{address}'"
+            )
+        # Use provided value, try to extract adapter property from device or use default hci0
+        adapter = f"/org/bluez/{adapter or getattr(device, '_adapter', 'hci0')}"
+
+        # Create system bus
+        bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+        # Remove device
+        reply = await bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=adapter,
+                interface=defs.ADAPTER_INTERFACE,
+                member="RemoveDevice",
+                signature="o",
+                body=[f"{adapter}/dev_{address.replace(':', '_').upper()}"],
+            )
+        )
+        bus.disconnect()
+        # This method can be called multiple times or even "just to be sure", so it's normal that device doesn't exist
+        try:
+            assert_reply(reply)
+            return True
+        except BleakDBusError as e:
+            if e.dbus_error == f"{defs.BLUEZ_SERVICE}.Error.DoesNotExist":
+                return False
+            raise
 
     # Connectivity methods
 
@@ -137,8 +201,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # Create system bus
         self._bus = await MessageBus(
-            bus_type=BusType.SYSTEM,
-            negotiate_unix_fd=self._write_without_response_workaround_needed,
+            bus_type=BusType.SYSTEM, negotiate_unix_fd=True
         ).connect()
 
         try:
@@ -380,15 +443,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         self._bus.remove_message_handler(self._parse_msg)
 
-        # avoid reentrancy issues by taking a copy of self._rules
-        old_rules, self._rules = self._rules, []
-        for rule in old_rules:
+        for rule in self._rules:
             try:
                 await remove_match(self._bus, rule)
             except Exception as e:
                 logger.error(
                     f"Failed to remove match {rule.member} ({self._device_path}): {e}"
                 )
+        self._rules = []
 
         # There is no need to call stop_notify() here since the the device is
         # already disconnected and we are about to close the D-Bus message bus
@@ -424,8 +486,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Free all the allocated resource in DBus. Use this method to
         eventually cleanup all otherwise leaked resources.
         """
-        await self._remove_signal_handlers()
-        self._disconnect_message_bus()
+        async with self._cleanup_lock:
+            await self._remove_signal_handlers()
+            self._disconnect_message_bus()
+
+            # Reset all stored services.
+            self.services = BleakGATTServiceCollection()
+            self._services_resolved = False
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -471,17 +538,22 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
-        # Reset all stored services.
-        self.services = BleakGATTServiceCollection()
-        self._services_resolved = False
-
         return True
 
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(
+        self, *args, callback: Optional[PairingCallback] = None, **kwargs
+    ) -> bool:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+
+        Args:
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.
@@ -504,6 +576,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 f"BLE device @ {self.address} already paired with {self._adapter}"
             )
             return True
+
+        if callback:
+            self.pairingAgent.set_callback(
+                self._device_path,
+                # "/org/bluez/hci0/dev_A1_B2_C3_D4_E5_F6" -> "A1:B2:C3:D4:E5:F6"
+                lambda dp, pin, psk: callback(
+                    ":".join(dp.rsplit("_", maxsplit=6)[-6:]), pin, psk
+                ),
+            )
 
         # Set device as trusted.
         reply = await self._bus.call(
@@ -530,7 +611,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
-        assert_reply(reply)
+        try:
+            assert_reply(reply)
+        except BleakDBusError as e:
+            logger.error(
+                f"Pairing {self._device_path} with {self._adapter} failed ({e.dbus_error})"
+            )
+            # False could be returned here, but check again just to be sure
 
         reply = await self._bus.call(
             Message(
@@ -543,6 +630,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
         )
         assert_reply(reply)
+
+        if callback:
+            # Remove callback set above
+            self.pairingAgent.set_callback(self._device_path, None)
 
         return reply.body[0].value
 
@@ -570,13 +661,59 @@ class BleakClientBlueZDBus(BaseBleakClient):
             False if self._bus is None else self._properties.get("Connected", False)
         )
 
+    async def _acquire_mtu(self) -> None:
+        """Acquires the MTU for this device by calling the "AcquireWrite" or
+        "AcquireNotify" method of the first characteristic that has such a method.
+
+        This method only needs to be called once, after connecting to the device
+        but before accessing the ``mtu_size`` property.
+
+        If a device uses encryption on characteristics, it will need to be bonded
+        first before calling this method.
+        """
+        # This will try to get the "best" characteristic for getting the MTU.
+        # We would rather not start notifications if we don't have to.
+        try:
+            method = "AcquireWrite"
+            char = next(
+                c
+                for c in self.services.characteristics.values()
+                if "write-without-response" in c.properties
+            )
+        except StopIteration:
+            method = "AcquireNotify"
+            char = next(
+                c
+                for c in self.services.characteristics.values()
+                if "notify" in c.properties
+            )
+
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=char.path,
+                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                member=method,
+                signature="a{sv}",
+                body=[{}],
+            )
+        )
+        assert_reply(reply)
+
+        # we aren't actually using the write or notify, we just want the MTU
+        os.close(reply.unix_fds[0])
+        self._mtu_size = reply.body[1]
+
     @property
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
-        warnings.warn(
-            "MTU size not supported with BlueZ; this function returns the default value of 23. Note that the actual MTU size might be larger"
-        )
-        return 23
+        if self._mtu_size is None:
+            warnings.warn(
+                "Using default MTU value. Call _assign_mtu() or set _mtu_size first to avoid this warning."
+            )
+            return 23
+
+        return self._mtu_size
 
     # GATT services methods
 

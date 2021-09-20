@@ -47,6 +47,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         super(BleakScannerWinRT, self).__init__(**kwargs)
 
         self.watcher = None
+        self._stopped_event = None
         self._devices = {}
         self._scan_responses = {}
 
@@ -118,12 +119,14 @@ class BleakScannerWinRT(BaseBleakScanner):
                 len(self._devices), self.watcher.status
             )
         )
+        self._stopped_event.set()
 
     async def start(self):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
 
         event_loop = asyncio.get_event_loop()
+        self._stopped_event = asyncio.Event()
 
         self._received_token = self.watcher.add_received(
             lambda s, e: event_loop.call_soon_threadsafe(self._received_handler, s, e)
@@ -141,6 +144,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
     async def stop(self):
         self.watcher.stop()
+        await self._stopped_event.wait()
 
         try:
             self.watcher.remove_received(self._received_token)
@@ -202,6 +206,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         for m in event_args.advertisement.manufacturer_data:
             data[m.company_id] = bytes(CryptographicBuffer.copy_to_byte_array(m.data))
         local_name = event_args.advertisement.local_name
+        rssi = event_args.raw_signal_strength_in_d_bm
         return BLEDevice(
-            bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
+            bdaddr, local_name, event_args, rssi, uuids=uuids, manufacturer_data=data
         )
