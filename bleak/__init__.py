@@ -15,6 +15,7 @@ import asyncio
 
 from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
+from bleak.uuids import register_uuids
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 _on_ci = "CI" in os.environ

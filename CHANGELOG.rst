@@ -12,7 +12,17 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 ~~~~~
-- Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+* Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+* Added ``register_uuids()`` to augment the uuid-to-description mapping.
+* Added BlueZ Agent for pin and passkey pairing on Linux.
+* Added pairing support for .NET and WinRT.
+
+Fixed
+~~~~~
+* Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
+* Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
+* Fixed writing descriptors in WinRT backend. Fixes #615.
+* Fixed race on disconnect and cleanup of bluez matches when device disconnects early. Fixes #603.
 
 
 `0.12.1`_ (2021-07-07)
@@ -42,7 +52,7 @@ Added
 * Added ``BleakScanner.find_device_by_filter`` static method.
 * Added ``scanner_byname.py`` example.
 * Added optional command line argument to specify device to all applicable examples.
-
+* Added BlueZ Agent for pin and passkey pairing on Linux.
 
 Changed
 ~~~~~~~

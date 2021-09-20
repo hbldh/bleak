@@ -10,28 +10,27 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, List, Union
+from typing import Callable, Any, List, Union, Optional
 
 from winrt.windows.devices.enumeration import (
+    DeviceInformationCustomPairing,
     DevicePairingKinds,
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
+    DevicePairingRequestedEventArgs
 )
 from winrt.windows.security.cryptography import CryptographicBuffer
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.scanner import BleakScannerWinRT
 from bleak.exc import BleakError, BleakDotNetTaskError, CONTROLLER_ERROR_CODES
-from bleak.backends.client import BaseBleakClient
+from bleak.backends.client import BaseBleakClient, PairingCallback
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.winrt.service import BleakGATTServiceWinRT
 from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
 from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
-
-
-# Import of RT components needed.
 
 from winrt.windows.devices.bluetooth import (
     BluetoothLEDevice,
@@ -47,7 +46,6 @@ from winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattSession,
 )
 
-
 logger = logging.getLogger(__name__)
 
 _communication_statues = {
@@ -58,13 +56,11 @@ _communication_statues = {
     )
 }
 
-
 _pairing_statuses = {
     getattr(DevicePairingResultStatus, v): v
     for v in dir(DevicePairingResultStatus)
     if "_" not in v and isinstance(getattr(DevicePairingResultStatus, v), int)
 }
-
 
 _unpairing_statuses = {
     getattr(DeviceUnpairingResultStatus, v): v
@@ -105,7 +101,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
-            and kwargs["address_type"] in ("public", "random")
+               and kwargs["address_type"] in ("public", "random")
             else None
         )
 
@@ -216,6 +212,7 @@ class BleakClientWinRT(BaseBleakClient):
             # This keeps the device connected until we dispose the session or
             # until we set maintain_connection = False.
             self._session.maintain_connection = True
+
             await asyncio.wait_for(event.wait(), timeout=timeout)
         except BaseException:
             handle_disconnect()
@@ -276,8 +273,7 @@ class BleakClientWinRT(BaseBleakClient):
         return self._DeprecatedIsConnectedReturn(
             False
             if self._requester is None
-            else self._requester.connection_status
-            == BluetoothConnectionStatus.CONNECTED
+            else self._requester.connection_status == BluetoothConnectionStatus.CONNECTED
         )
 
     @property
@@ -285,7 +281,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
 
-    async def pair(self, protection_level: int = None, **kwargs) -> bool:
+    async def pair(self,
+                   protection_level=None,
+                   *args,
+                   callback: Optional[PairingCallback] = None,
+                   **kwargs,
+                   ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -295,6 +296,11 @@ class BleakClientWinRT(BaseBleakClient):
                         2: Encryption - Pair the device using encryption.
                         3: EncryptionAndAuthentication - Pair the device using
                            encryption and authentication. (This will not work in Bleak...)
+            callback (`PairingCallback`): callback to be called to provide or confirm pairing pin
+                or passkey. If not provided and Bleak is registered as a pairing agent/manager
+                instead of system pairing manager, then all display- and confirm-based pairing
+                requests will be accepted, and requests requiring pin or passkey input will be
+                canceled.
 
         Returns:
             Boolean regarding success of pairing.
@@ -306,14 +312,41 @@ class BleakClientWinRT(BaseBleakClient):
             and not self._requester.device_information.pairing.is_paired
         ):
 
-            # Currently only supporting Just Works solutions...
-            ceremony = DevicePairingKinds.CONFIRM_ONLY
+            if callback:
+                ceremony = (
+                    DevicePairingKinds.CONFIRM_ONLY
+                    + DevicePairingKinds.CONFIRM_PIN_MATCH
+                    + DevicePairingKinds.DISPLAY_PIN
+                    + DevicePairingKinds.PROVIDE_PIN
+                )
+            else:
+                ceremony = DevicePairingKinds.CONFIRM_ONLY
             custom_pairing = self._requester.device_information.pairing.custom
 
-            def handler(sender, args):
-                args.accept()
+            def handler(sender: DeviceInformationCustomPairing, args: DevicePairingRequestedEventArgs):
+                deferral = args.get_deferral()
+                if callback:
+                    if args.pairing_kind == DevicePairingKinds.CONFIRM_ONLY:
+                        args.accept()
+                    # TODO: Get device MAC for first argument, test conversion, flags can have multiple values set (mask)
+                    elif (
+                        args.pairing_kind == DevicePairingKinds.CONFIRM_PIN_MATCH
+                        or args.pairing_kind == DevicePairingKinds.DISPLAY_PIN
+                    ):
+                        if callback("", args.Pin, None) is True:
+                            args.accept()
+                    elif args.pairing_kind == DevicePairingKinds.PROVIDE_PIN:
+                        pin = callback("", None, None)
+                        if pin:
+                            args.accept(pin)
+                else:
+                    args.accept()
 
-            pairing_requested_token = custom_pairing.add_pairing_requested(handler)
+                deferral.complete()
+
+            pairing_requested_token = custom_pairing.add_pairing_requested(
+                handler
+            )
             try:
                 if protection_level:
                     pairing_result = await custom_pairing.pair_async(
@@ -345,6 +378,7 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 return True
         else:
+            logger.debug(f"Device ({self._requester.device_information}) is already paired.")
             return self._requester.device_information.pairing.is_paired
 
     async def unpair(self) -> bool:
@@ -683,7 +717,7 @@ class BleakClientWinRT(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
-        write_result = await descriptor.obj.write_value_async(
+        write_result = await descriptor.obj.write_value_with_result_async(
             CryptographicBuffer.create_from_byte_array(list(data))
         )
 
