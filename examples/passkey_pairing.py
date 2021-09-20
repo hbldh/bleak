@@ -59,10 +59,10 @@ async def main(mac_addr: str):
                 print("\t\tValue: ", await client.read_gatt_char(char))
 
 
-    if platform.system() == "Darwin":
-        raise EnvironmentError(
-            "Pairing methods other than Just Works are currently implemented only on BlueZ, .NET, and WinRT backend."
-        )
+if platform.system() == "Darwin":
+    raise EnvironmentError(
+        "Pairing methods other than Just Works are currently implemented only on BlueZ, .NET, and WinRT backend."
+    )
 
 loop = asyncio.get_event_loop()
 loop.set_debug(True)
