@@ -9,14 +9,13 @@ Created on 2021-04-20 by Bojan Potočnik <info@bojanpotocnik.com>
 """
 
 import asyncio
+import os
 import platform
 from typing import Union
 
-from bleak import BleakClient
-
-
 # os.environ["BLEAK_LOGGING"] = "1"
 
+from bleak import BleakClient
 
 def get_passkey(
     device: str, pin: Union[None, str], passkey: Union[None, int]
@@ -60,11 +59,10 @@ async def main(mac_addr: str):
                 print("\t\tValue: ", await client.read_gatt_char(char))
 
 
-if platform.system() == "Darwin":
-    raise EnvironmentError(
-        "Pairing methods other than Just Works are currently implemented only on BlueZ, .NET, and "
-        "WinRT backend."
-    )
+    if platform.system() == "Darwin":
+        raise EnvironmentError(
+            "Pairing methods other than Just Works are currently implemented only on BlueZ, .NET, and WinRT backend."
+        )
 
 loop = asyncio.get_event_loop()
 loop.set_debug(True)
