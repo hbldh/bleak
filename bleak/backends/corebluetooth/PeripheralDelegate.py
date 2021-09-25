@@ -87,14 +87,21 @@ class PeripheralDelegate(NSObject):
     @objc.python_method
     async def discover_services(self, use_cached: bool = True) -> NSArray:
         if self._services_discovered_future.done() and use_cached:
-            return self.peripheral.services()
+            services = self.peripheral.services()
+            if services is None:
+                logger.debug("Services lost retrying")
+            else:
+                return services
 
         future = self._event_loop.create_future()
         self._services_discovered_future = future
         self.peripheral.discoverServices_(None)
         await future
 
-        return self.peripheral.services()
+        services = self.peripheral.services()
+        if services is None:
+            raise RuntimeError("Unable to get services")
+        return services
 
     @objc.python_method
     async def discover_characteristics(

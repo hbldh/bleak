@@ -21,6 +21,7 @@ Fixed
 * Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
 * Fixed writing descriptors in WinRT backend. Fixes #615.
 * Fixed race on disconnect and cleanup of bluez matches when device disconnects early. Fixes #603.
+* Fixed exception on rediscovered devices in osx.
 
 
 `0.12.1`_ (2021-07-07)
