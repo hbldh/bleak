@@ -99,7 +99,7 @@ Scanning filter examples in .NET backend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To be written. In the meantime, check docstrings
-`here <https://github.com/hbldh/bleak/blob/master/bleak/backends/dotnet/scanner.py#L43-L60>`_
+`here <https://github.com/hbldh/bleak/blob/master/bleak/backends/winrt/scanner.py#L43-L60>`_
 and check out issue `#230 <https://github.com/hbldh/bleak/issues/230>`_.
 
 
