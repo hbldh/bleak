@@ -17,6 +17,7 @@ from typing import Union
 
 from bleak import BleakClient
 
+
 def get_passkey(
     device: str, pin: Union[None, str], passkey: Union[None, int]
 ) -> Union[bool, int, str, None]:

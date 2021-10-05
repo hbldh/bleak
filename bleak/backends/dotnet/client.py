@@ -120,7 +120,7 @@ class BleakClientDotNet(BaseBleakClient):
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
-               and kwargs["address_type"] in ("public", "random")
+            and kwargs["address_type"] in ("public", "random")
             else None
         )
         self._use_cached = kwargs.get("use_cached", True)
@@ -348,16 +348,16 @@ class BleakClientDotNet(BaseBleakClient):
                     + DevicePairingKinds.ProvidePin
                 )
             else:
-                ceremony = (
-                    DevicePairingKinds.ConfirmOnly
-                )
+                ceremony = DevicePairingKinds.ConfirmOnly
             custom_pairing = self._requester.DeviceInformation.Pairing.Custom
 
             def handler(sender, args):
                 logger.debug(f"sender: {sender}, args: {args}")
                 logger.debug(f"args.PairingKind: {args.PairingKind}")
-                logger.debug(f"args.DeviceInformation.Pairing.ProtectionLevel: "
-                             f"{args.DeviceInformation.Pairing.ProtectionLevel}")
+                logger.debug(
+                    f"args.DeviceInformation.Pairing.ProtectionLevel: "
+                    f"{args.DeviceInformation.Pairing.ProtectionLevel}"
+                )
                 deferral = args.GetDeferral()
                 if callback:
                     if args.PairingKind == DevicePairingKinds.ConfirmOnly:
@@ -375,7 +375,9 @@ class BleakClientDotNet(BaseBleakClient):
                             args.Accept()
                     elif args.PairingKind == DevicePairingKinds.ProvidePin:
                         logger.debug("provide")
-                        pin = callback("", None, None)  # This pin should return as a string
+                        pin = callback(
+                            "", None, None
+                        )  # This pin should return as a string
                         logger.debug(f"pin {str(pin)}")
                         if pin:
                             logger.debug("calling accept with pin.")
@@ -436,7 +438,9 @@ class BleakClientDotNet(BaseBleakClient):
                 )
                 return True
         else:
-            logger.debug(f"Device ({self._requester.DeviceInformation}) is already paired.")
+            logger.debug(
+                f"Device ({self._requester.DeviceInformation}) is already paired."
+            )
             return self._requester.DeviceInformation.Pairing.IsPaired
 
     async def unpair(self) -> bool:
