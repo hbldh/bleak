@@ -19,6 +19,7 @@ Added
 Changed
 ~~~~~~~
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
+* Improved error when connecting to device fails in WinRT backend. Fixes #647.
 
 Removed
 ~~~~~~~
