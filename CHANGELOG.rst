@@ -14,6 +14,7 @@ Added
 ~~~~~
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
+* Support for Python 3.10.
 
 Changed
 ~~~~~~~
