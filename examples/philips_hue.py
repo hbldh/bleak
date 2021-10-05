@@ -24,14 +24,10 @@ Created on 2020-01-13 by hbldh <henrik.blidh@nedomkull.com>
 
 import sys
 import asyncio
-import logging
 
 from bleak import BleakClient
 
 ADDRESS = "EB:F0:49:21:95:4F"
-if len(sys.argv) == 2:
-    ADDRESS = sys.argv[1]
-
 
 LIGHT_CHARACTERISTIC = "932c32bd-0002-47a2-835a-a8d455b859dd"
 BRIGHTNESS_CHARACTERISTIC = "932c32bd-0003-47a2-835a-a8d455b859dd"
@@ -49,21 +45,12 @@ def convert_rgb(rgb):
     return bytearray([0x1, adjusted[0], adjusted[2], adjusted[1]])
 
 
-async def run(address, debug=False):
-    log = logging.getLogger(__name__)
-    if debug:
-        import sys
-
-        log.setLevel(logging.DEBUG)
-        h = logging.StreamHandler(sys.stdout)
-        h.setLevel(logging.DEBUG)
-        log.addHandler(h)
-
+async def main(address):
     async with BleakClient(address) as client:
-        log.info(f"Connected: {client.is_connected}")
+        print(f"Connected: {client.is_connected}")
 
         paired = await client.pair(protection_level=2)
-        log.info(f"Paired: {paired}")
+        print(f"Paired: {paired}")
 
         print("Turning Light off...")
         await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x00")
@@ -111,6 +98,4 @@ async def run(address, debug=False):
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.set_debug(True)
-    loop.run_until_complete(run(ADDRESS, True))
+    asyncio.run(main(sys.argv[1] if len(sys.argv) == 2 else ADDRESS))

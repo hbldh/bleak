@@ -15,11 +15,9 @@ ADDRESS = (
     if platform.system() != "Darwin"
     else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
 )
-if len(sys.argv) == 2:
-    ADDRESS = sys.argv[1]
 
 
-async def print_services(ble_address: str):
+async def main(ble_address: str):
     device = await BleakScanner.find_device_by_address(ble_address, timeout=20.0)
     if not device:
         raise BleakError(f"A device with address {ble_address} could not be found.")
@@ -30,5 +28,5 @@ async def print_services(ble_address: str):
             print(service)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(print_services(ADDRESS))
+if __name__ == "__main__":
+    asyncio.run(main(sys.argv[1] if len(sys.argv) == 2 else ADDRESS))

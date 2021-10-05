@@ -19,11 +19,9 @@ ADDRESS = (
     if platform.system() != "Darwin"
     else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
 )
-if len(sys.argv) == 2:
-    ADDRESS = sys.argv[1]
 
 
-async def print_services(mac_addr: str):
+async def main(mac_addr: str):
     async with BleakClient(mac_addr) as client:
         svcs = await client.get_services()
         print("Services:")
@@ -31,5 +29,5 @@ async def print_services(mac_addr: str):
             print(service)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(print_services(ADDRESS))
+if __name__ == "__main__":
+    asyncio.run(main(sys.argv[1] if len(sys.argv) == 2 else ADDRESS))

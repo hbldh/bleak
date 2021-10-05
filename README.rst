@@ -58,13 +58,12 @@ To discover Bluetooth devices that can be connected to:
     import asyncio
     from bleak import BleakScanner
 
-    async def run():
+    async def main():
         devices = await BleakScanner.discover()
         for d in devices:
             print(d)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    asyncio.run(main())
 
 
 Connect to a Bluetooth device and read its model number:
@@ -77,13 +76,12 @@ Connect to a Bluetooth device and read its model number:
     address = "24:71:89:cc:09:05"
     MODEL_NBR_UUID = "00002a24-0000-1000-8000-00805f9b34fb"
 
-    async def run(address):
+    async def main(address):
         async with BleakClient(address) as client:
             model_number = await client.read_gatt_char(MODEL_NBR_UUID)
             print("Model Number: {0}".format("".join(map(chr, model_number))))
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run(address))
+    asyncio.run(main(address))
 
 
 See examples folder for more code, for instance example code for connecting to a

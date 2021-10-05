@@ -74,11 +74,9 @@ async def uart_terminal():
             print("sent:", data)
 
 
-# It is important to use asyncio.run() to get proper cleanup on KeyboardInterrupt.
-# This was introduced in Python 3.7. If you need it in Python 3.6, you can copy
-# it from https://github.com/python/cpython/blob/3.7/Lib/asyncio/runners.py
-try:
-    asyncio.run(uart_terminal())
-except asyncio.CancelledError:
-    # task is cancelled on disconnect, so we ignore this error
-    pass
+if __name__ == "__main__":
+    try:
+        asyncio.run(uart_terminal())
+    except asyncio.CancelledError:
+        # task is cancelled on disconnect, so we ignore this error
+        pass

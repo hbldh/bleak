@@ -19,6 +19,7 @@ Added
 Changed
 ~~~~~~~
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
+* Changed examples to use ``asyncio.run()``.
 
 Removed
 ~~~~~~~
