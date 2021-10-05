@@ -19,11 +19,7 @@ def test_import():
     elif platform.system() == "Windows":
         from bleak import BleakClient
 
-        py_major, py_minor, *_ = platform.python_version_tuple()
-        if int(py_major) == 3 and int(py_minor) < 9:
-            assert BleakClient.__name__ == "BleakClientDotNet"
-        else:
-            assert BleakClient.__name__ == "BleakClientWinRT"
+        assert BleakClient.__name__ == "BleakClientWinRT"
     elif platform.system() == "Darwin":
         from bleak import BleakClient
 

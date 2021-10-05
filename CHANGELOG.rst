@@ -20,7 +20,16 @@ Added
 
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
+* Support for Python 3.10.
 * Added ``force_indicate`` keyword argument for WinRT backend client's ``start_notify`` method. Fixes #526.
+
+Changed
+~~~~~~~
+* Changed from ``winrt`` dependency to ``bleak-winrt``.
+
+Removed
+~~~~~~~
+* Removed ``dotnet`` backend.
 
 Fixed
 ~~~~~
@@ -28,6 +37,8 @@ Fixed
 * Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
 * Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
 * Fixed writing descriptors in WinRT backend. Fixes #615.
+* Fixed race on disconnect and cleanup of bluez matches when device disconnects early. Fixes #603.
+* Fixed memory leaks on Windows.
 
 
 `0.12.1`_ (2021-07-07)

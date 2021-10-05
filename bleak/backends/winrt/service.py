@@ -1,10 +1,12 @@
 from uuid import UUID
 from typing import List, Union
 
+from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
+    GattDeviceService,
+)
+
 from bleak.backends.service import BleakGATTService
 from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
-
-from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 
 
 class BleakGATTServiceWinRT(BleakGATTService):

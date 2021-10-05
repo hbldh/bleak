@@ -8,12 +8,6 @@ class BleakError(Exception):
     pass
 
 
-class BleakDotNetTaskError(BleakError):
-    """Wrapped exception that occurred in .NET async Task."""
-
-    pass
-
-
 class BleakDBusError(BleakError):
     """Specialized exception type for D-Bus errors."""
 
