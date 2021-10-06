@@ -32,6 +32,7 @@ Removed
 
 * Removed ``dotnet`` backend.
 * Dropped support for Python 3.6.
+* Removed ``use_cached`` kwarg from ``BleakClient`` ``connect()`` and ``get_services()`` methods. Fixes #646.
 
 Fixed
 ~~~~~
