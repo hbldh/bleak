@@ -10,11 +10,18 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 -------------
 
+Changed
+~~~~~~~
+
+* The default notify method for the WinRT backend is changed from ``Indicate`` to ``Notify``.
+
 Added
 ~~~~~
+
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
 * Support for Python 3.10.
+* Added ``force_indicate`` keyword argument for WinRT backend client's ``start_notify`` method. Fixes #526.
 
 Changed
 ~~~~~~~
@@ -30,6 +37,7 @@ Removed
 
 Fixed
 ~~~~~
+
 * Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
 * Fixed BleakClient ignoring the `adapter` kwarg. Fixes #607.
 * Fixed writing descriptors in WinRT backend. Fixes #615.

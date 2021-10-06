@@ -742,6 +742,10 @@ class BleakClientWinRT(BaseBleakClient):
                 UUID or directly by the BleakGATTCharacteristic object representing it.
             callback (function): The function to be called on notification.
 
+        Keyword Args:
+            force_indicate (bool): If this is set to True, then Bleak will set up a indication request instead of a
+                notification request, given that the characteristic supports notifications as well as indications.
+
         """
         if inspect.iscoroutinefunction(callback):
 
@@ -762,18 +766,23 @@ class BleakClientWinRT(BaseBleakClient):
             await self.stop_notify(characteristic)
 
         characteristic_obj = characteristic.obj
-        if (
-            characteristic_obj.characteristic_properties
-            & GattCharacteristicProperties.INDICATE
-        ):
-            cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
-        elif (
+
+        # If we want to force indicate even when notify is available, also check if the device
+        # actually supports indicate as well.
+        if kwargs.get("force_indicate", False) and (
             characteristic_obj.characteristic_properties
             & GattCharacteristicProperties.NOTIFY
         ):
             cccd = GattClientCharacteristicConfigurationDescriptorValue.NOTIFY
+        elif (
+            characteristic_obj.characteristic_properties
+            & GattCharacteristicProperties.INDICATE
+        ):
+            cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
         else:
-            cccd = GattClientCharacteristicConfigurationDescriptorValue.NONE
+            raise BleakError(
+                "characteristic does not support notifications or indications"
+            )
 
         fcn = _notification_wrapper(bleak_callback, asyncio.get_event_loop())
         event_handler_token = characteristic_obj.add_value_changed(fcn)
