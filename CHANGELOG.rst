@@ -21,10 +21,12 @@ Changed
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
 * Changed WinRT client to default to not use cache when enumerating services. Fixes #646.
 * Improved error when connecting to device fails in WinRT backend. Fixes #647.
+* Changed examples to use ``asyncio.run()``.
 
 Removed
 ~~~~~~~
 * Removed ``dotnet`` backend.
+* Dropped support for Python 3.6.
 
 Fixed
 ~~~~~

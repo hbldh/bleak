@@ -15,7 +15,6 @@ import asyncio
 
 from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
-from bleak.uuids import register_uuids
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 _on_ci = "CI" in os.environ
@@ -95,9 +94,6 @@ discover = BleakScanner.discover
 
 def cli():
     import argparse
-    from asyncio.tasks import ensure_future
-
-    loop = asyncio.get_event_loop()
 
     parser = argparse.ArgumentParser(
         description="Perform Bluetooth Low Energy device scan"
@@ -108,9 +104,7 @@ def cli():
     )
     args = parser.parse_args()
 
-    out = loop.run_until_complete(
-        ensure_future(discover(adapter=args.adapter, timeout=float(args.timeout)))
-    )
+    out = asyncio.run(discover(adapter=args.adapter, timeout=float(args.timeout)))
     for o in out:
         print(str(o))
 
