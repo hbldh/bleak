@@ -106,7 +106,7 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         self._connection_status_changed_token = None
-        self._use_cached = kwargs.get("use_cached", True)
+        self._use_cached = kwargs.get("use_cached", False)
 
     def __str__(self):
         return "BleakClientWinRT ({0})".format(self.address)
