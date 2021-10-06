@@ -43,6 +43,7 @@ Fixed
 * Fixed race on disconnect and cleanup of BlueZ matches when device disconnects early. Fixes #603.
 * Fixed memory leaks on Windows.
 * Fixed protocol error code descriptions on WinRT backend. Fixes #532.
+* Fixed enumerating services on a device with HID service on WinRT backend. Fixes #599.
 
 
 `0.12.1`_ (2021-07-07)
