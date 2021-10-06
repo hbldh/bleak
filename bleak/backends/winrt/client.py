@@ -765,7 +765,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         # If we want to force indicate even when notify is available, also check if the device
         # actually supports indicate as well.
-        if kwargs.get("force_indicate", False) and (
+        if not kwargs.get("force_indicate", False) and (
             characteristic_obj.characteristic_properties
             & GattCharacteristicProperties.NOTIFY
         ):
