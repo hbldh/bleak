@@ -6,15 +6,16 @@ Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import logging
 import uuid
-from typing import Optional, Union
+from typing import Optional, Set, Union
 
 from CoreBluetooth import (
+    CBUUID,
     CBCharacteristicWriteWithoutResponse,
     CBCharacteristicWriteWithResponse,
     CBPeripheral,
     CBPeripheralStateConnected,
 )
-from Foundation import NSData
+from Foundation import NSArray, NSData
 
 from ... import BleakScanner
 from ...exc import BleakError, BleakDeviceNotFoundError
@@ -38,13 +39,19 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        services: Optional set of service UUIDs that will be used.
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+    def __init__(
+        self,
+        address_or_ble_device: Union[BLEDevice, str],
+        services: Optional[Set[str]] = None,
+        **kwargs,
+    ):
         super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
 
         self._peripheral: Optional[CBPeripheral] = None
@@ -56,6 +63,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 self._peripheral,
                 self._central_manager_delegate,
             ) = address_or_ble_device.details
+
+        self._requested_services = (
+            NSArray.alloc().initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
+            if services
+            else None
+        )
 
     def __str__(self):
         return "BleakClientCoreBluetooth ({})".format(self.address)
@@ -192,7 +205,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         services = BleakGATTServiceCollection()
 
         logger.debug("Retrieving services...")
-        cb_services = await self._delegate.discover_services()
+        cb_services = await self._delegate.discover_services(self._requested_services)
 
         for service in cb_services:
             serviceUUID = service.UUID().UUIDString()

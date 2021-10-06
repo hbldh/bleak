@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 import warnings
-from typing import Callable, Dict, Optional, Union, cast
+from typing import Callable, Dict, Optional, Set, Union, cast
 from uuid import UUID
 
 if sys.version_info < (3, 11):
@@ -43,6 +43,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+        services: Optional list of service UUIDs that will be used.
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
@@ -52,7 +53,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         adapter (str): Bluetooth adapter to use for discovery.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+    def __init__(
+        self,
+        address_or_ble_device: Union[BLEDevice, str],
+        services: Optional[Set[str]] = None,
+        **kwargs,
+    ):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
@@ -64,6 +70,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         else:
             self._device_path = None
             self._device_info = None
+
+        self._requested_services = services
 
         # D-Bus message bus
         self._bus: Optional[MessageBus] = None
@@ -599,7 +607,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         manager = await get_global_bluez_manager()
 
         self.services = await manager.get_services(
-            self._device_path, dangerous_use_bleak_cache
+            self._device_path, dangerous_use_bleak_cache, self._requested_services
         )
 
         return self.services

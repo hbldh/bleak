@@ -8,6 +8,7 @@ from jnius import autoclass, cast
 # caching constants avoids unnecessary extra use of the jni-python interface, which can be slow
 
 List = autoclass("java.util.ArrayList")
+UUID = autoclass("java.util.UUID")
 BluetoothAdapter = autoclass("android.bluetooth.BluetoothAdapter")
 ScanCallback = autoclass("android.bluetooth.le.ScanCallback")
 ScanFilter = autoclass("android.bluetooth.le.ScanFilter")

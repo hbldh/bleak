@@ -11,7 +11,7 @@ import sys
 import uuid
 import warnings
 from ctypes import pythonapi
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -153,22 +153,18 @@ class WinRTClientArgs(TypedDict, total=False):
 class BleakClientWinRT(BaseBleakClient):
     """Native Windows Bleak Client.
 
-    Implemented using `winrt <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection>`_,
-    a package that enables Python developers to access Windows Runtime APIs directly from Python.
-
     Args:
         address_or_ble_device (str or BLEDevice): The Bluetooth address of the BLE peripheral
             to connect to or the ``BLEDevice`` object representing it.
+        services: Optional set of service UUIDs that will be used.
         winrt (dict): A dictionary of Windows-specific configuration values.
         **timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        **disconnected_callback (callable): Callback that will be scheduled in the
-            event loop when the client is disconnected. The callable must take one
-            argument, which will be this client object.
     """
 
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
+        services: Optional[Set[str]] = None,
         *,
         winrt: WinRTClientArgs,
         **kwargs,
@@ -180,6 +176,9 @@ class BleakClientWinRT(BaseBleakClient):
             self._device_info = address_or_ble_device.details.adv.bluetooth_address
         else:
             self._device_info = None
+        self._requested_services = (
+            [uuid.UUID(s) for s in services] if services else None
+        )
         self._requester: Optional[BluetoothLEDevice] = None
         self._services_changed_events: List[asyncio.Event] = []
         self._session_active_events: List[asyncio.Event] = []
@@ -657,14 +656,33 @@ class BleakClientWinRT(BaseBleakClient):
                 for service in future._result:
                     service.close()
 
-        future = FutureLike(self._requester.get_gatt_services_async(*srv_args))
-        future.add_done_callback(dispose_on_cancel)
+        services: Sequence[GattDeviceService]
 
-        services: Sequence[GattDeviceService] = _ensure_success(
-            await future,
-            "services",
-            "Could not get GATT services",
-        )
+        if self._requested_services is None:
+            future = FutureLike(self._requester.get_gatt_services_async(*srv_args))
+            future.add_done_callback(dispose_on_cancel)
+
+            services = _ensure_success(
+                await FutureLike(self._requester.get_gatt_services_async(*srv_args)),
+                "services",
+                "Could not get GATT services",
+            )
+        else:
+            services = []
+            # REVISIT: should properly dispose services on cancel or protect from cancellation
+
+            for s in self._requested_services:
+                services.extend(
+                    _ensure_success(
+                        await FutureLike(
+                            self._requester.get_gatt_services_for_uuid_async(
+                                s, *srv_args
+                            )
+                        ),
+                        "services",
+                        "Could not get GATT services",
+                    )
+                )
 
         logger.debug("returned from get_gatt_services_async")
 
