@@ -34,7 +34,7 @@ from bleak_winrt.windows.storage.streams import Buffer
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.scanner import BleakScannerWinRT
-from bleak.exc import BleakError, CONTROLLER_ERROR_CODES
+from bleak.exc import BleakError, PROTOCOL_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -410,7 +410,7 @@ class BleakClientWinRT(BaseBleakClient):
                         "Could not get GATT services: {0} (Error: 0x{1:02X}: {2})".format(
                             _communication_statues.get(services_result.status, ""),
                             services_result.protocol_error,
-                            CONTROLLER_ERROR_CODES.get(
+                            PROTOCOL_ERROR_CODES.get(
                                 services_result.protocol_error, "Unknown"
                             ),
                         )
@@ -441,7 +441,7 @@ class BleakClientWinRT(BaseBleakClient):
                                     characteristics_result.status, ""
                                 ),
                                 characteristics_result.protocol_error,
-                                CONTROLLER_ERROR_CODES.get(
+                                PROTOCOL_ERROR_CODES.get(
                                     characteristics_result.protocol_error, "Unknown"
                                 ),
                             )
@@ -476,7 +476,7 @@ class BleakClientWinRT(BaseBleakClient):
                                         descriptors_result.status, ""
                                     ),
                                     descriptors_result.protocol_error,
-                                    CONTROLLER_ERROR_CODES.get(
+                                    PROTOCOL_ERROR_CODES.get(
                                         descriptors_result.protocol_error, "Unknown"
                                     ),
                                 )
@@ -550,9 +550,7 @@ class BleakClientWinRT(BaseBleakClient):
                         characteristic.uuid,
                         _communication_statues.get(read_result.status, ""),
                         read_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
-                            read_result.protocol_error, "Unknown"
-                        ),
+                        PROTOCOL_ERROR_CODES.get(read_result.protocol_error, "Unknown"),
                     )
                 )
             else:
@@ -598,9 +596,7 @@ class BleakClientWinRT(BaseBleakClient):
                         descriptor.uuid,
                         _communication_statues.get(read_result.status, ""),
                         read_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
-                            read_result.protocol_error, "Unknown"
-                        ),
+                        PROTOCOL_ERROR_CODES.get(read_result.protocol_error, "Unknown"),
                     )
                 )
             else:
@@ -661,7 +657,7 @@ class BleakClientWinRT(BaseBleakClient):
                         characteristic.uuid,
                         _communication_statues.get(write_result.status, ""),
                         write_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
+                        PROTOCOL_ERROR_CODES.get(
                             write_result.protocol_error, "Unknown"
                         ),
                     )
@@ -705,7 +701,7 @@ class BleakClientWinRT(BaseBleakClient):
                         descriptor.uuid,
                         _communication_statues.get(write_result.status, ""),
                         write_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
+                        PROTOCOL_ERROR_CODES.get(
                             write_result.protocol_error, "Unknown"
                         ),
                     )
