@@ -760,26 +760,23 @@ class BleakClientWinRT(BaseBleakClient):
             await self.stop_notify(characteristic)
 
         characteristic_obj = characteristic.obj
-        if (
+
+        # If we want to force indicate even when notify is available, also check if the device
+        # actually supports indicate as well.
+        if kwargs.get("force_indicate", False) and (
             characteristic_obj.characteristic_properties
             & GattCharacteristicProperties.NOTIFY
         ):
-            if kwargs.get("force_indicate", False) and (
-                characteristic_obj.characteristic_properties
-                & GattCharacteristicProperties.INDICATE
-            ):
-                # If we want to force indicate even when notify is available, also check if the device
-                # actually supports indicate as well.
-                cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
-            else:
-                cccd = GattClientCharacteristicConfigurationDescriptorValue.NOTIFY
+            cccd = GattClientCharacteristicConfigurationDescriptorValue.NOTIFY
         elif (
             characteristic_obj.characteristic_properties
             & GattCharacteristicProperties.INDICATE
         ):
             cccd = GattClientCharacteristicConfigurationDescriptorValue.INDICATE
         else:
-            cccd = GattClientCharacteristicConfigurationDescriptorValue.NONE
+            raise BleakError(
+                "characteristic does not support notifications or indications"
+            )
 
         fcn = _notification_wrapper(bleak_callback, asyncio.get_event_loop())
         event_handler_token = characteristic_obj.add_value_changed(fcn)
