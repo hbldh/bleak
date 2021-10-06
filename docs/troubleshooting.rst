@@ -176,3 +176,9 @@ the device was connected. You can use the ``bluetoothctl`` command line tool to 
 .. code-block:: shell
 
     bluetoothctl -- remove XX:XX:XX:XX:XX:XX
+    # prior to BlueZ 5.62 you also need to manually delete the GATT cache
+    sudo rm "/var/lib/bluetooth/YY:YY:YY:YY:YY:YY/cache/XX:XX:XX:XX:XX:XX"
+
+...where ``XX:XX:XX:XX:XX:XX`` is the Bluetooth address of your device and
+``YY:YY:YY:YY:YY:YY`` is the Bluetooth address of the Bluetooth adapter on
+your computer.
