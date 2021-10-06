@@ -175,5 +175,4 @@ the device was connected. You can use the ``bluetoothctl`` command line tool to 
 
 .. code-block:: shell
 
-    bluetoothctl -- remove [mac_address]
-
+    bluetoothctl -- remove XX:XX:XX:XX:XX:XX

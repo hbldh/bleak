@@ -21,8 +21,8 @@ ADDRESS = (
 )
 
 
-async def main(mac_addr: str):
-    async with BleakClient(mac_addr) as client:
+async def main(address: str):
+    async with BleakClient(address) as client:
         svcs = await client.get_services()
         print("Services:")
         for service in svcs:
