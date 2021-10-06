@@ -26,6 +26,7 @@ Changed
 * Improved error when connecting to device fails in WinRT backend. Fixes #647.
 * Changed examples to use ``asyncio.run()``.
 * Changed the default notify method for the WinRT backend from ``Indicate`` to ``Notify``.
+* Refactored GATT error handling in WinRT backend.
 
 Removed
 ~~~~~~~
