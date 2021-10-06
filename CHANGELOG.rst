@@ -19,6 +19,7 @@ Added
 Changed
 ~~~~~~~
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
+* Changed WinRT client to default to not use cache when enumerating services. Fixes #646.
 
 Removed
 ~~~~~~~
