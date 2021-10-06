@@ -26,6 +26,7 @@ Changed
 * Improved error when connecting to device fails in WinRT backend. Fixes #647.
 * Changed examples to use ``asyncio.run()``.
 * Changed the default notify method for the WinRT backend from ``Indicate`` to ``Notify``.
+* Refactored GATT error handling in WinRT backend.
 
 Removed
 ~~~~~~~
@@ -41,6 +42,7 @@ Fixed
 * Fixed writing descriptors in WinRT backend. Fixes #615.
 * Fixed race on disconnect and cleanup of BlueZ matches when device disconnects early. Fixes #603.
 * Fixed memory leaks on Windows.
+* Fixed protocol error code descriptions on WinRT backend. Fixes #532.
 
 
 `0.12.1`_ (2021-07-07)

@@ -10,7 +10,7 @@ import logging
 import asyncio
 import uuid
 from functools import wraps
-from typing import Callable, Any, List, Union
+from typing import Callable, Any, List, Optional, Sequence, Union
 
 from bleak_winrt.windows.devices.bluetooth import (
     BluetoothLEDevice,
@@ -19,7 +19,10 @@ from bleak_winrt.windows.devices.bluetooth import (
     BluetoothAddressType,
 )
 from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
+    GattCharacteristic,
     GattCommunicationStatus,
+    GattDescriptor,
+    GattDeviceService,
     GattWriteOption,
     GattCharacteristicProperties,
     GattClientCharacteristicConfigurationDescriptorValue,
@@ -34,7 +37,7 @@ from bleak_winrt.windows.storage.streams import Buffer
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.scanner import BleakScannerWinRT
-from bleak.exc import BleakError, CONTROLLER_ERROR_CODES
+from bleak.exc import BleakError, PROTOCOL_ERROR_CODES
 from bleak.backends.client import BaseBleakClient
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -45,14 +48,6 @@ from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
 
 logger = logging.getLogger(__name__)
-
-_communication_statues = {
-    getattr(GattCommunicationStatus, k): v
-    for k, v in zip(
-        ["SUCCESS", "UNREACHABLE", "PROTOCOL_ERROR", "ACCESS_DENIED"],
-        ["Success", "Unreachable", "ProtocolError", "AccessDenied"],
-    )
-}
 
 
 _pairing_statuses = {
@@ -67,6 +62,41 @@ _unpairing_statuses = {
     for v in dir(DeviceUnpairingResultStatus)
     if "_" not in v and isinstance(getattr(DeviceUnpairingResultStatus, v), int)
 }
+
+# TODO: we can use this when minimum Python is 3.8
+# class _Result(typing.Protocol):
+#     status: GattCommunicationStatus
+#     protocol_error: typing.Optional[int]
+
+
+def _ensure_success(result: Any, attr: Optional[str], fail_msg: str) -> Any:
+    """
+    Ensures that *status* is ``GattCommunicationStatus.SUCCESS``, otherwise
+    raises ``BleakError``.
+
+    Args:
+        result: The result returned by a WinRT API method.
+        attr: The name of the attribute containing the result.
+        fail_msg: A message to include in the exception.
+    """
+    status = result.status if hasattr(result, "status") else result
+
+    if status == GattCommunicationStatus.SUCCESS:
+        return None if attr is None else getattr(result, attr)
+
+    if status == GattCommunicationStatus.PROTOCOL_ERROR:
+        err = PROTOCOL_ERROR_CODES.get(result.protocol_error, "Unknown")
+        raise BleakError(
+            f"{fail_msg}: Protocol Error 0x{result.protocol_error:02X}: {err}"
+        )
+
+    if status == GattCommunicationStatus.ACCESS_DENIED:
+        raise BleakError(f"{fail_msg}: Access Denied")
+
+    if status == GattCommunicationStatus.UNREACHABLE:
+        raise BleakError(f"{fail_msg}: Unreachable")
+
+    raise BleakError(f"{fail_msg}: Unexpected status code 0x{result.status:02X}")
 
 
 class BleakClientWinRT(BaseBleakClient):
@@ -400,97 +430,45 @@ class BleakClientWinRT(BaseBleakClient):
             return self.services
         else:
             logger.debug("Get Services...")
-            services_result = await self._requester.get_gatt_services_async(
-                BluetoothCacheMode.CACHED if use_cached else BluetoothCacheMode.UNCACHED
-            )
-
-            if services_result.status != GattCommunicationStatus.SUCCESS:
-                if services_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                    raise BleakError(
-                        "Could not get GATT services: {0} (Error: 0x{1:02X}: {2})".format(
-                            _communication_statues.get(services_result.status, ""),
-                            services_result.protocol_error,
-                            CONTROLLER_ERROR_CODES.get(
-                                services_result.protocol_error, "Unknown"
-                            ),
-                        )
-                    )
-                else:
-                    raise BleakError(
-                        "Could not get GATT services: {0}".format(
-                            _communication_statues.get(services_result.status, "")
-                        )
-                    )
-
-            for service in services_result.services:
-                characteristics_result = await service.get_characteristics_async(
+            services: Sequence[GattDeviceService] = _ensure_success(
+                await self._requester.get_gatt_services_async(
                     BluetoothCacheMode.CACHED
                     if use_cached
                     else BluetoothCacheMode.UNCACHED
-                )
+                ),
+                "services",
+                "Could not get GATT services",
+            )
+
+            for service in services:
                 self.services.add_service(BleakGATTServiceWinRT(service))
-                if characteristics_result.status != GattCommunicationStatus.SUCCESS:
-                    if (
-                        characteristics_result.status
-                        == GattCommunicationStatus.PROTOCOL_ERROR
-                    ):
-                        raise BleakError(
-                            "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
-                                service,
-                                _communication_statues.get(
-                                    characteristics_result.status, ""
-                                ),
-                                characteristics_result.protocol_error,
-                                CONTROLLER_ERROR_CODES.get(
-                                    characteristics_result.protocol_error, "Unknown"
-                                ),
-                            )
-                        )
-                    else:
-                        raise BleakError(
-                            "Could not get GATT characteristics for {0}: {1}".format(
-                                service,
-                                _communication_statues.get(
-                                    characteristics_result.status, ""
-                                ),
-                            )
-                        )
-                for characteristic in characteristics_result.characteristics:
-                    descriptors_result = await characteristic.get_descriptors_async(
+
+                characteristics: Sequence[GattCharacteristic] = _ensure_success(
+                    await service.get_characteristics_async(
                         BluetoothCacheMode.CACHED
                         if use_cached
                         else BluetoothCacheMode.UNCACHED
-                    )
+                    ),
+                    "characteristics",
+                    f"Could not get GATT characteristics for {service}",
+                )
+
+                for characteristic in characteristics:
                     self.services.add_characteristic(
                         BleakGATTCharacteristicWinRT(characteristic)
                     )
-                    if descriptors_result.status != GattCommunicationStatus.SUCCESS:
-                        if (
-                            characteristics_result.status
-                            == GattCommunicationStatus.PROTOCOL_ERROR
-                        ):
-                            raise BleakError(
-                                "Could not get GATT descriptors for {0}: {1} (Error: 0x{2:02X}: {3})".format(
-                                    service,
-                                    _communication_statues.get(
-                                        descriptors_result.status, ""
-                                    ),
-                                    descriptors_result.protocol_error,
-                                    CONTROLLER_ERROR_CODES.get(
-                                        descriptors_result.protocol_error, "Unknown"
-                                    ),
-                                )
-                            )
-                        else:
-                            raise BleakError(
-                                "Could not get GATT descriptors for {0}: {1}".format(
-                                    characteristic,
-                                    _communication_statues.get(
-                                        descriptors_result.status, ""
-                                    ),
-                                )
-                            )
-                    for descriptor in list(descriptors_result.descriptors):
+
+                    descriptors: Sequence[GattDescriptor] = _ensure_success(
+                        await characteristic.get_descriptors_async(
+                            BluetoothCacheMode.CACHED
+                            if use_cached
+                            else BluetoothCacheMode.UNCACHED
+                        ),
+                        "descriptors",
+                        f"Could not get GATT descriptors for {service}",
+                    )
+
+                    for descriptor in descriptors:
                         self.services.add_descriptor(
                             BleakGATTDescriptorWinRT(
                                 descriptor,
@@ -534,34 +512,20 @@ class BleakClientWinRT(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {0} was not found!".format(char_specifier))
 
-        read_result = await characteristic.obj.read_value_async(
-            BluetoothCacheMode.CACHED if use_cached else BluetoothCacheMode.UNCACHED
+        value = bytearray(
+            _ensure_success(
+                await characteristic.obj.read_value_async(
+                    BluetoothCacheMode.CACHED
+                    if use_cached
+                    else BluetoothCacheMode.UNCACHED
+                ),
+                "value",
+                f"Could not read characteristic handle {characteristic.handle}",
+            )
         )
 
-        if read_result.status == GattCommunicationStatus.SUCCESS:
-            value = bytearray(read_result.value)
-            logger.debug(
-                "Read Characteristic {0} : {1}".format(characteristic.uuid, value)
-            )
-        else:
-            if read_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                raise BleakError(
-                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
-                        characteristic.uuid,
-                        _communication_statues.get(read_result.status, ""),
-                        read_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
-                            read_result.protocol_error, "Unknown"
-                        ),
-                    )
-                )
-            else:
-                raise BleakError(
-                    "Could not read characteristic value for {0}: {1}".format(
-                        characteristic.uuid,
-                        _communication_statues.get(read_result.status, ""),
-                    )
-                )
+        logger.debug(f"Read Characteristic {characteristic.handle:04X} : {value}")
+
         return value
 
     async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
@@ -584,32 +548,19 @@ class BleakClientWinRT(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
-        read_result = await descriptor.obj.read_value_async(
-            BluetoothCacheMode.CACHED if use_cached else BluetoothCacheMode.UNCACHED
+        value = bytearray(
+            _ensure_success(
+                await descriptor.obj.read_value_async(
+                    BluetoothCacheMode.CACHED
+                    if use_cached
+                    else BluetoothCacheMode.UNCACHED
+                ),
+                "value",
+                f"Could not read Descriptor value for {handle:04X}",
+            )
         )
 
-        if read_result.status == GattCommunicationStatus.SUCCESS:
-            value = bytearray(read_result.value)
-            logger.debug("Read Descriptor {0} : {1}".format(handle, value))
-        else:
-            if read_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                raise BleakError(
-                    "Could not get GATT characteristics for {0}: {1} (Error: 0x{2:02X}: {3})".format(
-                        descriptor.uuid,
-                        _communication_statues.get(read_result.status, ""),
-                        read_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
-                            read_result.protocol_error, "Unknown"
-                        ),
-                    )
-                )
-            else:
-                raise BleakError(
-                    "Could not read Descriptor value for {0}: {1}".format(
-                        descriptor.uuid,
-                        _communication_statues.get(read_result.status, ""),
-                    )
-                )
+        logger.debug(f"Read Descriptor {handle:04X} : {value}")
 
         return value
 
@@ -645,35 +596,11 @@ class BleakClientWinRT(BaseBleakClient):
         buf.length = buf.capacity
         with memoryview(buf) as mv:
             mv[:] = data
-        write_result = await characteristic.obj.write_value_with_result_async(
-            buf, response
+        _ensure_success(
+            await characteristic.obj.write_value_with_result_async(buf, response),
+            None,
+            f"Could not write value {data} to characteristic {characteristic.handle:04X}",
         )
-
-        if write_result.status == GattCommunicationStatus.SUCCESS:
-            logger.debug(
-                "Write Characteristic {0} : {1}".format(characteristic.uuid, data)
-            )
-        else:
-            if write_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X}: {4})".format(
-                        data,
-                        characteristic.uuid,
-                        _communication_statues.get(write_result.status, ""),
-                        write_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
-                            write_result.protocol_error, "Unknown"
-                        ),
-                    )
-                )
-            else:
-                raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2}".format(
-                        data,
-                        characteristic.uuid,
-                        _communication_statues.get(write_result.status, ""),
-                    )
-                )
 
     async def write_gatt_descriptor(
         self, handle: int, data: Union[bytes, bytearray, memoryview]
@@ -693,31 +620,13 @@ class BleakClientWinRT(BaseBleakClient):
         buf.length = buf.capacity
         with memoryview(buf) as mv:
             mv[:] = data
-        write_result = await descriptor.obj.write_value_with_result_async(buf)
+        _ensure_success(
+            await descriptor.obj.write_value_with_result_async(buf),
+            None,
+            f"Could not write value {data} to descriptor {handle:04X}",
+        )
 
-        if write_result.status == GattCommunicationStatus.SUCCESS:
-            logger.debug("Write Descriptor {0} : {1}".format(handle, data))
-        else:
-            if write_result.status == GattCommunicationStatus.PROTOCOL_ERROR:
-                raise BleakError(
-                    "Could not write value {0} to characteristic {1}: {2} (Error: 0x{3:02X}: {4})".format(
-                        data,
-                        descriptor.uuid,
-                        _communication_statues.get(write_result.status, ""),
-                        write_result.protocol_error,
-                        CONTROLLER_ERROR_CODES.get(
-                            write_result.protocol_error, "Unknown"
-                        ),
-                    )
-                )
-            else:
-                raise BleakError(
-                    "Could not write value {0} to descriptor {1}: {2}".format(
-                        data,
-                        descriptor.uuid,
-                        _communication_statues.get(write_result.status, ""),
-                    )
-                )
+        logger.debug(f"Write Descriptor {handle:04X} : {data}")
 
     async def start_notify(
         self,
@@ -769,7 +678,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         # If we want to force indicate even when notify is available, also check if the device
         # actually supports indicate as well.
-        if kwargs.get("force_indicate", False) and (
+        if not kwargs.get("force_indicate", False) and (
             characteristic_obj.characteristic_properties
             & GattCharacteristicProperties.NOTIFY
         ):
@@ -787,11 +696,16 @@ class BleakClientWinRT(BaseBleakClient):
         fcn = _notification_wrapper(bleak_callback, asyncio.get_event_loop())
         event_handler_token = characteristic_obj.add_value_changed(fcn)
         self._notification_callbacks[characteristic.handle] = event_handler_token
-        status = await characteristic_obj.write_client_characteristic_configuration_descriptor_async(
-            cccd
-        )
+        try:
+            _ensure_success(
+                await characteristic_obj.write_client_characteristic_configuration_descriptor_async(
+                    cccd
+                ),
+                None,
+                f"Could not start notify on {characteristic.handle:04X}",
+            )
+        except BaseException:
 
-        if status != GattCommunicationStatus.SUCCESS:
             # This usually happens when a device reports that it supports indicate,
             # but it actually doesn't.
             if characteristic.handle in self._notification_callbacks:
@@ -800,11 +714,7 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 characteristic_obj.remove_value_changed(event_handler_token)
 
-            raise BleakError(
-                "Could not start notify on {0}: {1}".format(
-                    characteristic.uuid, _communication_statues.get(status, "")
-                )
-            )
+            raise
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
@@ -824,21 +734,16 @@ class BleakClientWinRT(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(char_specifier))
 
-        status = await characteristic.obj.write_client_characteristic_configuration_descriptor_async(
-            GattClientCharacteristicConfigurationDescriptorValue.NONE
+        _ensure_success(
+            await characteristic.obj.write_client_characteristic_configuration_descriptor_async(
+                GattClientCharacteristicConfigurationDescriptorValue.NONE
+            ),
+            None,
+            f"Could not stop notify on {characteristic.handle:04X}",
         )
 
-        if status != GattCommunicationStatus.SUCCESS:
-            raise BleakError(
-                "Could not stop notify on {0}: {1}".format(
-                    characteristic.uuid, _communication_statues.get(status, "")
-                )
-            )
-        else:
-            event_handler_token = self._notification_callbacks.pop(
-                characteristic.handle
-            )
-            characteristic.obj.remove_value_changed(event_handler_token)
+        event_handler_token = self._notification_callbacks.pop(characteristic.handle)
+        characteristic.obj.remove_value_changed(event_handler_token)
 
 
 def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
