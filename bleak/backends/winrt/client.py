@@ -106,7 +106,7 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         self._connection_status_changed_token = None
-        self._use_cached = kwargs.get("use_cached", True)
+        self._use_cached = kwargs.get("use_cached", False)
 
     def __str__(self):
         return "BleakClientWinRT ({0})".format(self.address)
@@ -153,6 +153,12 @@ class BleakClientWinRT(BaseBleakClient):
                 else BluetoothAddressType.RANDOM
             )
         self._requester = await BluetoothLEDevice.from_bluetooth_address_async(*args)
+
+        if self._requester is None:
+            # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
+            raise BleakError(
+                f"Failed to connect to {self._device_info}. If the device requires pairing, then pair first. If the device uses a random address, it may have changed."
+            )
 
         # Called on disconnect event or on failure to connect.
         def handle_disconnect():
@@ -502,7 +508,7 @@ class BleakClientWinRT(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -717,7 +723,7 @@ class BleakClientWinRT(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         callback: Callable[[int, bytearray], None],
-        **kwargs
+        **kwargs,
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
