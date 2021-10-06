@@ -553,7 +553,7 @@ class BlueZManager:
         self._device_watchers.remove(watcher)
 
     async def get_services(
-        self, device_path: str, use_cached: bool
+        self, device_path: str, use_cached: bool, requested_services: Optional[Set[str]]
     ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
@@ -565,6 +565,9 @@ class BlueZManager:
                 When ``True`` if there is a cached :class:`BleakGATTServiceCollection`,
                 the method will not wait for ``"ServicesResolved"`` to become true
                 and instead return the cached service collection immediately.
+            requested_services:
+                When given, only return services with UUID that is in the list
+                of requested services.
 
         Returns:
             A new :class:`BleakGATTServiceCollection`.
@@ -586,6 +589,12 @@ class BlueZManager:
             )
 
             service = BleakGATTServiceBlueZDBus(service_props, service_path)
+
+            if (
+                requested_services is not None
+                and service.uuid not in requested_services
+            ):
+                continue
 
             services.add_service(service)
 

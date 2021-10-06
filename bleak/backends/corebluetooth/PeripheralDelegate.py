@@ -98,12 +98,12 @@ class PeripheralDelegate(NSObject):
         )
 
     @objc.python_method
-    async def discover_services(self) -> NSArray:
+    async def discover_services(self, services: Optional[NSArray]) -> NSArray:
         future = self._event_loop.create_future()
 
         self._services_discovered_future = future
         try:
-            self.peripheral.discoverServices_(None)
+            self.peripheral.discoverServices_(services)
             return await future
         finally:
             del self._services_discovered_future
