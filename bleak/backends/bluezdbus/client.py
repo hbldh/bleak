@@ -2,6 +2,7 @@
 """
 BLE Client for BlueZ on Linux
 """
+from asyncio.tasks import sleep
 import inspect
 import logging
 import asyncio
@@ -446,6 +447,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
         logger.debug(f"Disconnecting ({self._device_path})")
+
+        # If cleanup is already scheduled or in progress from "Connect" D-Bus
+        # property change then we need to wait for it to finish to ensure a
+        # consistant state.
+        await asyncio.sleep(0)
+        async with self._cleanup_lock:
+            pass
 
         if self._bus is None:
             # No connection exists. Either one hasn't been created or
