@@ -38,17 +38,23 @@ and decode them.
 Windows 10
 ==========
 
-No special software is required on Windows to capture Bluetooth traffic, however
-special software is required to convert it to a useful format.
+There is a Windows hardware developer package that includes a tool that supports
+capturing Bluetooth traffic directly in Wireshark.
+
+Install
+-------
+
+1. Download and install `Wireshark`_.
+2. Download and install `the BTP software package`_.
 
 Capture
 -------
 
 To capture Bluetooth traffic:
 
-1.  Open a Command Prompt as Administrator.
+1.  Open a terminal as Administrator.
 
-    * Search start menu for ``cmd``.
+    * Search start menu for ``cmd``. (Powershell and Windows Terminal are fine too.)
     * Right-click *Command Prompt* and select *Run as Administrator*.
 
       .. image:: images/win-10-start-cmd-as-admin.png
@@ -56,48 +62,21 @@ To capture Bluetooth traffic:
         :alt: Screenshot of Windows Start Menu showing Command Prompt selected
               and context menu with Run as Administrator selected.
 
-2.  Run the following command in the Administrator Command Prompt::
+2.  Run ``C:\BTP\v1.9.0\x86\btvs.exe``. This should automatically start Wireshark
+    in capture mode.
 
-        logman create trace "bth_hci" -ow -o C:\bth_hci.etl -p {8a1f9517-3a8c-4a9e-a018-4f17a200f277} 0xffffffffffffffff 0xff -nb 16 16 -bs 1024 -mode Circular -f bincirc -max 4096 -ets
-
-    .. tip:: ``C:\bth_hci.etl`` can be replaced with any file path you like.
+    .. tip:: The version needs to match the installed version. ``v1.9.0`` was
+             the current version at the time this was written. Additionally,
+             ``C:`` may not be the root drive on some systems.
 
 3.  Run your Python script in a different terminal (not as Administrator) to reproduce
     the problem.
 
-4.  In the Administrator Command Prompt run::
-
-        logman stop "bth_hci" -ets
-
-
-Decode
-------
-
-Microsoft no longer has tools to directly view ``.etl`` files so in order to
-make use of the information, we need to convert it to a different file format.
-The `Windows Driver Kit <wdk_>`_ contains a tool to do this.
-
-.. _wdk: https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk
-
-1.  Download and install the  `Windows Driver Kit <wdk_>`_.
-
-    .. tip:: The install may give warnings about additional software not being
-             installed. These warnings can be ignored since we just need a standalone
-             executable file from the installation.
-
-2.  Run the following command::
-
-        "%ProgramFiles(x86)%\Windows Kits\10\Tools\x86\Bluetooth\BETLParse\btetlparse.exe" c:\bth_hci.etl
-
-    This will create a file with the same file name and a ``.cfa`` file extension
-    (and an empty ``.txt`` file for some reason).
-
-3.  Download and install `Wireshark`_.
-
-4.  Open the ``.cfa`` file in Wireshark to view the captured Bluetooth traffic.
+4.  Click the stop button in Wireshark to stop the capture.
 
 
 .. _Wireshark:  https://www.wireshark.org/
+.. _the BTP software package: https://docs.microsoft.com/en-us/windows-hardware/drivers/bluetooth/testing-btp-software-package
 
 
 macOS
