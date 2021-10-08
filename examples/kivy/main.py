@@ -54,7 +54,7 @@ class ExampleApp(App):
                 scanned_devices.sort(key=lambda device: -device.rssi)
 
                 for device in scanned_devices:
-                    self.line("{0} {1}dB".format(str(device)[:24], device.rssi))
+                    self.line(f"{device.name} {device.rssi}dB")
 
                 for device in scanned_devices:
                     self.line("Connecting to {0} ...".format(str(device)[:24]))
