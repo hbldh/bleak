@@ -49,6 +49,10 @@ from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
 logger = logging.getLogger(__name__)
 
+_ACCESS_DENIED_SERVICES = list(
+    uuid.UUID(u)
+    for u in ("00001812-0000-1000-8000-00805f9b34fb",)  # Human Interface Device Service
+)
 
 _pairing_statuses = {
     getattr(DevicePairingResultStatus, v): v
@@ -427,6 +431,12 @@ class BleakClientWinRT(BaseBleakClient):
             )
 
             for service in services:
+                # Windows returns an ACCESS_DENIED error when trying to enumerate
+                # characterstics of services used by the OS, like the HID service
+                # so we have to exclude those services.
+                if service.uuid in _ACCESS_DENIED_SERVICES:
+                    continue
+
                 self.services.add_service(BleakGATTServiceWinRT(service))
 
                 characteristics: Sequence[GattCharacteristic] = _ensure_success(
