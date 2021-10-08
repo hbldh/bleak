@@ -109,8 +109,6 @@ class BleakClientWinRT(BaseBleakClient):
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
-        use_cached (bool): If set to `True`, then the OS level BLE cache is used for
-                getting services, characteristics and descriptors. Defaults to ``True``.
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
 
     """
@@ -136,7 +134,6 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         self._connection_status_changed_token = None
-        self._use_cached = kwargs.get("use_cached", False)
 
     def __str__(self):
         return "BleakClientWinRT ({0})".format(self.address)
@@ -148,8 +145,6 @@ class BleakClientWinRT(BaseBleakClient):
 
         Keyword Args:
             timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-            use_cached (bool): If set to `True`, then the OS level BLE cache is used for
-                getting services, characteristics and descriptors. Defaults to ``True``.
 
         Returns:
             Boolean representing connection status.
@@ -158,7 +153,6 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
-        use_cached = kwargs.get("use_cached", self._use_cached)
         if self._device_info is None:
             device = await BleakScannerWinRT.find_device_by_address(
                 self.address, timeout=timeout
@@ -256,7 +250,7 @@ class BleakClientWinRT(BaseBleakClient):
             self._connect_events.remove(event)
 
         # Obtain services, which also leads to connection being established.
-        await self.get_services(use_cached=use_cached)
+        await self.get_services()
 
         return True
 
@@ -415,16 +409,10 @@ class BleakClientWinRT(BaseBleakClient):
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
-        Keyword Args:
-
-            use_cached (bool): If set to `True`, then the OS level BLE cache is used for
-                getting services, characteristics and descriptors.
-
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
-        use_cached = kwargs.get("use_cached", self._use_cached)
         # Return the Service Collection.
         if self._services_resolved:
             return self.services
@@ -432,9 +420,7 @@ class BleakClientWinRT(BaseBleakClient):
             logger.debug("Get Services...")
             services: Sequence[GattDeviceService] = _ensure_success(
                 await self._requester.get_gatt_services_async(
-                    BluetoothCacheMode.CACHED
-                    if use_cached
-                    else BluetoothCacheMode.UNCACHED
+                    BluetoothCacheMode.UNCACHED
                 ),
                 "services",
                 "Could not get GATT services",
@@ -445,9 +431,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                 characteristics: Sequence[GattCharacteristic] = _ensure_success(
                     await service.get_characteristics_async(
-                        BluetoothCacheMode.CACHED
-                        if use_cached
-                        else BluetoothCacheMode.UNCACHED
+                        BluetoothCacheMode.UNCACHED
                     ),
                     "characteristics",
                     f"Could not get GATT characteristics for {service}",
@@ -460,9 +444,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
                         await characteristic.get_descriptors_async(
-                            BluetoothCacheMode.CACHED
-                            if use_cached
-                            else BluetoothCacheMode.UNCACHED
+                            BluetoothCacheMode.UNCACHED
                         ),
                         "descriptors",
                         f"Could not get GATT descriptors for {service}",
