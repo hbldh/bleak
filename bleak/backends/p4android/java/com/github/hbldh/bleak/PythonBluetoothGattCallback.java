@@ -19,6 +19,7 @@ public final class PythonBluetoothGattCallback extends BluetoothGattCallback
     public interface Interface
     {
         public void onConnectionStateChange(int status, int newState);
+        public void onMtuChanged(int mtu, int status);
         public void onServicesDiscovered(int status);
         public void onCharacteristicChanged(int handle, byte[] value);
         public void onCharacteristicRead(int handle, int status, byte[] value);
@@ -27,7 +28,7 @@ public final class PythonBluetoothGattCallback extends BluetoothGattCallback
         public void onDescriptorWrite(String uuid, int status);
     }
     private Interface callback;
-        
+
     public PythonBluetoothGattCallback(Interface pythonCallback)
     {
         callback = pythonCallback;
@@ -37,6 +38,12 @@ public final class PythonBluetoothGattCallback extends BluetoothGattCallback
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
     {
         callback.onConnectionStateChange(status, newState);
+    }
+
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status)
+    {
+        callback.onMtuChanged(mtu, status);
     }
 
     @Override

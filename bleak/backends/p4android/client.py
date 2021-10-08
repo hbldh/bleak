@@ -6,7 +6,7 @@ import asyncio
 import logging
 import uuid
 import warnings
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
@@ -43,6 +43,7 @@ class BleakClientP4Android(BaseBleakClient):
         # kwarg "device" is for backwards compatibility
         self.__adapter = kwargs.get("adapter", kwargs.get("device", None))
         self.__gatt = None
+        self.__mtu = None
 
     def __del__(self):
         if self.__gatt is not None:
@@ -89,6 +90,16 @@ class BleakClientP4Android(BaseBleakClient):
 
         self._subscriptions = {}
 
+        # unlike other backends, Android doesn't automatically negotiate
+        # the MTU, so we request the largest size possible like BlueZ
+        logger.debug("requesting mtu...")
+        (self.__mtu,) = await self.__callbacks.perform_and_wait(
+            dispatchApi=self.__gatt.requestMtu,
+            dispatchParams=(517,),
+            resultApi="onMtuChanged",
+        )
+
+        logger.debug("discovering services...")
         await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.discoverServices,
             dispatchParams=(),
@@ -217,6 +228,10 @@ class BleakClientP4Android(BaseBleakClient):
             and self.__callbacks.states["onConnectionStateChange"][1]
             == "STATE_CONNECTED"
         )
+
+    @property
+    def mtu_size(self) -> Optional[int]:
+        return self.__mtu
 
     # GATT services methods
 
@@ -558,6 +573,10 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
             and self._client._disconnected_callback is not None
         ):
             self._client._disconnected_callback(self._client)
+
+    @java_method("(II)V")
+    def onMtuChanged(self, mtu, status):
+        self.result_state(status, "onMtuChanged", mtu)
 
     @java_method("(I)V")
     def onServicesDiscovered(self, status):
