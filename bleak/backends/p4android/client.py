@@ -204,7 +204,8 @@ class BleakClientP4Android(BaseBleakClient):
         )
         return False
 
-    async def is_connected(self) -> bool:
+    @property
+    def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
         Returns:
