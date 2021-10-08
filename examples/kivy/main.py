@@ -82,14 +82,13 @@ class ExampleApp(App):
         self.line("example loop terminated", True)
 
 
+async def main(app):
+    await asyncio.gather(app.async_run("asyncio"), app.example())
+
+
 if __name__ == "__main__":
     Logger.setLevel(logging.DEBUG)
 
     # app running on one thread with two async coroutines
     app = ExampleApp()
-    loop = asyncio.get_event_loop()
-    coroutines = (app.async_run("asyncio"), app.example())
-    firstcompleted = asyncio.wait(coroutines, return_when=asyncio.FIRST_COMPLETED)
-    results, ongoing = loop.run_until_complete(firstcompleted)
-    for result in results:
-        result.result()  # raises exceptions from asyncio.wait
+    asyncio.run(main(app))
