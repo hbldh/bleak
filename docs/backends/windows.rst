@@ -1,15 +1,12 @@
 Windows backend
 ===============
 
-The Windows backend of bleak is written using the `Python for .NET <https://pythonnet.github.io/>`_
-package. Combined with a thin bridge library (`BleakUWPBridge <https://github.com/hbldh/BleakUWPBridge>`_)
-that is bundled with bleak, the .NET Bluetooth components can be used from Python.
+The Windows backend of bleak is written using the `Bleak WinRT <https://github.com/dlech/bleak-winrt>`_
+package to provide bindings for the Windows Runtime (WinRT).
 
-The Windows backend implements a ``BleakClient`` in the module ``bleak.backends.dotnet.client``, a ``BleakScanner``
-method in the ``bleak.backends.dotnet.scanner`` module. There are also backend-specific implementations of the
+The Windows backend implements a ``BleakClient`` in the module ``bleak.backends.winrt.client``, a ``BleakScanner``
+method in the ``bleak.backends.winrt.scanner`` module. There are also backend-specific implementations of the
 ``BleakGATTService``, ``BleakGATTCharacteristic`` and ``BleakGATTDescriptor`` classes.
-
-Finally, some .NET/``asyncio``-connectivity methods are available in the ``bleak.backends.dotnet.utils`` module.
 
 Specific features for the Windows backend
 -----------------------------------------

@@ -13,7 +13,7 @@ import asyncio
 from bleak import BleakClient, discover
 
 
-async def show_disconnect_handling():
+async def main():
     devs = await discover()
     if not devs:
         print("No devices found, try again later.")
@@ -30,11 +30,8 @@ async def show_disconnect_handling():
     ) as client:
         print("Sleeping until device disconnects...")
         await disconnected_event.wait()
-        print("Connected: {0}".format(await client.is_connected()))
-        await asyncio.sleep(
-            0.5
-        )  # Sleep a bit longer to allow _cleanup to remove all BlueZ notifications nicely...
+        print("Connected:", client.is_connected)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(show_disconnect_handling())
+if __name__ == "__main__":
+    asyncio.run(main())

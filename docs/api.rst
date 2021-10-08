@@ -13,7 +13,7 @@ Interface
 Windows
 ~~~~~~~
 
-.. automodule:: bleak.backends.dotnet.client
+.. automodule:: bleak.backends.winrt.client
     :members:
 
 macOS
@@ -46,7 +46,7 @@ Interface
 Windows
 ~~~~~~~
 
-.. automodule:: bleak.backends.dotnet.scanner
+.. automodule:: bleak.backends.winrt.scanner
     :members:
 
 macOS
@@ -97,9 +97,6 @@ Exceptions
 
 Utilities
 ---------
-
-.. automodule:: bleak.utils
-    :members:
 
 .. automodule:: bleak.uuids
     :members:

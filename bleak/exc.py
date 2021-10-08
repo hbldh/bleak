@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import Optional
 
 
 class BleakError(Exception):
@@ -7,10 +8,40 @@ class BleakError(Exception):
     pass
 
 
-class BleakDotNetTaskError(BleakError):
-    """Wrapped exception that occurred in .NET async Task."""
+class BleakDBusError(BleakError):
+    """Specialized exception type for D-Bus errors."""
 
-    pass
+    def __init__(self, dbus_error: str, error_body: list):
+        """
+        Args:
+            dbus_error (str): The D-Bus error, e.g. ``org.freedesktop.DBus.Error.UnknownObject``.
+            error_body (list): Body of the D-Bus error, sometimes containing error description or details.
+        """
+        super().__init__(dbus_error, *error_body)
+
+    @property
+    def dbus_error(self) -> str:
+        """Gets the D-Bus error name, e.g. ``org.freedesktop.DBus.Error.UnknownObject``."""
+        return self.args[0]
+
+    @property
+    def dbus_error_details(self) -> Optional[str]:
+        """Gets the optional D-Bus error details, e.g. 'Invalid UUID'."""
+        if len(self.args) > 1:
+            details = self.args[1]
+            # Some error descriptions can be further parsed to be even more helpful
+            if "ATT error: 0x" in details:
+                more_detail = CONTROLLER_ERROR_CODES.get(
+                    int(details.rsplit("x")[1], 16), "Unknown code"
+                )
+                details += f" ({more_detail})"
+            return details
+        return None
+
+    def __str__(self) -> str:
+        name = f"[{self.dbus_error}]"
+        details = self.dbus_error_details
+        return (name + " " + details) if details else name
 
 
 CONTROLLER_ERROR_CODES = {
@@ -84,4 +115,29 @@ CONTROLLER_ERROR_CODES = {
     0x43: "Limit Reached",
     0x44: "Operation Cancelled by Host",
     0x45: "Packet Too Long",
+}
+
+# as defined in Bluetooth Core Specification v5.2, volume 3, part F, section 3.4.1.1, table 3.4.
+PROTOCOL_ERROR_CODES = {
+    0x01: "Invalid Handle",
+    0x02: "Read Not Permitted",
+    0x03: "Write Not Permitted",
+    0x04: "Invalid PDU",
+    0x05: "Insufficient Authentication",
+    0x06: "Request Not Supported",
+    0x07: "Invalid Offset",
+    0x08: "Insufficient Authorization",
+    0x09: "Prepare Queue Full",
+    0x0A: "Attribute Not Found",
+    0x0B: "Attribute Not Long",
+    0x0C: "Insufficient Encryption Key Size",
+    0x0D: "Invalid Attribute Value Length",
+    0x0E: "Unlikely Error",
+    0x0F: "Insufficient Authentication",
+    0x10: "Unsupported Group Type",
+    0x11: "Insufficient Resource",
+    0x12: "Database Out Of Sync",
+    0x13: "Value Not Allowed",
+    # REVISIT: do we need Application Errors 0x80-0x9F?
+    # REVISIT: do we need Common Profile and Service Error Codes 0xE0-0xFF?
 }

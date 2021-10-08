@@ -13,19 +13,164 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 ~~~~~
 
-* Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
+* Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
+* Added ``register_uuids()`` to augment the uuid-to-description mapping.
+* Added support for Python 3.10.
+* Added ``force_indicate`` keyword argument for WinRT backend client's ``start_notify`` method. Fixes #526.
+* Added python-for-android backend.
+
+Changed
+~~~~~~~
+
+* Changed from ``winrt`` dependency to ``bleak-winrt``.
+* Improved error when connecting to device fails in WinRT backend. Fixes #647.
+* Changed examples to use ``asyncio.run()``.
+* Changed the default notify method for the WinRT backend from ``Indicate`` to ``Notify``.
+* Refactored GATT error handling in WinRT backend.
+* Changed Windows Bluetooth packet capture instructions. Fixes #653.
+
+Removed
+~~~~~~~
+
+* Removed ``dotnet`` backend.
+* Dropped support for Python 3.6.
+* Removed ``use_cached`` kwarg from ``BleakClient`` ``connect()`` and ``get_services()`` methods. Fixes #646.
 
 Fixed
 ~~~~~
 
-* Fixed ``AttributeError`` in ``write_gatt_descriptor()`` in Windows backend.
-  Merged #403.
+* Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
+* Fixed BleakClient ignoring the ``adapter`` kwarg. Fixes #607.
+* Fixed writing descriptors in WinRT backend. Fixes #615.
+* Fixed race on disconnect and cleanup of BlueZ matches when device disconnects early. Fixes #603.
+* Fixed memory leaks on Windows.
+* Fixed protocol error code descriptions on WinRT backend. Fixes #532.
+* Fixed race condition hitting assertation in BlueZ ``disconect()`` method. Fixes #641.
+* Fixed enumerating services on a device with HID service on WinRT backend. Fixes #599.
+
+
+`0.12.1`_ (2021-07-07)
+----------------------
+
+Changed
+~~~~~~~
+* Changed minimum ``winrt`` package version to 1.0.21033.1. Fixes #589.
+
+Fixed
+~~~~~
+
+* Fixed unawaited future when writing without response on CoreBluetooth backend.
+  Fixes #586.
+
+
+`0.12.0`_  (2021-06-19)
+-----------------------
+
+Added
+~~~~~
+
+* Added ``mtu_size`` property for clients.
+* Added WinRT backend.
+* Added ``BleakScanner.discovered_devices`` property.
+* Added an event to await when stopping scanners in WinRT and pythonnet backends. Fixes #556.
+* Added ``BleakScanner.find_device_by_filter`` static method.
+* Added ``scanner_byname.py`` example.
+* Added optional command line argument to specify device to all applicable examples.
+
+Changed
+~~~~~~~
+
+* Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``.
+* Deprecated ``BleakScanner.get_discovered_devices()`` async method.
+* Added capability to handle async functions as detection callbacks in ``BleakScanner``.
+* Added error description in addition to error name when ``BleakDBusError`` is converted to string.
+* Change typing of data parameter in write methods to ``Union[bytes, bytearray, memoryview]``.
+* Improved type hints in CoreBluetooth backend.
+* Use delegate callbacks for ``get_rssi()`` on CoreBluetooth backend.
+* Use ``@objc.python_method`` where possible in ``PeripheralDelegate`` class.
+* Using ObjC key-value observer to wait for ``BleakScanner.start()`` and ``stop()``
+  in CoreBluetooth backend.
+
+Fixed
+~~~~~
+
+* Fixed ``KeyError`` when trying to connect to ``BLEDevice`` from advertising
+  data callback on macOS. Fixes #448.
+* Handling of undetected devices in ``connect_by_bledevice.py`` example. Fixes #487.
+* Added ``Optional`` typehint for ``BleakScanner.find_device_by_address``.
+* Fixed ``linux_autodoc_mock_import`` in ``docs/conf.py``.
+* Minor fix for disconnection event handling in BlueZ backend. Fixes #491.
+* Corrections for the Philips Hue lamp example. Merged #505.
+* Fixed ``BleakClientBlueZDBus.pair()`` method always returning ``True``. Fixes #503.
+* Fixed waiting for notification start/stop to complete in CoreBluetooth backend.
+* Fixed write without response on BlueZ < 5.51.
+* Fixed error propagation for CoreBluetooth events.
+* Fixed failed import on CI server when BlueZ is not installed.
+* Fixed notification ``value`` should be ``bytearray`` on CoreBluetooth. Fixes #560.
+* Fixed crash when cancelling connection when Python runtime shuts down on
+  CoreBluetooth backend. Fixes #538.
+* Fixed connecting to multiple devices using a single ``BleakScanner`` on
+  CoreBluetooth backend.
+* Fixed deadlock in CoreBluetooth backend when device disconnects while
+  callbacks are pending. Fixes #535.
+* Fixed deadlock when using more than one service, characteristic or descriptor
+  with the same UUID on CoreBluetooth backend.
+* Fixed exception raised when calling ``BleakScanner.stop()`` when already
+  stopped in CoreBluetooth backend.
+
+
+`0.11.0`_ (2021-03-17)
+----------------------
+
+Added
+~~~~~
+
+* Updated ``dotnet.client.BleakClientDotNet`` connect method docstring.
+* Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
+* Protection levels (encryption) in Windows backend pairing. Solves #405.
+* Philips Hue lamp example script. Relates to #405.
+* Keyword arguments to ``get_services`` method on ``BleakClient``.
+* Keyword argument ``use_cached`` on .NET backend, to enable uncached reading
+  of services, characteristics and descriptors in Windows.
+* Documentation on troubleshooting OS level caches for services.
+* New example added: Async callbacks with a queue and external consumer
+* ``handle`` property on ``BleakGATTService`` objects
+* ``service_handle`` property on ``BleakGATTCharacteristic`` objects
+* Added more specific type hints for ``BleakGATTServiceCollection`` properties.
+* Added ``asyncio`` task to disconnect devices on event loop crash in BlueZ backend.
+* Added filtering on advertisement data callbacks on BlueZ backend so that
+  callbacks only occur when advertising data changes like on macOS backend.
+* Added fallback to try ``org.bluez.Adapter1.ConnectDevice`` when trying to connect
+  a device in BlueZ backend.
+* Added UART service example.
+
+Fixed
+~~~~~
+
 * Fixed wrong OS write method called in ``write_gatt_descriptor()`` in Windows
   backend.  Merged #403.
 * Fixed ``BaseBleakClient.services_resolved`` not reset on disconnect on BlueZ
   backend. Merged #401.
 * Fixed RSSI missing in discovered devices on macOS backend. Merged #400.
-* Added python-for-android backend.
+* Fixed scan result shows 'Unknown' name of the ``BLEDevice``. Fixes #371.
+* Fixed a broken check for the correct adapter in ``BleakClientBlueZDBus``.
+* Fixed #445 and #362 for Windows.
+
+Changed
+~~~~~~~
+
+* Using handles to identify the services. Added `handle` abstract property to `BleakGATTService`
+  and storing the services by handle instead of UUID.
+* Changed ``BleakScanner.set_scanning_filter()`` from async method to normal method.
+* Changed BlueZ backend to use ``dbus-next`` instead of ``txdbus``.
+* Changed ``BleakClient.is_connected`` from async method to property.
+* Consolidated D-Bus signal debug messages in BlueZ backend.
+
+Removed
+~~~~~~~
+* Removed all ``__str__`` methods from backend service, characteristic and descriptor implementations
+  in favour of those in the abstract base classes.
+
 
 
 `0.10.0`_ (2020-12-11)
@@ -439,15 +584,18 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.10.0...develop
-.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.9.1
-.. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.1...v0.9.0
-.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.9.0...v0.8.0
-.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.7.1
-.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.1...v0.7.0
-.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.7.0...v0.6.4
-.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.4
-.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.3
-.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.2
-.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.0...v0.6.1
-.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.5.1...v0.6.0
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.12.1...develop
+.. _0.12.1: https://github.com/hbldh/bleak/compare/v0.12.0...v0.12.1
+.. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0
+.. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.11.0
+.. _0.10.0: https://github.com/hbldh/bleak/compare/v0.9.1...v0.10.0
+.. _0.9.1: https://github.com/hbldh/bleak/compare/v0.9.0...v0.9.1
+.. _0.9.0: https://github.com/hbldh/bleak/compare/v0.8.0...v0.9.0
+.. _0.8.0: https://github.com/hbldh/bleak/compare/v0.7.1...v0.8.0
+.. _0.7.1: https://github.com/hbldh/bleak/compare/v0.7.0...v0.7.1
+.. _0.7.0: https://github.com/hbldh/bleak/compare/v0.6.4...v0.7.0
+.. _0.6.4: https://github.com/hbldh/bleak/compare/v0.6.4...v0.6.3
+.. _0.6.3: https://github.com/hbldh/bleak/compare/v0.6.3...v0.6.2
+.. _0.6.2: https://github.com/hbldh/bleak/compare/v0.6.2...v0.6.1
+.. _0.6.1: https://github.com/hbldh/bleak/compare/v0.6.1...v0.6.0
+.. _0.6.0: https://github.com/hbldh/bleak/compare/v0.6.0...v0.5.1

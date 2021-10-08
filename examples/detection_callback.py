@@ -21,7 +21,7 @@ def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
     print(device.address, "RSSI:", device.rssi, advertisement_data)
 
 
-async def run():
+async def main():
     scanner = BleakScanner()
     scanner.register_detection_callback(simple_callback)
 
@@ -31,5 +31,5 @@ async def run():
         await scanner.stop()
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run())
+if __name__ == "__main__":
+    asyncio.run(main())

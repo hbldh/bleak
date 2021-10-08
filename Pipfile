@@ -4,11 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-txdbus = {version = ">=1.1.1", sys_platform = "== 'linux'"}
+dbus-next = {version = ">=0.2.2", sys_platform = "== 'linux'"}
 pyobjc-core = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pyobjc-framework-CoreBluetooth = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
 pyobjc-framework-libdispatch = {version = ">=7.0.1", sys_platform = "== 'darwin'"}
-pythonnet = {version = ">=2.5.1", sys_platform = "== 'win32'"}
+bleak-winrt = {version = ">=1.0.1", sys_platform = "== 'win32'"}
 
 [dev-packages]
 pytest = "*"
@@ -16,6 +16,7 @@ bumpversion = "*"
 tox = "*"
 "flake8" = "*"
 sphinx = "*"
+sphinx-rtd-theme = "*"
 pytest-cov = "*"
 cryptography = "*"
 pyyaml = "*"
@@ -23,4 +24,3 @@ wheel = "*"
 watchdog = "*"
 coverage = "*"
 pytest-runner = "*"
-

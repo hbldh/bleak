@@ -16,12 +16,8 @@ import asyncio
 from bleak.__version__ import __version__  # noqa
 from bleak.exc import BleakError
 
-
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
-if os.environ.get("P4A_BOOTSTRAP") is not None:
-    _system = "Python4Android"
-else:
-    _system = platform.system()
+_on_ci = "CI" in os.environ
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -33,8 +29,17 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
 
-if _system == "Linux":
-    if not _on_rtd:
+if _on_rtd:
+    pass
+elif os.environ.get("P4A_BOOTSTRAP") is not None:
+    from bleak.backends.p4android.scanner import (
+        BleakScannerP4Android as BleakScanner,
+    )  # noqa: F401
+    from bleak.backends.p4android.client import (
+        BleakClientP4Android as BleakClient,
+    )  # noqa: F401
+elif platform.system() == "Linux":
+    if not _on_ci:
         # TODO: Check if BlueZ version 5.43 is sufficient.
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
@@ -54,14 +59,7 @@ if _system == "Linux":
     from bleak.backends.bluezdbus.client import (
         BleakClientBlueZDBus as BleakClient,
     )  # noqa: F401
-elif _system == "Python4Android":
-    from bleak.backends.p4android.scanner import (
-        BleakScannerP4Android as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.p4android.client import (
-        BleakClientP4Android as BleakClient,
-    )  # noqa: F401
-elif _system == "Darwin":
+elif platform.system() == "Darwin":
     try:
         from CoreBluetooth import CBPeripheral  # noqa: F401
     except Exception as ex:
@@ -74,7 +72,7 @@ elif _system == "Darwin":
         BleakClientCoreBluetooth as BleakClient,
     )  # noqa: F401
 
-elif _system == "Windows":
+elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
     if int(_vtup[0]) != 10:
@@ -89,20 +87,23 @@ elif _system == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    from bleak.backends.dotnet.scanner import BleakScannerDotNet as BleakScanner  # noqa
-    from bleak.backends.dotnet.client import BleakClientDotNet as BleakClient  # noqa
+    from bleak.backends.winrt.scanner import (
+        BleakScannerWinRT as BleakScanner,
+    )  # noqa: F401
+    from bleak.backends.winrt.client import (
+        BleakClientWinRT as BleakClient,
+    )  # noqa: F401
+
 else:
-    raise BleakError(f"Unsupported platform: {_system}")
+    raise BleakError(f"Unsupported platform: {platform.system()}")
 
 # for backward compatibility
-discover = BleakScanner.discover
+if not _on_rtd:
+    discover = BleakScanner.discover
 
 
 def cli():
     import argparse
-    from asyncio.tasks import ensure_future
-
-    loop = asyncio.get_event_loop()
 
     parser = argparse.ArgumentParser(
         description="Perform Bluetooth Low Energy device scan"
@@ -113,9 +114,7 @@ def cli():
     )
     args = parser.parse_args()
 
-    out = loop.run_until_complete(
-        ensure_future(discover(adapter=args.adapter, timeout=float(args.timeout)))
-    )
+    out = asyncio.run(discover(adapter=args.adapter, timeout=float(args.timeout)))
     for o in out:
         print(str(o))
 
