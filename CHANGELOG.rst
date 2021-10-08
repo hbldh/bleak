@@ -27,6 +27,7 @@ Changed
 * Changed the default notify method for the WinRT backend from ``Indicate`` to ``Notify``.
 * Refactored GATT error handling in WinRT backend.
 * Changed Windows Bluetooth packet capture instructions. Fixes #653.
+* Replaced usage of deprecated ``@abc.abstractproperty``.
 
 Removed
 ~~~~~~~

@@ -155,7 +155,8 @@ class BaseBleakScanner(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.
 
