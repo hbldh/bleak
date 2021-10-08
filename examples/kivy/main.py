@@ -58,24 +58,21 @@ class ExampleApp(App):
 
                 for device in scanned_devices:
                     self.line("Connecting to {0} ...".format(str(device)[:24]))
-                    client = bleak.BleakClient(device.address)
                     try:
-                        await client.connect()
-                        services = await client.get_services()
-                        for service in services.services.values():
-                            self.line("  service {0}".format(service.uuid))
-                            for characteristic in service.characteristics:
-                                self.line(
-                                    "  characteristic {0} {1} ({2} descriptors)".format(
-                                        characteristic.uuid,
-                                        hex(characteristic.handle),
-                                        len(characteristic.descriptors),
+                        async with bleak.BleakClient(device) as client:
+                            services = await client.get_services()
+                            for service in services.services.values():
+                                self.line("  service {0}".format(service.uuid))
+                                for characteristic in service.characteristics:
+                                    self.line(
+                                        "  characteristic {0} {1} ({2} descriptors)".format(
+                                            characteristic.uuid,
+                                            hex(characteristic.handle),
+                                            len(characteristic.descriptors),
+                                        )
                                     )
-                                )
                     except bleak.exc.BleakError as e:
                         self.line("  error {0}".format(e))
-                    finally:
-                        await client.disconnect()
             except bleak.exc.BleakError as e:
                 self.line("ERROR {0}".format(e))
                 await asyncio.sleep(1)
