@@ -322,11 +322,11 @@ class BleakClientWinRT(BaseBleakClient):
 
         Keyword Args:
             protection_level:
-                    Windows.Devices.Enumeration.DevicePairingProtectionLevel
-                        1: None - Pair the device using no levels of protection.
-                        2: Encryption - Pair the device using encryption.
-                        3: EncryptionAndAuthentication - Pair the device using
-                           encryption and authentication. (This will not work in Bleak...)
+                ``Windows.Devices.Enumeration.DevicePairingProtectionLevel``
+                1: None - Pair the device using no levels of protection.
+                2: Encryption - Pair the device using encryption.
+                3: EncryptionAndAuthentication - Pair the device using
+                encryption and authentication. (This will not work in Bleak...)
 
         Returns:
             Boolean regarding success of pairing.
