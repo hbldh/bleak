@@ -9,7 +9,7 @@ from dbus_next.signature import Variant
 from bleak import BleakError
 from bleak.exc import BleakDBusError
 
-_mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
 
 def assert_reply(reply: Message):
@@ -24,8 +24,8 @@ def assert_reply(reply: Message):
     assert reply.message_type == MessageType.METHOD_RETURN
 
 
-def validate_mac_address(address):
-    return _mac_address_regex.match(address) is not None
+def validate_address(address):
+    return _address_regex.match(address) is not None
 
 
 def unpack_variants(dictionary: Dict[str, Variant]) -> Dict[str, Any]:

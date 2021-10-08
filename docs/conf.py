@@ -14,7 +14,7 @@
 # serve to show the default.
 
 
-windows_autodoc_mock_import = ["clr", "Windows", "System", "BleakBridge"]
+windows_autodoc_mock_import = ["bleak_winrt"]
 linux_autodoc_mock_import = ["dbus_next"]
 macos_autodoc_mock_import = [
     "objc",
