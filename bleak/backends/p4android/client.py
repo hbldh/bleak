@@ -267,7 +267,7 @@ class BleakClientP4Android(BaseBleakClient):
                 java_descriptors = java_characteristic.getDescriptors()
 
                 characteristic = BleakGATTCharacteristicP4Android(
-                    java_characteristic, service.uuid
+                    java_characteristic, service.uuid, service.handle
                 )
 
                 self.services.add_characteristic(characteristic)

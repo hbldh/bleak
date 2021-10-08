@@ -5,7 +5,6 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.exc import BleakError
 
-from jnius import autoclass
 
 from . import defs
 
@@ -13,11 +12,12 @@ from . import defs
 class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the python-for-android backend"""
 
-    def __init__(self, java, service_uuid: str):
+    def __init__(self, java, service_uuid: str, service_handle: int):
         super(BleakGATTCharacteristicP4Android, self).__init__(java)
         self.__uuid = self.obj.getUuid().toString()
         self.__handle = self.obj.getInstanceId()
         self.__service_uuid = service_uuid
+        self.__service_handle = service_handle
         self.__descriptors = []
         self.__notification_descriptor = None
 
@@ -31,6 +31,11 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
     def service_uuid(self) -> str:
         """The uuid of the Service containing this characteristic"""
         return self.__service_uuid
+
+    @property
+    def service_handle(self) -> int:
+        """The integer handle of the Service containing this characteristic"""
+        return int(self.__service_handle)
 
     @property
     def handle(self) -> int:
