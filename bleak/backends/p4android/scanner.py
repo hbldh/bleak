@@ -199,7 +199,8 @@ class BleakScannerP4Android(BaseBleakScanner):
     async def set_scanning_filter(self, **kwargs):
         self._filters = kwargs.get("filters", {})
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
         return [*self._devices.values()]
 
 
