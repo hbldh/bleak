@@ -131,6 +131,7 @@ class BleakClientP4Android(BaseBleakClient):
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the gatt
             # connection.
+            logger.debug("already disconnected")
             return True
 
         # Try to disconnect the actual device/peripheral
@@ -147,17 +148,14 @@ class BleakClientP4Android(BaseBleakClient):
         except Exception as e:
             logger.error("Attempt to disconnect device failed: {0}".format(e))
 
-        is_disconnected = not await self.is_connected()
+        self.__gatt = None
+        self.__callbacks = None
 
-        if is_disconnected:
-            self.__gatt = None
-            self.__callbacks = None
+        # Reset all stored services.
+        self.services = BleakGATTServiceCollection()
+        self._services_resolved = False
 
-            # Reset all stored services.
-            self.services = BleakGATTServiceCollection()
-            self._services_resolved = False
-
-        return is_disconnected
+        return True
 
     async def pair(self, *args, **kwargs) -> bool:
         """Pair with the peripheral.
