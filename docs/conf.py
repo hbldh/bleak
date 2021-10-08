@@ -14,7 +14,7 @@
 # serve to show the default.
 
 
-windows_autodoc_mock_import = ["clr", "Windows", "System", "BleakBridge"]
+windows_autodoc_mock_import = ["bleak_winrt"]
 linux_autodoc_mock_import = ["dbus_next"]
 macos_autodoc_mock_import = [
     "objc",
@@ -159,7 +159,7 @@ html_theme = "sphinx_rtd_theme"
 # here, relative to this directory. They are copied after the builtin
 # static files, so a file named "default.css" will overwrite the builtin
 # "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.

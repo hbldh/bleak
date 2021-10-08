@@ -86,8 +86,5 @@ Exceptions
 Utilities
 ---------
 
-.. automodule:: bleak.utils
-    :members:
-
 .. automodule:: bleak.uuids
     :members:

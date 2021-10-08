@@ -22,17 +22,18 @@ Changed
 ~~~~~~~
 
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
-* Changed WinRT client to default to not use cache when enumerating services. Fixes #646.
 * Improved error when connecting to device fails in WinRT backend. Fixes #647.
 * Changed examples to use ``asyncio.run()``.
 * Changed the default notify method for the WinRT backend from ``Indicate`` to ``Notify``.
 * Refactored GATT error handling in WinRT backend.
+* Changed Windows Bluetooth packet capture instructions. Fixes #653.
 
 Removed
 ~~~~~~~
 
 * Removed ``dotnet`` backend.
 * Dropped support for Python 3.6.
+* Removed ``use_cached`` kwarg from ``BleakClient`` ``connect()`` and ``get_services()`` methods. Fixes #646.
 
 Fixed
 ~~~~~
@@ -43,6 +44,7 @@ Fixed
 * Fixed race on disconnect and cleanup of BlueZ matches when device disconnects early. Fixes #603.
 * Fixed memory leaks on Windows.
 * Fixed protocol error code descriptions on WinRT backend. Fixes #532.
+* Fixed race condition hitting assertation in BlueZ ``disconect()`` method. Fixes #641.
 * Fixed enumerating services on a device with HID service on WinRT backend. Fixes #599.
 
 

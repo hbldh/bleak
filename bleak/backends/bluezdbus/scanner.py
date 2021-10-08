@@ -11,7 +11,7 @@ from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
 from bleak.backends.bluezdbus.utils import (
     assert_reply,
     unpack_variants,
-    validate_mac_address,
+    validate_address,
 )
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
@@ -36,7 +36,7 @@ def _device_info(path, props):
         if address is None:
             try:
                 address = path[-17:].replace("_", ":")
-                if not validate_mac_address(address):
+                if not validate_address(address):
                     address = None
             except Exception:
                 address = None

@@ -29,8 +29,10 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
 
-if platform.system() == "Linux":
-    if not _on_rtd and not _on_ci:
+if _on_rtd:
+    pass
+elif platform.system() == "Linux":
+    if not _on_ci:
         # TODO: Check if BlueZ version 5.43 is sufficient.
         p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
         out, _ = p.communicate()
@@ -89,7 +91,8 @@ else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
 # for backward compatibility
-discover = BleakScanner.discover
+if not _on_rtd:
+    discover = BleakScanner.discover
 
 
 def cli():
