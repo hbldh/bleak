@@ -5,15 +5,14 @@
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
-import re
 import os
 import sys
 import logging
 import platform
-import subprocess
 import asyncio
 
-from bleak.__version__ import __version__  # noqa
+from bleak.__version__ import __version__  # noqa: F401
+from bleak.backends.bluezdbus import check_bluez_version
 from bleak.exc import BleakError
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -32,19 +31,8 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 if _on_rtd:
     pass
 elif platform.system() == "Linux":
-    if not _on_ci:
-        # TODO: Check if BlueZ version 5.43 is sufficient.
-        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
-        out, _ = p.communicate()
-        s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
-        if not s:
-            raise BleakError("Could not determine BlueZ version: {0}".format(out))
-
-        major, minor = s.groups()
-        if not (int(major) == 5 and int(minor) >= 43):
-            raise BleakError(
-                "Bleak requires BlueZ >= 5.43. Found version {0} installed.".format(out)
-            )
+    if not _on_ci and not check_bluez_version(5, 43):
+        raise BleakError("Bleak requires BlueZ >= 5.43.")
 
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as BleakScanner,

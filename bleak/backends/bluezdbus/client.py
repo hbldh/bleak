@@ -6,8 +6,6 @@ import inspect
 import logging
 import asyncio
 import os
-import re
-import subprocess
 import warnings
 from typing import Any, Callable, Dict, Optional, Union
 from uuid import UUID
@@ -17,7 +15,7 @@ from dbus_next.constants import BusType, ErrorType, MessageType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
 
-from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus import check_bluez_version, defs
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
@@ -80,22 +78,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
 
-        # get BlueZ version
-        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
-        out, _ = p.communicate()
-        s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
-        bluez_version = tuple(map(int, s.groups()))
-
         # BlueZ version features
-        self._can_write_without_response = (
-            bluez_version[0] == 5 and bluez_version[1] >= 46
-        )
-        self._write_without_response_workaround_needed = (
-            bluez_version[0] == 5 and bluez_version[1] < 51
-        )
-        self._hides_battery_characteristic = self._hides_device_name_characteristic = (
-            bluez_version[0] == 5 and bluez_version[1] >= 48
-        )
+        self._can_write_without_response = check_bluez_version(5, 46)
+        self._write_without_response_workaround_needed = not check_bluez_version(5, 51)
+        self._hides_battery_characteristic = check_bluez_version(5, 48)
+        self._hides_device_name_characteristic = check_bluez_version(5, 48)
 
     # Connectivity methods
 
