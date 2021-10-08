@@ -331,7 +331,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
             return True
         except BaseException:
-            await self._cleanup_all()
+            self._cleanup_all()
             raise
 
     async def _disconnect_monitor(self) -> None:
