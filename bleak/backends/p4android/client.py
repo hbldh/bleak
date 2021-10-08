@@ -71,6 +71,8 @@ class BleakClientP4Android(BaseBleakClient):
 
         self.__callbacks = _PythonBluetoothGattCallback(self, loop)
 
+        self._subscriptions = {}
+
         logger.debug("Connecting to BLE device @ {0}".format(self.address))
 
         (self.__gatt,) = await self.__callbacks.perform_and_wait(
@@ -86,27 +88,35 @@ class BleakClientP4Android(BaseBleakClient):
             return_indicates_status=False,
         )
 
-        logger.debug("Connection successful.")
+        try:
+            logger.debug("Connection successful.")
 
-        self._subscriptions = {}
+            # unlike other backends, Android doesn't automatically negotiate
+            # the MTU, so we request the largest size possible like BlueZ
+            logger.debug("requesting mtu...")
+            (self.__mtu,) = await self.__callbacks.perform_and_wait(
+                dispatchApi=self.__gatt.requestMtu,
+                dispatchParams=(517,),
+                resultApi="onMtuChanged",
+            )
 
-        # unlike other backends, Android doesn't automatically negotiate
-        # the MTU, so we request the largest size possible like BlueZ
-        logger.debug("requesting mtu...")
-        (self.__mtu,) = await self.__callbacks.perform_and_wait(
-            dispatchApi=self.__gatt.requestMtu,
-            dispatchParams=(517,),
-            resultApi="onMtuChanged",
-        )
+            logger.debug("discovering services...")
+            await self.__callbacks.perform_and_wait(
+                dispatchApi=self.__gatt.discoverServices,
+                dispatchParams=(),
+                resultApi="onServicesDiscovered",
+            )
 
-        logger.debug("discovering services...")
-        await self.__callbacks.perform_and_wait(
-            dispatchApi=self.__gatt.discoverServices,
-            dispatchParams=(),
-            resultApi="onServicesDiscovered",
-        )
+            await self.get_services()
+        except BaseException:
+            # if connecting is canceled or one of the above fails, we need to
+            # disconnect
+            try:
+                await self.disconnect()
+            except Exception:
+                pass
+            raise
 
-        await self.get_services()
         return True
 
     async def disconnect(self) -> bool:
