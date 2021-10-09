@@ -64,7 +64,7 @@ class BleakClientP4Android(BaseBleakClient):
         self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
         if self.__adapter is None:
             raise BleakError("Bluetooth is not supported on this hardware platform")
-        if self.__adapter.getState() != defs.STATE_ON:
+        if self.__adapter.getState() != defs.BluetoothAdapter.STATE_ON:
             raise BleakError("Bluetooth is not turned on")
 
         self.__device = self.__adapter.getRemoteDevice(self.address)
@@ -81,7 +81,7 @@ class BleakClientP4Android(BaseBleakClient):
                 defs.context,
                 False,
                 self.__callbacks.java,
-                defs.TRANSPORT_LE,
+                defs.BluetoothDevice.TRANSPORT_LE,
             ),
             resultApi="onConnectionStateChange",
             resultExpected=("STATE_CONNECTED",),
@@ -172,13 +172,13 @@ class BleakClientP4Android(BaseBleakClient):
         bondedFuture = loop.create_future()
 
         def handleBondStateChanged(context, intent):
-            bond_state = intent.getIntExtra(defs.EXTRA_BOND_STATE, -1)
+            bond_state = intent.getIntExtra(defs.BluetoothDevice.EXTRA_BOND_STATE, -1)
             if bond_state == -1:
                 loop.call_soon_threadsafe(
                     bondedFuture.set_exception,
                     BleakError("Unexpected bond state {}".format(bond_state)),
                 )
-            elif bond_state == defs.BOND_NONE:
+            elif bond_state == defs.BluetoothDevice.BOND_NONE:
                 loop.call_soon_threadsafe(
                     bondedFuture.set_exception,
                     BleakError(
@@ -187,19 +187,19 @@ class BleakClientP4Android(BaseBleakClient):
                         )
                     ),
                 )
-            elif bond_state == defs.BOND_BONDED:
+            elif bond_state == defs.BluetoothDevice.BOND_BONDED:
                 loop.call_soon_threadsafe(bondedFuture.set_result, True)
 
         receiver = BroadcastReceiver(
-            handleBondStateChanged, actions=[defs.ACTION_BOND_STATE_CHANGED]
+            handleBondStateChanged, actions=[defs.BluetoothDevice.ACTION_BOND_STATE_CHANGED]
         )
         receiver.start()
         try:
             # See if it is already paired.
             bond_state = self.__device.getBondState()
-            if bond_state == defs.BOND_BONDED:
+            if bond_state == defs.BluetoothDevice.BOND_BONDED:
                 return True
-            elif bond_state == defs.BOND_NONE:
+            elif bond_state == defs.BluetoothDevice.BOND_NONE:
                 logger.debug("Pairing to BLE device @ {0}".format(self.address))
                 if not self.__device.createBond():
                     raise BleakError(
@@ -416,9 +416,9 @@ class BleakClientP4Android(BaseBleakClient):
             )
 
         if response:
-            characteristic.obj.setWriteType(defs.WRITE_TYPE_DEFAULT)
+            characteristic.obj.setWriteType(defs.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
         else:
-            characteristic.obj.setWriteType(defs.WRITE_TYPE_NO_RESPONSE)
+            characteristic.obj.setWriteType(defs.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
 
         characteristic.obj.setValue(data)
 
@@ -515,7 +515,7 @@ class BleakClientP4Android(BaseBleakClient):
             )
 
         await self.write_gatt_descriptor(
-            characteristic.notification_descriptor, defs.ENABLE_NOTIFICATION_VALUE
+            characteristic.notification_descriptor, defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         )
 
     async def stop_notify(
@@ -538,7 +538,7 @@ class BleakClientP4Android(BaseBleakClient):
             raise BleakError("Characteristic {} not found!".format(char_specifier))
 
         await self.write_gatt_descriptor(
-            characteristic.notification_descriptor, defs.DISABLE_NOTIFICATION_VALUE
+            characteristic.notification_descriptor, defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
         )
 
         if not self.__gatt.setCharacteristicNotification(characteristic.obj, False):
@@ -561,7 +561,7 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
         self.java = defs.PythonBluetoothGattCallback(self)
 
     def result_state(self, status, resultApi, *data):
-        if status == defs.GATT_SUCCESS:
+        if status == defs.BluetoothGatt.GATT_SUCCESS:
             failure_str = None
         else:
             failure_str = defs.GATT_STATUS_STRINGS.get(status, status)
