@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import bleak.exc
 from android.permissions import Permission
 from jnius import autoclass, cast
 
@@ -70,39 +71,13 @@ ENABLE_NOTIFICATION_VALUE = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
 ENABLE_INDICATION_VALUE = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
 
 GATT_SUCCESS = 0x0000
-GATT_STATUS_NAMES = {
+GATT_STATUS_STRINGS = {
     # https://developer.android.com/reference/android/bluetooth/BluetoothGatt
     # https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/5738f83aeb59361a0a2eda2460113f6dc9194271/stack/include/gatt_api.h
     # https://android.googlesource.com/platform/system/bt/+/master/stack/include/gatt_api.h
     # https://www.bluetooth.com/specifications/bluetooth-core-specification/
-    # if error codes are missing you could check the bluetooth
-    # specification (last link above) as not all were copied over, since
-    # android repurposed so many
-    0x0000: "GATT_SUCCESS",
-    0x0001: "GATT_INVALID_HANDLE",
-    0x0002: "GATT_READ_NOT_PERMIT",
-    0x0003: "GATT_WRITE_NOT_PERMIT",
-    0x0004: "GATT_INVALID_PDU",
-    0x0005: "GATT_INSUF_AUTHENTICATION",
-    0x0006: "GATT_REQ_NOT_SUPPORTED",
-    0x0007: "GATT_INVALID_OFFSET",
-    0x0008: "GATT_INSUF_AUTHORIZATION",
-    0x0009: "GATT_PREPARE_Q_FULL",
-    0x000A: "GATT_NOT_FOUND",
-    0x000B: "GATT_NOT_LONG",
-    0x000C: "GATT_INSUF_KEY_SIZE",
-    0x000D: "GATT_INVALID_ATTR_LEN",
-    0x000E: "GATT_ERR_UNLIKELY",
-    0x000F: "GATT_INSUF_ENCRYPTION",
-    0x0010: "GATT_UNSUPPORT_GRP_TYPE",
-    0x0011: "GATT_INSUF_RESOURCE",
-    0x0012: "GATT_DATABASE_OUT_OF_SYNC",
-    0x0013: "GATT_VALUE_NOT_ALLOWED",
-    0x0014: "BLU_REM_TERM_CONN_LOW_RES",  # names made up from bluetooth spec
-    0x0015: "BLU_REM_TERM_CONN_POW_OFF",
-    0x0016: "BLU_LOC_TERM_CONN",
-    0x0017: "BLU_REPEATED_ATTEMPTS",
-    0x0018: "BLU_PAIRING_NOT_ALLOWED",
+    **bleak.exc.CONTROLLER_ERROR_CODES,
+    **bleak.exc.PROTOCOL_ERROR_CODES,
     0x007F: "GATT_TOO_SHORT",
     0x0080: "GATT_NO_RESOURCES",
     0x0081: "GATT_INTERNAL_ERROR",

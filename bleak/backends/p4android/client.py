@@ -564,7 +564,7 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
         if status == defs.GATT_SUCCESS:
             failure_str = None
         else:
-            failure_str = defs.GATT_STATUS_NAMES.get(status, status)
+            failure_str = defs.GATT_STATUS_STRINGS.get(status, status)
         self._loop.call_soon_threadsafe(
             self._result_state_unthreadsafe, failure_str, resultApi, data
         )
