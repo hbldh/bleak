@@ -84,7 +84,7 @@ class BleakClientP4Android(BaseBleakClient):
                 defs.BluetoothDevice.TRANSPORT_LE,
             ),
             resultApi="onConnectionStateChange",
-            resultExpected=("STATE_CONNECTED",),
+            resultExpected=(defs.BluetoothProfile.STATE_CONNECTED,),
             return_indicates_status=False,
         )
 
@@ -140,7 +140,7 @@ class BleakClientP4Android(BaseBleakClient):
                 dispatchApi=self.__gatt.disconnect,
                 dispatchParams=(),
                 resultApi="onConnectionStateChange",
-                resultExpected=("STATE_DISCONNECTED",),
+                resultExpected=(defs.BluetoothProfile.STATE_DISCONNECTED,),
                 unless_already=True,
                 return_indicates_status=False,
             )
@@ -231,7 +231,7 @@ class BleakClientP4Android(BaseBleakClient):
         return (
             self.__callbacks is not None
             and self.__callbacks.states["onConnectionStateChange"][1]
-            == "STATE_CONNECTED"
+            == defs.BluetoothProfile.STATE_CONNECTED
         )
 
     @property
@@ -551,13 +551,12 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
 
     @java_method("(II)V")
     def onConnectionStateChange(self, status, new_state):
-        state = defs.CONNECTION_STATE_NAMES.get(new_state, new_state)
         try:
-            self.result_state(status, "onConnectionStateChange", state)
+            self.result_state(status, "onConnectionStateChange", new_state)
         except BleakError:
             pass
         if (
-            state == "STATE_DISCONNECTED"
+            new_state == defs.BluetoothProfile.STATE_DISCONNECTED
             and self._client._disconnected_callback is not None
         ):
             self._client._disconnected_callback(self._client)

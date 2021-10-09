@@ -69,13 +69,6 @@ GATT_STATUS_STRINGS = {
     0x0101: "GATT_FAILURE",
 }
 
-CONNECTION_STATE_NAMES = {
-    BluetoothProfile.STATE_DISCONNECTED: "STATE_DISCONNECTED",
-    BluetoothProfile.STATE_CONNECTING: "STATE_CONNECTING",
-    BluetoothProfile.STATE_CONNECTED: "STATE_CONNECTED",
-    BluetoothProfile.STATE_DISCONNECTING: "STATE_DISCONNECTING",
-}
-
 CHARACTERISTIC_PROPERTY_DBUS_NAMES = {
     BluetoothGattCharacteristic.PROPERTY_BROADCAST: "broadcast",
     BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS: "extended-properties",
