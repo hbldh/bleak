@@ -37,9 +37,4 @@ class BleakGATTDescriptorP4Android(BleakGATTDescriptor):
     def handle(self) -> int:
         """Integer handle for this descriptor"""
         # 2021-01 The Android Bluetooth API does not appear to provide access to descriptor handles.
-        warnings.warn(
-            "Faking descriptor {0} as having handle {1}.".format(
-                self.__uuid, hex(self.__fake_handle)
-            )
-        )
         return self.__fake_handle
