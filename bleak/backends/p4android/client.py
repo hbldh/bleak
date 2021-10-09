@@ -215,7 +215,7 @@ class BleakClientP4Android(BaseBleakClient):
         return (
             self.__callbacks is not None
             and self.__callbacks.states["onConnectionStateChange"][1]
-            == "STATE_DISCONNECTED"
+            == "STATE_CONNECTED"
         )
 
     # GATT services methods
