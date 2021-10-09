@@ -15,3 +15,4 @@ scratch. TODO: find a better way to do this:
 
 An iOS backend has not been implemented yet.
 
+This kivy example can also be run on desktop.

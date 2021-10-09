@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from kivy.app import App
 
 # from kivy.core.window import Window
