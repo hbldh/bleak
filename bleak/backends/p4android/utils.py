@@ -52,9 +52,7 @@ class AsyncJavaCallbacks(PythonJavaClass):
             result1 = dispatchApi(*dispatchParams)
             if return_indicates_status and not result1:
                 del self.futures[resultApi]
-                raise BleakError(
-                    f"api call failed, not waiting for {resultApi}"
-                )
+                raise BleakError(f"api call failed, not waiting for {resultApi}")
             data = await state
             result2 = self._if_expected(data, resultExpected)
             if result2 is None:
@@ -68,9 +66,7 @@ class AsyncJavaCallbacks(PythonJavaClass):
             return (result1, *result2)
 
     def _result_state_unthreadsafe(self, failure_str, source, data):
-        logger.debug(
-            f"Java state transfer {source} error={failure_str} data={data}"
-        )
+        logger.debug(f"Java state transfer {source} error={failure_str} data={data}")
         self.states[source] = (failure_str, *data)
         future = self.futures.get(source, None)
         if future is not None and not future.done():
@@ -90,9 +86,7 @@ class AsyncJavaCallbacks(PythonJavaClass):
                 if len(namedfutures):
                     # send it on existing requests
                     for name, future in namedfutures:
-                        warnings.warn(
-                            f"Redirecting error without home to {name}"
-                        )
+                        warnings.warn(f"Redirecting error without home to {name}")
                         future.set_exception(exception)
                 else:
                     # send it on the event thread

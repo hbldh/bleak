@@ -189,7 +189,8 @@ class BleakClientP4Android(BaseBleakClient):
                 loop.call_soon_threadsafe(bondedFuture.set_result, True)
 
         receiver = BroadcastReceiver(
-            handleBondStateChanged, actions=[defs.BluetoothDevice.ACTION_BOND_STATE_CHANGED]
+            handleBondStateChanged,
+            actions=[defs.BluetoothDevice.ACTION_BOND_STATE_CHANGED],
         )
         receiver.start()
         try:
@@ -262,7 +263,9 @@ class BleakClientP4Android(BaseBleakClient):
                 )
                 self.services.add_characteristic(characteristic)
 
-                for descriptor_index, java_descriptor in enumerate(java_characteristic.getDescriptors()):
+                for descriptor_index, java_descriptor in enumerate(
+                    java_characteristic.getDescriptors()
+                ):
 
                     descriptor = BleakGATTDescriptorP4Android(
                         java_descriptor,
@@ -280,7 +283,7 @@ class BleakClientP4Android(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -317,7 +320,7 @@ class BleakClientP4Android(BaseBleakClient):
     async def read_gatt_descriptor(
         self,
         desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -336,9 +339,7 @@ class BleakClientP4Android(BaseBleakClient):
             descriptor = desc_specifier
 
         if not descriptor:
-            raise BleakError(
-                f"Descriptor with UUID {desc_specifier} was not found!"
-            )
+            raise BleakError(f"Descriptor with UUID {desc_specifier} was not found!")
 
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readDescriptor,
@@ -399,9 +400,13 @@ class BleakClientP4Android(BaseBleakClient):
             )
 
         if response:
-            characteristic.obj.setWriteType(defs.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+            characteristic.obj.setWriteType(
+                defs.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            )
         else:
-            characteristic.obj.setWriteType(defs.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE)
+            characteristic.obj.setWriteType(
+                defs.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+            )
 
         characteristic.obj.setValue(data)
 
@@ -453,7 +458,7 @@ class BleakClientP4Android(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
         callback: Callable[[int, bytearray], None],
-        **kwargs
+        **kwargs,
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -490,7 +495,8 @@ class BleakClientP4Android(BaseBleakClient):
             )
 
         await self.write_gatt_descriptor(
-            characteristic.notification_descriptor, defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            characteristic.notification_descriptor,
+            defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
         )
 
     async def stop_notify(
@@ -513,7 +519,8 @@ class BleakClientP4Android(BaseBleakClient):
             raise BleakError(f"Characteristic {char_specifier} not found!")
 
         await self.write_gatt_descriptor(
-            characteristic.notification_descriptor, defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+            characteristic.notification_descriptor,
+            defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,
         )
 
         if not self.__gatt.setCharacteristicNotification(characteristic.obj, False):
