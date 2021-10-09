@@ -26,16 +26,12 @@ class BleakScannerP4Android(BaseBleakScanner):
     """The python-for-android Bleak BLE Scanner.
 
     Keyword Args:
-        adapter (str): Bluetooth adapter to use for discovery. [ignored]
         filters (dict): A dict of filters to be applied on discovery. [unimplemented]
 
     """
 
     def __init__(self, **kwargs):
         super(BleakScannerP4Android, self).__init__(**kwargs)
-
-        # kwarg "device" is for backwards compatibility
-        self.__adapter = kwargs.get("adapter", kwargs.get("device", None))
 
         self._devices = {}
         self.__javascanner = None
