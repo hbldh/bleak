@@ -139,7 +139,7 @@ class BleakScannerP4Android(BaseBleakScanner):
                             loop.call_soon_threadsafe(
                                 stateOffFuture.set_exception,
                                 BleakError(
-                                    "Unexpected adapter state {}".format(adapter_state)
+                                    f"Unexpected adapter state {adapter_state}"
                                 ),
                             )
                         elif adapter_state == state:

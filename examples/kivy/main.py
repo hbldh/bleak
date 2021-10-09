@@ -60,19 +60,16 @@ class ExampleApp(App):
                         async with bleak.BleakClient(device) as client:
                             services = await client.get_services()
                             for service in services.services.values():
-                                self.line("  service {0}".format(service.uuid))
+                                self.line(f"  service {service.uuid}")
                                 for characteristic in service.characteristics:
                                     self.line(
-                                        "  characteristic {0} {1} ({2} descriptors)".format(
-                                            characteristic.uuid,
-                                            hex(characteristic.handle),
-                                            len(characteristic.descriptors),
-                                        )
+                                        f"  characteristic {characteristic.uuid} {hex(characteristic.handle)} ({len(characteristic.descriptors)} descriptors)"
                                     )
                     except bleak.exc.BleakError as e:
-                        self.line("  error {0}".format(e))
+                        self.line(f"  error {e}")
+                        asyncio.sleep(10)
             except bleak.exc.BleakError as e:
-                self.line("ERROR {0}".format(e))
+                self.line(f"ERROR {e}")
                 await asyncio.sleep(1)
         self.line("example loop terminated", True)
 

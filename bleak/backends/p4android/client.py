@@ -73,7 +73,7 @@ class BleakClientP4Android(BaseBleakClient):
 
         self._subscriptions = {}
 
-        logger.debug("Connecting to BLE device @ {0}".format(self.address))
+        logger.debug(f"Connecting to BLE device @ {self.address}")
 
         (self.__gatt,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__device.connectGatt,
@@ -146,7 +146,7 @@ class BleakClientP4Android(BaseBleakClient):
             )
             self.__gatt.close()
         except Exception as e:
-            logger.error("Attempt to disconnect device failed: {0}".format(e))
+            logger.error(f"Attempt to disconnect device failed: {e}")
 
         self.__gatt = None
         self.__callbacks = None
@@ -176,15 +176,13 @@ class BleakClientP4Android(BaseBleakClient):
             if bond_state == -1:
                 loop.call_soon_threadsafe(
                     bondedFuture.set_exception,
-                    BleakError("Unexpected bond state {}".format(bond_state)),
+                    BleakError(f"Unexpected bond state {bond_state}"),
                 )
             elif bond_state == defs.BluetoothDevice.BOND_NONE:
                 loop.call_soon_threadsafe(
                     bondedFuture.set_exception,
                     BleakError(
-                        "Device with address {0} could not be paired with.".format(
-                            self.address
-                        )
+                        f"Device with address {self.address} could not be paired with."
                     ),
                 )
             elif bond_state == defs.BluetoothDevice.BOND_BONDED:
@@ -200,12 +198,10 @@ class BleakClientP4Android(BaseBleakClient):
             if bond_state == defs.BluetoothDevice.BOND_BONDED:
                 return True
             elif bond_state == defs.BluetoothDevice.BOND_NONE:
-                logger.debug("Pairing to BLE device @ {0}".format(self.address))
+                logger.debug(f"Pairing to BLE device @ {self.address}")
                 if not self.__device.createBond():
                     raise BleakError(
-                        "Could not initiate bonding with device @ {0}".format(
-                            self.address
-                        )
+                        f"Could not initiate bonding with device @ {self.address}"
                     )
             return await bondedFuture
         finally:
@@ -304,9 +300,7 @@ class BleakClientP4Android(BaseBleakClient):
 
         if not characteristic:
             raise BleakError(
-                "Characteristic with UUID {0} could not be found!".format(
-                    char_specifier
-                )
+                f"Characteristic with UUID {char_specifier} could not be found!"
             )
 
         (value,) = await self.__callbacks.perform_and_wait(
@@ -316,9 +310,7 @@ class BleakClientP4Android(BaseBleakClient):
         )
         value = bytearray(value)
         logger.debug(
-            "Read Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.handle, value
-            )
+            f"Read Characteristic {characteristic.uuid} | {characteristic.handle}: {value}"
         )
         return value
 
@@ -345,7 +337,7 @@ class BleakClientP4Android(BaseBleakClient):
 
         if not descriptor:
             raise BleakError(
-                "Descriptor with UUID {0} was not found!".format(desc_specifier)
+                f"Descriptor with UUID {desc_specifier} was not found!"
             )
 
         (value,) = await self.__callbacks.perform_and_wait(
@@ -356,9 +348,7 @@ class BleakClientP4Android(BaseBleakClient):
         value = bytearray(value)
 
         logger.debug(
-            "Read Descriptor {0} | {1}: {2}".format(
-                descriptor.uuid, descriptor.handle, value
-            )
+            f"Read Descriptor {descriptor.uuid} | {descriptor.handle}: {value}"
         )
 
         return value
@@ -385,15 +375,14 @@ class BleakClientP4Android(BaseBleakClient):
             characteristic = char_specifier
 
         if not characteristic:
-            raise BleakError("Characteristic {0} was not found!".format(char_specifier))
+            raise BleakError(f"Characteristic {char_specifier} was not found!")
 
         if (
             "write" not in characteristic.properties
             and "write-without-response" not in characteristic.properties
         ):
             raise BleakError(
-                "Characteristic %s does not support write operations!"
-                % str(characteristic.uuid)
+                f"Characteristic {str(characteristic.uuid)} does not support write operations!"
             )
         if not response and "write-without-response" not in characteristic.properties:
             response = True
@@ -423,9 +412,7 @@ class BleakClientP4Android(BaseBleakClient):
         )
 
         logger.debug(
-            "Write Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.handle, data
-            )
+            f"Write Characteristic {characteristic.uuid} | {characteristic.handle}: {data}"
         )
 
     async def write_gatt_descriptor(
@@ -448,7 +435,7 @@ class BleakClientP4Android(BaseBleakClient):
             descriptor = desc_specifier
 
         if not descriptor:
-            raise BleakError("Descriptor {0} was not found!".format(desc_specifier))
+            raise BleakError(f"Descriptor {desc_specifier} was not found!")
 
         descriptor.obj.setValue(data)
 
@@ -459,9 +446,7 @@ class BleakClientP4Android(BaseBleakClient):
         )
 
         logger.debug(
-            "Write Descriptor {0} | {1}: {2}".format(
-                descriptor.uuid, descriptor.handle, data
-            )
+            f"Write Descriptor {descriptor.uuid} | {descriptor.handle}: {data}"
         )
 
     async def start_notify(
@@ -494,18 +479,14 @@ class BleakClientP4Android(BaseBleakClient):
 
         if not characteristic:
             raise BleakError(
-                "Characteristic with UUID {0} could not be found!".format(
-                    char_specifier
-                )
+                f"Characteristic with UUID {char_specifier} could not be found!"
             )
 
         self._subscriptions[characteristic.handle] = callback
 
         if not self.__gatt.setCharacteristicNotification(characteristic.obj, True):
             raise BleakError(
-                "Failed to enable notification for characteristic {0}".format(
-                    characteristic.uuid
-                )
+                f"Failed to enable notification for characteristic {characteristic.uuid}"
             )
 
         await self.write_gatt_descriptor(
@@ -529,7 +510,7 @@ class BleakClientP4Android(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} not found!".format(char_specifier))
+            raise BleakError(f"Characteristic {char_specifier} not found!")
 
         await self.write_gatt_descriptor(
             characteristic.notification_descriptor, defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
@@ -537,9 +518,7 @@ class BleakClientP4Android(BaseBleakClient):
 
         if not self.__gatt.setCharacteristicNotification(characteristic.obj, False):
             raise BleakError(
-                "Failed to disable notification for characteristic {0}".format(
-                    characteristic.uuid
-                )
+                f"Failed to disable notification for characteristic {characteristic.uuid}"
             )
         del self._subscriptions[characteristic.handle]
 
