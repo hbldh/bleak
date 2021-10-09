@@ -55,7 +55,7 @@ class ExampleApp(App):
                     self.line(f"{device.name} {device.rssi}dB")
 
                 for device in scanned_devices:
-                    self.line("Connecting to {0} ...".format(str(device)[:24]))
+                    self.line(f"Connecting to {device.name} ...")
                     try:
                         async with bleak.BleakClient(device) as client:
                             services = await client.get_services()
