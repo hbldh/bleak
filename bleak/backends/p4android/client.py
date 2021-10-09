@@ -254,25 +254,19 @@ class BleakClientP4Android(BaseBleakClient):
             return self.services
 
         logger.debug("Get Services...")
-        java_services = self.__gatt.getServices()
-        for service_index in range(len(java_services)):
-            java_service = java_services[service_index]
-            java_characteristics = java_service.getCharacteristics()
+        for java_service in self.__gatt.getServices():
 
             service = BleakGATTServiceP4Android(java_service)
             self.services.add_service(service)
 
-            for characteristic_index in range(len(java_characteristics)):
-                java_characteristic = java_characteristics[characteristic_index]
-                java_descriptors = java_characteristic.getDescriptors()
+            for java_characteristic in java_service.getCharacteristics():
 
                 characteristic = BleakGATTCharacteristicP4Android(
                     java_characteristic, service.uuid, service.handle
                 )
-
                 self.services.add_characteristic(characteristic)
-                for descriptor_index in range(len(java_descriptors)):
-                    java_descriptor = java_descriptors[descriptor_index]
+
+                for descriptor_index, java_descriptor in enumerate(java_characteristic.getDescriptors()):
 
                     descriptor = BleakGATTDescriptorP4Android(
                         java_descriptor,

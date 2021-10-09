@@ -224,8 +224,8 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
         service_uuids = record.getServiceUuids()
         if service_uuids is not None:
             service_uuids = [
-                service_uuids[index].getUuid().toString()
-                for index in range(len(service_uuids))
+                service_uuid.getUuid().toString()
+                for service_uuid in service_uuids
             ]
         manufacturer_data = record.getManufacturerSpecificData()
         manufacturer_data = {
