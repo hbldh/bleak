@@ -1,7 +1,4 @@
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.exc import BleakError
-
-import warnings
 
 
 class BleakGATTDescriptorP4Android(BleakGATTDescriptor):
