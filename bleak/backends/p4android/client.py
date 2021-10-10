@@ -16,15 +16,10 @@ from bleak.backends.p4android.service import BleakGATTServiceP4Android
 from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
 from bleak.backends.p4android.descriptor import BleakGATTDescriptorP4Android
 
-import sys
+from android.broadcast import BroadcastReceiver
+from jnius import java_method
 
-if "sphinx" in sys.modules:
-    java_method = lambda descr: (lambda func: func)
-else:
-    from android.broadcast import BroadcastReceiver
-    from jnius import java_method
-
-    from . import defs
+from . import defs
 from . import utils
 
 logger = logging.getLogger(__name__)

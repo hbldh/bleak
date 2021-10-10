@@ -3,16 +3,7 @@
 import logging
 import warnings
 
-import sys
-
-if "sphinx" in sys.modules:
-
-    class PythonJavaClass:
-        pass
-
-
-else:
-    from jnius import PythonJavaClass
+from jnius import PythonJavaClass
 
 from bleak.exc import BleakError
 
