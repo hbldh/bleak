@@ -9,11 +9,16 @@ from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
-from android.broadcast import BroadcastReceiver
-from android.permissions import request_permissions, Permission
-from jnius import cast, java_method
+import sys
 
-from . import defs
+if "sphinx" in sys.modules:
+    java_method = lambda descr: (lambda func: func)
+else:
+    from android.broadcast import BroadcastReceiver
+    from android.permissions import request_permissions, Permission
+    from jnius import cast, java_method
+
+    from . import defs
 from . import utils
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,10 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.exc import BleakError
 
 
-from . import defs
+import sys
+
+if "sphinx" not in sys.modules:
+    from . import defs
 
 
 class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
