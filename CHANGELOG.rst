@@ -8,10 +8,10 @@ The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
 `Unreleased`_
--------------
+=============
 
 Added
-~~~~~
+-----
 
 * Allow 16-bit UUID string arguments to ``get_service()`` and ``get_characteristic()``.
 * Added ``register_uuids()`` to augment the uuid-to-description mapping.
@@ -19,7 +19,7 @@ Added
 * Added ``force_indicate`` keyword argument for WinRT backend client's ``start_notify`` method. Fixes #526.
 
 Changed
-~~~~~~~
+-------
 
 * Changed from ``winrt`` dependency to ``bleak-winrt``.
 * Improved error when connecting to device fails in WinRT backend. Fixes #647.
@@ -30,14 +30,14 @@ Changed
 * Replaced usage of deprecated ``@abc.abstractproperty``.
 
 Removed
-~~~~~~~
+-------
 
 * Removed ``dotnet`` backend.
 * Dropped support for Python 3.6.
 * Removed ``use_cached`` kwarg from ``BleakClient`` ``connect()`` and ``get_services()`` methods. Fixes #646.
 
 Fixed
-~~~~~
+-----
 
 * Fixed unused timeout in the implementation of BleakScanner's ``find_device_by_address()`` function.
 * Fixed BleakClient ignoring the ``adapter`` kwarg. Fixes #607.
@@ -50,24 +50,25 @@ Fixed
 
 
 `0.12.1`_ (2021-07-07)
-----------------------
+======================
 
 Changed
-~~~~~~~
+-------
+
 * Changed minimum ``winrt`` package version to 1.0.21033.1. Fixes #589.
 
 Fixed
-~~~~~
+-----
 
 * Fixed unawaited future when writing without response on CoreBluetooth backend.
   Fixes #586.
 
 
-`0.12.0`_  (2021-06-19)
------------------------
+`0.12.0`_ (2021-06-19)
+======================
 
 Added
-~~~~~
+-----
 
 * Added ``mtu_size`` property for clients.
 * Added WinRT backend.
@@ -78,7 +79,7 @@ Added
 * Added optional command line argument to specify device to all applicable examples.
 
 Changed
-~~~~~~~
+-------
 
 * Added ``Programming Language :: Python :: 3.9`` classifier in ``setup.py``.
 * Deprecated ``BleakScanner.get_discovered_devices()`` async method.
@@ -92,7 +93,7 @@ Changed
   in CoreBluetooth backend.
 
 Fixed
-~~~~~
+-----
 
 * Fixed ``KeyError`` when trying to connect to ``BLEDevice`` from advertising
   data callback on macOS. Fixes #448.
@@ -120,10 +121,10 @@ Fixed
 
 
 `0.11.0`_ (2021-03-17)
-----------------------
+======================
 
 Added
-~~~~~
+-----
 
 * Updated ``dotnet.client.BleakClientDotNet`` connect method docstring.
 * Added ``AdvertisementServiceData`` in BLEDevice in macOS devices
@@ -145,7 +146,7 @@ Added
 * Added UART service example.
 
 Fixed
-~~~~~
+-----
 
 * Fixed wrong OS write method called in ``write_gatt_descriptor()`` in Windows
   backend.  Merged #403.
@@ -157,7 +158,7 @@ Fixed
 * Fixed #445 and #362 for Windows.
 
 Changed
-~~~~~~~
+-------
 
 * Using handles to identify the services. Added `handle` abstract property to `BleakGATTService`
   and storing the services by handle instead of UUID.
@@ -167,17 +168,18 @@ Changed
 * Consolidated D-Bus signal debug messages in BlueZ backend.
 
 Removed
-~~~~~~~
+-------
+
 * Removed all ``__str__`` methods from backend service, characteristic and descriptor implementations
   in favour of those in the abstract base classes.
 
 
 
 `0.10.0`_ (2020-12-11)
-----------------------
+======================
 
 Added
-~~~~~
+-----
 
 * Added ``AdvertisementData`` class used with detection callbacks across all
   supported platforms. Merged #334.
@@ -186,7 +188,7 @@ Added
 * Added ``detection_callback`` kwarg to ``BleakScanner`` constructor.
 
 Changed
-~~~~~~~
+-------
 
 * Updated minimum PyObjC version to 7.0.1.
 * Consolidated implementation of ``BleakScanner.register_detection_callback()``.
@@ -197,7 +199,7 @@ Changed
   #381.
 
 Fixed
-~~~~~
+-----
 
 * Fixed use of bare exceptions.
 * Fixed ``BleakClientBlueZDBus.start_notify()`` misses initial notifications with
@@ -210,7 +212,7 @@ Fixed
   Fixes #360.
 
 Removed
-~~~~~~~
+-------
 
 * Removed duplicate definition of ``BLEDevice`` in BlueZ backend.
 * Removed unused imports.
@@ -218,22 +220,22 @@ Removed
 
 
 `0.9.1`_ (2020-10-22)
----------------------
+=====================
 
 Added
-~~~~~
+-----
 
 * Added new attribute ``_device_info`` on ``BleakClientBlueZDBus``. Merges #347.
 * Added Pull Request Template.
 
 Changed
-~~~~~~~
+-------
 
 * Updated instructions on how to contribute, file issues and make PRs.
 * Updated ``AUTHORS.rst`` file with development team.
 
 Fixed
-~~~~~
+-----
 
 * Fix well-known services not converted to UUIDs in ``BLEDevice.metadata`` in
   CoreBluetooth backend. Fixes #342.
@@ -245,10 +247,10 @@ Fixed
 
 
 `0.9.0`_ (2020-10-20)
----------------------
+=====================
 
 Added
-~~~~~
+-----
 
 * Timeout for BlueZ backend connect call to avoid potential infinite hanging. Merged #306.
 * Added Interfaces API docs again.
@@ -257,7 +259,7 @@ Added
 * Adding a timeout on OSX so that the connect cannot hang forever. Merge #336.
 
 Changed
-~~~~~~~
+-------
 
 * ``BleakCharacteristic.description()`` on .NET now returns the same value as
   other platforms.
@@ -273,7 +275,7 @@ Changed
 
 
 Fixed
-~~~~~
+-----
 
 * UUID property bug fixed in BlueZ backend. Merged #307.
 * Fix for broken RTD documentation.
@@ -291,10 +293,10 @@ Fixed
 * Fix nordic uart UUID. Merge #339.
 
 `0.8.0`_ (2020-09-22)
----------------------
+=====================
 
 Added
-~~~~~
+-----
 
 * Implemented ``set_disconnected_callback`` in the .NET backend ``BleakClient`` implementation.
 * Added ``find_device_by_address`` method to the ``BleakScanner`` interface, for stopping scanning
@@ -314,12 +316,13 @@ Added
   allows for skipping the discovery call when connecting.
 
 Removed
-~~~~~~~
+-------
 
 * Support for Python 3.5.
 
 Changed
-~~~~~~~
+-------
+
 * **BREAKING CHANGE** All notifications now have the characteristic's integer **handle** instead of its UUID as a
   string as the first argument ``sender`` sent to notification callbacks. This provides the uniqueness of
   sender in notifications as well.
@@ -330,7 +333,7 @@ Changed
 * Made context managers for .NET ``DataReader`` and ``DataWriter``.
 
 Fixed
-~~~~~
+-----
 
 * .NET backend loop handling bug entered by #224 fixed.
 * Removed default ``DEBUG`` level set to bleak logger. Fixes #251.
@@ -344,10 +347,10 @@ Fixed
 * Safer `Core Bluetooth` presence check. Merged #280.
 
 `0.7.1`_ (2020-07-02)
----------------------
+=====================
 
 Changed
-~~~~~~~
+-------
 
 * Improved, more explanatory error on BlueZ backend when ``BleakClient`` cannot find the desired device when trying to connect. (#238)
 * Better-than-nothing documentation about scanning filters added (#230).
@@ -355,17 +358,17 @@ Changed
 * Re-adding Python 3.8 CI "tests" on Windows again.
 
 Fixed
-~~~~~
+-----
 
 * Fix when characteristic updates value faster than asyncio schedule (#240 & #241)
 * Incorrect ``MANIFEST.in`` corrected. (#244)
 
 
 `0.7.0`_ (2020-06-30)
----------------------
+=====================
 
 Added
-~~~~~
+-----
 
 * Better feedback of communication errors to user in .NET backend and implementing error details proposed in #174.
 * Two devices example file to use for e.g. debugging.
@@ -374,7 +377,7 @@ Added
 * Added scanning filters to .NET backend's ``discover`` method.
 
 Changed
-~~~~~~~
+-------
 
 * Replace ``NSRunLoop`` with dispatch queue in Core Bluetooth backend. This causes callbacks to be dispatched on a
   background thread instead of on the main dispatch queue on the main thread. ``call_soon_threadsafe()`` is used to synchronize the events
@@ -396,7 +399,7 @@ Changed
 * Using CBManagerState constants from pyobj instead of integers.
 
 Removed
-~~~~~~~
+-------
 
 * Removed documentation note about not using new event loops in Linux. This was fixed by #143.
 * ``_central_manager_delegate_ready`` was removed in macOS backend.
@@ -404,7 +407,7 @@ Removed
   bleak and possibly generates errors.
 
 Fixed
-~~~~~
+-----
 
 * Improved handling of the txdbus connection to avoid hanging of disconnection
   clients in BlueZ backend. Fixes #216, #219 & #221.
@@ -417,51 +420,53 @@ Fixed
 * Added workaround for ``isScanning`` attribute added in macOS 10.13. Fixes #234.
 
 `0.6.4`_ (2020-05-20)
----------------------
+=====================
 
 Fixed
-~~~~~
+-----
 
 * Fix for bumpversion usage
 
 `0.6.3`_ (2020-05-20)
----------------------
+=====================
 
 Added
-~~~~~
+-----
 
 * Building and releasing from Github Actions
 
 Removed
-~~~~~~~
+-------
 
 * Building and releasing on Azure Pipelines
 
 `0.6.2`_ (2020-05-15)
----------------------
+=====================
 
 Added
-~~~~~
+-----
+
 * Added ``disconnection_callback`` functionality for Core Bluetooth (#184 & #186)
 * Added ``requirements.txt``
 
 Fixed
-~~~~~
+-----
+
 * Better cleanup of Bluez notifications (#154)
 * Fix for ``read_gatt_char`` in Core Bluetooth (#177)
 * Fix for ``is_disconnected`` in Core Bluetooth (#187 & #185)
 * Documentation fixes
 
 `0.6.1`_ (2020-03-09)
----------------------
+=====================
 
 Fixed
-~~~~~
+-----
 
 * Including #156, lost notifications on macOS backend, which was accidentally missed on previous release.
 
 `0.6.0`_ (2020-03-09)
----------------------
+=====================
 
 * New Scanner object to allow for async device scanning.
 * Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
@@ -489,7 +494,7 @@ Fixed
 
 
 0.5.1 (2019-10-09)
-------------------
+==================
 
 * Active Scanning on Windows, #99 potentially solving #95
 * Longer timeout in service discovery on BlueZ
@@ -501,7 +506,7 @@ Fixed
 * More verbose exceptions on macOS, #117 and #107
 
 0.5.0 (2019-08-02)
-------------------
+==================
 
 * macOS support added (thanks to @kevincar)
 * Merged #90 which fixed #89: Leaking callbacks in BlueZ
@@ -512,7 +517,7 @@ Fixed
 * Merged #80: macOS development
 
 0.4.3 (2019-06-30)
-------------------
+==================
 
 * Fix for #76
 * Fix for #69
@@ -522,12 +527,12 @@ Fixed
 * Merged #66
 
 0.4.2 (2019-05-17)
-------------------
+==================
 
 * Fix for missed part of PR #61.
 
 0.4.1 (2019-05-17)
-------------------
+==================
 
 * Merging of PR #61, improvements and fixes for multiple issues for BlueZ backend
 * Implementation of issue #57
@@ -535,43 +540,43 @@ Fixed
 * Documentation fixes.
 
 0.4.0 (2019-04-10)
-------------------
+==================
 
 * Transferred code from the BleakUWPBridge C# support project to pythonnet code
 * Fixed BlueZ >= 5.48 issues regarding Battery Service
 * Fix for issue #55
 
 0.3.0 (2019-03-18)
-------------------
+==================
 
 * Fix for issue #53: Windows and Python 3.7 error
 * Azure Pipelines used for CI
 
 0.2.4 (2018-11-30)
-------------------
+==================
 
 * Fix for issue #52: Timing issue getting characteristics
 * Additional fix for issue #51.
 * Bugfix for string method for BLEDevice.
 
 0.2.3 (2018-11-28)
-------------------
+==================
 
 * Fix for issue #51: ``dpkg-query not found on all Linux systems``
 
 0.2.2 (2018-11-08)
-------------------
+==================
 
 * Made it compliant with Python 3.5 by removing f-strings
 
 0.2.1 (2018-06-28)
-------------------
+==================
 
 * Improved logging on .NET discover method
 * Some type annotation fixes in .NET code
 
 0.2.0 (2018-04-26)
-------------------
+==================
 
 * Project added to Github
 * First version on PyPI.
@@ -579,7 +584,7 @@ Fixed
 * Working Windows (UWP Bluetooth API) backend.
 
 0.1.0 (2017-10-23)
-------------------
+==================
 
 * Bleak created.
 
