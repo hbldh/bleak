@@ -47,7 +47,7 @@ Fixed
 * Fixed protocol error code descriptions on WinRT backend. Fixes #532.
 * Fixed race condition hitting assentation in BlueZ ``disconnect()`` method. Fixes #641.
 * Fixed enumerating services on a device with HID service on WinRT backend. Fixes #599.
-
+* Fixed subprocess running to check BlueZ version each time a client is created. Fixes #602.
 
 `0.12.1`_ (2021-07-07)
 ======================
