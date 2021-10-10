@@ -12,7 +12,7 @@ import logging
 from typing import Callable, Any, Dict, Iterable, NewType, Optional
 
 import objc
-from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID
+from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
 from CoreBluetooth import (
     CBPeripheral,
     CBService,
@@ -513,6 +513,36 @@ class PeripheralDelegate(NSObject):
             future.set_exception(exception)
         else:
             future.set_result(rssi)
+
+    # peripheral_didReadRSSI_error_ method is added dynamically later
+
+    # Bleak currently doesn't use the callbacks below other than for debug logging
+
+    @objc.python_method
+    def did_update_name(self, peripheral: CBPeripheral, name: NSString) -> None:
+        logger.debug(f"name of {peripheral.identifier()} changed to {name}")
+
+    def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
+        logger.debug("peripheralDidUpdateName_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_update_name, peripheral, peripheral.name()
+        )
+
+    @objc.python_method
+    def did_modify_services(
+        self, peripheral: CBPeripheral, invalidated_services: NSArray
+    ) -> None:
+        logger.debug(
+            f"{peripheral.identifier()} invalidated services: {invalidated_services}"
+        )
+
+    def peripheral_didModifyServices_(
+        self, peripheral: CBPeripheral, invalidatedServices: NSArray
+    ) -> None:
+        logger.debug("peripheral_didModifyServices_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_modify_services, peripheral, invalidatedServices
+        )
 
 
 # peripheralDidUpdateRSSI:error: was deprecated and replaced with
