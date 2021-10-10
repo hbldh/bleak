@@ -34,6 +34,7 @@ class BleakScannerP4Android(BaseBleakScanner):
         super(BleakScannerP4Android, self).__init__(**kwargs)
 
         self._devices = {}
+        self.__adapter = None
         self.__javascanner = None
         self.__callback = None
 
