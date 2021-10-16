@@ -28,6 +28,7 @@ Changed
 * Refactored GATT error handling in WinRT backend.
 * Changed Windows Bluetooth packet capture instructions. Fixes #653.
 * Replaced usage of deprecated ``@abc.abstractproperty``.
+* Use ``asyncio.get_running_loop()`` instead of ``asyncio.get_event_loop()``.
 
 Removed
 -------
