@@ -225,25 +225,22 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
     def onScanResult(self, result):
         device = result.getDevice()
         record = result.getScanRecord()
+
         service_uuids = record.getServiceUuids()
         if service_uuids is not None:
-            service_uuids = [
-                service_uuid.getUuid().toString() for service_uuid in service_uuids
-            ]
+            service_uuids = [service_uuid.toString() for service_uuid in service_uuids]
+
         manufacturer_data = record.getManufacturerSpecificData()
         manufacturer_data = {
-            manufacturer_data.keyAt(index): bytearray(
-                manufacturer_data.valueAt(index).tolist()
-            )
+            manufacturer_data.keyAt(index): bytes(manufacturer_data.valueAt(index))
             for index in range(manufacturer_data.size())
         }
-        service_data_iterator = record.getServiceData().entrySet().iterator()
-        service_data = {}
-        while service_data_iterator.hasNext():
-            entry = service_data_iterator.next()
-            service_data[entry.getKey().toString()] = bytearray(
-                entry.getValue().tolist()
-            )
+
+        service_data = {
+            entry.getKey().toString(): bytes(entry.getValue())
+            for entry in record.getServiceData().entrySet()
+        }
+
         advertisement = AdvertisementData(
             local_name=record.getDeviceName(),
             manufacturer_data=manufacturer_data,
