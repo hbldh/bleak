@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import enum
+
 import bleak.exc
 from jnius import autoclass, cast
 
@@ -27,12 +29,15 @@ PythonBluetoothGattCallback = autoclass(
     BLEAK_JNI_NAMESPACE + ".PythonBluetoothGattCallback"
 )
 
-SCAN_FAILED_NAMES = {
-    ScanCallback.SCAN_FAILED_ALREADY_STARTED: "SCAN_FAILED_ALREADY_STARTED",
-    ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED: "SCAN_FAILED_APPLICATION_REGISTRATION_FAILED",
-    ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED: "SCAN_FAILED_FEATURE_UNSUPPORTED",
-    ScanCallback.SCAN_FAILED_INTERNAL_ERROR: "SCAN_FAILED_INTERNAL_ERROR",
-}
+
+class ScanFailed(enum.IntEnum):
+    ALREADY_STARTED = ScanCallback.SCAN_FAILED_ALREADY_STARTED
+    APPLICATION_REGISTRATION_FAILED = (
+        ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
+    )
+    FEATURE_UNSUPPORTED = ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED
+    INTERNAL_ERROR = ScanCallback.SCAN_FAILED_INTERNAL_ERROR
+
 
 GATT_SUCCESS = 0x0000
 # TODO: we may need different lookups, e.g. one for bleak.exc.CONTROLLER_ERROR_CODES

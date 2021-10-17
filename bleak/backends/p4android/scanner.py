@@ -219,7 +219,7 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
 
     @java_method("(I)V")
     def onScanFailed(self, errorCode):
-        self.result_state(defs.SCAN_FAILED_NAMES[errorCode], "onScan")
+        self.result_state(defs.ScanFailed(errorCode).name, "onScan")
 
     @java_method("(Landroid/bluetooth/le/ScanResult;)V")
     def onScanResult(self, result):
