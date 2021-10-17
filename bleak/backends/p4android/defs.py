@@ -3,7 +3,7 @@
 import bleak.exc
 from jnius import autoclass, cast
 
-# caching constants avoids unneccessary extra use of the jni-python interface, which can be slow
+# caching constants avoids unnecessary extra use of the jni-python interface, which can be slow
 
 List = autoclass("java.util.ArrayList")
 BluetoothAdapter = autoclass("android.bluetooth.BluetoothAdapter")
