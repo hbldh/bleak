@@ -22,11 +22,13 @@ macos_autodoc_mock_import = [
     "CoreBluetooth",
     "libdispatch",
 ]
+android_autodoc_mock_import = ["android", "jnius"]
 autodoc_mock_imports = list(
     set(
         windows_autodoc_mock_import
         + macos_autodoc_mock_import
         + linux_autodoc_mock_import
+        + android_autodoc_mock_import
     )
 )
 

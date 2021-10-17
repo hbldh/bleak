@@ -30,6 +30,13 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 
 if _on_rtd:
     pass
+elif os.environ.get("P4A_BOOTSTRAP") is not None:
+    from bleak.backends.p4android.scanner import (
+        BleakScannerP4Android as BleakScanner,
+    )  # noqa: F401
+    from bleak.backends.p4android.client import (
+        BleakClientP4Android as BleakClient,
+    )  # noqa: F401
 elif platform.system() == "Linux":
     if not _on_ci and not check_bluez_version(5, 43):
         raise BleakError("Bleak requires BlueZ >= 5.43.")

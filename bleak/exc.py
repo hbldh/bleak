@@ -139,5 +139,8 @@ PROTOCOL_ERROR_CODES = {
     0x12: "Database Out Of Sync",
     0x13: "Value Not Allowed",
     # REVISIT: do we need Application Errors 0x80-0x9F?
-    # REVISIT: do we need Common Profile and Service Error Codes 0xE0-0xFF?
+    0xFC: "Write Request Rejected",
+    0xFD: "Client Characteristic Configuration Descriptor Improperly Configured",
+    0xFE: "Procedure Already in Progress",
+    0xFF: "Out of Range",
 }
