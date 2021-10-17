@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import bleak.exc
-from android.permissions import Permission
 from jnius import autoclass, cast
 
 # caching constants avoids unneccessary extra use of the jni-python interface, which can be slow
