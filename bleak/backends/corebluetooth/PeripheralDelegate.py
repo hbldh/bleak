@@ -12,7 +12,7 @@ import logging
 from typing import Callable, Any, Dict, Iterable, NewType, Optional
 
 import objc
-from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID
+from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
 from CoreBluetooth import (
     CBPeripheral,
     CBService,
@@ -46,7 +46,7 @@ class PeripheralDelegate(NSObject):
         self.peripheral = peripheral
         self.peripheral.setDelegate_(self)
 
-        self._event_loop = asyncio.get_event_loop()
+        self._event_loop = asyncio.get_running_loop()
         self._services_discovered_future = self._event_loop.create_future()
 
         self._service_characteristic_discovered_futures: Dict[int, asyncio.Future] = {}
@@ -85,10 +85,7 @@ class PeripheralDelegate(NSObject):
         )
 
     @objc.python_method
-    async def discover_services(self, use_cached: bool = True) -> NSArray:
-        if self._services_discovered_future.done() and use_cached:
-            return self.peripheral.services()
-
+    async def discover_services(self) -> NSArray:
         future = self._event_loop.create_future()
         self._services_discovered_future = future
         self.peripheral.discoverServices_(None)
@@ -97,12 +94,7 @@ class PeripheralDelegate(NSObject):
         return self.peripheral.services()
 
     @objc.python_method
-    async def discover_characteristics(
-        self, service: CBService, use_cached: bool = True
-    ) -> NSArray:
-        if service.characteristics() is not None and use_cached:
-            return service.characteristics()
-
+    async def discover_characteristics(self, service: CBService) -> NSArray:
         future = self._event_loop.create_future()
         self._service_characteristic_discovered_futures[service.startHandle()] = future
         self.peripheral.discoverCharacteristics_forService_(None, service)
@@ -111,12 +103,7 @@ class PeripheralDelegate(NSObject):
         return service.characteristics()
 
     @objc.python_method
-    async def discover_descriptors(
-        self, characteristic: CBCharacteristic, use_cached: bool = True
-    ) -> NSArray:
-        if characteristic.descriptors() is not None and use_cached:
-            return characteristic.descriptors()
-
+    async def discover_descriptors(self, characteristic: CBCharacteristic) -> NSArray:
         future = self._event_loop.create_future()
         self._characteristic_descriptor_discover_futures[
             characteristic.handle()
@@ -513,6 +500,36 @@ class PeripheralDelegate(NSObject):
             future.set_exception(exception)
         else:
             future.set_result(rssi)
+
+    # peripheral_didReadRSSI_error_ method is added dynamically later
+
+    # Bleak currently doesn't use the callbacks below other than for debug logging
+
+    @objc.python_method
+    def did_update_name(self, peripheral: CBPeripheral, name: NSString) -> None:
+        logger.debug(f"name of {peripheral.identifier()} changed to {name}")
+
+    def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
+        logger.debug("peripheralDidUpdateName_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_update_name, peripheral, peripheral.name()
+        )
+
+    @objc.python_method
+    def did_modify_services(
+        self, peripheral: CBPeripheral, invalidated_services: NSArray
+    ) -> None:
+        logger.debug(
+            f"{peripheral.identifier()} invalidated services: {invalidated_services}"
+        )
+
+    def peripheral_didModifyServices_(
+        self, peripheral: CBPeripheral, invalidatedServices: NSArray
+    ) -> None:
+        logger.debug("peripheral_didModifyServices_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_modify_services, peripheral, invalidatedServices
+        )
 
 
 # peripheralDidUpdateRSSI:error: was deprecated and replaced with

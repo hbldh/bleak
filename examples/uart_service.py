@@ -54,7 +54,7 @@ async def uart_terminal():
 
         print("Connected, start typing and press ENTER...")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         while True:
             # This waits until you type a line and press ENTER.

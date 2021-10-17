@@ -29,15 +29,6 @@ class BleakGATTServiceWinRT(BleakGATTService):
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def get_characteristic(
-        self, _uuid: Union[str, UUID]
-    ) -> Union[BleakGATTCharacteristicWinRT, None]:
-        """Get a characteristic by UUID"""
-        try:
-            return next(filter(lambda x: x.uuid == str(_uuid), self.characteristics))
-        except StopIteration:
-            return None
-
     def add_characteristic(self, characteristic: BleakGATTCharacteristicWinRT):
         """Add a :py:class:`~BleakGATTCharacteristicWinRT` to the service.
 

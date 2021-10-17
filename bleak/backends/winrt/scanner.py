@@ -124,7 +124,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
 
-        event_loop = asyncio.get_event_loop()
+        event_loop = asyncio.get_running_loop()
         self._stopped_event = asyncio.Event()
 
         self._received_token = self.watcher.add_received(
