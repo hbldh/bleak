@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+
+`0.13.0`_ (2021-10-17)
+======================
+
 Added
 -----
 
@@ -593,7 +597,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.12.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.13.0...develop
+.. _0.13.0: https://github.com/hbldh/bleak/compare/v0.12.1...v0.13.0
 .. _0.12.1: https://github.com/hbldh/bleak/compare/v0.12.0...v0.12.1
 .. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0
 .. _0.11.0: https://github.com/hbldh/bleak/compare/v0.10.0...v0.11.0
