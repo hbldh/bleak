@@ -85,10 +85,7 @@ class PeripheralDelegate(NSObject):
         )
 
     @objc.python_method
-    async def discover_services(self, use_cached: bool = True) -> NSArray:
-        if self._services_discovered_future.done() and use_cached:
-            return self.peripheral.services()
-
+    async def discover_services(self) -> NSArray:
         future = self._event_loop.create_future()
         self._services_discovered_future = future
         self.peripheral.discoverServices_(None)
@@ -97,12 +94,7 @@ class PeripheralDelegate(NSObject):
         return self.peripheral.services()
 
     @objc.python_method
-    async def discover_characteristics(
-        self, service: CBService, use_cached: bool = True
-    ) -> NSArray:
-        if service.characteristics() is not None and use_cached:
-            return service.characteristics()
-
+    async def discover_characteristics(self, service: CBService) -> NSArray:
         future = self._event_loop.create_future()
         self._service_characteristic_discovered_futures[service.startHandle()] = future
         self.peripheral.discoverCharacteristics_forService_(None, service)
@@ -111,12 +103,7 @@ class PeripheralDelegate(NSObject):
         return service.characteristics()
 
     @objc.python_method
-    async def discover_descriptors(
-        self, characteristic: CBCharacteristic, use_cached: bool = True
-    ) -> NSArray:
-        if characteristic.descriptors() is not None and use_cached:
-            return characteristic.descriptors()
-
+    async def discover_descriptors(self, characteristic: CBCharacteristic) -> NSArray:
         future = self._event_loop.create_future()
         self._characteristic_descriptor_discover_futures[
             characteristic.handle()

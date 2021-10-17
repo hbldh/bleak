@@ -49,6 +49,8 @@ Fixed
 * Fixed race condition hitting assentation in BlueZ ``disconnect()`` method. Fixes #641.
 * Fixed enumerating services on a device with HID service on WinRT backend. Fixes #599.
 * Fixed subprocess running to check BlueZ version each time a client is created. Fixes #602.
+* Fixed exception when discovering services after reconnecting in CoreBluetooth backend.
+
 
 `0.12.1`_ (2021-07-07)
 ======================
