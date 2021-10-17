@@ -220,7 +220,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                 handle_disconnect()
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         def _ConnectionStatusChanged_Handler(sender, args):
             logger.debug(
@@ -685,7 +685,7 @@ class BleakClientWinRT(BaseBleakClient):
                 "characteristic does not support notifications or indications"
             )
 
-        fcn = _notification_wrapper(bleak_callback, asyncio.get_event_loop())
+        fcn = _notification_wrapper(bleak_callback, asyncio.get_running_loop())
         event_handler_token = characteristic_obj.add_value_changed(fcn)
         self._notification_callbacks[characteristic.handle] = event_handler_token
         try:

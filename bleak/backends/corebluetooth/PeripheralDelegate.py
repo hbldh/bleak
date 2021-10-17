@@ -46,7 +46,7 @@ class PeripheralDelegate(NSObject):
         self.peripheral = peripheral
         self.peripheral.setDelegate_(self)
 
-        self._event_loop = asyncio.get_event_loop()
+        self._event_loop = asyncio.get_running_loop()
         self._services_discovered_future = self._event_loop.create_future()
 
         self._service_characteristic_discovered_futures: Dict[int, asyncio.Future] = {}

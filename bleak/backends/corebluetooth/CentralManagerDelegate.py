@@ -58,7 +58,7 @@ class CentralManagerDelegate(NSObject):
         if self is None:
             return None
 
-        self.event_loop = asyncio.get_event_loop()
+        self.event_loop = asyncio.get_running_loop()
         self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
 
         self.devices: Dict[str, BLEDeviceCoreBluetooth] = {}
