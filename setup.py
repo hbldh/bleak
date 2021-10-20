@@ -34,8 +34,6 @@ TEST_REQUIRED = ["pytest", "pytest-cov"]
 here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = "\n" + f.read()
-with io.open(os.path.join(here, "CHANGELOG.rst"), encoding="utf-8") as f:
-    long_description += "\n\n" + f.read()
 
 # Load the package's __version__.py module as a dictionary.
 about = {}
@@ -92,6 +90,12 @@ setup(
     tests_require=TEST_REQUIRED,
     include_package_data=True,
     license="MIT",
+    project_urls={
+        "Changelog": "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst",
+        "Documentation": "https://bleak.readthedocs.io",
+        "Support": "https://github.com/hbldh/bleak/discussions",
+        "Issues": "https://github.com/hbldh/bleak/issues",
+    },
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
