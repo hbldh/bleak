@@ -34,6 +34,7 @@ Changed
 * Changed Windows Bluetooth packet capture instructions. Fixes #653.
 * Replaced usage of deprecated ``@abc.abstractproperty``.
 * Use ``asyncio.get_running_loop()`` instead of ``asyncio.get_event_loop()``.
+* Changed "service is already present" exception to logged error in BlueZ backend. Merged #622.
 
 Removed
 -------
