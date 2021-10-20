@@ -102,7 +102,7 @@ setup(
         "Development Status :: 4 - Beta",
         "Framework :: AsyncIO",
         "Intended Audience :: Developers",
-        "Topic :: Communications",
+        "Topic :: System :: Hardware :: Bluetooth",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Operating System :: Microsoft :: Windows :: Windows 10",
