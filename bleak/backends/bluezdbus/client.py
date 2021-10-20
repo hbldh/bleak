@@ -6,10 +6,8 @@ import inspect
 import logging
 import asyncio
 import os
-import re
-import subprocess
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 from uuid import UUID
 
 from dbus_next.aio import MessageBus
@@ -17,12 +15,12 @@ from dbus_next.constants import BusType, ErrorType, MessageType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
 
-from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus import check_bluez_version, defs
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
-from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
+from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import (
     assert_reply,
     extract_service_handle_from_path,
@@ -68,12 +66,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # D-Bus message bus
         self._bus: Optional[MessageBus] = None
-        # match rules we are subscribed to that need to be removed on disconnect
-        self._rules: List[MatchRules] = []
         # D-Bus properties for the device
         self._properties: Dict[str, Any] = {}
-        # list of characteristic handles that have notifications enabled
-        self._subscriptions: List[int] = []
         # provides synchronization between get_services() and PropertiesChanged signal
         self._services_resolved_event: Optional[asyncio.Event] = None
         # indicates disconnect request in progress when not None
@@ -84,22 +78,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
 
-        # get BlueZ version
-        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
-        out, _ = p.communicate()
-        s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
-        bluez_version = tuple(map(int, s.groups()))
-
         # BlueZ version features
-        self._can_write_without_response = (
-            bluez_version[0] == 5 and bluez_version[1] >= 46
-        )
-        self._write_without_response_workaround_needed = (
-            bluez_version[0] == 5 and bluez_version[1] < 51
-        )
-        self._hides_battery_characteristic = self._hides_device_name_characteristic = (
-            bluez_version[0] == 5 and bluez_version[1] >= 48
-        )
+        self._can_write_without_response = check_bluez_version(5, 46)
+        self._write_without_response_workaround_needed = not check_bluez_version(5, 51)
+        self._hides_battery_characteristic = check_bluez_version(5, 48)
+        self._hides_device_name_characteristic = check_bluez_version(5, 48)
 
     # Connectivity methods
 
@@ -158,7 +141,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
             reply = await add_match(self._bus, rules)
             assert_reply(reply)
-            self._rules.append(rules)
 
             rules = MatchRules(
                 interface=defs.OBJECT_MANAGER_INTERFACE,
@@ -167,7 +149,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
             reply = await add_match(self._bus, rules)
             assert_reply(reply)
-            self._rules.append(rules)
 
             rules = MatchRules(
                 interface=defs.PROPERTIES_INTERFACE,
@@ -176,7 +157,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
             reply = await add_match(self._bus, rules)
             assert_reply(reply)
-            self._rules.append(rules)
 
             # Find the HCI device to use for scanning and get cached device properties
             reply = await self._bus.call(
@@ -338,7 +318,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
             return True
         except BaseException:
-            await self._cleanup_all()
+            self._cleanup_all()
             raise
 
     async def _disconnect_monitor(self) -> None:
@@ -369,40 +349,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
             except Exception:
                 pass
 
-    async def _remove_signal_handlers(self) -> None:
+    def _cleanup_all(self) -> None:
         """
-        Remove all pending notifications of the client. This method is used to
-        free the DBus matches that have been established.
+        Free all the allocated resource in DBus. Use this method to
+        eventually cleanup all otherwise leaked resources.
         """
-        logger.debug(f"_remove_signal_handlers({self._device_path})")
-
-        if self._bus is None:
-            logger.debug("no bus object")
-            return
-
-        self._bus.remove_message_handler(self._parse_msg)
-
-        # avoid reentrancy issues by taking a copy of self._rules
-        old_rules, self._rules = self._rules, []
-        for rule in old_rules:
-            try:
-                await remove_match(self._bus, rule)
-            except Exception as e:
-                logger.error(
-                    f"Failed to remove match {rule.member} ({self._device_path}): {e}"
-                )
-
-        # There is no need to call stop_notify() here since the the device is
-        # already disconnected and we are about to close the D-Bus message bus
-        # which has the effect of clearing all notifications in BlueZ.
-        self._subscriptions = []
-
-    def _disconnect_message_bus(self) -> None:
-        """
-        Free the resources allocated for both the DBus bus.
-        Use this method upon final disconnection.
-        """
-        logger.debug(f"_disconnect_message_bus({self._device_path})")
+        logger.debug(f"_cleanup_all({self._device_path})")
 
         if not self._bus:
             logger.debug(f"already disconnected ({self._device_path})")
@@ -421,13 +373,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # a stuck client.
             self._bus = None
 
-    async def _cleanup_all(self) -> None:
-        """
-        Free all the allocated resource in DBus. Use this method to
-        eventually cleanup all otherwise leaked resources.
-        """
-        await self._remove_signal_handlers()
-        self._disconnect_message_bus()
+            # Reset all stored services.
+            self.services = BleakGATTServiceCollection()
+            self._services_resolved = False
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -472,10 +420,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
-
-        # Reset all stored services.
-        self.services = BleakGATTServiceCollection()
-        self._services_resolved = False
 
         return True
 
@@ -975,7 +919,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
 
         self._notification_callbacks[characteristic.path] = bleak_callback
-        self._subscriptions.append(characteristic.handle)
 
         reply = await self._bus.call(
             Message(
@@ -1020,10 +963,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert_reply(reply)
 
         self._notification_callbacks.pop(characteristic.path, None)
-        try:
-            self._subscriptions.remove(characteristic.handle)
-        except ValueError:
-            pass
 
     # Internal Callbacks
 
@@ -1096,11 +1035,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         self._disconnect_monitor_event.set()
                         self._disconnect_monitor_event = None
 
-                    task = asyncio.ensure_future(self._cleanup_all())
+                    self._cleanup_all()
                     if self._disconnected_callback is not None:
-                        task.add_done_callback(
-                            lambda _: self._disconnected_callback(self)
-                        )
+                        self._disconnected_callback(self)
                     disconnecting_event = self._disconnecting_event
                     if disconnecting_event:
-                        task.add_done_callback(lambda _: disconnecting_event.set())
+                        disconnecting_event.set()

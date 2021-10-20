@@ -5,15 +5,14 @@
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
-import re
 import os
 import sys
 import logging
 import platform
-import subprocess
 import asyncio
 
-from bleak.__version__ import __version__  # noqa
+from bleak.__version__ import __version__  # noqa: F401
+from bleak.backends.bluezdbus import check_bluez_version
 from bleak.exc import BleakError
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -29,20 +28,18 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
 
-if platform.system() == "Linux":
-    if not _on_rtd and not _on_ci:
-        # TODO: Check if BlueZ version 5.43 is sufficient.
-        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
-        out, _ = p.communicate()
-        s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
-        if not s:
-            raise BleakError("Could not determine BlueZ version: {0}".format(out))
-
-        major, minor = s.groups()
-        if not (int(major) == 5 and int(minor) >= 43):
-            raise BleakError(
-                "Bleak requires BlueZ >= 5.43. Found version {0} installed.".format(out)
-            )
+if _on_rtd:
+    pass
+elif os.environ.get("P4A_BOOTSTRAP") is not None:
+    from bleak.backends.p4android.scanner import (
+        BleakScannerP4Android as BleakScanner,
+    )  # noqa: F401
+    from bleak.backends.p4android.client import (
+        BleakClientP4Android as BleakClient,
+    )  # noqa: F401
+elif platform.system() == "Linux":
+    if not _on_ci and not check_bluez_version(5, 43):
+        raise BleakError("Bleak requires BlueZ >= 5.43.")
 
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as BleakScanner,
@@ -78,35 +75,23 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    # If the winrt package is installed, assume that the user has opted to use that backend
-    # instead of the pythonnet/BleakBridge implementation.
-    try:
-        from bleak.backends.winrt.scanner import (
-            BleakScannerWinRT as BleakScanner,
-        )  # noqa: F401
-        from bleak.backends.winrt.client import (
-            BleakClientWinRT as BleakClient,
-        )  # noqa: F401
-    except ImportError:
-        from bleak.backends.dotnet.scanner import (
-            BleakScannerDotNet as BleakScanner,
-        )  # noqa: F401
-        from bleak.backends.dotnet.client import (
-            BleakClientDotNet as BleakClient,
-        )  # noqa: F401
+    from bleak.backends.winrt.scanner import (
+        BleakScannerWinRT as BleakScanner,
+    )  # noqa: F401
+    from bleak.backends.winrt.client import (
+        BleakClientWinRT as BleakClient,
+    )  # noqa: F401
 
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
 # for backward compatibility
-discover = BleakScanner.discover
+if not _on_rtd:
+    discover = BleakScanner.discover
 
 
 def cli():
     import argparse
-    from asyncio.tasks import ensure_future
-
-    loop = asyncio.get_event_loop()
 
     parser = argparse.ArgumentParser(
         description="Perform Bluetooth Low Energy device scan"
@@ -117,9 +102,7 @@ def cli():
     )
     args = parser.parse_args()
 
-    out = loop.run_until_complete(
-        ensure_future(discover(adapter=args.adapter, timeout=float(args.timeout)))
-    )
+    out = asyncio.run(discover(adapter=args.adapter, timeout=float(args.timeout)))
     for o in out:
         print(str(o))
 

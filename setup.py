@@ -26,8 +26,7 @@ REQUIRED = [
     'pyobjc-framework-CoreBluetooth;platform_system=="Darwin"',
     'pyobjc-framework-libdispatch;platform_system=="Darwin"',
     # Windows reqs
-    'pythonnet;platform_system=="Windows" and python_version < "3.9.0"',
-    'winrt>=1.0.21033.1;platform_system=="Windows" and python_version >= "3.9.0"',
+    'bleak-winrt>=1.0.1;platform_system=="Windows"',
 ]
 
 TEST_REQUIRED = ["pytest", "pytest-cov"]
@@ -87,19 +86,10 @@ setup(
     author_email=EMAIL,
     url=URL,
     packages=find_packages(exclude=("tests", "examples", "docs", "BleakUWPBridge")),
-    package_data={"bleak.backends.dotnet": ["*.dll"]},
     entry_points={"console_scripts": ["bleak-lescan=bleak:cli"]},
     install_requires=REQUIRED,
     test_suite="tests",
     tests_require=TEST_REQUIRED,
-    extras_require={
-        "winrt": [
-            "winrt>=1.0.21033.1",
-        ],
-        "pythonnet": [
-            "pythonnet>=2.5.1",
-        ],
-    },
     include_package_data=True,
     license="MIT",
     classifiers=[
@@ -116,10 +106,10 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     # $ setup.py publish support.

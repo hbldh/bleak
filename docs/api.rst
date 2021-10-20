@@ -13,7 +13,7 @@ Interface
 Windows
 ~~~~~~~
 
-.. automodule:: bleak.backends.dotnet.client
+.. automodule:: bleak.backends.winrt.client
     :members:
 
 macOS
@@ -28,6 +28,12 @@ Linux Distributions with BlueZ
 .. automodule:: bleak.backends.bluezdbus.client
     :members:
 
+Python-for-Android/Kivy
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.client
+    :members:
+
 Scanning Clients
 ----------------
 
@@ -40,7 +46,7 @@ Interface
 Windows
 ~~~~~~~
 
-.. automodule:: bleak.backends.dotnet.scanner
+.. automodule:: bleak.backends.winrt.scanner
     :members:
 
 macOS
@@ -53,6 +59,12 @@ Linux Distributions with BlueZ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: bleak.backends.bluezdbus.scanner
+    :members:
+
+Python-for-Android/Kivy
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.scanner
     :members:
 
 
@@ -85,9 +97,6 @@ Exceptions
 
 Utilities
 ---------
-
-.. automodule:: bleak.utils
-    :members:
 
 .. automodule:: bleak.uuids
     :members:

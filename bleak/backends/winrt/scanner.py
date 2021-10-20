@@ -1,19 +1,18 @@
 import asyncio
 import logging
 import pathlib
-from typing import Callable, List
+from typing import List
 from uuid import UUID
 
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
-
-from winrt.windows.devices.bluetooth.advertisement import (
+from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementWatcher,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
 )
-from winrt.windows.security.cryptography import CryptographicBuffer
+
+from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 
 logger = logging.getLogger(__name__)
@@ -87,19 +86,19 @@ class BleakScannerWinRT(BaseBleakScanner):
         service_data = {}
         # 0x16 is service data with 16-bit UUID
         for section in event_args.advertisement.get_sections_by_type(0x16):
-            data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
+            data = bytes(section.data)
             service_data[
                 f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
             ] = data[2:]
         # 0x20 is service data with 32-bit UUID
         for section in event_args.advertisement.get_sections_by_type(0x20):
-            data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
+            data = bytes(section.data)
             service_data[
                 f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
             ] = data[4:]
         # 0x21 is service data with 128-bit UUID
         for section in event_args.advertisement.get_sections_by_type(0x21):
-            data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
+            data = bytes(section.data)
             service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 
         # Use the BLEDevice to populate all the fields for the advertisement data to return
@@ -125,7 +124,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
 
-        event_loop = asyncio.get_event_loop()
+        event_loop = asyncio.get_running_loop()
         self._stopped_event = asyncio.Event()
 
         self._received_token = self.watcher.add_received(
@@ -204,7 +203,7 @@ class BleakScannerWinRT(BaseBleakScanner):
             pass
         data = {}
         for m in event_args.advertisement.manufacturer_data:
-            data[m.company_id] = bytes(CryptographicBuffer.copy_to_byte_array(m.data))
+            data[m.company_id] = bytes(m.data)
         local_name = event_args.advertisement.local_name
         rssi = event_args.raw_signal_strength_in_d_bm
         return BLEDevice(
