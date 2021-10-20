@@ -8,11 +8,14 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 from uuid import UUID
 from typing import Dict, List, Optional, Union, Iterator
+import logging
 
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
+
+logger = logging.getLogger(__name__)
 
 
 class BleakGATTService(abc.ABC):
@@ -125,8 +128,9 @@ class BleakGATTServiceCollection(object):
         if service.handle not in self.__services:
             self.__services[service.handle] = service
         else:
-            raise BleakError(
-                "This service is already present in this BleakGATTServiceCollection!"
+            logger.error(
+                "The service '%s' is already present in this BleakGATTServiceCollection!",
+                service.handle,
             )
 
     def get_service(self, specifier: Union[int, str, UUID]) -> BleakGATTService:
@@ -163,8 +167,9 @@ class BleakGATTServiceCollection(object):
                 characteristic
             )
         else:
-            raise BleakError(
-                "This characteristic is already present in this BleakGATTServiceCollection!"
+            logger.error(
+                "The characteristic '%s' is already present in this BleakGATTServiceCollection!",
+                characteristic.handle,
             )
 
     def get_characteristic(
@@ -199,8 +204,9 @@ class BleakGATTServiceCollection(object):
                 descriptor
             )
         else:
-            raise BleakError(
-                "This descriptor is already present in this BleakGATTServiceCollection!"
+            logger.error(
+                "The descriptor '%s' is already present in this BleakGATTServiceCollection!",
+                descriptor.handle,
             )
 
     def get_descriptor(self, handle: int) -> BleakGATTDescriptor:
