@@ -91,11 +91,9 @@ class PeripheralDelegate(NSObject):
         self._services_discovered_future = future
         try:
             self.peripheral.discoverServices_(None)
-            await future
+            return await future
         finally:
             del self._services_discovered_future
-
-        return self.peripheral.services()
 
     @objc.python_method
     async def discover_characteristics(self, service: CBService) -> NSArray:
@@ -104,11 +102,9 @@ class PeripheralDelegate(NSObject):
         self._service_characteristic_discovered_futures[service.startHandle()] = future
         try:
             self.peripheral.discoverCharacteristics_forService_(None, service)
-            await future
+            return await future
         finally:
             del self._service_characteristic_discovered_futures[service.startHandle()]
-
-        return service.characteristics()
 
     @objc.python_method
     async def discover_descriptors(self, characteristic: CBCharacteristic) -> NSArray:
@@ -139,14 +135,9 @@ class PeripheralDelegate(NSObject):
         self._characteristic_read_futures[characteristic.handle()] = future
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
-            await asyncio.wait_for(future, timeout=5)
+            return await asyncio.wait_for(future, timeout=5)
         finally:
             del self._characteristic_read_futures[characteristic.handle()]
-
-        if characteristic.value():
-            return characteristic.value()
-        else:
-            return b""
 
     @objc.python_method
     async def read_descriptor(
@@ -160,11 +151,9 @@ class PeripheralDelegate(NSObject):
         self._descriptor_read_futures[descriptor.handle()] = future
         try:
             self.peripheral.readValueForDescriptor_(descriptor)
-            await future
+            return await future
         finally:
             del self._descriptor_read_futures[descriptor.handle()]
-
-        return descriptor.value()
 
     @objc.python_method
     async def write_characteristic(
@@ -261,7 +250,7 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     def did_discover_services(
-        self, peripheral: CBPeripheral, error: Optional[NSError]
+        self, peripheral: CBPeripheral, services: NSArray, error: Optional[NSError]
     ) -> None:
         future = self._services_discovered_future
         if error is not None:
@@ -269,7 +258,7 @@ class PeripheralDelegate(NSObject):
             future.set_exception(exception)
         else:
             logger.debug("Services discovered")
-            future.set_result(None)
+            future.set_result(services)
 
     def peripheral_didDiscoverServices_(
         self, peripheral: CBPeripheral, error: Optional[NSError]
@@ -278,12 +267,17 @@ class PeripheralDelegate(NSObject):
         self._event_loop.call_soon_threadsafe(
             self.did_discover_services,
             peripheral,
+            peripheral.services(),
             error,
         )
 
     @objc.python_method
     def did_discover_characteristics_for_service(
-        self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
+        self,
+        peripheral: CBPeripheral,
+        service: CBService,
+        characteristics: NSArray,
+        error: Optional[NSError],
     ):
         future = self._service_characteristic_discovered_futures.get(
             service.startHandle()
@@ -300,7 +294,7 @@ class PeripheralDelegate(NSObject):
             future.set_exception(exception)
         else:
             logger.debug("Characteristics discovered")
-            future.set_result(None)
+            future.set_result(characteristics)
 
     def peripheral_didDiscoverCharacteristicsForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
@@ -310,6 +304,7 @@ class PeripheralDelegate(NSObject):
             self.did_discover_characteristics_for_service,
             peripheral,
             service,
+            service.characteristics(),
             error,
         )
 
@@ -374,7 +369,7 @@ class PeripheralDelegate(NSObject):
             future.set_exception(exception)
         else:
             logger.debug("Read characteristic value")
-            future.set_result(None)
+            future.set_result(value)
 
     def peripheral_didUpdateValueForCharacteristic_error_(
         self,
@@ -396,6 +391,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         descriptor: CBDescriptor,
+        value: NSObject,
         error: Optional[NSError],
     ):
         future = self._descriptor_read_futures.get(descriptor.handle())
@@ -409,7 +405,7 @@ class PeripheralDelegate(NSObject):
             future.set_exception(exception)
         else:
             logger.debug("Read descriptor value")
-            future.set_result(None)
+            future.set_result(value)
 
     def peripheral_didUpdateValueForDescriptor_error_(
         self,
@@ -422,6 +418,7 @@ class PeripheralDelegate(NSObject):
             self.did_update_value_for_descriptor,
             peripheral,
             descriptor,
+            descriptor.value(),
             error,
         )
 
