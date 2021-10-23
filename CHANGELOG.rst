@@ -14,6 +14,8 @@ Fixed
 -----
 * Fixed ``InvalidStateError`` in CoreBluetooth backend when read and notification
   of the same characteristic are used. Fixes #675.
+* Fixed reading a characteristic on CoreBluetooth backend also triggers notification
+  callback.
 
 
 `0.13.0`_ (2021-10-20)

@@ -348,14 +348,17 @@ class PeripheralDelegate(NSObject):
     ):
         c_handle = characteristic.handle()
 
-        if error is None:
-            notify_callback = self._characteristic_notify_callbacks.get(c_handle)
-            if notify_callback:
-                notify_callback(c_handle, bytearray(value))
-
         future = self._characteristic_read_futures.get(c_handle)
+
+        # If there is no pending read request, then this must be a notification
+        # (the same delagate callback is used by both).
         if not future:
-            return  # only expected on read
+            if error is None:
+                notify_callback = self._characteristic_notify_callbacks.get(c_handle)
+                if notify_callback:
+                    notify_callback(c_handle, bytearray(value))
+            return
+
         if error is not None:
             exception = BleakError(f"Failed to read characteristic {c_handle}: {error}")
             future.set_exception(exception)
