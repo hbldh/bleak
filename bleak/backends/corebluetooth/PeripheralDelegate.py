@@ -161,7 +161,7 @@ class PeripheralDelegate(NSObject):
         characteristic: CBCharacteristic,
         value: NSData,
         response: CBCharacteristicWriteType,
-    ) -> bool:
+    ) -> None:
         # in CoreBluetooth there is no indication of success or failure of
         # CBCharacteristicWriteWithoutResponse
         if response == CBCharacteristicWriteWithResponse:
@@ -180,10 +180,8 @@ class PeripheralDelegate(NSObject):
                 value, characteristic, response
             )
 
-        return True
-
     @objc.python_method
-    async def write_descriptor(self, descriptor: CBDescriptor, value: NSData) -> bool:
+    async def write_descriptor(self, descriptor: CBDescriptor, value: NSData) -> None:
         future = self._event_loop.create_future()
 
         self._descriptor_write_futures[descriptor.handle()] = future
@@ -193,12 +191,10 @@ class PeripheralDelegate(NSObject):
         finally:
             del self._descriptor_write_futures[descriptor.handle()]
 
-        return True
-
     @objc.python_method
     async def start_notifications(
         self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any]
-    ) -> bool:
+    ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notifications already started")
@@ -214,10 +210,8 @@ class PeripheralDelegate(NSObject):
         finally:
             del self._characteristic_notify_change_futures[c_handle]
 
-        return True
-
     @objc.python_method
-    async def stop_notifications(self, characteristic: CBCharacteristic) -> bool:
+    async def stop_notifications(self, characteristic: CBCharacteristic) -> None:
         c_handle = characteristic.handle()
         if c_handle not in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notification never started")
@@ -232,8 +226,6 @@ class PeripheralDelegate(NSObject):
             del self._characteristic_notify_change_futures[c_handle]
 
         self._characteristic_notify_callbacks.pop(c_handle)
-
-        return True
 
     @objc.python_method
     async def read_rssi(self) -> NSNumber:

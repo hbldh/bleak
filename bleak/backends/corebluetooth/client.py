@@ -234,7 +234,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         use_cached=False,
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -316,23 +316,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = await self._delegate.write_characteristic(
+        await self._delegate.write_characteristic(
             characteristic.obj,
             value,
             CBCharacteristicWriteWithResponse
             if response
             else CBCharacteristicWriteWithoutResponse,
         )
-        if success:
-            logger.debug(
-                "Write Characteristic {0} : {1}".format(characteristic.uuid, data)
-            )
-        else:
-            raise BleakError(
-                "Could not write value {0} to characteristic {1}: {2}".format(
-                    data, characteristic.uuid, success
-                )
-            )
+        logger.debug(f"Write Characteristic {characteristic.uuid} : {data}")
 
     async def write_gatt_descriptor(
         self, handle: int, data: Union[bytes, bytearray, memoryview]
@@ -349,21 +340,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Descriptor {} was not found!".format(handle))
 
         value = NSData.alloc().initWithBytes_length_(data, len(data))
-        success = await self._delegate.write_descriptor(descriptor.obj, value)
-        if success:
-            logger.debug("Write Descriptor {0} : {1}".format(handle, data))
-        else:
-            raise BleakError(
-                "Could not write value {0} to descriptor {1}: {2}".format(
-                    data, descriptor.uuid, success
-                )
-            )
+        await self._delegate.write_descriptor(descriptor.obj, value)
+        logger.debug("Write Descriptor {0} : {1}".format(handle, data))
 
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         callback: Callable[[int, bytearray], None],
-        **kwargs
+        **kwargs,
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -398,15 +382,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {0} not found!".format(char_specifier))
 
-        success = await self._delegate.start_notifications(
-            characteristic.obj, bleak_callback
-        )
-        if not success:
-            raise BleakError(
-                "Could not start notify on {0}: {1}".format(
-                    characteristic.uuid, success
-                )
-            )
+        await self._delegate.start_notifications(characteristic.obj, bleak_callback)
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
@@ -427,11 +403,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} not found!".format(char_specifier))
 
-        success = await self._delegate.stop_notifications(characteristic.obj)
-        if not success:
-            raise BleakError(
-                "Could not stop notify on {0}: {1}".format(characteristic.uuid, success)
-            )
+        await self._delegate.stop_notifications(characteristic.obj)
 
     async def get_rssi(self) -> int:
         """To get RSSI value in dBm of the connected Peripheral"""
