@@ -87,29 +87,43 @@ class PeripheralDelegate(NSObject):
     @objc.python_method
     async def discover_services(self) -> NSArray:
         future = self._event_loop.create_future()
+
         self._services_discovered_future = future
-        self.peripheral.discoverServices_(None)
-        await future
+        try:
+            self.peripheral.discoverServices_(None)
+            await future
+        finally:
+            del self._services_discovered_future
 
         return self.peripheral.services()
 
     @objc.python_method
     async def discover_characteristics(self, service: CBService) -> NSArray:
         future = self._event_loop.create_future()
+
         self._service_characteristic_discovered_futures[service.startHandle()] = future
-        self.peripheral.discoverCharacteristics_forService_(None, service)
-        await future
+        try:
+            self.peripheral.discoverCharacteristics_forService_(None, service)
+            await future
+        finally:
+            del self._service_characteristic_discovered_futures[service.startHandle()]
 
         return service.characteristics()
 
     @objc.python_method
     async def discover_descriptors(self, characteristic: CBCharacteristic) -> NSArray:
         future = self._event_loop.create_future()
+
         self._characteristic_descriptor_discover_futures[
             characteristic.handle()
         ] = future
-        self.peripheral.discoverDescriptorsForCharacteristic_(characteristic)
-        await future
+        try:
+            self.peripheral.discoverDescriptorsForCharacteristic_(characteristic)
+            await future
+        finally:
+            del self._characteristic_descriptor_discover_futures[
+                characteristic.handle()
+            ]
 
         return characteristic.descriptors()
 
@@ -121,9 +135,14 @@ class PeripheralDelegate(NSObject):
             return characteristic.value()
 
         future = self._event_loop.create_future()
+
         self._characteristic_read_futures[characteristic.handle()] = future
-        self.peripheral.readValueForCharacteristic_(characteristic)
-        await asyncio.wait_for(future, timeout=5)
+        try:
+            self.peripheral.readValueForCharacteristic_(characteristic)
+            await asyncio.wait_for(future, timeout=5)
+        finally:
+            del self._characteristic_read_futures[characteristic.handle()]
+
         if characteristic.value():
             return characteristic.value()
         else:
@@ -137,9 +156,13 @@ class PeripheralDelegate(NSObject):
             return descriptor.value()
 
         future = self._event_loop.create_future()
+
         self._descriptor_read_futures[descriptor.handle()] = future
-        self.peripheral.readValueForDescriptor_(descriptor)
-        await future
+        try:
+            self.peripheral.readValueForDescriptor_(descriptor)
+            await future
+        finally:
+            del self._descriptor_read_futures[descriptor.handle()]
 
         return descriptor.value()
 
@@ -154,23 +177,32 @@ class PeripheralDelegate(NSObject):
         # CBCharacteristicWriteWithoutResponse
         if response == CBCharacteristicWriteWithResponse:
             future = self._event_loop.create_future()
+
             self._characteristic_write_futures[characteristic.handle()] = future
-
-        self.peripheral.writeValue_forCharacteristic_type_(
-            value, characteristic, response
-        )
-
-        if response == CBCharacteristicWriteWithResponse:
-            await future
+            try:
+                self.peripheral.writeValue_forCharacteristic_type_(
+                    value, characteristic, response
+                )
+                await future
+            finally:
+                del self._characteristic_write_futures[characteristic.handle()]
+        else:
+            self.peripheral.writeValue_forCharacteristic_type_(
+                value, characteristic, response
+            )
 
         return True
 
     @objc.python_method
     async def write_descriptor(self, descriptor: CBDescriptor, value: NSData) -> bool:
         future = self._event_loop.create_future()
+
         self._descriptor_write_futures[descriptor.handle()] = future
-        self.peripheral.writeValue_forDescriptor_(value, descriptor)
-        await future
+        try:
+            self.peripheral.writeValue_forDescriptor_(value, descriptor)
+            await future
+        finally:
+            del self._descriptor_write_futures[descriptor.handle()]
 
         return True
 
@@ -185,9 +217,13 @@ class PeripheralDelegate(NSObject):
         self._characteristic_notify_callbacks[c_handle] = callback
 
         future = self._event_loop.create_future()
+
         self._characteristic_notify_change_futures[c_handle] = future
-        self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
-        await future
+        try:
+            self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
+            await future
+        finally:
+            del self._characteristic_notify_change_futures[c_handle]
 
         return True
 
@@ -198,9 +234,13 @@ class PeripheralDelegate(NSObject):
             raise ValueError("Characteristic notification never started")
 
         future = self._event_loop.create_future()
+
         self._characteristic_notify_change_futures[c_handle] = future
-        self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
-        await future
+        try:
+            self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
+            await future
+        finally:
+            del self._characteristic_notify_change_futures[c_handle]
 
         self._characteristic_notify_callbacks.pop(c_handle)
 
@@ -209,9 +249,13 @@ class PeripheralDelegate(NSObject):
     @objc.python_method
     async def read_rssi(self) -> NSNumber:
         future = self._event_loop.create_future()
+
         self._read_rssi_futures[self.peripheral.identifier()] = future
-        self.peripheral.readRSSI()
-        return await future
+        try:
+            self.peripheral.readRSSI()
+            return await future
+        finally:
+            del self._read_rssi_futures[self.peripheral.identifier()]
 
     # Protocol Functions
 
@@ -388,7 +432,7 @@ class PeripheralDelegate(NSObject):
         characteristic: CBCharacteristic,
         error: Optional[NSError],
     ):
-        future = self._characteristic_write_futures.pop(characteristic.handle(), None)
+        future = self._characteristic_write_futures.get(characteristic.handle(), None)
         if not future:
             return  # event only expected on write with response
         if error is not None:
@@ -489,7 +533,7 @@ class PeripheralDelegate(NSObject):
     def did_read_rssi(
         self, peripheral: CBPeripheral, rssi: NSNumber, error: Optional[NSError]
     ) -> None:
-        future = self._read_rssi_futures.pop(peripheral.identifier(), None)
+        future = self._read_rssi_futures.get(peripheral.identifier(), None)
 
         if not future:
             logger.warning("Unexpected event did_read_rssi")
