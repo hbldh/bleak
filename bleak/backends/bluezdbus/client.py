@@ -90,7 +90,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+            timeout (float): Defaults to 10.0.
 
         Returns:
             Boolean representing connection status.
@@ -377,8 +377,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self.services = BleakGATTServiceCollection()
             self._services_resolved = False
 
-    async def disconnect(self) -> bool:
+    async def disconnect(self, **kwargs) -> bool:
         """Disconnect from the specified GATT server.
+
+        Keyword Args:
+            timeout (float): Defaults to 10.0.
 
         Returns:
             Boolean representing if device is disconnected.
@@ -396,10 +399,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             logger.debug(f"already disconnected ({self._device_path})")
             return True
 
+        timeout = kwargs.get("timeout", self._timeout)
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
             logger.debug(f"already in progress ({self._device_path})")
-            await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+            await asyncio.wait_for(self._disconnecting_event.wait(), timeout=timeout)
         elif self.is_connected:
             self._disconnecting_event = asyncio.Event()
             try:
@@ -413,7 +417,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 assert_reply(reply)
-                await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+                await asyncio.wait_for(
+                    self._disconnecting_event.wait(), timeout=timeout
+                )
             finally:
                 self._disconnecting_event = None
 
@@ -575,6 +581,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
+        Keyword Args:
+            timeout (float): Defaults to 10.0.
+
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
@@ -585,11 +594,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._services_resolved:
             return self.services
 
+        timeout = kwargs.get("timeout", self._timeout)
         if not self._properties["ServicesResolved"]:
             logger.debug(f"Waiting for ServicesResolved ({self._device_path})")
             self._services_resolved_event = asyncio.Event()
             try:
-                await asyncio.wait_for(self._services_resolved_event.wait(), 5)
+                await asyncio.wait_for(self._services_resolved_event.wait(), timeout)
             finally:
                 self._services_resolved_event = None
 

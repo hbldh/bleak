@@ -9,7 +9,7 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import itertools
 import logging
-from typing import Callable, Any, Dict, Iterable, NewType, Optional
+from typing import Callable, Any, Dict, Iterable, NewType, Optional, Union
 
 import objc
 from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
@@ -125,17 +125,22 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     async def read_characteristic(
-        self, characteristic: CBCharacteristic, use_cached: bool = True
+        self,
+        characteristic: CBCharacteristic,
+        use_cached: bool = True,
+        timeout: Optional[Union[int, float]] = None,
     ) -> NSData:
         if characteristic.value() is not None and use_cached:
             return characteristic.value()
+        if timeout is None:
+            timeout = self._timeout
 
         future = self._event_loop.create_future()
 
         self._characteristic_read_futures[characteristic.handle()] = future
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
-            return await asyncio.wait_for(future, timeout=5)
+            return await asyncio.wait_for(future, timeout=timeout)
         finally:
             del self._characteristic_read_futures[characteristic.handle()]
 
