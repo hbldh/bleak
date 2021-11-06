@@ -2,8 +2,6 @@
 Bleak Scanner
 -------------
 
-
-
 Updated on 2020-08-12 by hbldh <henrik.blidh@nedomkull.com>
 
 """
