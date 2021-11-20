@@ -10,8 +10,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+
+* Changed WinRT backend to use GATT session status instead of actual device
+  connection status.
+
 Fixed
 -----
+
 * Fixed ``InvalidStateError`` in CoreBluetooth backend when read and notification
   of the same characteristic are used. Fixes #675.
 * Fixed reading a characteristic on CoreBluetooth backend also triggers notification
