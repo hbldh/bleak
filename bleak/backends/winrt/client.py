@@ -17,7 +17,7 @@ from winrt.windows.devices.enumeration import (
     DevicePairingKinds,
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
-    DevicePairingRequestedEventArgs
+    DevicePairingRequestedEventArgs,
 )
 from winrt.windows.security.cryptography import CryptographicBuffer
 
@@ -101,7 +101,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
-               and kwargs["address_type"] in ("public", "random")
+            and kwargs["address_type"] in ("public", "random")
             else None
         )
 
@@ -273,7 +273,8 @@ class BleakClientWinRT(BaseBleakClient):
         return self._DeprecatedIsConnectedReturn(
             False
             if self._requester is None
-            else self._requester.connection_status == BluetoothConnectionStatus.CONNECTED
+            else self._requester.connection_status
+            == BluetoothConnectionStatus.CONNECTED
         )
 
     @property
@@ -281,12 +282,13 @@ class BleakClientWinRT(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
 
-    async def pair(self,
-                   protection_level=None,
-                   *args,
-                   callback: Optional[PairingCallback] = None,
-                   **kwargs,
-                   ) -> bool:
+    async def pair(
+        self,
+        protection_level=None,
+        *args,
+        callback: Optional[PairingCallback] = None,
+        **kwargs,
+    ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -323,7 +325,10 @@ class BleakClientWinRT(BaseBleakClient):
                 ceremony = DevicePairingKinds.CONFIRM_ONLY
             custom_pairing = self._requester.device_information.pairing.custom
 
-            def handler(sender: DeviceInformationCustomPairing, args: DevicePairingRequestedEventArgs):
+            def handler(
+                sender: DeviceInformationCustomPairing,
+                args: DevicePairingRequestedEventArgs,
+            ):
                 deferral = args.get_deferral()
                 if callback:
                     if args.pairing_kind == DevicePairingKinds.CONFIRM_ONLY:
@@ -344,9 +349,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                 deferral.complete()
 
-            pairing_requested_token = custom_pairing.add_pairing_requested(
-                handler
-            )
+            pairing_requested_token = custom_pairing.add_pairing_requested(handler)
             try:
                 if protection_level:
                     pairing_result = await custom_pairing.pair_async(
@@ -378,7 +381,9 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 return True
         else:
-            logger.debug(f"Device ({self._requester.device_information}) is already paired.")
+            logger.debug(
+                f"Device ({self._requester.device_information}) is already paired."
+            )
             return self._requester.device_information.pairing.is_paired
 
     async def unpair(self) -> bool:
@@ -540,7 +545,7 @@ class BleakClientWinRT(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -749,7 +754,7 @@ class BleakClientWinRT(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         callback: Callable[[int, bytearray], None],
-        **kwargs
+        **kwargs,
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
