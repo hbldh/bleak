@@ -7,14 +7,14 @@ Scanning
     You should always import the scanning class with ``from bleak import BleakScanner``. That way
     Bleak will select the appropriate backend implementation for your current OS.
 
-The :class:`<BleakScanner> bleak.backends.scanner.BleakScanner` is the Bleak 
+The :class:`<BleakScanner> bleak.backends.scanner.BleakScanner` is the Bleak
 class that is used to discover Bluetooth Low Energy devices by monitoring advertising data.
 
 Simple scanning
 ===============
 
-The simplest and most straightforward way to do a BLE scan 
-with Bleak is to use the :py:meth:`bleak.backends.scanner.BleakScanner.discover` 
+The simplest and most straightforward way to do a BLE scan
+with Bleak is to use the :py:meth:`bleak.backends.scanner.BleakScanner.discover`
 method on the :class:`<BleakScanner> bleak.backends.scanner.BleakScanner` class:
 
 .. code-block:: python
@@ -26,7 +26,7 @@ method on the :class:`<BleakScanner> bleak.backends.scanner.BleakScanner` class:
         # This will perform a scanning for 5 seconds, and the
         # program will continue after that duration.
         devices = await BleakScanner.discover(timeout=5.0)
-        
+
         for d in devices:
             print(d)
 
@@ -50,10 +50,13 @@ the manufacturer of the device respectively.
 In Windows and Linux, the peripherals are identified by a Bluetooth address (e.g. ``24:71:89:CC:09:05``), whereas
 they are identified by a UUID that is unique for that peripheral on the specific computer that Bleak is run on.
 
+..
+    Add links to or write appropriate example files.
+
 BleakScanner
 ============
 
-The :class:`<BleakScanner> bleak.backends.scanner.BleakScanner` class 
+The :class:`<BleakScanner> bleak.backends.scanner.BleakScanner` class
 can also be used in the simple fashion described above, or in an asynchronous context manager way.
 
 This program performs the exact same thing as the one above, but with the context manager
@@ -69,7 +72,7 @@ approach and a manual sleep call:
         # entry to this scope and stops the scanning when exiting
         # the scope.
         async with BleakScanner() as scanner:
-            # This sleep call keeps the scanning going for 
+            # This sleep call keeps the scanning going for
             # the specified sleep duration.
             await asyncio.sleep(5.0)
 
@@ -97,12 +100,15 @@ one can do this:
 
     asyncio.run(main())
 
+..
+    Add links to or write appropriate example files.
+
 Custom detection callback
 -------------------------
 
 It is possible to customize the scanner class to perform actions of your own
-choice upon receiving a new device update, in which none, some or all manufacturer data 
-might be sent as the second argument to the custom callback. The data sent as advertisment data 
+choice upon receiving a new device update, in which none, some or all manufacturer data
+might be sent as the second argument to the custom callback. The data sent as advertisment data
 depends on the OS, what kind of device update it is and a lot of other things. Never assume that the
 ``advertisment_data`` always contains all the data available on the device.
 
@@ -119,7 +125,7 @@ depends on the OS, what kind of device update it is and a lot of other things. N
         # entry to this scope and stops the scanning when exiting
         # the scope.
         async with BleakScanner(detection_callback=custom_detection_callback) as scanner:
-            # This sleep call keeps the scanning going for 
+            # This sleep call keeps the scanning going for
             # the specified sleep duration.
             await asyncio.sleep(5.0)
 
@@ -149,8 +155,9 @@ This will output something similar to:
     24:71:89:CC:09:05: CC2650 SensorTag
     59:57:A3:79:54:75: Apple, Inc. (b'\x10\x05\x05\x18(\xa5\xfa')
 
-There are some
+.. todo::
 
+    Add links to or write appropriate example files.
 
 Scanning Filters
 ----------------
@@ -190,10 +197,39 @@ This will start scanning until a device with the address specified is found, or 
 It is appropriate to use when you know the address of the peripheral and you only want to make the
 OS detect it and make it connectable as fast as possible.
 
+..
+    Add links to or write appropriate example files.
+
 Find devices by custom Bleak filtering
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TBW.
+If you prefer to make filtering based on some other criteria than address, then this can be implemented
+using detection callbacks in some cases as well. An example of filtering on the name of the peripheral instead of
+the address:
+
+.. code-block:: python
+
+    import asyncio
+
+    from bleak import BleakScanner
+
+
+    async def main(wanted_name):
+        device = await BleakScanner.find_device_by_filter(
+            lambda d, ad: d.name and d.name.lower() == wanted_name.lower(), timeout=10.0
+        )
+        print(device)
+
+
+    name = "CC2650 SensorTag"
+    asyncio.run(main(name))
+
+The program above will look for maximally 10 seconds for a device with the advertised name ``CC2650 SensorTag``
+after which it will return ``None`` if nothing is found. If a device with a name that matches that string, then it will return that
+a :py:class:`bleak.backends.device.BLEDevice` instance representing that peripheral.
+
+See `scanner_byname.py <https://github.com/hbldh/bleak/blob/master/examples/scanner_byname.py>`_ for a more user-friendly
+version of the above program.
 
 Find devices by custom OS native filtering
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,9 +246,9 @@ they are generally used like this:
 
 Scanning filters are currently implemented in Windows and BlueZ backends, but not yet
 in the macOS backend. To filter there, you are forced to implement it yourself, using custom detection callbacks,
-filtering after the scanning and similar. 
+filtering after the scanning and similar.
 
-Plase note that they are not currently abstracted enough to be
+Please note that they are not currently abstracted enough to be
 OS independent. It is, at the moment, required to do some separate handling for each OS backend.
 
 Scanning filter examples in .NET backend

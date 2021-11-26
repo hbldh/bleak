@@ -36,7 +36,7 @@ Python-for-Android/Kivy
     :members:
 
 Scanning Clients
-==================
+================
 
 Interface
 ~~~~~~~~~

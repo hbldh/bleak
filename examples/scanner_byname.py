@@ -1,6 +1,10 @@
 """
-Bleak Scanner
--------------
+Bleak Scanner, find by name
+---------------------------
+
+Find a peripheral by advertised name. Calle by
+
+``python scanner_byname.py "Name of my Peripheral"``
 
 Updated on 2020-08-12 by hbldh <henrik.blidh@nedomkull.com>
 
