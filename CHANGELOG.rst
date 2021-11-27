@@ -10,6 +10,12 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+
+* Added ``service_uuids`` kwarg to  ``BleakScanner``. This can be used to work
+  around issue of scanning not working on macOS 12. Issue #635.
+
 Changed
 -------
 

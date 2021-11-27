@@ -2,6 +2,7 @@ import logging
 import pathlib
 from typing import Any, Dict, List, Optional
 
+import objc
 from Foundation import NSArray, NSUUID
 from CoreBluetooth import CBPeripheral
 
@@ -25,10 +26,16 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
     this for the BLEDevice address on macOS.
 
-    Keyword Args:
-        timeout (double): The scanning timeout to be used, in case of missing
+    Args:
+        **timeout (double): The scanning timeout to be used, in case of missing
           ``stopScan_`` method.
-
+        **detection_callback (callable or coroutine):
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        **service_uuids (List[str]):
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received. Required on
+            macOS 12 and later.
     """
 
     def __init__(self, **kwargs):
@@ -36,6 +43,10 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._identifiers: Optional[Dict[NSUUID, Dict[str, Any]]] = None
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)
+        if objc.macos_available(12, 0) and not self._service_uuids:
+            logging.error(
+                "macOS 12 requires non-empty service_uuids kwarg, otherwise no advertisement data will be received"
+            )
 
     async def start(self):
         self._identifiers = {}
@@ -89,7 +100,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             self._callback(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
-        await self._manager.start_scan({})
+        await self._manager.start_scan(self._service_uuids)
 
     async def stop(self):
         await self._manager.stop_scan()

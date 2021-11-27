@@ -104,15 +104,17 @@ class CentralManagerDelegate(NSObject):
     # User defined functions
 
     @objc.python_method
-    async def start_scan(self, scan_options) -> None:
+    async def start_scan(self, service_uuids) -> None:
         # remove old
         self.devices = {}
-        service_uuids = None
-        if "service_uuids" in scan_options:
-            service_uuids_str = scan_options["service_uuids"]
-            service_uuids = NSArray.alloc().initWithArray_(
-                list(map(CBUUID.UUIDWithString_, service_uuids_str))
+
+        service_uuids = (
+            NSArray.alloc().initWithArray_(
+                list(map(CBUUID.UUIDWithString_, service_uuids))
             )
+            if service_uuids
+            else None
+        )
 
         self.central_manager.scanForPeripheralsWithServices_options_(
             service_uuids, None
