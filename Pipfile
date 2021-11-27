@@ -24,3 +24,7 @@ wheel = "*"
 watchdog = "*"
 coverage = "*"
 pytest-runner = "*"
+black = "*"
+
+[pipenv]
+allow_prereleases = true
