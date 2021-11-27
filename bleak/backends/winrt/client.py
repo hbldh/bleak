@@ -125,7 +125,9 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            self._device_info = address_or_ble_device.details.bluetooth_address
+            self._device_info = (
+                address_or_ble_device.address.details.adv.bluetooth_address
+            )
         else:
             self._device_info = None
         self._requester = None
@@ -166,7 +168,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
 
             if device:
-                self._device_info = device.details.bluetooth_address
+                self._device_info = device.details.adv.bluetooth_address
             else:
                 raise BleakError(
                     "Device with address {0} was not found.".format(self.address)

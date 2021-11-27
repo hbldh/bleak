@@ -21,6 +21,8 @@ Changed
 
 * Changed WinRT backend to use GATT session status instead of actual device
   connection status.
+* Changed handling of scan response data on WinRT backend. Advertising data
+  and scan response data is now combined in callbacks like other platforms.
 
 Fixed
 -----
