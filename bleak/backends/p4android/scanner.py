@@ -23,11 +23,8 @@ class BleakScannerP4Android(BaseBleakScanner):
 
     __scanner = None
 
-    """The python-for-android Bleak BLE Scanner.
-
-    Keyword Args:
-        filters (dict): A dict of filters to be applied on discovery. [unimplemented]
-
+    """
+    The python-for-android Bleak BLE Scanner.
     """
 
     def __init__(self, **kwargs):
@@ -37,9 +34,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__adapter = None
         self.__javascanner = None
         self.__callback = None
-
-        # Discovery filters
-        self._filters = kwargs.get("filters", {})
 
     def __del__(self):
         self.__stop()
@@ -196,8 +190,10 @@ class BleakScannerP4Android(BaseBleakScanner):
     async def stop(self):
         self.__stop()
 
-    async def set_scanning_filter(self, **kwargs):
-        self._filters = kwargs.get("filters", {})
+    def set_scanning_filter(self, **kwargs):
+        # If we do end up implementing this, this should accept List<ScanFilter>
+        # and ScanSettings java objects to pass to startScan().
+        raise NotImplementedError("not implemented in Android backend")
 
     @property
     def discovered_devices(self) -> List[BLEDevice]:
