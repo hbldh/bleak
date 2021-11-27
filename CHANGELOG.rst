@@ -14,7 +14,7 @@ Added
 -----
 
 * Added ``service_uuids`` kwarg to  ``BleakScanner``. This can be used to work
-  around issue of scanning not working on macOS 12. Issue #635.
+  around issue of scanning not working on macOS 12. Fixes #230. Works around #635.
 
 Changed
 -------

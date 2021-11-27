@@ -106,6 +106,20 @@ class BleakScannerWinRT(BaseBleakScanner):
         # Get a "BLEDevice" from parse_event args
         device = self._parse_adv_data(raw_data)
 
+        # On Windows, we have to fake service UUID filtering. If we were to pass
+        # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
+        # with the service UUIDs appropriately set, we would no longer receive
+        # scan response data (which commonly contains the local device name).
+        # So we have to do it like this instead.
+
+        if self._service_uuids:
+            for uuid in device.metadata["uuids"]:
+                if uuid in self._service_uuids:
+                    break
+            else:
+                # if there were no matching service uuids, the don't call the callback
+                return
+
         service_data = {}
 
         # Decode service data
