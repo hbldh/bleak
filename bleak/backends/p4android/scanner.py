@@ -20,12 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 class BleakScannerP4Android(BaseBleakScanner):
-
-    __scanner = None
-
     """
     The python-for-android Bleak BLE Scanner.
+
+    Args:
+        **detection_callback (callable or coroutine):
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        **service_uuids (List[str]):
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received. Specifying this
+            also enables scanning while the screen is off on Android.
     """
+
+    __scanner = None
 
     def __init__(self, **kwargs):
         super(BleakScannerP4Android, self).__init__(**kwargs)
@@ -85,7 +93,13 @@ class BleakScannerP4Android(BaseBleakScanner):
         BleakScannerP4Android.__scanner = self
 
         filters = cast("java.util.List", defs.List())
-        # filters could be built with defs.ScanFilterBuilder
+        if self._service_uuids:
+            for uuid in self._service_uuids:
+                filters.add(
+                    defs.ScanFilterBuilder()
+                    .setServiceUuid(defs.ParcelUuid.fromString(uuid))
+                    .build()
+                )
 
         scanfuture = self.__callback.perform_and_wait(
             dispatchApi=self.__javascanner.startScan,
