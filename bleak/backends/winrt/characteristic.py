@@ -94,7 +94,11 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     @property
     def description(self) -> str:
         """Description for this characteristic"""
-        return self.obj.user_description
+        return (
+            self.obj.user_description
+            if self.obj.user_description
+            else super().description
+        )
 
     @property
     def properties(self) -> List[str]:
