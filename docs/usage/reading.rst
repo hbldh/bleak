@@ -81,3 +81,31 @@ peripheral to send the value. In some cases the values are static and wil not ch
 one can send the `use_cached=True` keyword in the :py:meth:`bleak.backends.client.read_gatt_char`
 call to use the value cached in the OS, to avoid the round trip to the actual device. This might result
 in faster execution times when reading.
+
+
+Reading from descriptors
+------------------------
+
+It is also possible to read from descriptors that are present on the peripheral in a similar fashion.
+The descriptor to be read from can however only be read by specifying it by its integer handle:
+
+.. code-block:: python
+
+    import asyncio
+    from bleak import BleakClient, BleakScanner
+
+    address = "24:71:89:cc:09:05"
+
+
+    async def run(address):
+        device = await BleakScanner.find_device_by_address(address)
+        async with BleakClient(device) as client:
+            services = await client.get_services()
+            # Use the integer handle 78, which is a Characteristic User Description descriptor
+            # for the SensorTag CC2650 peripheral.
+            descriptor = services.get_descriptor(78)
+            value = await client.read_gatt_descriptor(descriptor.handle)
+            print(f"{descriptor} - Value: {value.decode()} ")
+
+
+    asyncio.run(run(address))
