@@ -114,7 +114,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     Args:
         address_or_ble_device (``BLEDevice`` or str): The Bluetooth address of the BLE peripheral
-        to connect to or the ``BLEDevice`` object representing it.
+            to connect to or the ``BLEDevice`` object representing it.
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
