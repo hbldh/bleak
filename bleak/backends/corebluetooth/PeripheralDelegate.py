@@ -72,8 +72,14 @@ class PeripheralDelegate(NSObject):
 
         These can be used to handle any pending futures when a peripheral is disconnected.
         """
+        services_discovered_future = (
+            (self._services_discovered_future,)
+            if hasattr(self, "_services_discovered_future")
+            else ()
+        )
+
         return itertools.chain(
-            (self._services_discovered_future,),
+            services_discovered_future,
             self._service_characteristic_discovered_futures.values(),
             self._characteristic_descriptor_discover_futures.values(),
             self._characteristic_read_futures.values(),
