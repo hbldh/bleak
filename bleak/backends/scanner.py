@@ -68,12 +68,28 @@ AdvertisementDataFilter = Callable[
 
 
 class BaseBleakScanner(abc.ABC):
-    """Interface for Bleak Bluetooth LE Scanners"""
+    """
+    Interface for Bleak Bluetooth LE Scanners
+
+    Args:
+        **detection_callback (callable or coroutine):
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        **service_uuids (List[str]):
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received. Required on
+            macOS 12 and later.
+    """
 
     def __init__(self, *args, **kwargs):
         super(BaseBleakScanner, self).__init__()
         self._callback: Optional[AdvertisementDataCallback] = None
         self.register_detection_callback(kwargs.get("detection_callback"))
+        self._service_uuids: Optional[List[str]] = (
+            [u.lower() for u in kwargs["service_uuids"]]
+            if "service_uuids" in kwargs
+            else None
+        )
 
     async def __aenter__(self):
         await self.start()

@@ -20,15 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 class BleakScannerP4Android(BaseBleakScanner):
+    """
+    The python-for-android Bleak BLE Scanner.
+
+    Args:
+        **detection_callback (callable or coroutine):
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        **service_uuids (List[str]):
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received. Specifying this
+            also enables scanning while the screen is off on Android.
+    """
 
     __scanner = None
-
-    """The python-for-android Bleak BLE Scanner.
-
-    Keyword Args:
-        filters (dict): A dict of filters to be applied on discovery. [unimplemented]
-
-    """
 
     def __init__(self, **kwargs):
         super(BleakScannerP4Android, self).__init__(**kwargs)
@@ -37,9 +42,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__adapter = None
         self.__javascanner = None
         self.__callback = None
-
-        # Discovery filters
-        self._filters = kwargs.get("filters", {})
 
     def __del__(self):
         self.__stop()
@@ -91,7 +93,13 @@ class BleakScannerP4Android(BaseBleakScanner):
         BleakScannerP4Android.__scanner = self
 
         filters = cast("java.util.List", defs.List())
-        # filters could be built with defs.ScanFilterBuilder
+        if self._service_uuids:
+            for uuid in self._service_uuids:
+                filters.add(
+                    defs.ScanFilterBuilder()
+                    .setServiceUuid(defs.ParcelUuid.fromString(uuid))
+                    .build()
+                )
 
         scanfuture = self.__callback.perform_and_wait(
             dispatchApi=self.__javascanner.startScan,
@@ -196,8 +204,10 @@ class BleakScannerP4Android(BaseBleakScanner):
     async def stop(self):
         self.__stop()
 
-    async def set_scanning_filter(self, **kwargs):
-        self._filters = kwargs.get("filters", {})
+    def set_scanning_filter(self, **kwargs):
+        # If we do end up implementing this, this should accept List<ScanFilter>
+        # and ScanSettings java objects to pass to startScan().
+        raise NotImplementedError("not implemented in Android backend")
 
     @property
     def discovered_devices(self) -> List[BLEDevice]:

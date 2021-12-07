@@ -10,11 +10,19 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+
+* Added ``service_uuids`` kwarg to  ``BleakScanner``. This can be used to work
+  around issue of scanning not working on macOS 12. Fixes #230. Works around #635.
+
 Changed
 -------
 
 * Changed WinRT backend to use GATT session status instead of actual device
   connection status.
+* Changed handling of scan response data on WinRT backend. Advertising data
+  and scan response data is now combined in callbacks like other platforms.
 
 Fixed
 -----

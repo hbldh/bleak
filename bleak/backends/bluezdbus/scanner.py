@@ -53,10 +53,18 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     ``SetDiscoveryFilter`` method in the `BlueZ docs
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
-    Keyword Args:
-        adapter (str): Bluetooth adapter to use for discovery.
-        filters (dict): A dict of filters to be applied on discovery.
-
+    Args:
+        **detection_callback (callable or coroutine):
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        **service_uuids (List[str]):
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received. Specifying this
+            also enables scanning while the screen is off on Android.
+        **adapter (str):
+            Bluetooth adapter to use for discovery.
+        **filters (dict):
+            A dict of filters to be applied on discovery.
     """
 
     def __init__(self, **kwargs):
@@ -72,6 +80,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         # Discovery filters
         self._filters: Dict[str, Variant] = {}
+        if self._service_uuids:
+            self._filters["UUIDs"] = Variant("as", self._service_uuids)
         self.set_scanning_filter(**kwargs)
 
     async def start(self):
