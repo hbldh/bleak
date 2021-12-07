@@ -98,7 +98,7 @@ IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 
 
 async def main(address):
-    async with BleakClient(address, win={"use_cached_services": True}) as client:
+    async with BleakClient(address, win=dict(use_cached_services=True)) as client:
         print(f"Connected: {client.is_connected}")
 
         system_id = await client.read_gatt_char(SYSTEM_ID_UUID)
