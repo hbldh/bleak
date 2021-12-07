@@ -118,9 +118,17 @@ class BleakClientWinRT(BaseBleakClient):
 
     Keyword Args:
         timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and descriptors
-            from the Windows cache instead of reading them from the device. Can be very much faster for known devices.
-            Defaults to ``False``.
+        disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
+        address_type (str): Can either be `public` or `random`, depending on the required address type needed
+            to connect to your device.
+        win (dict): A dictionary of Windows-specific configuration values:
+            use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and
+                descriptors from the Windows cache instead of reading them from the device. Can be
+                very much faster for known, unchanging devices, but not recommended for DIY peripherals where
+                the GATT layout can change between connections.
+                Defaults to ``False``.
 
     """
 
@@ -139,13 +147,20 @@ class BleakClientWinRT(BaseBleakClient):
         self._session_closed_events: List[asyncio.Event] = []
         self._session: GattSession = None
 
+        if "address_type" in kwargs:
+            raise PendingDeprecationWarning(
+                "The address_type keyword arg will in a future version be moved into the win dict input instead."
+            )
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
             and kwargs["address_type"] in ("public", "random")
             else None
         )
-        self._use_cached_services = kwargs.get("use_cached_services", False)
+
+        self._os_options = kwargs.get("win", {})
+        self._os_options.setdefault("use_cached_services", False)
+        self._os_options.setdefault("address_type", None)
 
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
 
@@ -159,17 +174,11 @@ class BleakClientWinRT(BaseBleakClient):
 
         Keyword Args:
             timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-            use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and descriptors
-                from the Windows cache instead of reading them from the device. Can be very much faster for known
-                devices. Defaults to what was specified in the constructor, where default is ``False``.
 
         Returns:
             Boolean representing connection status.
 
         """
-        use_cached_services = kwargs.get(
-            "use_cached_services", self._use_cached_services
-        )
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_info is None:
@@ -284,7 +293,9 @@ class BleakClientWinRT(BaseBleakClient):
             self._session_active_events.remove(event)
 
         # Obtain services, which also leads to connection being established.
-        await self.get_services(use_cached_services=use_cached_services)
+        await self.get_services(
+            use_cached_services=self._os_options.get("use_cached_services")
+        )
 
         return True
 
@@ -446,10 +457,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Get all services registered for this GATT server.
 
         Keyword Args:
-
-            use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and descriptors
-                from the Windows cache instead of reading them from the device. Can be very much faster for known
-                devices. Defaults to what was specified in the constructor, where default is ``False``.
+            win (dict): A dictionary of Windows-specific configuration values:
+                use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and
+                    descriptors from the Windows cache instead of reading them from the device. Can be
+                    very much faster for known, unchanging devices, but not recommended for DIY peripherals where
+                    the GATT layout can change between connections.
+                    Defaults to what was specified in the constructor, where default is ``False``.
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
@@ -460,15 +473,17 @@ class BleakClientWinRT(BaseBleakClient):
             return self.services
         else:
             logger.debug("Get Services...")
-            use_cached_services = kwargs.get(
-                "use_cached_services", self._use_cached_services
+            _use_cached_services = kwargs.get("win", {}).get(
+                "use_cached_services", self._os_options.get("use_cached_services")
             )
+            cache_enum = (
+                BluetoothCacheMode.CACHED
+                if _use_cached_services
+                else BluetoothCacheMode.UNCACHED
+            )
+
             services: Sequence[GattDeviceService] = _ensure_success(
-                await self._requester.get_gatt_services_async(
-                    BluetoothCacheMode.CACHED
-                    if use_cached_services
-                    else BluetoothCacheMode.UNCACHED
-                ),
+                await self._requester.get_gatt_services_async(cache_enum),
                 "services",
                 "Could not get GATT services",
             )
@@ -483,11 +498,7 @@ class BleakClientWinRT(BaseBleakClient):
                 self.services.add_service(BleakGATTServiceWinRT(service))
 
                 characteristics: Sequence[GattCharacteristic] = _ensure_success(
-                    await service.get_characteristics_async(
-                        BluetoothCacheMode.CACHED
-                        if use_cached_services
-                        else BluetoothCacheMode.UNCACHED
-                    ),
+                    await service.get_characteristics_async(cache_enum),
                     "characteristics",
                     f"Could not get GATT characteristics for {service}",
                 )
@@ -498,11 +509,7 @@ class BleakClientWinRT(BaseBleakClient):
                     )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
-                        await characteristic.get_descriptors_async(
-                            BluetoothCacheMode.CACHED
-                            if use_cached_services
-                            else BluetoothCacheMode.UNCACHED
-                        ),
+                        await characteristic.get_descriptors_async(cache_enum),
                         "descriptors",
                         f"Could not get GATT descriptors for {service}",
                     )
