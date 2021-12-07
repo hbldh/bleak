@@ -492,7 +492,7 @@ class BleakClientWinRT(BaseBleakClient):
 
             for service in services:
                 # Windows returns an ACCESS_DENIED error when trying to enumerate
-                # characterstics of services used by the OS, like the HID service
+                # characteristics of services used by the OS, like the HID service
                 # so we have to exclude those services.
                 if service.uuid in _ACCESS_DENIED_SERVICES:
                     continue
