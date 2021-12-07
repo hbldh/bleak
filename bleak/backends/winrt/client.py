@@ -113,7 +113,7 @@ class BleakClientWinRT(BaseBleakClient):
     a package that enables Python developers to access Windows Runtime APIs directly from Python.
 
     Args:
-        address_or_ble_device (``BLEDevice`` or str): The Bluetooth address of the BLE peripheral
+        address_or_ble_device (str or BLEDevice): The Bluetooth address of the BLE peripheral
             to connect to or the ``BLEDevice`` object representing it.
 
     Keyword Args:
