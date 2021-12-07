@@ -123,8 +123,9 @@ class BleakClientWinRT(BaseBleakClient):
             argument, which will be this client object.
         address_type (str): Can either be `public` or `random`, depending on the required address type needed
             to connect to your device.
-        win (dict): A dictionary of Windows-specific configuration values:
-            use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and
+        win (dict): A dictionary of Windows-specific configuration values.
+
+              * **use_cached_services** (*bool*): ``True`` allows Windows to fetch the services, characteristics and
                 descriptors from the Windows cache instead of reading them from the device. Can be
                 very much faster for known, unchanging devices, but not recommended for DIY peripherals where
                 the GATT layout can change between connections.
@@ -362,12 +363,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Attempts to pair with the device.
 
         Keyword Args:
-            protection_level:
-                ``Windows.Devices.Enumeration.DevicePairingProtectionLevel``
-                1: None - Pair the device using no levels of protection.
-                2: Encryption - Pair the device using encryption.
-                3: EncryptionAndAuthentication - Pair the device using
-                encryption and authentication. (This will not work in Bleak...)
+            protection_level (int): A ``DevicePairingProtectionLevel`` enum value:
+
+                1. None - Pair the device using no levels of protection.
+                2. Encryption - Pair the device using encryption.
+                3. EncryptionAndAuthentication - Pair the device using
+                   encryption and authentication. (This will not work in Bleak...)
 
         Returns:
             Boolean regarding success of pairing.
@@ -458,11 +459,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         Keyword Args:
             win (dict): A dictionary of Windows-specific configuration values:
-                use_cached_services (bool): ``True`` allows Windows to fetch the services, characteristics and
-                    descriptors from the Windows cache instead of reading them from the device. Can be
-                    very much faster for known, unchanging devices, but not recommended for DIY peripherals where
-                    the GATT layout can change between connections.
-                    Defaults to what was specified in the constructor, where default is ``False``.
+
+                * **use_cached_services** (*bool*):: ``True`` allows Windows to fetch the services, characteristics and
+                  descriptors from the Windows cache instead of reading them from the device. Can be
+                  very much faster for known, unchanging devices, but not recommended for DIY peripherals where
+                  the GATT layout can change between connections.
+                  Defaults to what was specified in the constructor, where default is ``False``.
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
