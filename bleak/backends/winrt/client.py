@@ -9,6 +9,7 @@ import inspect
 import logging
 import asyncio
 import uuid
+import warnings
 from functools import wraps
 from typing import Callable, Any, List, Optional, Sequence, Union
 
@@ -149,9 +150,12 @@ class BleakClientWinRT(BaseBleakClient):
         self._session: GattSession = None
 
         if "address_type" in kwargs:
-            raise PendingDeprecationWarning(
-                "The address_type keyword arg will in a future version be moved into the win dict input instead."
+            warnings.warn(
+                "The address_type keyword arg will in a future version be moved into the win dict input instead.",
+                PendingDeprecationWarning,
+                stacklevel=2,
             )
+
         self._address_type = (
             kwargs["address_type"]
             if "address_type" in kwargs
