@@ -15,6 +15,9 @@ Added
 
 * Added ``service_uuids`` kwarg to  ``BleakScanner``. This can be used to work
   around issue of scanning not working on macOS 12. Fixes #230. Works around #635.
+* Adding option to use cached services, characteristics and descriptors in WinRT backend. Fixes #686.
+* Adding ``PendingDeprecationWarning`` to use of ``address_type`` as keyword argument. It will be moved into the
+  ``win`` keyword instead according to #623.
 
 Changed
 -------
@@ -31,6 +34,8 @@ Fixed
   of the same characteristic are used. Fixes #675.
 * Fixed reading a characteristic on CoreBluetooth backend also triggers notification
   callback.
+* Documentation fixes for the WinRT client.
+* On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
 
 
 `0.13.0`_ (2021-10-20)
