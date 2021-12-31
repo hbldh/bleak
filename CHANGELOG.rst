@@ -23,6 +23,7 @@ Changed
   connection status.
 * Changed handling of scan response data on WinRT backend. Advertising data
   and scan response data is now combined in callbacks like other platforms.
+* Updated ``bleak-winrt`` dependency to v1.1.0. Fixes #698.
 
 Fixed
 -----
