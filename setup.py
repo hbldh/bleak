@@ -29,8 +29,6 @@ REQUIRED = [
     'bleak-winrt>=1.0.1;platform_system=="Windows"',
 ]
 
-TEST_REQUIRED = ["pytest", "pytest-cov"]
-
 here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = "\n" + f.read()
@@ -87,7 +85,6 @@ setup(
     entry_points={"console_scripts": ["bleak-lescan=bleak:cli"]},
     install_requires=REQUIRED,
     test_suite="tests",
-    tests_require=TEST_REQUIRED,
     include_package_data=True,
     license="MIT",
     project_urls={

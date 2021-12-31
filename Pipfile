@@ -23,7 +23,6 @@ pyyaml = "*"
 wheel = "*"
 watchdog = "*"
 coverage = "*"
-pytest-runner = "*"
 black = "*"
 
 [pipenv]
