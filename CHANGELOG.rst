@@ -33,6 +33,7 @@ Fixed
   of the same characteristic are used. Fixes #675.
 * Fixed reading a characteristic on CoreBluetooth backend also triggers notification
   callback.
+* Removed hardcoded timeout values in all backends.
 
 
 `0.13.0`_ (2021-10-20)

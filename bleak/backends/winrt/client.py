@@ -278,14 +278,18 @@ class BleakClientWinRT(BaseBleakClient):
 
         return True
 
-    async def disconnect(self) -> bool:
+    async def disconnect(self, **kwargs) -> bool:
         """Disconnect from the specified GATT server.
+
+        Keyword Args:
+            timeout (float): Defaults to 10.0.
 
         Returns:
             Boolean representing if device is disconnected.
 
         """
         logger.debug("Disconnecting from BLE device...")
+        timeout = kwargs.get("timeout", self._timeout)
         # Remove notifications.
         for handle, event_handler_token in list(self._notification_callbacks.items()):
             char = self.services.get_characteristic(handle)
@@ -312,7 +316,7 @@ class BleakClientWinRT(BaseBleakClient):
             self._session_closed_events.append(event)
             try:
                 self._requester.close()
-                await asyncio.wait_for(event.wait(), timeout=10)
+                await asyncio.wait_for(event.wait(), timeout=timeout)
             finally:
                 self._session_closed_events.remove(event)
 
