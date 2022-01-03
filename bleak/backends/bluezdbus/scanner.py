@@ -281,6 +281,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             props["Alias"],
             {"path": path, "props": props},
             props.get("RSSI", 0),
+            uuids=_service_uuids,
+            manufacturer_data=_manufacturer_data,
         )
 
         self._callback(device, advertisement_data)
