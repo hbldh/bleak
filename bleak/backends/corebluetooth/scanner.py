@@ -44,7 +44,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)
         if objc.macos_available(12, 0) and not self._service_uuids:
-            logging.error(
+            logger.error(
                 "macOS 12 requires non-empty service_uuids kwarg, otherwise no advertisement data will be received"
             )
 
