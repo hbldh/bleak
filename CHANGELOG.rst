@@ -7,8 +7,8 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
-=============
+`0.14.0`_ (2022-01-10)
+======================
 
 Added
 -----
@@ -33,7 +33,7 @@ Fixed
   of the same characteristic are used. Fixes #675.
 * Fixed reading a characteristic on CoreBluetooth backend also triggers notification
   callback.
-* Fixed in Linux, scanner callback not setting metadata parameters   
+* Fixed in Linux, scanner callback not setting metadata parameters. Merged #715.
 
 
 `0.13.0`_ (2021-10-20)
@@ -623,7 +623,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.13.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.14.0...develop
+.. _0.14.0: https://github.com/hbldh/bleak/compare/v0.13.0...v0.14.0
 .. _0.13.0: https://github.com/hbldh/bleak/compare/v0.12.1...v0.13.0
 .. _0.12.1: https://github.com/hbldh/bleak/compare/v0.12.0...v0.12.1
 .. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0
