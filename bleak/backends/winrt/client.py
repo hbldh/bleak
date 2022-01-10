@@ -13,8 +13,8 @@ from functools import wraps
 from typing import Callable, Any, List, Optional, Sequence, Union
 
 from bleak_winrt.windows.devices.bluetooth import (
+    BluetoothError,
     BluetoothLEDevice,
-    BluetoothConnectionStatus,
     BluetoothCacheMode,
     BluetoothAddressType,
 )
@@ -23,6 +23,8 @@ from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattCommunicationStatus,
     GattDescriptor,
     GattDeviceService,
+    GattSessionStatus,
+    GattSessionStatusChangedEventArgs,
     GattWriteOption,
     GattCharacteristicProperties,
     GattClientCharacteristicConfigurationDescriptorValue,
@@ -33,6 +35,7 @@ from bleak_winrt.windows.devices.enumeration import (
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
 )
+from bleak_winrt.windows.foundation import EventRegistrationToken
 from bleak_winrt.windows.storage.streams import Buffer
 
 from bleak.backends.device import BLEDevice
@@ -122,12 +125,14 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            self._device_info = address_or_ble_device.details.bluetooth_address
+            self._device_info = (
+                address_or_ble_device.address.details.adv.bluetooth_address
+            )
         else:
             self._device_info = None
         self._requester = None
-        self._connect_events: List[asyncio.Event] = []
-        self._disconnect_events: List[asyncio.Event] = []
+        self._session_active_events: List[asyncio.Event] = []
+        self._session_closed_events: List[asyncio.Event] = []
         self._session: GattSession = None
 
         self._address_type = (
@@ -137,7 +142,7 @@ class BleakClientWinRT(BaseBleakClient):
             else None
         )
 
-        self._connection_status_changed_token = None
+        self._session_status_changed_token: Optional[EventRegistrationToken] = None
 
     def __str__(self):
         return "BleakClientWinRT ({0})".format(self.address)
@@ -163,7 +168,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
 
             if device:
-                self._device_info = device.details.bluetooth_address
+                self._device_info = device.details.adv.bluetooth_address
             else:
                 raise BleakError(
                     "Device with address {0} was not found.".format(self.address)
@@ -190,11 +195,11 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Called on disconnect event or on failure to connect.
         def handle_disconnect():
-            if self._connection_status_changed_token:
-                self._requester.remove_connection_status_changed(
-                    self._connection_status_changed_token
+            if self._session_status_changed_token:
+                self._session.remove_session_status_changed(
+                    self._session_status_changed_token
                 )
-                self._connection_status_changed_token = None
+                self._session_status_changed_token = None
 
             if self._requester:
                 self._requester.close()
@@ -204,54 +209,69 @@ class BleakClientWinRT(BaseBleakClient):
                 self._session.close()
                 self._session = None
 
-        def handle_connection_status_changed(
-            connection_status: BluetoothConnectionStatus,
+        def handle_session_status_changed(
+            args: GattSessionStatusChangedEventArgs,
         ):
-            if connection_status == BluetoothConnectionStatus.CONNECTED:
-                for e in self._connect_events:
+            if args.error != BluetoothError.SUCCESS:
+                logger.error(f"Unhandled GATT error {args.error}")
+
+            if args.status == GattSessionStatus.ACTIVE:
+                for e in self._session_active_events:
                     e.set()
 
-            elif connection_status == BluetoothConnectionStatus.DISCONNECTED:
+            elif args.status == GattSessionStatus.CLOSED:
                 if self._disconnected_callback:
                     self._disconnected_callback(self)
 
-                for e in self._disconnect_events:
+                for e in self._session_closed_events:
                     e.set()
 
                 handle_disconnect()
 
         loop = asyncio.get_running_loop()
 
-        def _ConnectionStatusChanged_Handler(sender, args):
+        # this is the WinRT event handler will be called on another thread
+        def session_status_changed_event_handler(
+            sender: GattSession, args: GattSessionStatusChangedEventArgs
+        ):
             logger.debug(
-                "_ConnectionStatusChanged_Handler: %d", sender.connection_status
+                "session_status_changed_event_handler: id: %s, error: %s, status: %s",
+                sender.device_id,
+                args.error,
+                args.status,
             )
-            loop.call_soon_threadsafe(
-                handle_connection_status_changed, sender.connection_status
-            )
-
-        self._connection_status_changed_token = (
-            self._requester.add_connection_status_changed(
-                _ConnectionStatusChanged_Handler
-            )
-        )
+            loop.call_soon_threadsafe(handle_session_status_changed, args)
 
         # Start a GATT Session to connect
         event = asyncio.Event()
-        self._connect_events.append(event)
+        self._session_active_events.append(event)
         try:
             self._session = await GattSession.from_device_id_async(
                 self._requester.bluetooth_device_id
             )
-            # This keeps the device connected until we dispose the session or
-            # until we set maintain_connection = False.
+
+            if not self._session.can_maintain_connection:
+                raise BleakError("device does not support GATT sessions")
+
+            self._session_status_changed_token = (
+                self._session.add_session_status_changed(
+                    session_status_changed_event_handler
+                )
+            )
+
+            # Windows does not support explicitly connecting to a device.
+            # Instead it has the concept of a GATT session that is owned
+            # by the calling program.
             self._session.maintain_connection = True
+            # This keeps the device connected until we set maintain_connection = False.
+
+            # wait for the session to become active
             await asyncio.wait_for(event.wait(), timeout=timeout)
         except BaseException:
             handle_disconnect()
             raise
         finally:
-            self._connect_events.remove(event)
+            self._session_active_events.remove(event)
 
         # Obtain services, which also leads to connection being established.
         await self.get_services()
@@ -280,18 +300,21 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Without this, disposing the BluetoothLEDevice won't disconnect it
         if self._session:
-            self._session.close()
+            self._session.maintain_connection = False
+            # calling self._session.close() here prevents any further GATT
+            # session status events, so we defer that until after the session
+            # is no longer active
 
-        # Dispose of the BluetoothLEDevice and see that the connection
-        # status is now Disconnected.
+        # Dispose of the BluetoothLEDevice and see that the session
+        # status is now closed.
         if self._requester:
             event = asyncio.Event()
-            self._disconnect_events.append(event)
+            self._session_closed_events.append(event)
             try:
                 self._requester.close()
                 await asyncio.wait_for(event.wait(), timeout=10)
             finally:
-                self._disconnect_events.remove(event)
+                self._session_closed_events.remove(event)
 
         return True
 
@@ -305,9 +328,8 @@ class BleakClientWinRT(BaseBleakClient):
         """
         return self._DeprecatedIsConnectedReturn(
             False
-            if self._requester is None
-            else self._requester.connection_status
-            == BluetoothConnectionStatus.CONNECTED
+            if self._session is None
+            else self._session.session_status == GattSessionStatus.ACTIVE
         )
 
     @property

@@ -20,6 +20,7 @@ BluetoothGattCharacteristic = autoclass("android.bluetooth.BluetoothGattCharacte
 BluetoothGattDescriptor = autoclass("android.bluetooth.BluetoothGattDescriptor")
 BluetoothProfile = autoclass("android.bluetooth.BluetoothProfile")
 PythonActivity = autoclass("org.kivy.android.PythonActivity")
+ParcelUuid = autoclass("android.os.ParcelUuid")
 activity = cast("android.app.Activity", PythonActivity.mActivity)
 context = cast("android.content.Context", activity.getApplicationContext())
 

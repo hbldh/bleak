@@ -104,15 +104,17 @@ class CentralManagerDelegate(NSObject):
     # User defined functions
 
     @objc.python_method
-    async def start_scan(self, scan_options) -> None:
+    async def start_scan(self, service_uuids) -> None:
         # remove old
         self.devices = {}
-        service_uuids = None
-        if "service_uuids" in scan_options:
-            service_uuids_str = scan_options["service_uuids"]
-            service_uuids = NSArray.alloc().initWithArray_(
-                list(map(CBUUID.UUIDWithString_, service_uuids_str))
+
+        service_uuids = (
+            NSArray.alloc().initWithArray_(
+                list(map(CBUUID.UUIDWithString_, service_uuids))
             )
+            if service_uuids
+            else None
+        )
 
         self.central_manager.scanForPeripheralsWithServices_options_(
             service_uuids, None
@@ -152,25 +154,38 @@ class CentralManagerDelegate(NSObject):
         try:
             self._disconnect_callbacks[peripheral.identifier()] = disconnect_callback
             future = self.event_loop.create_future()
+
             self._connect_futures[peripheral.identifier()] = future
-            self.central_manager.connectPeripheral_options_(peripheral, None)
-            await asyncio.wait_for(future, timeout=timeout)
+            try:
+                self.central_manager.connectPeripheral_options_(peripheral, None)
+                await asyncio.wait_for(future, timeout=timeout)
+            finally:
+                del self._connect_futures[peripheral.identifier()]
+
         except asyncio.TimeoutError:
             logger.debug(f"Connection timed out after {timeout} seconds.")
             del self._disconnect_callbacks[peripheral.identifier()]
             future = self.event_loop.create_future()
+
             self._disconnect_futures[peripheral.identifier()] = future
-            self.central_manager.cancelPeripheralConnection_(peripheral)
-            await future
+            try:
+                self.central_manager.cancelPeripheralConnection_(peripheral)
+                await future
+            finally:
+                del self._disconnect_futures[peripheral.identifier()]
+
             raise
 
     @objc.python_method
     async def disconnect(self, peripheral: CBPeripheral) -> None:
         future = self.event_loop.create_future()
+
         self._disconnect_futures[peripheral.identifier()] = future
-        self.central_manager.cancelPeripheralConnection_(peripheral)
-        await future
-        del self._disconnect_callbacks[peripheral.identifier()]
+        try:
+            self.central_manager.cancelPeripheralConnection_(peripheral)
+            await future
+        finally:
+            del self._disconnect_callbacks[peripheral.identifier()]
 
     @objc.python_method
     def _changed_is_scanning(self, is_scanning: bool) -> None:
@@ -280,7 +295,7 @@ class CentralManagerDelegate(NSObject):
     def did_connect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral
     ) -> None:
-        future = self._connect_futures.pop(peripheral.identifier(), None)
+        future = self._connect_futures.get(peripheral.identifier(), None)
         if future is not None:
             future.set_result(True)
 
@@ -301,7 +316,7 @@ class CentralManagerDelegate(NSObject):
         peripheral: CBPeripheral,
         error: Optional[NSError],
     ) -> None:
-        future = self._connect_futures.pop(peripheral.identifier(), None)
+        future = self._connect_futures.get(peripheral.identifier(), None)
         if future is not None:
             if error is not None:
                 future.set_exception(BleakError(f"failed to connect: {error}"))
@@ -331,7 +346,7 @@ class CentralManagerDelegate(NSObject):
     ) -> None:
         logger.debug("Peripheral Device disconnected!")
 
-        future = self._disconnect_futures.pop(peripheral.identifier(), None)
+        future = self._disconnect_futures.get(peripheral.identifier(), None)
         if future is not None:
             if error is not None:
                 future.set_exception(BleakError(f"disconnect failed: {error}"))

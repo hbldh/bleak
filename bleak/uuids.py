@@ -752,6 +752,13 @@ uuid128_dict = {
     "6e400001-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART Service",
     "6e400003-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART TX",
     "6e400002-b5a3-f393-e0a9-e50e24dcca9e": "Nordic UART RX",
+    # LEGO
+    "00001623-1212-efde-1623-785feabcd123": "LEGO Wireless Protocol v3 Hub Service",
+    "00001624-1212-efde-1623-785feabcd123": "LEGO Wireless Protocol v3 Hub Characteristic",
+    "00001625-1212-efde-1623-785feabcd123": "LEGO Wireless Protocol v3 Bootloader Service",
+    "00001626-1212-efde-1623-785feabcd123": "LEGO Wireless Protocol v3 Bootloader Characteristic",
+    "c5f50001-8280-46da-89f4-6d8051e4aeef": "Pybricks Service",
+    "c5f50002-8280-46da-89f4-6d8051e4aeef": "Pybricks Characteristic",
     # from nRF connect
     "be15bee0-6186-407e-8381-0bd89c4d8df4": "Anki Drive Vehicle Service READ",
     "be15bee1-6186-407e-8381-0bd89c4d8df4": "Anki Drive Vehicle Service WRITE",
