@@ -3,7 +3,7 @@ import pathlib
 from typing import Any, Dict, List, Optional
 
 import objc
-from Foundation import NSArray, NSUUID
+from Foundation import NSArray, NSUUID, NSBundle
 from CoreBluetooth import CBPeripheral
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -35,7 +35,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         **service_uuids (List[str]):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Required on
-            macOS 12 and later.
+            macOS 12 and later (unless you create an app with ``py2app``).
     """
 
     def __init__(self, **kwargs):
@@ -44,9 +44,14 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)
         if objc.macos_available(12, 0) and not self._service_uuids:
-            logger.error(
-                "macOS 12 requires non-empty service_uuids kwarg, otherwise no advertisement data will be received"
-            )
+            # Python can't be the foreground app, so macOS background scanning
+            # rules apply which breaks scripts that don't supply service uuids.
+            # https://developer.apple.com/documentation/corebluetooth/cbcentralmanager/1518986-scanforperipheralswithservices?language=objc
+            # https://github.com/hbldh/bleak/issues/720
+            if NSBundle.mainBundle().bundleIdentifier() == "org.python.python":
+                logger.error(
+                    "macOS 12 requires non-empty service_uuids kwarg, otherwise no advertisement data will be received"
+                )
 
     async def start(self):
         self._identifiers = {}
