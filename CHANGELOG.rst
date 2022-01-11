@@ -10,6 +10,12 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+
+* Fixed ``AttributeError`` when passing ``BLEDevice`` to ``BleakClient``
+  constructor on WinRT backend. Fixes #731.
+
 
 `0.14.0`_ (2022-01-10)
 ======================
