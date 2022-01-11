@@ -22,6 +22,8 @@ To discover Bluetooth devices that can be connected to:
 
     asyncio.run(main())
 
+.. warning:: Do not name your script `bleak.py`! It will cause a circular import error.
+
 This will scan for 5 seconds and then produce a printed list of detected devices::
 
     24:71:89:CC:09:05: CC2650 SensorTag

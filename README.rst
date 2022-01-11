@@ -84,6 +84,7 @@ Connect to a Bluetooth device and read its model number:
 
     asyncio.run(main(address))
 
+DO NOT NAME YOUR SCRIPT `bleak.py`! It will cause a circular import error.
 
 See examples folder for more code, for instance example code for connecting to a
 `TI SensorTag CC2650 <http://www.ti.com/ww/en/wireless_connectivity/sensortag/>`_
