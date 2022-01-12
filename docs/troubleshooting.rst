@@ -4,6 +4,17 @@ Troubleshooting
 
 When things don't seem to be working right, here are some things to try.
 
+---------------
+Common Mistakes
+---------------
+
+Many people name their first script ```bleak.py``. This causes the script to
+crash with an ``ImportError`` similar to::
+
+    ImportError: cannot import name 'BleakClient' from partially initialized module 'bleak' (most likely due to a circular import) (bleak.py)`
+
+To fix the error, change the name of the script to something other than ``bleak.py``.
+
 
 --------------
 Enable Logging
