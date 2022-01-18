@@ -26,7 +26,7 @@ REQUIRED = [
     'pyobjc-framework-CoreBluetooth;platform_system=="Darwin"',
     'pyobjc-framework-libdispatch;platform_system=="Darwin"',
     # Windows reqs
-    'bleak-winrt>=1.1.0;platform_system=="Windows"',
+    'bleak-winrt>=1.1.1;platform_system=="Windows"',
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))
