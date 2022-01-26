@@ -16,6 +16,11 @@ Changed
 
 * Updated ``bleak-winrt`` dependency to v1.1.1. Fixes #741.
 
+Fixed
+-----
+
+* Fixed ``name`` is ``'Unknown'`` in WinRT backend. Fixes #736.
+
 
 `0.14.1`_ (2022-01-12)
 ======================
