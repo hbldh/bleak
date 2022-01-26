@@ -14,6 +14,10 @@ bleak
 
 .. image:: https://img.shields.io/pypi/v/bleak.svg
     :target: https://pypi.python.org/pypi/bleak
+    
+.. image:: https://img.shields.io/pypi/dm/bleak.svg
+    :target: https://pypi.python.org/pypi/bleak
+    :alt: PyPI - Downloads
 
 .. image:: https://readthedocs.org/projects/bleak/badge/?version=latest
     :target: https://bleak.readthedocs.io/en/latest/?badge=latest
