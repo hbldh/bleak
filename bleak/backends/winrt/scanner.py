@@ -237,7 +237,8 @@ class BleakScannerWinRT(BaseBleakScanner):
                 uuids.append(str(u))
             for m in args.advertisement.manufacturer_data:
                 data[m.company_id] = bytes(m.data)
-            if args.advertisement.local_name is not None:
+            # local name is empty string rather than None if not present
+            if args.advertisement.local_name:
                 local_name = args.advertisement.local_name
             rssi = args.raw_signal_strength_in_d_bm
 
