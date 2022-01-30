@@ -37,6 +37,36 @@ Windows Command Prompt::
 
 Then run your Python script in the same terminal.
 
+------------------------------------------------
+Handling multiple devices with same Service UUID
+------------------------------------------------
+
+If you're having difficulty connecting to multiple devices, try to do a scan first and
+pass the returned ``BLEDevice`` objects to ``BleakClient``.
+
+If you need a way to pass more parameters to the notify callback, please use
+``functools.partial`` to pass in more arguments.
+
+Python::
+
+    from functools import partial
+
+    from Bleak import BleakClient
+
+
+    def my_notification_callback_with_client_input(
+        client: BleakClient, sender: int, data: bytearray
+    ):
+        """Notification callback with client awareness"""
+        print(
+            f"Notification from device with address {client.address} and characteristic with handle {client.services.get_characteristic(sender)}. Data: {data}"
+        )
+
+    # [...]
+
+    await client.start_notify(
+        char_specifier, partial(my_notification_callback_with_client_input, client)
+    )
 
 -------------------------
 Capture Bluetooth Traffic
