@@ -10,7 +10,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
-* Fixed reading the battery level returns a zero-filled bytearray on linux with bluez >= 5.48 Fixes #750
+Changed
+-------
+
+* Suppress macOS 12 scanner bug error message for macOS 12.3 and higher. Fixes #720.
+
+Fixed
+-----
+
+* Fixed reading the battery level returns a zero-filled bytearray on BlueZ >= 5.48. Fixes #750.
+
 
 `0.14.2`_ (2022-01-26)
 ======================
