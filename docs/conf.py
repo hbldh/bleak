@@ -73,8 +73,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"bleak"
-copyright = u"2020, Henrik Blidh"
+project = "bleak"
+copyright = "2020, Henrik Blidh"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -225,7 +225,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ("index", "bleak.tex", u"bleak Documentation", u"Henrik Blidh", "manual")
+    ("index", "bleak.tex", "bleak Documentation", "Henrik Blidh", "manual")
 ]
 
 # The name of an image file (relative to this directory) to place at
@@ -253,7 +253,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [("index", "bleak", u"bleak Documentation", [u"Henrik Blidh"], 1)]
+man_pages = [("index", "bleak", "bleak Documentation", ["Henrik Blidh"], 1)]
 
 # If true, show URL addresses after external links.
 # man_show_urls = False
@@ -268,8 +268,8 @@ texinfo_documents = [
     (
         "index",
         "bleak",
-        u"bleak Documentation",
-        u"Henrik Blidh",
+        "bleak Documentation",
+        "Henrik Blidh",
         "bleak",
         "One line description of project.",
         "Miscellaneous",

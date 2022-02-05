@@ -23,7 +23,7 @@ pyyaml = "*"
 wheel = "*"
 watchdog = "*"
 coverage = "*"
-black = "*"
+black = ">=22.1.0"
 
 [pipenv]
 allow_prereleases = true

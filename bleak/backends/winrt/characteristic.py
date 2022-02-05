@@ -67,7 +67,7 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         self.__descriptors = []
         self.__props = [
             _GattCharacteristicsPropertiesMap[v][0]
-            for v in [2 ** n for n in range(10)]
+            for v in [2**n for n in range(10)]
             if (self.obj.characteristic_properties & v)
         ]
 
