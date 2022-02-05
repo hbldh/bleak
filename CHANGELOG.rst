@@ -11,6 +11,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 =============
 
 * Fixed reading the battery level returns a zero-filled bytearray on linux with bluez >= 5.48 Fixes #750
+* Fixed unpairing does not work on windows with winrt. Fixes #699
 
 `0.14.2`_ (2022-01-26)
 ======================
