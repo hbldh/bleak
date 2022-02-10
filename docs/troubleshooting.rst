@@ -38,14 +38,12 @@ Windows Command Prompt::
 Then run your Python script in the same terminal.
 
 
-------------------------------------------------
-Handling multiple devices with same Service UUID
-------------------------------------------------
+-----------------------------------------------
+Connecting to multiple devices at the same time
+-----------------------------------------------
 
 If you're having difficulty connecting to multiple devices, try to do a scan first and
-pass the returned ``BLEDevice`` objects to ``BleakClient``.
-
-Issue #759 might fix this in the future.
+pass the returned ``BLEDevice`` objects to ``BleakClient`` calls.
 
 Python::
 
@@ -73,6 +71,8 @@ Pass more parameters to a notify callback
 
 If you need a way to pass more parameters to the notify callback, please use
 ``functools.partial`` to pass in more arguments.
+
+Issue #759 might fix this in the future.
 
 Python::
 
