@@ -92,7 +92,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 self._peripheral
             )
 
-        def disconnect_callback():
+        def disconnect_callback(error: Optional[int]):
             self.services = BleakGATTServiceCollection()
             # Ensure that `get_services` retrieves services again, rather
             # than using the cached object
@@ -109,7 +109,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     # the future was already done
                     pass
 
-            if self._disconnected_callback:
+            if error and self._disconnected_callback:
                 self._disconnected_callback(self)
 
         manager = self._central_manager_delegate
@@ -126,7 +126,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Disconnect from the peripheral device"""
         if (
             self._peripheral is None
-            or self._peripheral.state() != CBPeripheralStateConnected
         ):
             return True
 

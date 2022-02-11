@@ -355,7 +355,7 @@ class CentralManagerDelegate(NSObject):
 
         callback = self._disconnect_callbacks.get(peripheral.identifier())
         if callback is not None:
-            callback()
+            callback(error.code if error else None)
 
     def centralManager_didDisconnectPeripheral_error_(
         self,
