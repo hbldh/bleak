@@ -353,7 +353,8 @@ class CentralManagerDelegate(NSObject):
             else:
                 future.set_result(None)
 
-        callback = self._disconnect_callbacks.get(peripheral.identifier())
+        callback = self._disconnect_callbacks.pop(peripheral.identifier(), None)
+
         if callback is not None:
             callback()
 
