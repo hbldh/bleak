@@ -38,6 +38,63 @@ Windows Command Prompt::
 Then run your Python script in the same terminal.
 
 
+-----------------------------------------------
+Connecting to multiple devices at the same time
+-----------------------------------------------
+
+If you're having difficulty connecting to multiple devices, try to do a scan first and
+pass the returned ``BLEDevice`` objects to ``BleakClient`` calls.
+
+Python::
+
+    import asyncio
+    from typing import Sequence
+
+    from bleak import BleakClient, BleakScanner
+    from bleak.backends.device import BLEDevice
+
+
+    async def find_all_devices_services()
+        scanner = BleakScanner()
+        devices: Sequence[BLEDevice] = scanner.discover(timeout=5.0)
+        for d in devices:
+            async with BleakClient(d) as client:
+                print(await client.get_services())
+
+
+    asyncio.run(find_all_devices_services())
+
+
+-----------------------------------------
+Pass more parameters to a notify callback
+-----------------------------------------
+
+If you need a way to pass more parameters to the notify callback, please use
+``functools.partial`` to pass in more arguments.
+
+Issue #759 might fix this in the future.
+
+Python::
+
+    from functools import partial
+
+    from bleak import BleakClient
+
+
+    def my_notification_callback_with_client_input(
+        client: BleakClient, sender: int, data: bytearray
+    ):
+        """Notification callback with client awareness"""
+        print(
+            f"Notification from device with address {client.address} and characteristic with handle {client.services.get_characteristic(sender)}. Data: {data}"
+        )
+
+    # [...]
+
+    await client.start_notify(
+        char_specifier, partial(my_notification_callback_with_client_input, client)
+    )
+
 -------------------------
 Capture Bluetooth Traffic
 -------------------------
