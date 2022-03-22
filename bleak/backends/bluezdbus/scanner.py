@@ -207,11 +207,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self._filters[k] = Variant("as", v)
             elif k == "RSSI":
                 self._filters[k] = Variant("n", v)
-            elif k == "DuplicateData":
-                self._filters[k] = Variant("b", v)
             elif k == "Pathloss":
                 self._filters[k] = Variant("n", v)
             elif k == "Transport":
+                self._filters[k] = Variant("s", v)
+            elif k == "DuplicateData":
+                self._filters[k] = Variant("b", v)
+            elif k == "Discoverable":
+                self._filters[k] = Variant("b", v)
+            elif k == "Pattern":
                 self._filters[k] = Variant("s", v)
             else:
                 logger.warning("Filter '%s' is not currently supported." % k)
