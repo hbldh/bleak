@@ -14,6 +14,7 @@ Changed
 -------
 
 * Suppress macOS 12 scanner bug error message for macOS 12.3 and higher. Fixes #720.
+* Adds filters ``Discoverable`` and ``Pattern`` to Bluezdbus scanner. Fixes #790.
 
 Fixed
 -----
