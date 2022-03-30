@@ -2,7 +2,7 @@
 import os
 import re
 
-from dbus_fast.auth import AuthExternal
+from dbus_fast.auth import AuthExternal, AuthAnnonymous
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
@@ -57,5 +57,14 @@ def get_dbus_authenticator():
     auth = None
     if uid is not None:
         auth = AuthExternal(uid=uid)
+    
+    if 'tcp' in os.environ.get('DBUS_SYSTEM_BUS_ADDRESS', None):
+        auth=AuthAnnonymous()
 
     return auth
+
+def should_negotiate_unix_fd():
+    if 'tcp' in os.environ.get('DBUS_SYSTEM_BUS_ADDRESS', None):
+        return False
+    else:
+        return True

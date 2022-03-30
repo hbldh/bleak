@@ -30,7 +30,7 @@ from . import defs
 from .characteristic import BleakGATTCharacteristicBlueZDBus
 from .manager import get_global_bluez_manager
 from .scanner import BleakScannerBlueZDBus
-from .utils import assert_reply, get_dbus_authenticator
+from .utils import assert_reply, get_dbus_authenticator, should_negotiate_unix_fd
 from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # BlueZ quirk where notifications are automatically enabled on reconnect.
                 self._bus = await MessageBus(
                     bus_type=BusType.SYSTEM,
-                    negotiate_unix_fd=True,
+                    negotiate_unix_fd=should_negotiate_unix_fd(),
                     auth=get_dbus_authenticator(),
                 ).connect()
 
