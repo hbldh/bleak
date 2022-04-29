@@ -63,7 +63,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         # self.__props = obj.properties()
         self.__props: List[str] = [
             _GattCharacteristicsPropertiesEnum[v][0]
-            for v in [2 ** n for n in range(10)]
+            for v in [2**n for n in range(10)]
             if (self.obj.properties() & v)
         ]
         self._uuid: str = cb_uuid_to_str(self.obj.UUID())

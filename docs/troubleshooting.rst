@@ -15,6 +15,50 @@ crash with an ``ImportError`` similar to::
 
 To fix the error, change the name of the script to something other than ``bleak.py``.
 
+----------
+macOS Bugs
+----------
+
+Bleak crashes with SIGABRT on macOS
+===================================
+
+If you see a crash similar to this::
+
+    Crashed Thread:        1  Dispatch queue: com.apple.root.default-qos
+
+    Exception Type:        EXC_CRASH (SIGABRT)
+    Exception Codes:       0x0000000000000000, 0x0000000000000000
+    Exception Note:        EXC_CORPSE_NOTIFY
+
+    Termination Reason:    Namespace TCC, Code 0
+    This app has crashed because it attempted to access privacy-sensitive data without a usage description. The app's Info.plist must contain an NSBluetoothAlwaysUsageDescription key with a string value explaining to the user how the app uses this data.
+
+It is not a problem with Bleak. It is a problem with your terminal application.
+
+Ideally, the terminal application should be fixed by adding ``NSBluetoothAlwaysUsageDescription``
+to the ``Info.plist`` file (`example <https://github.com/gnachman/iTerm2/pull/457/commits/626068e026ffb958242034129a1974ff87b21a32>`_).
+
+It is also possible to manually add the app to the list of Bluetooth apps in
+the *Privacy* settings in the macOS *System Preferences*.
+
+.. image:: images/macos-privacy-bluetooth.png
+
+
+No devices found when scanning on macOS 12
+==========================================
+
+A bug was introduced in macOS 12.0 that causes scanning to not work unless a
+list of service UUIDs is provided to ``BleakScanner``. This bug was fixed in
+macOS 12.3. On the affected version, users of bleak will see the following
+error logged:
+
+.. code-block:: none
+
+    macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received
+
+See `#635 <https://github.com/hbldh/bleak/issues/635>`_ and
+`#720 <https://github.com/hbldh/bleak/issues/720>`_ for more information
+including some partial workarounds if you need to support these macOS versions.
 
 --------------
 Enable Logging
@@ -37,6 +81,63 @@ Windows Command Prompt::
 
 Then run your Python script in the same terminal.
 
+
+-----------------------------------------------
+Connecting to multiple devices at the same time
+-----------------------------------------------
+
+If you're having difficulty connecting to multiple devices, try to do a scan first and
+pass the returned ``BLEDevice`` objects to ``BleakClient`` calls.
+
+Python::
+
+    import asyncio
+    from typing import Sequence
+
+    from bleak import BleakClient, BleakScanner
+    from bleak.backends.device import BLEDevice
+
+
+    async def find_all_devices_services()
+        scanner = BleakScanner()
+        devices: Sequence[BLEDevice] = scanner.discover(timeout=5.0)
+        for d in devices:
+            async with BleakClient(d) as client:
+                print(await client.get_services())
+
+
+    asyncio.run(find_all_devices_services())
+
+
+-----------------------------------------
+Pass more parameters to a notify callback
+-----------------------------------------
+
+If you need a way to pass more parameters to the notify callback, please use
+``functools.partial`` to pass in more arguments.
+
+Issue #759 might fix this in the future.
+
+Python::
+
+    from functools import partial
+
+    from bleak import BleakClient
+
+
+    def my_notification_callback_with_client_input(
+        client: BleakClient, sender: int, data: bytearray
+    ):
+        """Notification callback with client awareness"""
+        print(
+            f"Notification from device with address {client.address} and characteristic with handle {client.services.get_characteristic(sender)}. Data: {data}"
+        )
+
+    # [...]
+
+    await client.start_notify(
+        char_specifier, partial(my_notification_callback_with_client_input, client)
+    )
 
 -------------------------
 Capture Bluetooth Traffic

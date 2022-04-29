@@ -185,7 +185,7 @@ class CentralManagerDelegate(NSObject):
             self.central_manager.cancelPeripheralConnection_(peripheral)
             await future
         finally:
-            del self._disconnect_callbacks[peripheral.identifier()]
+            del self._disconnect_futures[peripheral.identifier()]
 
     @objc.python_method
     def _changed_is_scanning(self, is_scanning: bool) -> None:
@@ -353,7 +353,8 @@ class CentralManagerDelegate(NSObject):
             else:
                 future.set_result(None)
 
-        callback = self._disconnect_callbacks.get(peripheral.identifier())
+        callback = self._disconnect_callbacks.pop(peripheral.identifier(), None)
+
         if callback is not None:
             callback()
 
