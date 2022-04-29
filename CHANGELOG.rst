@@ -7,20 +7,20 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
-`Unreleased`_
-=============
+`0.14.3`_ (2022-04-29)
+======================
 
 Changed
 -------
 
 * Suppress macOS 12 scanner bug error message for macOS 12.3 and higher. Fixes #720.
-* Adds filters ``Discoverable`` and ``Pattern`` to Bluezdbus scanner. Fixes #790.
+* Added filters ``Discoverable`` and ``Pattern`` to BlueZ D-Bus scanner. Fixes #790.
 
 Fixed
 -----
 
-* Fixed reading the battery level returns a zero-filled bytearray on BlueZ >= 5.48. Fixes #750.
-* Fixed unpairing does not work on windows with winrt. Fixes #699
+* Fixed reading the battery level returns a zero-filled ``bytearray`` on BlueZ >= 5.48. Fixes #750.
+* Fixed unpairing does not work on windows with WinRT. Fixes #699
 * Fixed leak of ``_disconnect_futures`` in ``CentralManagerDelegate``.
 * Fixed callback not removed from ``_disconnect_callbacks`` on disconnect in ``CentralManagerDelegate``.
 
@@ -665,7 +665,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.14.2...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.14.3...develop
+.. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3
 .. _0.14.2: https://github.com/hbldh/bleak/compare/v0.14.1...v0.14.2
 .. _0.14.1: https://github.com/hbldh/bleak/compare/v0.14.0...v0.14.1
 .. _0.14.0: https://github.com/hbldh/bleak/compare/v0.13.0...v0.14.0
