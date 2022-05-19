@@ -3,6 +3,7 @@ include CHANGELOG.rst
 include CONTRIBUTING.rst
 include LICENSE
 include README.rst
+include bleak/py.typed
 
 recursive-include tests *
 recursive-exclude * __pycache__
