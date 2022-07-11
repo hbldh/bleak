@@ -1,5 +1,4 @@
 import logging
-import pathlib
 from typing import Any, Dict, List, Optional
 
 import objc
@@ -12,7 +11,6 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 logger = logging.getLogger(__name__)
-_here = pathlib.Path(__file__).parent
 
 
 class BleakScannerCoreBluetooth(BaseBleakScanner):
