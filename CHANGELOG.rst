@@ -18,6 +18,7 @@ Changed
 * Replace use of deprecated ``asyncio.get_event_loop()`` in Android backend.
 * ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
 * ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
+* All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
 
 
 `0.14.3`_ (2022-04-29)
