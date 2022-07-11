@@ -72,23 +72,24 @@ class BaseBleakScanner(abc.ABC):
     Interface for Bleak Bluetooth LE Scanners
 
     Args:
-        **detection_callback (callable or coroutine):
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        **service_uuids (List[str]):
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
-            containing this advertising data will be received. Required on
-            macOS 12 and later.
+            containing this advertising data will be received.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+    ):
         super(BaseBleakScanner, self).__init__()
         self._callback: Optional[AdvertisementDataCallback] = None
-        self.register_detection_callback(kwargs.get("detection_callback"))
+        self.register_detection_callback(detection_callback)
         self._service_uuids: Optional[List[str]] = (
-            [u.lower() for u in kwargs["service_uuids"]]
-            if "service_uuids" in kwargs
-            else None
+            [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
 
     async def __aenter__(self):

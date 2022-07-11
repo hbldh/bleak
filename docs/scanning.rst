@@ -66,8 +66,7 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
         print(device.address, "RSSI:", device.rssi, advertisement_data)
 
     async def main():
-        scanner = BleakScanner()
-        scanner.register_detection_callback(detection_callback)
+        scanner = BleakScanner(detection_callback)
         await scanner.start()
         await asyncio.sleep(5.0)
         await scanner.stop()

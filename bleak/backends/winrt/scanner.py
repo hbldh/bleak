@@ -11,7 +11,11 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
 )
 
 from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from bleak.backends.scanner import (
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+    AdvertisementData,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -53,13 +57,25 @@ class BleakScannerWinRT(BaseBleakScanner):
 
     Implemented using `Python/WinRT <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection/>`_.
 
-    Keyword Args:
-        scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received.
+        **scanning_mode (str):
+            Set to "Passive" to avoid the "Active" scanning mode.
 
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerWinRT, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher = None
         self._stopped_event = None

@@ -16,6 +16,7 @@ Changed
 * Add `py.typed` file so mypy discovers Bleak's type annotations
 * UUID descriptions updated to 2022-03-16 assigned numbers document
 * Replace use of deprecated ``asyncio.get_event_loop()`` in Android backend.
+* ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
 
 
 `0.14.3`_ (2022-04-29)

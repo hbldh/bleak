@@ -14,7 +14,11 @@ from bleak.backends.bluezdbus.utils import (
     validate_address,
 )
 from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from bleak.backends.scanner import (
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+    AdvertisementData,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +58,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
     Args:
-        **detection_callback (callable or coroutine):
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        **service_uuids (List[str]):
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
@@ -67,8 +71,13 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             A dict of filters to be applied on discovery.
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
         # kwarg "device" is for backwards compatibility
         self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
 

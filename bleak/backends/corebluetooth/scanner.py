@@ -8,7 +8,11 @@ from CoreBluetooth import CBPeripheral
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from bleak.backends.scanner import (
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+    AdvertisementData,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +29,27 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     this for the BLEDevice address on macOS.
 
     Args:
-        **timeout (double): The scanning timeout to be used, in case of missing
-          ``stopScan_`` method.
-        **detection_callback (callable or coroutine):
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        **service_uuids (List[str]):
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Required on
-            macOS 12 and later (unless you create an app with ``py2app``).
+            macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
+        **timeout (float):
+             The scanning timeout to be used, in case of missing
+            ``stopScan_`` method.
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        **kwargs
+    ):
+        super(BleakScannerCoreBluetooth, self).__init__(
+            detection_callback, service_uuids
+        )
         self._identifiers: Optional[Dict[NSUUID, Dict[str, Any]]] = None
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)

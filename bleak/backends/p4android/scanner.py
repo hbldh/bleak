@@ -2,10 +2,14 @@
 
 import asyncio
 import logging
-from typing import List
+from typing import List, Optional
 import warnings
 
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from bleak.backends.scanner import (
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+    AdvertisementData,
+)
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
@@ -24,10 +28,10 @@ class BleakScannerP4Android(BaseBleakScanner):
     The python-for-android Bleak BLE Scanner.
 
     Args:
-        **detection_callback (callable or coroutine):
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        **service_uuids (List[str]):
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
@@ -35,8 +39,13 @@ class BleakScannerP4Android(BaseBleakScanner):
 
     __scanner = None
 
-    def __init__(self, **kwargs):
-        super(BleakScannerP4Android, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)
 
         self._devices = {}
         self.__adapter = None
