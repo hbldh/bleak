@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 import objc
 from Foundation import NSArray, NSUUID, NSBundle
 from CoreBluetooth import CBPeripheral
+from typing_extensions import Literal
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
@@ -13,6 +14,7 @@ from bleak.backends.scanner import (
     BaseBleakScanner,
     AdvertisementData,
 )
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,10 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Required on
             macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode. Not
+            supported on macOS! Will raise :class:`BleakError` if set to
+            ``"passive"``
         **timeout (float):
              The scanning timeout to be used, in case of missing
             ``stopScan_`` method.
@@ -45,11 +51,16 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback] = None,
         service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
         **kwargs
     ):
         super(BleakScannerCoreBluetooth, self).__init__(
             detection_callback, service_uuids
         )
+
+        if scanning_mode == "passive":
+            raise BleakError("macOS does not support passive scanning")
+
         self._identifiers: Optional[Dict[NSUUID, Dict[str, Any]]] = None
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)

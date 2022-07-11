@@ -5,6 +5,7 @@ from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType, MessageType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
+from typing_extensions import Literal
 
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
@@ -65,6 +66,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
         **adapter (str):
             Bluetooth adapter to use for discovery.
         **filters (dict):
@@ -75,9 +78,14 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback] = None,
         service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
         **kwargs,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
+
+        if scanning_mode == "passive":
+            raise NotImplementedError
+
         # kwarg "device" is for backwards compatibility
         self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
 

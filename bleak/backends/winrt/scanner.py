@@ -9,6 +9,7 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
 )
+from typing_extensions import Literal
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import (
@@ -64,8 +65,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.
-        **scanning_mode (str):
-            Set to "Passive" to avoid the "Active" scanning mode.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
 
     """
 
@@ -73,6 +74,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback] = None,
         service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
         **kwargs,
     ):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
@@ -81,7 +83,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._stopped_event = None
         self._discovered_devices: Dict[int, _RawAdvData] = {}
 
-        if "scanning_mode" in kwargs and kwargs["scanning_mode"].lower() == "passive":
+        # case insensitivity is for backwards compatibility on Windows only
+        if scanning_mode.lower() == "passive":
             self._scanning_mode = BluetoothLEScanningMode.PASSIVE
         else:
             self._scanning_mode = BluetoothLEScanningMode.ACTIVE

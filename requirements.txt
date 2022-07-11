@@ -1,3 +1,4 @@
+typing-extensions>=4.2.0
 dbus-next>=0.2.2; sys_platform=="linux"
 pyobjc-core>=7.0.1;sys_platform == 'darwin'
 pyobjc-framework-CoreBluetooth>=7.0.1;sys_platform == 'darwin'

@@ -5,6 +5,8 @@ import logging
 from typing import List, Optional
 import warnings
 
+from typing_extensions import Literal
+
 from bleak.backends.scanner import (
     AdvertisementDataCallback,
     BaseBleakScanner,
@@ -35,6 +37,8 @@ class BleakScannerP4Android(BaseBleakScanner):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
     """
 
     __scanner = None
@@ -43,9 +47,15 @@ class BleakScannerP4Android(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback] = None,
         service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
         **kwargs,
     ):
         super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)
+
+        if scanning_mode == "passive":
+            self.__scan_mode = defs.ScanSettings.SCAN_MODE_OPPORTUNISTIC
+        else:
+            self.__scan_mode = defs.ScanSettings.SCAN_MODE_LOW_LATENCY
 
         self._devices = {}
         self.__adapter = None
@@ -115,7 +125,7 @@ class BleakScannerP4Android(BaseBleakScanner):
             dispatchParams=(
                 filters,
                 defs.ScanSettingsBuilder()
-                .setScanMode(defs.ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setScanMode(self.__scan_mode)
                 .setReportDelay(0)
                 .setPhy(defs.ScanSettings.PHY_LE_ALL_SUPPORTED)
                 .setNumOfMatches(defs.ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
