@@ -1,14 +1,36 @@
 import logging
 from typing import Callable, Coroutine, Dict, List, Optional
+from warnings import warn
 
 from dbus_next import Variant
-from typing_extensions import Literal
+from typing_extensions import TypedDict, Literal
 
 from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .manager import Device1, get_global_bluez_manager
 
 logger = logging.getLogger(__name__)
+
+
+class BlueZDiscoveryFilters(TypedDict, total=False):
+    UUIDs: List[str]
+    RSSI: int
+    Pathloss: int
+    Transport: str
+    DuplicateData: bool
+    Discoverable: bool
+    Pattern: str
+
+
+class BlueZArgs(TypedDict, total=False):
+    """
+    :class:`BleakScanner` args that are specific to the BlueZ backend.
+    """
+
+    filters: BlueZDiscoveryFilters
+    """
+    Filters to pass to the adapter SetDiscoveryFilter D-Bus method.
+    """
 
 
 class BleakScannerBlueZDBus(BaseBleakScanner):
@@ -28,10 +50,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             also enables scanning while the screen is off on Android.
         scanning_mode:
             Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+        **bluez:
+            Dictionary of arguments specific to the BlueZ backend.
         **adapter (str):
             Bluetooth adapter to use for discovery.
-        **filters (dict):
-            A dict of filters to be applied on discovery.
     """
 
     def __init__(
@@ -39,6 +61,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         detection_callback: Optional[AdvertisementDataCallback] = None,
         service_uuids: Optional[List[str]] = None,
         scanning_mode: Literal["active", "passive"] = "active",
+        *,
+        bluez: BlueZArgs = {},
         **kwargs,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
@@ -66,7 +90,19 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if self._service_uuids:
             self._filters["UUIDs"] = Variant("as", self._service_uuids)
 
-        self.set_scanning_filter(**kwargs)
+        filters = kwargs.get("filters")
+
+        if filters is None:
+            filters = bluez.get("filters")
+        else:
+            warn(
+                "the 'filters' kwarg is deprecated, use 'bluez' kwarg instead",
+                FutureWarning,
+                stacklevel=2,
+            )
+
+        if filters is not None:
+            self.set_scanning_filter(filters=filters)
 
     async def start(self):
         manager = await get_global_bluez_manager()

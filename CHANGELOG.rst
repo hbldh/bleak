@@ -14,6 +14,7 @@ Added
 -----
 
 * Added new ``assigned_numbers`` module and ``AdvertisementDataType`` enum.
+* Added new ``bluez`` kwarg to ``BleakScanner`` in BlueZ backend.
 
 Changed
 -------
@@ -24,6 +25,7 @@ Changed
 * ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
 * ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
 * All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
+* Deprecated ``filters`` kwarg in ``BleakScanner`` in BlueZ backend.
 
 
 `0.14.3`_ (2022-04-29)
