@@ -363,6 +363,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
+            # An attempt to remedy the failure to close the DBus socket, see
+            # https://github.com/hbldh/bleak/issues/875
+            try:
+                self._bus._sock.close()
+            except:  # noqa
+                pass
         except Exception as e:
             logger.error(
                 f"Attempt to disconnect system bus failed ({self._device_path}): {e}"

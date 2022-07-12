@@ -187,6 +187,13 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         except Exception as e:
             logger.error("Attempt to disconnect system bus failed: {0}".format(e))
 
+        # An attempt to remedy the failure to close the DBus socket, see
+        # https://github.com/hbldh/bleak/issues/875
+        try:
+            self._bus._sock.close()
+        except:  # noqa
+            pass
+
         self._bus = None
 
     def set_scanning_filter(self, **kwargs):
