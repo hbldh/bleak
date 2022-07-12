@@ -7,6 +7,8 @@ PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
 # Bluez specific DBUS
 BLUEZ_SERVICE = "org.bluez"
 ADAPTER_INTERFACE = "org.bluez.Adapter1"
+ADVERTISEMENT_MONITOR_INTERFACE = "org.bluez.AdvertisementMonitor1"
+ADVERTISEMENT_MONITOR_MANAGER_INTERFACE = "org.bluez.AdvertisementMonitorManager1"
 DEVICE_INTERFACE = "org.bluez.Device1"
 BATTERY_INTERFACE = "org.bluez.Battery1"
 

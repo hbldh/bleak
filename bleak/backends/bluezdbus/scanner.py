@@ -5,8 +5,10 @@ from warnings import warn
 from dbus_next import Variant
 from typing_extensions import TypedDict, Literal
 
+from ...exc import BleakError
 from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
+from .advertisement_monitor import OrPatternLike
 from .manager import Device1, get_global_bluez_manager
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,15 @@ class BlueZArgs(TypedDict, total=False):
     filters: BlueZDiscoveryFilters
     """
     Filters to pass to the adapter SetDiscoveryFilter D-Bus method.
+
+    Only used for active scanning.
+    """
+
+    or_patterns: List[OrPatternLike]
+    """
+    Or patterns to pass to the AdvertisementMonitor1 D-Bus interface.
+
+    Only used for passive scanning.
     """
 
 
@@ -67,8 +78,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
 
-        if scanning_mode == "passive":
-            raise NotImplementedError
+        self._scanning_mode = scanning_mode
 
         # kwarg "device" is for backwards compatibility
         self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
@@ -104,14 +114,29 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if filters is not None:
             self.set_scanning_filter(filters=filters)
 
+        self._or_patterns = bluez.get("or_patterns")
+
+        if self._scanning_mode == "passive" and service_uuids:
+            logger.warning(
+                "service uuid filtering is not implemented for passive scanning, use bluez or_patterns as a workaround"
+            )
+
+        if self._scanning_mode == "passive" and not self._or_patterns:
+            raise BleakError("passive scanning mode requires bluez or_patterns")
+
     async def start(self):
         manager = await get_global_bluez_manager()
 
         self._devices.clear()
 
-        self._stop = await manager.active_scan(
-            self._adapter_path, self._filters, self._handle_advertising_data
-        )
+        if self._scanning_mode == "passive":
+            self._stop = await manager.passive_scan(
+                self._adapter_path, self._or_patterns, self._handle_advertising_data
+            )
+        else:
+            self._stop = await manager.active_scan(
+                self._adapter_path, self._filters, self._handle_advertising_data
+            )
 
     async def stop(self):
         if self._stop:

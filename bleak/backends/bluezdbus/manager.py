@@ -2,18 +2,22 @@
 BlueZ D-Bus manager module
 --------------------------
 
-This contains code for the global BlueZ D-Bus object manager.
+This module contains code for the global BlueZ D-Bus object manager that is
+used internally by Bleak.
 """
 
 import asyncio
 import logging
+import os
 from typing import Any, Callable, Coroutine, Dict, List, NamedTuple, Set, Tuple, cast
 
 from dbus_next import BusType, Message, MessageType, Variant
 from dbus_next.aio.message_bus import MessageBus
 from typing_extensions import TypedDict, Literal
 
+from ...exc import BleakError
 from . import defs
+from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
 from .signals import MatchRules, add_match
 from .utils import assert_reply, unpack_variants
 
@@ -365,6 +369,78 @@ class BlueZManager:
                 # if starting scanning failed, don't leak the callback
                 self._advertisement_callbacks.remove(callback_and_state)
                 raise
+
+    async def passive_scan(
+        self,
+        adapter_path: str,
+        filters: List[OrPatternLike],
+        callback: AdvertisementCallback,
+    ) -> Callable[[], Coroutine]:
+        """
+        Configures the advertisement data filters and starts scanning.
+
+        Args:
+            adapter_path: The D-Bus object path of the adapter to use for scanning.
+            filters: A list of "or patterns" to pass to ``org.bluez.AdvertisementMonitor1``.
+            callback: A callable that will be called when new advertisement data is received.
+
+        Returns:
+            An async function that is used to stop scanning and remove the filters.
+        """
+        async with self._bus_lock:
+            monitor = AdvertisementMonitor(
+                filters,
+                lambda d: callback(
+                    d, cast(Device1, self._properties[d][defs.DEVICE_INTERFACE])
+                ),
+            )
+
+            # this should be a unique path to allow multiple python interpreters
+            # running bleak and multiple scanners within a single interpreter
+            monitor_path = f"/org/bleak/{os.getpid()}/{id(monitor)}"
+
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=adapter_path,
+                    interface=defs.ADVERTISEMENT_MONITOR_MANAGER_INTERFACE,
+                    member="RegisterMonitor",
+                    signature="o",
+                    body=[monitor_path],
+                )
+            )
+
+            if (
+                reply.message_type == MessageType.ERROR
+                and reply.error_name == "org.freedesktop.DBus.Error.UnknownMethod"
+            ):
+                raise BleakError(
+                    "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled and Linux kernel >= 5.10"
+                )
+
+            assert_reply(reply)
+
+            # It is important to export after registering, otherwise BlueZ
+            # won't use the monitor
+            self._bus.export(monitor_path, monitor)
+
+            async def stop():
+                async with self._bus_lock:
+                    self._bus.unexport(monitor_path, monitor)
+
+                    reply = await self._bus.call(
+                        Message(
+                            destination=defs.BLUEZ_SERVICE,
+                            path=adapter_path,
+                            interface=defs.ADVERTISEMENT_MONITOR_MANAGER_INTERFACE,
+                            member="UnregisterMonitor",
+                            signature="o",
+                            body=[monitor_path],
+                        )
+                    )
+                    assert_reply(reply)
+
+            return stop
 
     def _parse_msg(self, message: Message):
         """

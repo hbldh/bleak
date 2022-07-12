@@ -15,6 +15,7 @@ Added
 
 * Added new ``assigned_numbers`` module and ``AdvertisementDataType`` enum.
 * Added new ``bluez`` kwarg to ``BleakScanner`` in BlueZ backend.
+* Added support for passive scanning in the BlueZ backend. Fixes #606.
 
 Changed
 -------
