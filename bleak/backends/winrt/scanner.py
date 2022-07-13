@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import pathlib
 from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
@@ -16,7 +15,6 @@ from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
 
 
 logger = logging.getLogger(__name__)
-_here = pathlib.Path(__file__).parent
 
 
 def _format_bdaddr(a):

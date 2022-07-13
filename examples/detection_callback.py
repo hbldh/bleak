@@ -28,6 +28,7 @@ async def main(service_uuids):
     scanner.register_detection_callback(simple_callback)
 
     while True:
+        print("(re)starting scanner")
         await scanner.start()
         await asyncio.sleep(5.0)
         await scanner.stop()

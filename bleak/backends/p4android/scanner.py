@@ -52,7 +52,7 @@ class BleakScannerP4Android(BaseBleakScanner):
 
         logger.debug("Starting BTLE scan")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         if self.__javascanner is None:
             if self.__callback is None:
