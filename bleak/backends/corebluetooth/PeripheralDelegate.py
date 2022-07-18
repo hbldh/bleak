@@ -131,7 +131,10 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     async def read_characteristic(
-        self, characteristic: CBCharacteristic, use_cached: bool = True
+        self,
+        characteristic: CBCharacteristic,
+        use_cached: bool = True,
+        timeout: int = 10,
     ) -> NSData:
         if characteristic.value() is not None and use_cached:
             return characteristic.value()
@@ -141,7 +144,7 @@ class PeripheralDelegate(NSObject):
         self._characteristic_read_futures[characteristic.handle()] = future
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
-            return await asyncio.wait_for(future, timeout=5)
+            return await asyncio.wait_for(future, timeout=timeout)
         finally:
             del self._characteristic_read_futures[characteristic.handle()]
 
