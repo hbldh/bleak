@@ -2,17 +2,22 @@ import os
 import platform
 from bleak.backends.bluezdbus import check_bluez_version
 from bleak.exc import BleakError
+from bleak.backends.scanner import BaseBleakScanner
+from bleak.backends.client import BaseBleakClient
+
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 _on_ci = "CI" in os.environ
 
 # Abstract classes, to allow typing and documentation to be specified
-# independent of backend
+# independent of backend.
+# xxxjack unsure whether these are needed, or the typing and documentation
+# in the Base classes is already good enough. Otherwise we can override here.
 
-class AbstractBleakScanner:
+class AbstractBleakScanner(BaseBleakScanner):
     pass
 
-class AbstractBleakClient:
+class AbstractBleakClient(BaseBleakClient):
     pass
 
 if _on_rtd:
@@ -79,7 +84,7 @@ else:
 class BleakScanner(AbstractBleakScanner, BackendBleakScanner):
     pass
 
-class BleakClient(AbstractBleakClient, BackEndBleakClient):
+class BleakClient(AbstractBleakClient, BackendBleakClient):
     pass
 
 # for backward compatibility

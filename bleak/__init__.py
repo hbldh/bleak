@@ -11,9 +11,10 @@ import logging
 import asyncio
 
 from bleak.__version__ import __version__  # noqa: F401
+from bleak.exc import BleakError
 from bleak._api import BleakScanner, BleakClient, discover
 
-__all__ = ["BleakScanner", "BleakClient", "discover", "cli"]
+__all__ = ["BleakError", "BleakScanner", "BleakClient", "discover", "cli"]
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
