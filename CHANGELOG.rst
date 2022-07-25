@@ -23,6 +23,7 @@ Changed
 * Add `py.typed` file so mypy discovers Bleak's type annotations
 * UUID descriptions updated to 2022-03-16 assigned numbers document
 * Replace use of deprecated ``asyncio.get_event_loop()`` in Android backend.
+* Adjust default timeout for read_gatt_char with CoreBluetooth to 10s
 * ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
 * ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
 * All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
