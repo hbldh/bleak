@@ -1,6 +1,6 @@
 """
 Advertisement Monitor
---------------------
+---------------------
 
 This module contains types associated with the BlueZ D-Bus `advertisement
 monitor api <https://github.com/bluez/bluez/blob/master/doc/advertisement-monitor-api.txt>`.
