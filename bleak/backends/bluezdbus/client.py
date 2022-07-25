@@ -564,7 +564,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         if self._mtu_size is None:
             warnings.warn(
-                "Using default MTU value. Call _assign_mtu() or set _mtu_size first to avoid this warning."
+                "Using default MTU value. Call _acquire_mtu() or set _mtu_size first to avoid this warning."
             )
             return 23
 
@@ -640,7 +640,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
                 assert_reply(reply)
                 # Simulate regular characteristics read to be consistent over all platforms.
-                value = bytearray(reply.body[0]["Percentage"].value)
+                value = bytearray([reply.body[0]["Percentage"].value])
                 logger.debug(
                     "Read Battery Level {0} | {1}: {2}".format(
                         char_specifier, self._device_path, value

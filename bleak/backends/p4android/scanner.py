@@ -2,10 +2,16 @@
 
 import asyncio
 import logging
-from typing import List
+from typing import List, Optional
 import warnings
 
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from typing_extensions import Literal
+
+from bleak.backends.scanner import (
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+    AdvertisementData,
+)
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
@@ -24,19 +30,32 @@ class BleakScannerP4Android(BaseBleakScanner):
     The python-for-android Bleak BLE Scanner.
 
     Args:
-        **detection_callback (callable or coroutine):
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        **service_uuids (List[str]):
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
     """
 
     __scanner = None
 
-    def __init__(self, **kwargs):
-        super(BleakScannerP4Android, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
+        **kwargs,
+    ):
+        super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)
+
+        if scanning_mode == "passive":
+            self.__scan_mode = defs.ScanSettings.SCAN_MODE_OPPORTUNISTIC
+        else:
+            self.__scan_mode = defs.ScanSettings.SCAN_MODE_LOW_LATENCY
 
         self._devices = {}
         self.__adapter = None
@@ -52,7 +71,7 @@ class BleakScannerP4Android(BaseBleakScanner):
 
         logger.debug("Starting BTLE scan")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         if self.__javascanner is None:
             if self.__callback is None:
@@ -106,7 +125,7 @@ class BleakScannerP4Android(BaseBleakScanner):
             dispatchParams=(
                 filters,
                 defs.ScanSettingsBuilder()
-                .setScanMode(defs.ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setScanMode(self.__scan_mode)
                 .setReportDelay(0)
                 .setPhy(defs.ScanSettings.PHY_LE_ALL_SUPPORTED)
                 .setNumOfMatches(defs.ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)

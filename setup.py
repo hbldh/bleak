@@ -19,6 +19,7 @@ EMAIL = "henrik.blidh@nedomkull.com"
 AUTHOR = "Henrik Blidh"
 
 REQUIRED = [
+    "typing-extensions>=4.2.0",
     # Linux reqs
     'dbus-next;platform_system=="Linux"',
     # macOS reqs
@@ -26,10 +27,8 @@ REQUIRED = [
     'pyobjc-framework-CoreBluetooth;platform_system=="Darwin"',
     'pyobjc-framework-libdispatch;platform_system=="Darwin"',
     # Windows reqs
-    'bleak-winrt>=1.0.1;platform_system=="Windows"',
+    'bleak-winrt>=1.1.1;platform_system=="Windows"',
 ]
-
-TEST_REQUIRED = ["pytest", "pytest-cov"]
 
 here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
@@ -87,7 +86,6 @@ setup(
     entry_points={"console_scripts": ["bleak-lescan=bleak:cli"]},
     install_requires=REQUIRED,
     test_suite="tests",
-    tests_require=TEST_REQUIRED,
     include_package_data=True,
     license="MIT",
     project_urls={
@@ -102,7 +100,6 @@ setup(
         "Development Status :: 4 - Beta",
         "Framework :: AsyncIO",
         "Intended Audience :: Developers",
-        "Topic :: System :: Hardware :: Bluetooth",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Operating System :: Microsoft :: Windows :: Windows 10",

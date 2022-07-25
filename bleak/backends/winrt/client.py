@@ -32,6 +32,7 @@ from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattSession,
 )
 from bleak_winrt.windows.devices.enumeration import (
+    DeviceInformation,
     DevicePairingKinds,
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
@@ -139,9 +140,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            self._device_info = (
-                address_or_ble_device.address.details.adv.bluetooth_address
-            )
+            self._device_info = address_or_ble_device.details.adv.bluetooth_address
         else:
             self._device_info = None
         self._requester = None
@@ -378,15 +377,18 @@ class BleakClientWinRT(BaseBleakClient):
             Boolean regarding success of pairing.
 
         """
-
+        # New local device information object created since the object from the requester isn't updated
+        device_information = await DeviceInformation.create_from_id_async(
+            self._requester.device_information.id
+        )
         if (
-            self._requester.device_information.pairing.can_pair
-            and not self._requester.device_information.pairing.is_paired
+            device_information.pairing.can_pair
+            and not device_information.pairing.is_paired
         ):
 
             # Currently only supporting Just Works solutions...
             ceremony = DevicePairingKinds.CONFIRM_ONLY
-            custom_pairing = self._requester.device_information.pairing.custom
+            custom_pairing = device_information.pairing.custom
 
             def handler(sender, args):
                 args.accept()
@@ -423,7 +425,7 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 return True
         else:
-            return self._requester.device_information.pairing.is_paired
+            return device_information.pairing.is_paired
 
     async def unpair(self) -> bool:
         """Attempts to unpair from the device.
@@ -435,10 +437,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         """
 
-        if self._requester.device_information.pairing.is_paired:
-            unpairing_result = (
-                await self._requester.device_information.pairing.unpair_async()
-            )
+        # New local device information object created since the object from the requester isn't updated
+        device_information = await DeviceInformation.create_from_id_async(
+            self._requester.device_information.id
+        )
+        if device_information.pairing.is_paired:
+            unpairing_result = await device_information.pairing.unpair_async()
 
             if unpairing_result.status not in (
                 DevicePairingResultStatus.PAIRED,
@@ -454,7 +458,7 @@ class BleakClientWinRT(BaseBleakClient):
                 logger.info("Unpaired with device.")
                 return True
 
-        return not self._requester.device_information.pairing.is_paired
+        return not device_information.pairing.is_paired
 
     # GATT services methods
 

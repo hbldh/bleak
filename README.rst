@@ -14,6 +14,10 @@ bleak
 
 .. image:: https://img.shields.io/pypi/v/bleak.svg
     :target: https://pypi.python.org/pypi/bleak
+    
+.. image:: https://img.shields.io/pypi/dm/bleak.svg
+    :target: https://pypi.python.org/pypi/bleak
+    :alt: PyPI - Downloads
 
 .. image:: https://readthedocs.org/projects/bleak/badge/?version=latest
     :target: https://bleak.readthedocs.io/en/latest/?badge=latest
@@ -84,6 +88,7 @@ Connect to a Bluetooth device and read its model number:
 
     asyncio.run(main(address))
 
+DO NOT NAME YOUR SCRIPT `bleak.py`! It will cause a circular import error.
 
 See examples folder for more code, for instance example code for connecting to a
 `TI SensorTag CC2650 <http://www.ti.com/ww/en/wireless_connectivity/sensortag/>`_

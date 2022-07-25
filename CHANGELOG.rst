@@ -13,11 +13,83 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 
+* Added new ``assigned_numbers`` module and ``AdvertisementDataType`` enum.
+* Added new ``bluez`` kwarg to ``BleakScanner`` in BlueZ backend.
+* Added support for passive scanning in the BlueZ backend. Fixes #606.
+* Added option to use cached services, characteristics and descriptors in WinRT backend. Fixes #686.
+* Added ``PendingDeprecationWarning`` to use of ``address_type`` as keyword argument. It will be moved into the
+  ``win`` keyword instead according to #623.
+
+Changed
+-------
+
+* Add `py.typed` file so mypy discovers Bleak's type annotations
+* UUID descriptions updated to 2022-03-16 assigned numbers document
+* Replace use of deprecated ``asyncio.get_event_loop()`` in Android backend.
+* Adjust default timeout for read_gatt_char with CoreBluetooth to 10s
+* ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
+* ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
+* All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
+* Deprecated ``filters`` kwarg in ``BleakScanner`` in BlueZ backend.
+
+Fixed
+-----
+
+* Documentation fixes.
+* On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
+
+
+`0.14.3`_ (2022-04-29)
+======================
+
+Changed
+-------
+
+* Suppress macOS 12 scanner bug error message for macOS 12.3 and higher. Fixes #720.
+* Added filters ``Discoverable`` and ``Pattern`` to BlueZ D-Bus scanner. Fixes #790.
+
+Fixed
+-----
+
+* Fixed reading the battery level returns a zero-filled ``bytearray`` on BlueZ >= 5.48. Fixes #750.
+* Fixed unpairing does not work on windows with WinRT. Fixes #699
+* Fixed leak of ``_disconnect_futures`` in ``CentralManagerDelegate``.
+* Fixed callback not removed from ``_disconnect_callbacks`` on disconnect in ``CentralManagerDelegate``.
+
+
+`0.14.2`_ (2022-01-26)
+======================
+
+Changed
+-------
+
+* Updated ``bleak-winrt`` dependency to v1.1.1. Fixes #741.
+
+Fixed
+-----
+
+* Fixed ``name`` is ``'Unknown'`` in WinRT backend. Fixes #736.
+
+
+`0.14.1`_ (2022-01-12)
+======================
+
+Fixed
+-----
+
+* Fixed ``AttributeError`` when passing ``BLEDevice`` to ``BleakClient``
+  constructor on WinRT backend. Fixes #731.
+
+
+`0.14.0`_ (2022-01-10)
+======================
+
+Added
+-----
+
 * Added ``service_uuids`` kwarg to  ``BleakScanner``. This can be used to work
   around issue of scanning not working on macOS 12. Fixes #230. Works around #635.
-* Adding option to use cached services, characteristics and descriptors in WinRT backend. Fixes #686.
-* Adding ``PendingDeprecationWarning`` to use of ``address_type`` as keyword argument. It will be moved into the
-  ``win`` keyword instead according to #623.
+* Added UUIDs for LEGO Powered Up Smart Hubs.
 
 Changed
 -------
@@ -26,6 +98,7 @@ Changed
   connection status.
 * Changed handling of scan response data on WinRT backend. Advertising data
   and scan response data is now combined in callbacks like other platforms.
+* Updated ``bleak-winrt`` dependency to v1.1.0. Fixes #698.
 
 Fixed
 -----
@@ -34,8 +107,7 @@ Fixed
   of the same characteristic are used. Fixes #675.
 * Fixed reading a characteristic on CoreBluetooth backend also triggers notification
   callback.
-* Documentation fixes for the WinRT client.
-* On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
+* Fixed in Linux, scanner callback not setting metadata parameters. Merged #715.
 
 
 `0.13.0`_ (2021-10-20)
@@ -625,7 +697,11 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.13.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.14.3...develop
+.. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3
+.. _0.14.2: https://github.com/hbldh/bleak/compare/v0.14.1...v0.14.2
+.. _0.14.1: https://github.com/hbldh/bleak/compare/v0.14.0...v0.14.1
+.. _0.14.0: https://github.com/hbldh/bleak/compare/v0.13.0...v0.14.0
 .. _0.13.0: https://github.com/hbldh/bleak/compare/v0.12.1...v0.13.0
 .. _0.12.1: https://github.com/hbldh/bleak/compare/v0.12.0...v0.12.1
 .. _0.12.0: https://github.com/hbldh/bleak/compare/v0.11.0...v0.12.0

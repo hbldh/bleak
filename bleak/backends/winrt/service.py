@@ -1,5 +1,4 @@
-from uuid import UUID
-from typing import List, Union
+from typing import List
 
 from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattDeviceService,
