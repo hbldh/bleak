@@ -18,7 +18,7 @@ async def main():
         # can use advertising data to filter here
         queue.put_nowait(device)
 
-    async with BleakScanner(detection_callback=callback):
+    async with BleakScanner(callback):
         # get the first matching device
         device = await queue.get()
 

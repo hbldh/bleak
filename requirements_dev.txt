@@ -12,3 +12,4 @@ sphinx-rtd-theme>=1.0.0
 PyYAML>=3.13
 pytest>=3.9.2
 pytest-cov>=2.5.1
+typing-extensions>=4.2.0

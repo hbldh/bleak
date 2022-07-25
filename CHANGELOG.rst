@@ -10,6 +10,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+
+* Added new ``assigned_numbers`` module and ``AdvertisementDataType`` enum.
+* Added new ``bluez`` kwarg to ``BleakScanner`` in BlueZ backend.
+* Added support for passive scanning in the BlueZ backend. Fixes #606.
+
 Changed
 -------
 
@@ -17,6 +24,10 @@ Changed
 * UUID descriptions updated to 2022-03-16 assigned numbers document
 * Replace use of deprecated ``asyncio.get_event_loop()`` in Android backend.
 * Adjust default timeout for read_gatt_char with CoreBluetooth to 10s
+* ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
+* ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
+* All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
+* Deprecated ``filters`` kwarg in ``BleakScanner`` in BlueZ backend.
 
 
 `0.14.3`_ (2022-04-29)

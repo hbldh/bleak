@@ -24,8 +24,7 @@ def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
 
 
 async def main(service_uuids):
-    scanner = BleakScanner(service_uuids=service_uuids)
-    scanner.register_detection_callback(simple_callback)
+    scanner = BleakScanner(simple_callback, service_uuids)
 
     while True:
         print("(re)starting scanner")

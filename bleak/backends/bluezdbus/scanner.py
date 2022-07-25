@@ -1,49 +1,47 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Callable, Coroutine, Dict, List, Optional
+from warnings import warn
 
-from dbus_next.aio import MessageBus
-from dbus_next.constants import BusType, MessageType
-from dbus_next.message import Message
-from dbus_next.signature import Variant
+from dbus_next import Variant
+from typing_extensions import TypedDict, Literal
 
-from bleak.backends.bluezdbus import defs
-from bleak.backends.bluezdbus.signals import MatchRules, add_match, remove_match
-from bleak.backends.bluezdbus.utils import (
-    assert_reply,
-    unpack_variants,
-    validate_address,
-)
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from ...exc import BleakError
+from ..device import BLEDevice
+from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
+from .advertisement_monitor import OrPatternLike
+from .manager import Device1, get_global_bluez_manager
 
 logger = logging.getLogger(__name__)
 
-# set of org.bluez.Device1 property names that come from advertising data
-_ADVERTISING_DATA_PROPERTIES = {
-    "AdvertisingData",
-    "AdvertisingFlags",
-    "ManufacturerData",
-    "Name",
-    "ServiceData",
-    "UUIDs",
-}
+
+class BlueZDiscoveryFilters(TypedDict, total=False):
+    UUIDs: List[str]
+    RSSI: int
+    Pathloss: int
+    Transport: str
+    DuplicateData: bool
+    Discoverable: bool
+    Pattern: str
 
 
-def _device_info(path, props):
-    try:
-        name = props.get("Alias", "Unknown")
-        address = props.get("Address", None)
-        if address is None:
-            try:
-                address = path[-17:].replace("_", ":")
-                if not validate_address(address):
-                    address = None
-            except Exception:
-                address = None
-        rssi = props.get("RSSI", "?")
-        return name, address, rssi, path
-    except Exception:
-        return None, None, None, None
+class BlueZArgs(TypedDict, total=False):
+    """
+    :class:`BleakScanner` args that are specific to the BlueZ backend.
+    """
+
+    filters: BlueZDiscoveryFilters
+    """
+    Filters to pass to the adapter SetDiscoveryFilter D-Bus method.
+
+    Only used for active scanning.
+    """
+
+    or_patterns: List[OrPatternLike]
+    """
+    Or patterns to pass to the AdvertisementMonitor1 D-Bus interface.
+
+    Only used for passive scanning.
+    """
 
 
 class BleakScannerBlueZDBus(BaseBleakScanner):
@@ -54,140 +52,98 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
     Args:
-        **detection_callback (callable or coroutine):
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        **service_uuids (List[str]):
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+        **bluez:
+            Dictionary of arguments specific to the BlueZ backend.
         **adapter (str):
             Bluetooth adapter to use for discovery.
-        **filters (dict):
-            A dict of filters to be applied on discovery.
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerBlueZDBus, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
+        *,
+        bluez: BlueZArgs = {},
+        **kwargs,
+    ):
+        super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
+
+        self._scanning_mode = scanning_mode
+
         # kwarg "device" is for backwards compatibility
         self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
-
-        self._bus: Optional[MessageBus] = None
-        self._cached_devices: Dict[str, Variant] = {}
-        self._devices: Dict[str, Dict[str, Any]] = {}
-        self._rules: List[MatchRules] = []
         self._adapter_path: str = f"/org/bluez/{self._adapter}"
 
+        # map of d-bus object path to d-bus object properties
+        self._devices: Dict[str, Device1] = {}
+
+        # callback from manager for stopping scanning if it has been started
+        self._stop: Optional[Callable[[], Coroutine]] = None
+
         # Discovery filters
+
         self._filters: Dict[str, Variant] = {}
+
+        self._filters["Transport"] = Variant("s", "le")
+        self._filters["DuplicateData"] = Variant("b", False)
+
         if self._service_uuids:
             self._filters["UUIDs"] = Variant("as", self._service_uuids)
-        self.set_scanning_filter(**kwargs)
+
+        filters = kwargs.get("filters")
+
+        if filters is None:
+            filters = bluez.get("filters")
+        else:
+            warn(
+                "the 'filters' kwarg is deprecated, use 'bluez' kwarg instead",
+                FutureWarning,
+                stacklevel=2,
+            )
+
+        if filters is not None:
+            self.set_scanning_filter(filters=filters)
+
+        self._or_patterns = bluez.get("or_patterns")
+
+        if self._scanning_mode == "passive" and service_uuids:
+            logger.warning(
+                "service uuid filtering is not implemented for passive scanning, use bluez or_patterns as a workaround"
+            )
+
+        if self._scanning_mode == "passive" and not self._or_patterns:
+            raise BleakError("passive scanning mode requires bluez or_patterns")
 
     async def start(self):
-        self._bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
+        manager = await get_global_bluez_manager()
 
         self._devices.clear()
-        self._cached_devices.clear()
 
-        # Add signal listeners
-
-        self._bus.add_message_handler(self._parse_msg)
-
-        rules = MatchRules(
-            interface=defs.OBJECT_MANAGER_INTERFACE,
-            member="InterfacesAdded",
-            arg0path=f"{self._adapter_path}/",
-        )
-        reply = await add_match(self._bus, rules)
-        assert_reply(reply)
-        self._rules.append(rules)
-
-        rules = MatchRules(
-            interface=defs.OBJECT_MANAGER_INTERFACE,
-            member="InterfacesRemoved",
-            arg0path=f"{self._adapter_path}/",
-        )
-        reply = await add_match(self._bus, rules)
-        assert_reply(reply)
-        self._rules.append(rules)
-
-        rules = MatchRules(
-            interface=defs.PROPERTIES_INTERFACE,
-            member="PropertiesChanged",
-            path_namespace=self._adapter_path,
-        )
-        reply = await add_match(self._bus, rules)
-        assert_reply(reply)
-        self._rules.append(rules)
-
-        # Find the HCI device to use for scanning and get cached device properties
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path="/",
-                member="GetManagedObjects",
-                interface=defs.OBJECT_MANAGER_INTERFACE,
+        if self._scanning_mode == "passive":
+            self._stop = await manager.passive_scan(
+                self._adapter_path, self._or_patterns, self._handle_advertising_data
             )
-        )
-        assert_reply(reply)
-
-        # get only the device interface
-        self._cached_devices = {
-            path: unpack_variants(interfaces[defs.DEVICE_INTERFACE])
-            for path, interfaces in reply.body[0].items()
-            if defs.DEVICE_INTERFACE in interfaces
-        }
-
-        logger.debug(f"cached devices: {self._cached_devices}")
-
-        # Apply the filters
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._adapter_path,
-                interface=defs.ADAPTER_INTERFACE,
-                member="SetDiscoveryFilter",
-                signature="a{sv}",
-                body=[self._filters],
+        else:
+            self._stop = await manager.active_scan(
+                self._adapter_path, self._filters, self._handle_advertising_data
             )
-        )
-        assert_reply(reply)
-
-        # Start scanning
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._adapter_path,
-                interface=defs.ADAPTER_INTERFACE,
-                member="StartDiscovery",
-            )
-        )
-        assert_reply(reply)
 
     async def stop(self):
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._adapter_path,
-                interface=defs.ADAPTER_INTERFACE,
-                member="StopDiscovery",
-            )
-        )
-        assert_reply(reply)
+        if self._stop:
+            # avoid reentrancy
+            stop, self._stop = self._stop, None
 
-        for rule in self._rules:
-            await remove_match(self._bus, rule)
-        self._rules.clear()
-        self._bus.remove_message_handler(self._parse_msg)
-
-        # Try to disconnect the System Bus.
-        try:
-            self._bus.disconnect()
-        except Exception as e:
-            logger.error("Attempt to disconnect system bus failed: {0}".format(e))
-
-        self._bus = None
+            await stop()
 
     def set_scanning_filter(self, **kwargs):
         """Sets OS level scanning filters for the BleakScanner.
@@ -220,9 +176,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             else:
                 logger.warning("Filter '%s' is not currently supported." % k)
 
-        if "Transport" not in self._filters:
-            self._filters["Transport"] = Variant("s", "le")
-
     @property
     def discovered_devices(self) -> List[BLEDevice]:
         # Reduce output.
@@ -233,15 +186,13 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                     "Disregarding %s since no properties could be obtained." % path
                 )
                 continue
-            name, address, _, path = _device_info(path, props)
-            if address is None:
-                continue
+
             uuids = props.get("UUIDs", [])
             manufacturer_data = props.get("ManufacturerData", {})
             discovered_devices.append(
                 BLEDevice(
-                    address,
-                    name,
+                    props["Address"],
+                    props["Alias"],
                     {"path": path, "props": props},
                     props.get("RSSI", 0),
                     uuids=uuids,
@@ -252,16 +203,19 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     # Helper methods
 
-    def _invoke_callback(self, path: str, message: Message) -> None:
-        """Invokes the advertising data callback.
+    def _handle_advertising_data(self, path: str, props: Device1) -> None:
+        """
+        Handles advertising data received from the BlueZ manager instance.
 
         Args:
-            message: The D-Bus message that triggered the callback.
+            path: The D-Bus object path of the device.
+            props: The D-Bus object properties of the device.
         """
+
+        self._devices[path] = props
+
         if self._callback is None:
             return
-
-        props = self._devices[path]
 
         # Get all the information wanted to pack in the advertisement data
         _local_name = props.get("Name")
@@ -277,7 +231,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             manufacturer_data=_manufacturer_data,
             service_data=_service_data,
             service_uuids=_service_uuids,
-            platform_data=(props, message),
+            platform_data=props,
         )
 
         device = BLEDevice(
@@ -290,76 +244,3 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         )
 
         self._callback(device, advertisement_data)
-
-    def _parse_msg(self, message: Message):
-        if message.message_type != MessageType.SIGNAL:
-            return
-
-        logger.debug(
-            "received D-Bus signal: {0}.{1} ({2}): {3}".format(
-                message.interface, message.member, message.path, message.body
-            )
-        )
-
-        if message.member == "InterfacesAdded":
-            # if a new device is discovered while we are scanning, add it to
-            # the discovered devices list
-
-            obj_path: str
-            interfaces_and_props: Dict[str, Dict[str, Variant]]
-            obj_path, interfaces_and_props = message.body
-            device_props = unpack_variants(
-                interfaces_and_props.get(defs.DEVICE_INTERFACE, {})
-            )
-            if device_props:
-                self._devices[obj_path] = device_props
-                self._invoke_callback(obj_path, message)
-        elif message.member == "InterfacesRemoved":
-            # if a device disappears while we are scanning, remove it from the
-            # discovered devices list
-
-            obj_path: str
-            interfaces: List[str]
-            obj_path, interfaces = message.body
-
-            if defs.DEVICE_INTERFACE in interfaces:
-                # Using pop to avoid KeyError if obj_path does not exist
-                self._devices.pop(obj_path, None)
-        elif message.member == "PropertiesChanged":
-            # Property change events basically mean that new advertising data
-            # was received or the RSSI changed. Either way, it lets us know
-            # that the device is active and we can add it to the discovered
-            # devices list.
-
-            interface: str
-            changed: Dict[str, Variant]
-            invalidated: List[str]
-            interface, changed, invalidated = message.body
-
-            if interface != defs.DEVICE_INTERFACE:
-                return
-
-            first_time_seen = False
-
-            if message.path not in self._devices:
-                if message.path not in self._cached_devices:
-                    # This can happen when we start scanning. The "PropertyChanged"
-                    # handler is attached before "GetManagedObjects" is called
-                    # and so self._cached_devices is not assigned yet.
-                    # This is not a problem. We just discard the property value
-                    # since "GetManagedObjects" will return a newer value.
-                    return
-
-                first_time_seen = True
-                self._devices[message.path] = self._cached_devices[message.path]
-
-            changed = unpack_variants(changed)
-            self._devices[message.path].update(changed)
-
-            # Only do advertising data callback if this is the first time the
-            # device has been seen or if an advertising data property changed.
-            # Otherwise we get a flood of callbacks from RSSI changing.
-            if first_time_seen or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
-                changed.keys()
-            ):
-                self._invoke_callback(message.path, message)
