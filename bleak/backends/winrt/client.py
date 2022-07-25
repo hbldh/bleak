@@ -308,9 +308,7 @@ class BleakClientWinRT(BaseBleakClient):
             self._session_active_events.remove(event)
 
         # Obtain services, which also leads to connection being established.
-        await self.get_services(
-            winrt=WinRTClientArgs(use_cached_services=self._use_cached_services)
-        )
+        await self.get_services()
 
         return True
 
@@ -473,12 +471,8 @@ class BleakClientWinRT(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(
-        self, *, winrt: WinRTClientArgs = {}, **kwargs
-    ) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
-
-        win (dict): A dictionary of Windows-specific configuration values:
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
@@ -489,12 +483,9 @@ class BleakClientWinRT(BaseBleakClient):
             return self.services
         else:
             logger.debug("Get Services...")
-            _use_cached_services = winrt.get(
-                "use_cached_services", self._use_cached_services
-            )
             cache_enum = (
                 BluetoothCacheMode.CACHED
-                if _use_cached_services
+                if self._use_cached_services
                 else BluetoothCacheMode.UNCACHED
             )
 
