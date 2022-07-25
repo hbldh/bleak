@@ -309,6 +309,12 @@ class BlueZManager:
             An async function that is used to stop scanning and remove the filters.
         """
         async with self._bus_lock:
+            # If the adapter doesn't exist, then the message calls below would
+            # fail with "method not found". This provides a more informative
+            # error message.
+            if adapter_path not in self._properties:
+                raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
+
             callback_and_state = CallbackAndState(callback, adapter_path, set())
             self._advertisement_callbacks.append(callback_and_state)
 
@@ -388,6 +394,12 @@ class BlueZManager:
             An async function that is used to stop scanning and remove the filters.
         """
         async with self._bus_lock:
+            # If the adapter doesn't exist, then the message calls below would
+            # fail with "method not found". This provides a more informative
+            # error message.
+            if adapter_path not in self._properties:
+                raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
+
             callback_and_state = CallbackAndState(callback, adapter_path, set())
             self._advertisement_callbacks.append(callback_and_state)
 

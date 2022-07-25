@@ -19,6 +19,7 @@ Added
 * Added option to use cached services, characteristics and descriptors in WinRT backend. Fixes #686.
 * Added ``PendingDeprecationWarning`` to use of ``address_type`` as keyword argument. It will be moved into the
   ``win`` keyword instead according to #623.
+* Added better error message when adapter is not present in BlueZ backend. Fixes #889.
 
 Changed
 -------
