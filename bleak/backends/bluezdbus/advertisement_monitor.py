@@ -7,7 +7,7 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/advertisement-monito
 """
 
 import logging
-from typing import Callable, Iterable, NamedTuple, Set, Tuple, Union, no_type_check
+from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
 
 from dbus_next.service import ServiceInterface, dbus_property, method, PropertyAccess
 
@@ -37,26 +37,29 @@ OrPatternLike = Union[OrPattern, Tuple[int, AdvertisementDataType, bytes]]
 class AdvertisementMonitor(ServiceInterface):
     """
     Implementation of the org.bluez.AdvertisementMonitor1 D-Bus interface.
+
+    The BlueZ advertisement monitor API design seems to be just for device
+    presence (is it in range or out of range), but this isn't really what
+    we want in Bleak, we want to monitor changes in advertisement data, just
+    like in active scanning.
+
+    So the only thing we are using here is the "or_patterns" since it is
+    currently required, but really we don't need that either. Hopefully an
+    "all" "Type" could be added to BlueZ in the future.
     """
 
     def __init__(
         self,
         or_patterns: Iterable[OrPatternLike],
-        on_device_found: Callable[[str], None],
     ):
         """
         Args:
             or_patterns:
                 List of or patterns that will be returned by the ``Patterns`` property.
-            on_device_found:
-                Callback that will be called with the D-Bus device object path
-                when an advertisement is received.
         """
         super().__init__(defs.ADVERTISEMENT_MONITOR_INTERFACE)
         # dbus_next marshaling requires list instead of tuple
         self._or_patterns = [list(p) for p in or_patterns]
-        self._on_device_found = on_device_found
-        self._seen_devices: Set[str] = set()
 
     @method()
     def Release(self):
@@ -73,14 +76,6 @@ class AdvertisementMonitor(ServiceInterface):
     @no_type_check
     def DeviceFound(self, device: "o"):  # noqa: F821
         logger.debug("DeviceFound %s", device)
-
-        # REVISIT: this will not catch advertisement data that changes like
-        # active scanning does
-
-        # only call callback once per device to avoid flood of callbacks
-        if device not in self._seen_devices:
-            self._seen_devices.add(device)
-            self._on_device_found(device)
 
     @method()
     @no_type_check

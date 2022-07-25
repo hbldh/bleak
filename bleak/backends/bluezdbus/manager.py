@@ -388,59 +388,65 @@ class BlueZManager:
             An async function that is used to stop scanning and remove the filters.
         """
         async with self._bus_lock:
-            monitor = AdvertisementMonitor(
-                filters,
-                lambda d: callback(
-                    d, cast(Device1, self._properties[d][defs.DEVICE_INTERFACE])
-                ),
-            )
+            callback_and_state = CallbackAndState(callback, adapter_path, set())
+            self._advertisement_callbacks.append(callback_and_state)
 
-            # this should be a unique path to allow multiple python interpreters
-            # running bleak and multiple scanners within a single interpreter
-            monitor_path = f"/org/bleak/{os.getpid()}/{id(monitor)}"
+            try:
+                monitor = AdvertisementMonitor(filters)
 
-            reply = await self._bus.call(
-                Message(
-                    destination=defs.BLUEZ_SERVICE,
-                    path=adapter_path,
-                    interface=defs.ADVERTISEMENT_MONITOR_MANAGER_INTERFACE,
-                    member="RegisterMonitor",
-                    signature="o",
-                    body=[monitor_path],
-                )
-            )
+                # this should be a unique path to allow multiple python interpreters
+                # running bleak and multiple scanners within a single interpreter
+                monitor_path = f"/org/bleak/{os.getpid()}/{id(monitor)}"
 
-            if (
-                reply.message_type == MessageType.ERROR
-                and reply.error_name == "org.freedesktop.DBus.Error.UnknownMethod"
-            ):
-                raise BleakError(
-                    "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled and Linux kernel >= 5.10"
-                )
-
-            assert_reply(reply)
-
-            # It is important to export after registering, otherwise BlueZ
-            # won't use the monitor
-            self._bus.export(monitor_path, monitor)
-
-            async def stop():
-                async with self._bus_lock:
-                    self._bus.unexport(monitor_path, monitor)
-
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            path=adapter_path,
-                            interface=defs.ADVERTISEMENT_MONITOR_MANAGER_INTERFACE,
-                            member="UnregisterMonitor",
-                            signature="o",
-                            body=[monitor_path],
-                        )
+                reply = await self._bus.call(
+                    Message(
+                        destination=defs.BLUEZ_SERVICE,
+                        path=adapter_path,
+                        interface=defs.ADVERTISEMENT_MONITOR_MANAGER_INTERFACE,
+                        member="RegisterMonitor",
+                        signature="o",
+                        body=[monitor_path],
                     )
-                    assert_reply(reply)
+                )
 
-            return stop
+                if (
+                    reply.message_type == MessageType.ERROR
+                    and reply.error_name == "org.freedesktop.DBus.Error.UnknownMethod"
+                ):
+                    raise BleakError(
+                        "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled and Linux kernel >= 5.10"
+                    )
+
+                assert_reply(reply)
+
+                # It is important to export after registering, otherwise BlueZ
+                # won't use the monitor
+                self._bus.export(monitor_path, monitor)
+
+                async def stop():
+                    async with self._bus_lock:
+                        self._bus.unexport(monitor_path, monitor)
+
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                path=adapter_path,
+                                interface=defs.ADVERTISEMENT_MONITOR_MANAGER_INTERFACE,
+                                member="UnregisterMonitor",
+                                signature="o",
+                                body=[monitor_path],
+                            )
+                        )
+                        assert_reply(reply)
+
+                        self._advertisement_callbacks.remove(callback_and_state)
+
+                return stop
+
+            except BaseException:
+                # if starting scanning failed, don't leak the callback
+                self._advertisement_callbacks.remove(callback_and_state)
+                raise
 
     def _parse_msg(self, message: Message):
         """
