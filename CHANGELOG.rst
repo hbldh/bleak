@@ -16,6 +16,9 @@ Added
 * Added new ``assigned_numbers`` module and ``AdvertisementDataType`` enum.
 * Added new ``bluez`` kwarg to ``BleakScanner`` in BlueZ backend.
 * Added support for passive scanning in the BlueZ backend. Fixes #606.
+* Added option to use cached services, characteristics and descriptors in WinRT backend. Fixes #686.
+* Added ``PendingDeprecationWarning`` to use of ``address_type`` as keyword argument. It will be moved into the
+  ``win`` keyword instead according to #623.
 
 Changed
 -------
@@ -28,6 +31,12 @@ Changed
 * ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
 * All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
 * Deprecated ``filters`` kwarg in ``BleakScanner`` in BlueZ backend.
+
+Fixed
+-----
+
+* Documentation fixes.
+* On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
 
 
 `0.14.3`_ (2022-04-29)
