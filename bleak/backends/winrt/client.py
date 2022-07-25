@@ -8,6 +8,7 @@ Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 import inspect
 import logging
 import asyncio
+from typing_extensions import Literal, TypedDict
 import uuid
 import warnings
 from functools import wraps
@@ -108,6 +109,28 @@ def _ensure_success(result: Any, attr: Optional[str], fail_msg: str) -> Any:
     raise BleakError(f"{fail_msg}: Unexpected status code 0x{result.status:02X}")
 
 
+class WinRTClientArgs(TypedDict, total=False):
+    """
+    Windows-specific arguments for :class:`BleakClient`.
+    """
+
+    address_type: Literal["public", "random"]
+    """
+    Can either be ``"public"`` or ``"random"``, depending on the required address
+    type needed to connect to your device.
+    """
+
+    use_cached_services: bool
+    """
+    ``True`` allows Windows to fetch the services, characteristics and descriptors
+    from the Windows cache instead of reading them from the device. Can be very
+    much faster for known, unchanging devices, but not recommended for DIY peripherals
+    where the GATT layout can change between connections.
+
+    Defaults to ``False``.
+    """
+
+
 class BleakClientWinRT(BaseBleakClient):
     """Native Windows Bleak Client.
 
@@ -117,25 +140,20 @@ class BleakClientWinRT(BaseBleakClient):
     Args:
         address_or_ble_device (str or BLEDevice): The Bluetooth address of the BLE peripheral
             to connect to or the ``BLEDevice`` object representing it.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        disconnected_callback (callable): Callback that will be scheduled in the
+        winrt (dict): A dictionary of Windows-specific configuration values.
+        **timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+        **disconnected_callback (callable): Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
-        address_type (str): Can either be `public` or `random`, depending on the required address type needed
-            to connect to your device.
-        win (dict): A dictionary of Windows-specific configuration values.
-
-              * **use_cached_services** (*bool*): ``True`` allows Windows to fetch the services, characteristics and
-                descriptors from the Windows cache instead of reading them from the device. Can be
-                very much faster for known, unchanging devices, but not recommended for DIY peripherals where
-                the GATT layout can change between connections.
-                Defaults to ``False``.
-
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+    def __init__(
+        self,
+        address_or_ble_device: Union[BLEDevice, str],
+        *,
+        winrt: WinRTClientArgs = {},
+        **kwargs,
+    ):
         super(BleakClientWinRT, self).__init__(address_or_ble_device, **kwargs)
 
         # Backend specific. WinRT objects.
@@ -155,16 +173,9 @@ class BleakClientWinRT(BaseBleakClient):
                 stacklevel=2,
             )
 
-        self._address_type = (
-            kwargs["address_type"]
-            if "address_type" in kwargs
-            and kwargs["address_type"] in ("public", "random")
-            else None
-        )
-
-        self._os_options = kwargs.get("win", {})
-        self._os_options.setdefault("use_cached_services", False)
-        self._os_options.setdefault("address_type", None)
+        # os-specific options
+        self._use_cached_services = winrt.get("use_cached_services", False)
+        self._address_type = winrt.get("address_type", kwargs.get("address_type"))
 
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
 
@@ -298,7 +309,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Obtain services, which also leads to connection being established.
         await self.get_services(
-            use_cached_services=self._os_options.get("use_cached_services")
+            winrt=WinRTClientArgs(use_cached_services=self._use_cached_services)
         )
 
         return True
@@ -462,17 +473,12 @@ class BleakClientWinRT(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
+    async def get_services(
+        self, *, winrt: WinRTClientArgs = {}, **kwargs
+    ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
-        Keyword Args:
-            win (dict): A dictionary of Windows-specific configuration values:
-
-                * **use_cached_services** (*bool*):: ``True`` allows Windows to fetch the services, characteristics and
-                  descriptors from the Windows cache instead of reading them from the device. Can be
-                  very much faster for known, unchanging devices, but not recommended for DIY peripherals where
-                  the GATT layout can change between connections.
-                  Defaults to what was specified in the constructor, where default is ``False``.
+        win (dict): A dictionary of Windows-specific configuration values:
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
@@ -483,8 +489,8 @@ class BleakClientWinRT(BaseBleakClient):
             return self.services
         else:
             logger.debug("Get Services...")
-            _use_cached_services = kwargs.get("win", {}).get(
-                "use_cached_services", self._os_options.get("use_cached_services")
+            _use_cached_services = winrt.get(
+                "use_cached_services", self._use_cached_services
             )
             cache_enum = (
                 BluetoothCacheMode.CACHED
