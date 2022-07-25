@@ -21,26 +21,26 @@ class AbstractBleakClient(BaseBleakClient):
     pass
 
 if _on_rtd:
-    class BackendBleakScanner:
+    class _BleakScannerImplementation:
         pass
-    class BackendBleakClient:
+    class _BleakClientImplementation:
         pass
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.scanner import (
-        BleakScannerP4Android as BackendBleakScanner,
+        BleakScannerP4Android as _BleakScannerImplementation,
     )  # noqa: F401
     from bleak.backends.p4android.client import (
-        BleakClientP4Android as BackEndBleakClient,
+        BleakClientP4Android as _BleakClientImplementation,
     )  # noqa: F401
 elif platform.system() == "Linux":
     if not _on_ci and not check_bluez_version(5, 43):
         raise BleakError("Bleak requires BlueZ >= 5.43.")
 
     from bleak.backends.bluezdbus.scanner import (
-        BleakScannerBlueZDBus as BackendBleakScanner,
+        BleakScannerBlueZDBus as _BleakScannerImplementation,
     )  # noqa: F401
     from bleak.backends.bluezdbus.client import (
-        BleakClientBlueZDBus as BackendBleakClient,
+        BleakClientBlueZDBus as _BleakClientImplementation,
     )  # noqa: F401
 elif platform.system() == "Darwin":
     try:
@@ -49,10 +49,10 @@ elif platform.system() == "Darwin":
         raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
     from bleak.backends.corebluetooth.scanner import (
-        BleakScannerCoreBluetooth as BackendBleakScanner,
+        BleakScannerCoreBluetooth as _BleakScannerImplementation,
     )  # noqa: F401
     from bleak.backends.corebluetooth.client import (
-        BleakClientCoreBluetooth as BackendBleakClient,
+        BleakClientCoreBluetooth as _BleakClientImplementation,
     )  # noqa: F401
 
 elif platform.system() == "Windows":
@@ -71,20 +71,20 @@ elif platform.system() == "Windows":
         )
 
     from bleak.backends.winrt.scanner import (
-        BleakScannerWinRT as BackendBleakScanner,
+        BleakScannerWinRT as _BleakScannerImplementation,
     )  # noqa: F401
     from bleak.backends.winrt.client import (
-        BleakClientWinRT as BackendBleakClient,
+        BleakClientWinRT as _BleakClientImplementation,
     )  # noqa: F401
 
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
 # Now let's tie together the abstract class and the backend implementation
-class BleakScanner(AbstractBleakScanner, BackendBleakScanner):
+class BleakScanner(AbstractBleakScanner, _BleakScannerImplementation):
     pass
 
-class BleakClient(AbstractBleakClient, BackendBleakClient):
+class BleakClient(AbstractBleakClient, _BleakClientImplementation):
     pass
 
 # for backward compatibility

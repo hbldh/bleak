@@ -13,14 +13,14 @@ _IS_CI = os.environ.get("CI", "false").lower() == "true"
 def test_import():
     """Test by importing the client and assert correct client by OS."""
     if platform.system() == "Linux":
-        from bleak import BleakClient
+        from bleak import _BleakClientImplementation
 
-        assert BleakClient.__name__ == "BleakClientBlueZDBus"
+        assert _BleakClientImplementation.__name__ == "BleakClientBlueZDBus"
     elif platform.system() == "Windows":
-        from bleak import BleakClient
+        from bleak import _BleakClientImplementation
 
-        assert BleakClient.__name__ == "BleakClientWinRT"
+        assert _BleakClientImplementation.__name__ == "BleakClientWinRT"
     elif platform.system() == "Darwin":
-        from bleak import BleakClient
+        from bleak import _BleakClientImplementation
 
-        assert BleakClient.__name__ == "BleakClientCoreBluetooth"
+        assert _BleakClientImplementation.__name__ == "BleakClientCoreBluetooth"
