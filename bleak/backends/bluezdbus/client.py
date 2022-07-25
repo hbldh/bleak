@@ -564,7 +564,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         if self._mtu_size is None:
             warnings.warn(
-                "Using default MTU value. Call _assign_mtu() or set _mtu_size first to avoid this warning."
+                "Using default MTU value. Call _acquire_mtu() or set _mtu_size first to avoid this warning."
             )
             return 23
 
