@@ -46,7 +46,7 @@ def assert_bus_name_valid(type: str):
     :type name: str
 
     :raises:
-        - :class:`InvalidBusNameError` - If this is not a valid message type.
+        - :class:`InvalidMessageTypeError` - If this is not a valid message type.
     """
     if not is_message_type_valid(type):
         raise InvalidMessageTypeError(type)
