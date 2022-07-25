@@ -24,7 +24,7 @@ class BlueZDiscoveryFilters(TypedDict, total=False):
     Pattern: str
 
 
-class BlueZArgs(TypedDict, total=False):
+class BlueZScannerArgs(TypedDict, total=False):
     """
     :class:`BleakScanner` args that are specific to the BlueZ backend.
     """
@@ -73,7 +73,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         service_uuids: Optional[List[str]] = None,
         scanning_mode: Literal["active", "passive"] = "active",
         *,
-        bluez: BlueZArgs = {},
+        bluez: BlueZScannerArgs = {},
         **kwargs,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
