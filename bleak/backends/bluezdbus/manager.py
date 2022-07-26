@@ -13,11 +13,15 @@ from typing import Any, Callable, Coroutine, Dict, List, NamedTuple, Set, Tuple,
 
 from dbus_next import BusType, Message, MessageType, Variant
 from dbus_next.aio.message_bus import MessageBus
-from typing_extensions import TypedDict, Literal
+from typing_extensions import Literal, TypedDict
 
 from ...exc import BleakError
+from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
+from .characteristic import BleakGATTCharacteristicBlueZDBus
+from .descriptor import BleakGATTDescriptorBlueZDBus
+from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
 from .utils import assert_reply, unpack_variants
 
@@ -196,6 +200,42 @@ class CallbackAndState(NamedTuple):
     """
 
 
+DeviceConnectedChangedCallback = Callable[[bool], None]
+"""
+A callback that is called when a device's "Connected" property changes.
+
+Args:
+    arg0: The current value of the "Connected" property.
+"""
+
+CharacteristicValueChangedCallback = Callable[[str, bytes], None]
+"""
+A callback that is called when a characteristics's "Value" property changes.
+
+Args:
+    arg0: The D-Bus object path of the characteristic.
+    arg1: The current value of the "Value" property.
+"""
+
+
+class DeviceWatcher(NamedTuple):
+
+    device_path: str
+    """
+    The D-Bus object path of the device.
+    """
+
+    on_connected_changed: DeviceConnectedChangedCallback
+    """
+    A callback that is called when a device's "Connected" property changes.
+    """
+
+    on_characteristic_value_changed: CharacteristicValueChangedCallback
+    """
+    A callback that is called when a characteristics's "Value" property changes.
+    """
+
+
 # set of org.bluez.Device1 property names that come from advertising data
 _ADVERTISING_DATA_PROPERTIES = {
     "AdvertisingData",
@@ -222,6 +262,8 @@ class BlueZManager:
         self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
         self._advertisement_callbacks: List[CallbackAndState] = []
+        self._device_watchers: Set[DeviceWatcher] = set()
+        self._condition_callbacks: Set[Callable] = set()
 
     async def async_init(self):
         """
@@ -460,6 +502,153 @@ class BlueZManager:
                 self._advertisement_callbacks.remove(callback_and_state)
                 raise
 
+    def add_device_watcher(
+        self,
+        device_path: str,
+        on_connected_changed: DeviceConnectedChangedCallback,
+        on_characteristic_value_changed: CharacteristicValueChangedCallback,
+    ) -> DeviceWatcher:
+        """
+        Registers a device watcher to receive callbacks when device state
+        changes or events are received.
+
+        Args:
+            device_path:
+                The D-Bus object path of the device.
+            on_connected_changed:
+                A callback that is called when the device's "Connected"
+                state changes.
+            on_characteristic_value_changed:
+                A callback that is called whenever a characteristic receives
+                a notification/indication.
+
+        Returns:
+            A device watcher object that acts a token to unregister the watcher.
+        """
+        watcher = DeviceWatcher(
+            device_path, on_connected_changed, on_characteristic_value_changed
+        )
+
+        self._device_watchers.add(watcher)
+        return watcher
+
+    def remove_device_watcher(self, watcher: DeviceWatcher) -> None:
+        """
+        Unregisters a device watcher.
+
+        Args:
+            The device watcher token that was returned by
+            :meth:`add_device_watcher`.
+        """
+        self._device_watchers.remove(watcher)
+
+    async def get_services(self, device_path: str) -> BleakGATTServiceCollection:
+        """
+        Builds a new :class:`BleakGATTServiceCollection` from the current state.
+
+        Args:
+            device_path: The D-Bus object path of the Bluetooth device.
+
+        Returns:
+            A new :class:`BleakGATTServiceCollection`.
+        """
+        await self._wait_condition(device_path, "ServicesResolved", True)
+
+        services = BleakGATTServiceCollection()
+
+        for service_path, service_ifaces in self._properties.items():
+            if (
+                not service_path.startswith(device_path)
+                or defs.GATT_SERVICE_INTERFACE not in service_ifaces
+            ):
+                continue
+
+            service = BleakGATTServiceBlueZDBus(
+                service_ifaces[defs.GATT_SERVICE_INTERFACE], service_path
+            )
+
+            services.add_service(service)
+
+            for char_path, char_ifaces in self._properties.items():
+                if (
+                    not char_path.startswith(service_path)
+                    or defs.GATT_CHARACTERISTIC_INTERFACE not in char_ifaces
+                ):
+                    continue
+
+                char = BleakGATTCharacteristicBlueZDBus(
+                    char_ifaces[defs.GATT_CHARACTERISTIC_INTERFACE],
+                    char_path,
+                    service.uuid,
+                    service.handle,
+                )
+
+                services.add_characteristic(char)
+
+                for desc_path, desc_ifaces in self._properties.items():
+                    if (
+                        not desc_path.startswith(char_path)
+                        or defs.GATT_DESCRIPTOR_INTERFACE not in desc_ifaces
+                    ):
+                        continue
+
+                    desc = BleakGATTDescriptorBlueZDBus(
+                        desc_ifaces[defs.GATT_DESCRIPTOR_INTERFACE],
+                        desc_path,
+                        char.uuid,
+                        char.handle,
+                    )
+
+                    services.add_descriptor(desc)
+
+        return services
+
+    def get_device_name(self, device_path: str) -> str:
+        """
+        Gets the value of the "Name" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value.
+        """
+        return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
+
+    async def _wait_condition(
+        self, device_path: str, property_name: str, property_value: Any
+    ) -> None:
+        """
+        Waits for a condition to become true.
+
+        Args:
+            device_path: The D-Bus object path of a Bluetooth device.
+            property_name: The name of the property to test.
+            property_value: A value to compare the current property value to.
+        """
+        if (
+            self._properties[device_path][defs.DEVICE_INTERFACE][property_name]
+            == property_value
+        ):
+            return
+
+        event = asyncio.Event()
+
+        def callback():
+            if (
+                self._properties[device_path][defs.DEVICE_INTERFACE][property_name]
+                == property_value
+            ):
+                event.set()
+
+        self._condition_callbacks.add(callback)
+
+        try:
+            # can be canceled
+            await event.wait()
+        finally:
+            self._condition_callbacks.remove(callback)
+
     def _parse_msg(self, message: Message):
         """
         Handles callbacks from dbus_next.
@@ -507,9 +696,19 @@ class BlueZManager:
                 # since "GetManagedObjects" will return a newer value.
                 pass
             else:
+                # update self._properties first
+
                 self_interface.update(unpack_variants(changed))
 
+                for name in invalidated:
+                    del self_interface[name]
+
+                # then call any callbacks so they will be called with the
+                # updated state
+
                 if interface == defs.DEVICE_INTERFACE:
+                    # handle advertisement watchers
+
                     for (
                         callback,
                         adapter_path,
@@ -537,8 +736,29 @@ class BlueZManager:
                             # TODO: this should be deep copy, not shallow
                             callback(message.path, cast(Device1, self_interface.copy()))
 
-                for name in invalidated:
-                    del self_interface[name]
+                    # handle device condition watchers
+                    for condition_callback in self._condition_callbacks:
+                        condition_callback()
+
+                    # handle device connection change watchers
+
+                    if "Connected" in changed:
+                        for (
+                            device_path,
+                            on_connected_changed,
+                            _,
+                        ) in self._device_watchers.copy():
+                            # callbacks may remove the watcher, hence the copy() above
+                            if message.path == device_path:
+                                on_connected_changed(self_interface["Connected"])
+
+                elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
+                    # handle characteristic value change watchers
+
+                    if "Value" in changed:
+                        for device_path, _, on_value_changed in self._device_watchers:
+                            if message.path.startswith(device_path):
+                                on_value_changed(message.path, self_interface["Value"])
 
 
 async def get_global_bluez_manager() -> BlueZManager:
