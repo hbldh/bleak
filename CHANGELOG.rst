@@ -38,6 +38,7 @@ Fixed
 
 * Documentation fixes.
 * On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
+* Fixed detection of first advertisement in BlueZ backend. Merged #903.
 
 
 `0.14.3`_ (2022-04-29)
