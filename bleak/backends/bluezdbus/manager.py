@@ -9,7 +9,18 @@ used internally by Bleak.
 import asyncio
 import logging
 import os
-from typing import Any, Callable, Coroutine, Dict, List, NamedTuple, Set, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Set,
+    Tuple,
+    cast,
+)
 
 from dbus_next import BusType, Message, MessageType, Variant
 from dbus_next.aio.message_bus import MessageBus
@@ -673,9 +684,18 @@ class BlueZManager:
             obj_path, interfaces_and_props = message.body
 
             for interface, props in interfaces_and_props.items():
-                self._properties.setdefault(obj_path, {})[interface] = unpack_variants(
-                    props
-                )
+                unpacked_props = unpack_variants(props)
+                self._properties.setdefault(obj_path, {})[interface] = unpacked_props
+
+                # If this is a device and it has advertising data properties,
+                # then it should mean that this device just started advertising.
+                # Previously, we just relied on RSSI updates to determine if
+                # a device was actually advertising, but we were missing "slow"
+                # devices that only advertise once and then go to sleep for a while.
+                if interface == defs.DEVICE_INTERFACE:
+                    self._run_advertisement_callbacks(
+                        obj_path, cast(Device1, unpacked_props), unpacked_props.keys()
+                    )
         elif message.member == "InterfacesRemoved":
             obj_path, interfaces = message.body
 
@@ -709,32 +729,9 @@ class BlueZManager:
                 if interface == defs.DEVICE_INTERFACE:
                     # handle advertisement watchers
 
-                    for (
-                        callback,
-                        adapter_path,
-                        seen_devices,
-                    ) in self._advertisement_callbacks:
-                        # filter messages from other adapters
-                        if not message.path.startswith(adapter_path):
-                            continue
-
-                        first_time_seen = False
-
-                        if message.path not in seen_devices:
-                            first_time_seen = True
-                            seen_devices.add(message.path)
-
-                        # Only do advertising data callback if this is the first time the
-                        # device has been seen or if an advertising data property changed.
-                        # Otherwise we get a flood of callbacks from RSSI changing.
-                        if (
-                            first_time_seen
-                            or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(
-                                changed.keys()
-                            )
-                        ):
-                            # TODO: this should be deep copy, not shallow
-                            callback(message.path, cast(Device1, self_interface.copy()))
+                    self._run_advertisement_callbacks(
+                        message.path, cast(Device1, self_interface), changed.keys()
+                    )
 
                     # handle device condition watchers
                     for condition_callback in self._condition_callbacks:
@@ -759,6 +756,39 @@ class BlueZManager:
                         for device_path, _, on_value_changed in self._device_watchers:
                             if message.path.startswith(device_path):
                                 on_value_changed(message.path, self_interface["Value"])
+
+    def _run_advertisement_callbacks(
+        self, device_path: str, device: Device1, changed: Iterable[str]
+    ) -> None:
+        """
+        Runs any registered advertisement callbacks.
+
+        Args:
+            device_path: The D-Bus object path of the remote device.
+            device: The current D-Bus properties of the device.
+            changed: A list of properties that have changed since the last call.
+        """
+        for (
+            callback,
+            adapter_path,
+            seen_devices,
+        ) in self._advertisement_callbacks:
+            # filter messages from other adapters
+            if not device_path.startswith(adapter_path):
+                continue
+
+            first_time_seen = False
+
+            if device_path not in seen_devices:
+                first_time_seen = True
+                seen_devices.add(device_path)
+
+            # Only do advertising data callback if this is the first time the
+            # device has been seen or if an advertising data property changed.
+            # Otherwise we get a flood of callbacks from RSSI changing.
+            if first_time_seen or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(changed):
+                # TODO: this should be deep copy, not shallow
+                callback(device_path, cast(Device1, device.copy()))
 
 
 async def get_global_bluez_manager() -> BlueZManager:
