@@ -253,6 +253,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
+
+            # work around https://github.com/altdesktop/python-dbus-next/issues/112
+            self._bus._sock.close()
         except Exception as e:
             logger.error(
                 f"Attempt to disconnect system bus failed ({self._device_path}): {e}"

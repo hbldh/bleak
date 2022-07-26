@@ -41,6 +41,7 @@ Fixed
 * Fixed performance issues in BlueZ backend caused by calling "GetManagedObjects" each time a
   ``BleakScanner`` scans or ``BleakClient`` is connected. Fixes #500.
 * Fixed not handling "InterfacesRemoved" in ``BleakClient`` in BlueZ backend. Fixes #882.
+* Fixed leaking D-Bus socket file descriptors in BlueZ backend. Fixes #805.
 
 Removed
 -------
