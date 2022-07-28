@@ -2,7 +2,7 @@ name: Build and Test
 
 on:
     push:
-        branches: [ master, develop, issue582-api ]
+        branches: [ master, develop ]
     pull_request:
         branches: [ master, develop ]
 
