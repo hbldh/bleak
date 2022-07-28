@@ -10,10 +10,12 @@ _on_rtd = os.environ.get("READTHEDOCS") == "True"
 _on_ci = "CI" in os.environ
 
 if _on_rtd:
-    class _BleakScannerImplementation:
-        pass
-    class _BleakClientImplementation:
-        pass
+    from bleak.backends.scanner import (
+        BaseBleakScanner as _BleakScannerImplementation,
+    )  # noqa: F401
+    from bleak.backends.client import (
+        BaseBleakClient as _BleakClientImplementation,
+    )  # noqa: F401
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.scanner import (
         BleakScannerP4Android as _BleakScannerImplementation,
@@ -94,7 +96,7 @@ class BleakScanner(_BleakScannerImplementation):
 class BleakClient(_BleakClientImplementation):
     """The interface for communicating with BLE devices. 
 
-    The actual implementation is dependent on the backend used, and some methods may have
+    The actual implementation is dependent on the backend used, and some the constructor and some methods may have
     additional optional arguments.
 
     Args:
@@ -110,5 +112,4 @@ class BleakClient(_BleakClientImplementation):
     pass
 
 # for backward compatibility
-if not _on_rtd:
-    discover = BleakScanner.discover
+discover = BleakScanner.discover
