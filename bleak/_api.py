@@ -9,17 +9,6 @@ from bleak.backends.client import BaseBleakClient
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 _on_ci = "CI" in os.environ
 
-# Abstract classes, to allow typing and documentation to be specified
-# independent of backend.
-# xxxjack unsure whether these are needed, or the typing and documentation
-# in the Base classes is already good enough. Otherwise we can override here.
-
-class AbstractBleakScanner(BaseBleakScanner):
-    pass
-
-class AbstractBleakClient(BaseBleakClient):
-    pass
-
 if _on_rtd:
     class _BleakScannerImplementation:
         pass
@@ -81,10 +70,43 @@ else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
 # Now let's tie together the abstract class and the backend implementation
-class BleakScanner(AbstractBleakScanner, _BleakScannerImplementation):
+class BleakScanner(_BleakScannerImplementation):
+    """
+    Interface for Bleak Bluetooth LE Scanners.
+
+    The actual implementation is dependent on the backend used, and some methods (notably the
+    constructor) may have additional optional arguments.
+
+
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received.
+        scanning_mode:
+            Set to "passive" to avoid the "active" scanning mode.
+    """
+
     pass
 
-class BleakClient(AbstractBleakClient, _BleakClientImplementation):
+class BleakClient(_BleakClientImplementation):
+    """The interface for communicating with BLE devices. 
+
+    The actual implementation is dependent on the backend used, and some methods may have
+    additional optional arguments.
+
+    Args:
+        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+
+    Keyword Args:
+        timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
+        disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
+    """
+
     pass
 
 # for backward compatibility

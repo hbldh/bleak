@@ -1,6 +1,19 @@
 Interfaces, exceptions and utils
 ================================
 
+The naming of things can be confusing when using Bluetooth LE, due to the many possible meanings of
+words like "device" or "service" depending on the context. Here is a quick breakdown of the main object
+types used in bleak and their meaning, roughly in the order in which you will often use them in your code:
+
+* :py:class:`bleak.BleakScanner` finds advertising BLE devices
+* :py:class:`bleak.backends.device.BLEDevice` the representation (think: name or address) of such a BLE device
+* :py:class:`bleak.BleakClient` an open connection to a BLE device
+* :py:class:`bleak.backends.service.BleakGATTService` the name (or address) of a service implemented in a BLE device
+* :py:class:`bleak.backends.service.BleakGATTCharacteristic` the name (or address) of a charactieristic (think: attribute or variable) implemented by such a service
+
+You can then read and write characteristic values by calling methods of :py:class:`bleak.backends.device.BLEDevice`,
+passing the :py:class:`bleak.backends.service.BleakGATTCharacteristic` of the value you are interested in.
+
 Connecting
 ----------
 
@@ -15,7 +28,6 @@ Client interface
 ~~~~~~~~~~~~~~~~
 
 .. autoclass:: bleak.BleakClient
-    :special-members: __init__
     :members:
     :inherited-members:
 
