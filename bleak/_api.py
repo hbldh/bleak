@@ -93,8 +93,9 @@ class BleakScanner(_BleakScannerImplementation):
 
     pass
 
+
 class BleakClient(_BleakClientImplementation):
-    """The interface for communicating with BLE devices. 
+    """The interface for communicating with BLE devices.
 
     The actual implementation is dependent on the backend used, and some the constructor and some methods may have
     additional optional arguments.
@@ -110,6 +111,7 @@ class BleakClient(_BleakClientImplementation):
     """
 
     pass
+
 
 # for backward compatibility
 discover = BleakScanner.discover

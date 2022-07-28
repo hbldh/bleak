@@ -12,7 +12,13 @@ import asyncio
 
 from bleak.__version__ import __version__  # noqa: F401
 from bleak.exc import BleakError
-from bleak._api import BleakScanner, _BleakScannerImplementation, BleakClient, _BleakClientImplementation, discover
+from bleak._api import (
+    BleakScanner,
+    _BleakScannerImplementation,
+    BleakClient,
+    _BleakClientImplementation,
+    discover,
+)
 
 __all__ = ["BleakError", "BleakScanner", "BleakClient", "discover", "cli"]
 
@@ -25,6 +31,7 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     handler.setFormatter(logging.Formatter(fmt=FORMAT))
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
+
 
 def cli():
     import argparse
