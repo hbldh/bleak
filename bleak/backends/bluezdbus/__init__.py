@@ -14,8 +14,12 @@ def check_bluez_version(major: int, minor: int) -> bool:
     """
     # lazy-get the version and store it so we only have to run subprocess once
     if not hasattr(check_bluez_version, "version"):
-        p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
-        out, _ = p.communicate()
+        try:
+            p = subprocess.Popen(["bluetoothctl", "--version"], stdout=subprocess.PIPE)
+            out, _ = p.communicate()
+        except OSError as err:
+            raise BleakError(f"Error determining BlueZ version: {err}") from err
+
         s = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
 
         if not s:
