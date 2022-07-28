@@ -15,7 +15,7 @@ from dbus_next.constants import BusType, ErrorType, MessageType
 from dbus_next.message import Message
 from dbus_next.signature import Variant
 
-from bleak.backends.bluezdbus import check_bluez_version, defs
+from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
@@ -30,7 +30,7 @@ from bleak.backends.client import BaseBleakClient
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakError
-
+from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +78,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
 
-        # BlueZ version features
-        self._can_write_without_response = check_bluez_version(5, 46)
-        self._write_without_response_workaround_needed = not check_bluez_version(5, 51)
-        self._hides_battery_characteristic = check_bluez_version(5, 48)
-        self._hides_device_name_characteristic = check_bluez_version(5, 48)
-
     # Connectivity methods
 
     async def connect(self, **kwargs) -> bool:
@@ -105,6 +99,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self.is_connected:
             raise BleakError("Client is already connected")
 
+        if not BlueZFeatures.checked_bluez_version:
+            await BlueZFeatures.check_bluez_version()
+        if not BlueZFeatures.supported_version:
+            raise BleakError("Bleak requires BlueZ >= 5.43.")
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
@@ -625,8 +623,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not characteristic:
             # Special handling for BlueZ >= 5.48, where Battery Service (0000180f-0000-1000-8000-00805f9b34fb:)
             # has been moved to interface org.bluez.Battery1 instead of as a regular service.
-            if str(char_specifier) == "00002a19-0000-1000-8000-00805f9b34fb" and (
-                self._hides_battery_characteristic
+            if (
+                str(char_specifier) == "00002a19-0000-1000-8000-00805f9b34fb"
+                and BlueZFeatures.hides_battery_characteristic
             ):
                 reply = await self._bus.call(
                     Message(
@@ -647,8 +646,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 return value
-            if str(char_specifier) == "00002a00-0000-1000-8000-00805f9b34fb" and (
-                self._hides_device_name_characteristic
+            if (
+                str(char_specifier) == "00002a00-0000-1000-8000-00805f9b34fb"
+                and BlueZFeatures.hides_device_name_characteristic
             ):
                 # Simulate regular characteristics read to be consistent over all platforms.
                 value = bytearray(self._properties["Name"].encode("ascii"))
@@ -780,9 +780,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
 
         # See docstring for details about this handling.
-        if not response and not self._can_write_without_response:
+        if not response and not BlueZFeatures.can_write_without_response:
             raise BleakError("Write without response requires at least BlueZ 5.46")
-        if response or not self._write_without_response_workaround_needed:
+        if response or not BlueZFeatures.write_without_response_workaround_needed:
             # TODO: Add OnValueUpdated handler for response=True?
             reply = await self._bus.call(
                 Message(

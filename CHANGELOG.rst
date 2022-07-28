@@ -32,6 +32,7 @@ Changed
 * ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
 * All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
 * Deprecated ``filters`` kwarg in ``BleakScanner`` in BlueZ backend.
+* BlueZ version is now checked on first connection instead of import to avoid blocking the event loop.
 
 Fixed
 -----
