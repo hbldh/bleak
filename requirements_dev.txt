@@ -1,3 +1,4 @@
+asynctest>=0.13.0
 pip>=18.0
 bump2version==1.0.1
 wheel>=0.32.2
@@ -11,5 +12,6 @@ Sphinx>=1.7.7
 sphinx-rtd-theme>=1.0.0
 PyYAML>=3.13
 pytest>=3.9.2
+pytest-asyncio>=0.19.0
 pytest-cov>=2.5.1
 typing-extensions>=4.2.0
