@@ -59,7 +59,7 @@ class BleakClientP4Android(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
         if self.__adapter is None:
@@ -167,7 +167,7 @@ class BleakClientP4Android(BaseBleakClient):
             Boolean regarding success of pairing.
 
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         bondedFuture = loop.create_future()
 

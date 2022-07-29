@@ -19,7 +19,7 @@ class BleakGATTDescriptorBlueZDBus(BleakGATTDescriptor):
 
     @property
     def characteristic_handle(self) -> int:
-        """handle for the characteristic that this descriptor belongs to"""
+        """Handle for the characteristic that this descriptor belongs to"""
         return self.__characteristic_handle
 
     @property

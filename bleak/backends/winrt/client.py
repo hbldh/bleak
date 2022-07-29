@@ -8,7 +8,9 @@ Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 import inspect
 import logging
 import asyncio
+from typing_extensions import Literal, TypedDict
 import uuid
+import warnings
 from functools import wraps
 from typing import Callable, Any, List, Optional, Sequence, Union
 
@@ -107,6 +109,31 @@ def _ensure_success(result: Any, attr: Optional[str], fail_msg: str) -> Any:
     raise BleakError(f"{fail_msg}: Unexpected status code 0x{result.status:02X}")
 
 
+class WinRTClientArgs(TypedDict, total=False):
+    """
+    Windows-specific arguments for :class:`BleakClient`.
+    """
+
+    address_type: Literal["public", "random"]
+    """
+    Can either be ``"public"`` or ``"random"``, depending on the required address
+    type needed to connect to your device.
+    """
+
+    use_cached_services: bool
+    """
+    ``True`` allows Windows to fetch the services, characteristics and descriptors
+    from the Windows cache instead of reading them from the device. Can be very
+    much faster for known, unchanging devices, but not recommended for DIY peripherals
+    where the GATT layout can change between connections.
+
+    ``False`` will force the attribute database to be read from the remote device
+    instead of using the OS cache.
+
+    If omitted, the OS Bluetooth stack will do what it thinks is best.
+    """
+
+
 class BleakClientWinRT(BaseBleakClient):
     """Native Windows Bleak Client.
 
@@ -114,14 +141,22 @@ class BleakClientWinRT(BaseBleakClient):
     a package that enables Python developers to access Windows Runtime APIs directly from Python.
 
     Args:
-        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
+        address_or_ble_device (str or BLEDevice): The Bluetooth address of the BLE peripheral
+            to connect to or the ``BLEDevice`` object representing it.
+        winrt (dict): A dictionary of Windows-specific configuration values.
+        **timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+        **disconnected_callback (callable): Callback that will be scheduled in the
+            event loop when the client is disconnected. The callable must take one
+            argument, which will be this client object.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+    def __init__(
+        self,
+        address_or_ble_device: Union[BLEDevice, str],
+        *,
+        winrt: WinRTClientArgs = {},
+        **kwargs,
+    ):
         super(BleakClientWinRT, self).__init__(address_or_ble_device, **kwargs)
 
         # Backend specific. WinRT objects.
@@ -134,12 +169,16 @@ class BleakClientWinRT(BaseBleakClient):
         self._session_closed_events: List[asyncio.Event] = []
         self._session: GattSession = None
 
-        self._address_type = (
-            kwargs["address_type"]
-            if "address_type" in kwargs
-            and kwargs["address_type"] in ("public", "random")
-            else None
-        )
+        if "address_type" in kwargs:
+            warnings.warn(
+                "The address_type keyword arg will in a future version be moved into the win dict input instead.",
+                PendingDeprecationWarning,
+                stacklevel=2,
+            )
+
+        # os-specific options
+        self._use_cached_services = winrt.get("use_cached_services")
+        self._address_type = winrt.get("address_type", kwargs.get("address_type"))
 
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
 
@@ -158,7 +197,6 @@ class BleakClientWinRT(BaseBleakClient):
             Boolean representing connection status.
 
         """
-
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_info is None:
@@ -340,12 +378,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Attempts to pair with the device.
 
         Keyword Args:
-            protection_level:
-                ``Windows.Devices.Enumeration.DevicePairingProtectionLevel``
-                1: None - Pair the device using no levels of protection.
-                2: Encryption - Pair the device using encryption.
-                3: EncryptionAndAuthentication - Pair the device using
-                encryption and authentication. (This will not work in Bleak...)
+            protection_level (int): A ``DevicePairingProtectionLevel`` enum value:
+
+                1. None - Pair the device using no levels of protection.
+                2. Encryption - Pair the device using encryption.
+                3. EncryptionAndAuthentication - Pair the device using
+                   encryption and authentication. (This will not work in Bleak...)
 
         Returns:
             Boolean regarding success of pairing.
@@ -448,17 +486,31 @@ class BleakClientWinRT(BaseBleakClient):
             return self.services
         else:
             logger.debug("Get Services...")
+
+            # Each of the get_serv/char/desc_async() methods has two forms, one
+            # with no args and one with a cache_mode argument
+            args = []
+
+            # If the os-specific use_cached_services arg was given when BleakClient
+            # was created, the we use the second form with explicit cache mode.
+            # Otherwise we use the first form with no explicit cache mode which
+            # allows the OS Bluetooth stack to decide what is best.
+            if self._use_cached_services is not None:
+                args.append(
+                    BluetoothCacheMode.CACHED
+                    if self._use_cached_services
+                    else BluetoothCacheMode.UNCACHED
+                )
+
             services: Sequence[GattDeviceService] = _ensure_success(
-                await self._requester.get_gatt_services_async(
-                    BluetoothCacheMode.UNCACHED
-                ),
+                await self._requester.get_gatt_services_async(*args),
                 "services",
                 "Could not get GATT services",
             )
 
             for service in services:
                 # Windows returns an ACCESS_DENIED error when trying to enumerate
-                # characterstics of services used by the OS, like the HID service
+                # characteristics of services used by the OS, like the HID service
                 # so we have to exclude those services.
                 if service.uuid in _ACCESS_DENIED_SERVICES:
                     continue
@@ -466,9 +518,7 @@ class BleakClientWinRT(BaseBleakClient):
                 self.services.add_service(BleakGATTServiceWinRT(service))
 
                 characteristics: Sequence[GattCharacteristic] = _ensure_success(
-                    await service.get_characteristics_async(
-                        BluetoothCacheMode.UNCACHED
-                    ),
+                    await service.get_characteristics_async(*args),
                     "characteristics",
                     f"Could not get GATT characteristics for {service}",
                 )
@@ -479,9 +529,7 @@ class BleakClientWinRT(BaseBleakClient):
                     )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
-                        await characteristic.get_descriptors_async(
-                            BluetoothCacheMode.UNCACHED
-                        ),
+                        await characteristic.get_descriptors_async(*args),
                         "descriptors",
                         f"Could not get GATT descriptors for {service}",
                     )

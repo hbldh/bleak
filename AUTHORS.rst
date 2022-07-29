@@ -19,3 +19,8 @@ Contributors
 * Bernie Conrad <bernie@allthenticate.net>
 * Jonathan Soto <jsotogaviard@alum.mit.edu>
 * Kyle J. Williams <kyle@kjwill.tech>
+
+Sponsors
+--------
+
+* Nabu Casa <https://www.nabucasa.com/>

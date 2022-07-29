@@ -24,6 +24,10 @@ To discover Bluetooth devices that can be connected to:
 
 .. warning:: Do not name your script `bleak.py`! It will cause a circular import error.
 
+.. warning:: On macOS you may need to give your terminal permission to access Bluetooth.
+    See `this troubleshooting message <https://bleak.readthedocs.io/en/latest/troubleshooting.html#bleak-crashes-with-sigabrt-on-macos>`_
+
+
 This will scan for 5 seconds and then produce a printed list of detected devices::
 
     24:71:89:CC:09:05: CC2650 SensorTag
@@ -62,8 +66,7 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
         print(device.address, "RSSI:", device.rssi, advertisement_data)
 
     async def main():
-        scanner = BleakScanner()
-        scanner.register_detection_callback(detection_callback)
+        scanner = BleakScanner(detection_callback)
         await scanner.start()
         await asyncio.sleep(5.0)
         await scanner.stop()

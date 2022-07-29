@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import pathlib
 from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
@@ -10,13 +9,14 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
 )
+from typing_extensions import Literal
 
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from ..device import BLEDevice
+from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
+from ...assigned_numbers import AdvertisementDataType
 
 
 logger = logging.getLogger(__name__)
-_here = pathlib.Path(__file__).parent
 
 
 def _format_bdaddr(a):
@@ -55,19 +55,33 @@ class BleakScannerWinRT(BaseBleakScanner):
 
     Implemented using `Python/WinRT <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection/>`_.
 
-    Keyword Args:
-        scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
 
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerWinRT, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
+        **kwargs,
+    ):
+        super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher = None
         self._stopped_event = None
         self._discovered_devices: Dict[int, _RawAdvData] = {}
 
-        if "scanning_mode" in kwargs and kwargs["scanning_mode"].lower() == "passive":
+        # case insensitivity is for backwards compatibility on Windows only
+        if scanning_mode.lower() == "passive":
             self._scanning_mode = BluetoothLEScanningMode.PASSIVE
         else:
             self._scanning_mode = BluetoothLEScanningMode.ACTIVE
@@ -124,20 +138,23 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         # Decode service data
         for args in filter(lambda d: d is not None, raw_data):
-            # 0x16 is service data with 16-bit UUID
-            for section in args.advertisement.get_sections_by_type(0x16):
+            for section in args.advertisement.get_sections_by_type(
+                AdvertisementDataType.SERVICE_DATA_UUID16
+            ):
                 data = bytes(section.data)
                 service_data[
                     f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
                 ] = data[2:]
-            # 0x20 is service data with 32-bit UUID
-            for section in args.advertisement.get_sections_by_type(0x20):
+            for section in args.advertisement.get_sections_by_type(
+                AdvertisementDataType.SERVICE_DATA_UUID32
+            ):
                 data = bytes(section.data)
                 service_data[
                     f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
                 ] = data[4:]
-            # 0x21 is service data with 128-bit UUID
-            for section in args.advertisement.get_sections_by_type(0x21):
+            for section in args.advertisement.get_sections_by_type(
+                AdvertisementDataType.SERVICE_DATA_UUID128
+            ):
                 data = bytes(section.data)
                 service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 

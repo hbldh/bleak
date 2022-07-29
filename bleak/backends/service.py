@@ -133,28 +133,33 @@ class BleakGATTServiceCollection(object):
                 service.handle,
             )
 
-    def get_service(self, specifier: Union[int, str, UUID]) -> BleakGATTService:
+    def get_service(
+        self, specifier: Union[int, str, UUID]
+    ) -> Optional[BleakGATTService]:
         """Get a service by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
-            return self.services.get(specifier, None)
-        else:
-            _specifier = str(specifier).lower()
-            # Assume uuid usage.
-            # Convert 16-bit uuid to 128-bit uuid
-            if len(_specifier) == 4:
-                _specifier = f"0000{_specifier}-0000-1000-8000-00805f9b34fb"
-            x = list(
-                filter(
-                    lambda x: x.uuid.lower() == _specifier,
-                    self.services.values(),
-                )
+            return self.services.get(specifier)
+
+        _specifier = str(specifier).lower()
+
+        # Assume uuid usage.
+        # Convert 16-bit uuid to 128-bit uuid
+        if len(_specifier) == 4:
+            _specifier = f"0000{_specifier}-0000-1000-8000-00805f9b34fb"
+
+        x = list(
+            filter(
+                lambda x: x.uuid.lower() == _specifier,
+                self.services.values(),
             )
-            if len(x) > 1:
-                raise BleakError(
-                    "Multiple Services with this UUID, refer to your desired service by the `handle` attribute instead."
-                )
-            else:
-                return x[0] if x else None
+        )
+
+        if len(x) > 1:
+            raise BleakError(
+                "Multiple Services with this UUID, refer to your desired service by the `handle` attribute instead."
+            )
+
+        return x[0] if x else None
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
         """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
@@ -174,24 +179,25 @@ class BleakGATTServiceCollection(object):
 
     def get_characteristic(
         self, specifier: Union[int, str, UUID]
-    ) -> BleakGATTCharacteristic:
+    ) -> Optional[BleakGATTCharacteristic]:
         """Get a characteristic by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
-            return self.characteristics.get(specifier, None)
-        else:
-            # Assume uuid usage.
-            x = list(
-                filter(
-                    lambda x: x.uuid == str(specifier).lower(),
-                    self.characteristics.values(),
-                )
+            return self.characteristics.get(specifier)
+
+        # Assume uuid usage.
+        x = list(
+            filter(
+                lambda x: x.uuid == str(specifier).lower(),
+                self.characteristics.values(),
             )
-            if len(x) > 1:
-                raise BleakError(
-                    "Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead."
-                )
-            else:
-                return x[0] if x else None
+        )
+
+        if len(x) > 1:
+            raise BleakError(
+                "Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead."
+            )
+
+        return x[0] if x else None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
         """Add a :py:class:`~BleakGATTDescriptor` to the service collection.
@@ -209,6 +215,6 @@ class BleakGATTServiceCollection(object):
                 descriptor.handle,
             )
 
-    def get_descriptor(self, handle: int) -> BleakGATTDescriptor:
+    def get_descriptor(self, handle: int) -> Optional[BleakGATTDescriptor]:
         """Get a descriptor by integer handle"""
-        return self.descriptors.get(handle, None)
+        return self.descriptors.get(handle)
