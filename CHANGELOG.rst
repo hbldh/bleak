@@ -39,7 +39,15 @@ Fixed
 * Documentation fixes.
 * On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
 * Fixed detection of first advertisement in BlueZ backend. Merged #903.
+* Fixed performance issues in BlueZ backend caused by calling "GetManagedObjects" each time a
+  ``BleakScanner`` scans or ``BleakClient`` is connected. Fixes #500.
+* Fixed not handling "InterfacesRemoved" in ``BleakClient`` in BlueZ backend. Fixes #882.
+* Fixed leaking D-Bus socket file descriptors in BlueZ backend. Fixes #805.
 
+Removed
+-------
+
+* Removed fallback to call "ConnectDevice" when "Connect" fails in Bluez backend. Fixes #806.
 
 `0.14.3`_ (2022-04-29)
 ======================
