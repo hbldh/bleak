@@ -1,13 +1,11 @@
 import os
 import platform
-from bleak.backends.bluezdbus import check_bluez_version
 from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.client import BaseBleakClient
 
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
-_on_ci = "CI" in os.environ
 
 if _on_rtd:
     from bleak.backends.scanner import (
@@ -24,8 +22,6 @@ elif os.environ.get("P4A_BOOTSTRAP") is not None:
         BleakClientP4Android as _BleakClientImplementation,
     )  # noqa: F401
 elif platform.system() == "Linux":
-    if not _on_ci and not check_bluez_version(5, 43):
-        raise BleakError("Bleak requires BlueZ >= 5.43.")
 
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as _BleakScannerImplementation,
