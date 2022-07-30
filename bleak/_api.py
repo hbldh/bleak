@@ -11,23 +11,59 @@ if _on_rtd:
     from bleak.backends.scanner import (
         BaseBleakScanner as _BleakScannerImplementation,
     )  # noqa: F401
+    from bleak.backends.device import (
+        BLEDevice as _BLEDeviceImplementation
+    )  # noqa: F401
     from bleak.backends.client import (
         BaseBleakClient as _BleakClientImplementation,
+    )  # noqa: F401
+    from bleak.backends.service import (
+        BleakGATTService as _BleakGATTServiceImplementation,
+    ) # noqa: F401
+    from bleak.backends.characteristic import (
+        BleakGATTCharacteristic as _BleakGATTCharacteristicImplementation
+    )  # noqa: F401
+    from bleak.backends.descriptor import (
+        BleakGATTDescriptor as _BleakGATTDescriptorImplementation
     )  # noqa: F401
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.scanner import (
         BleakScannerP4Android as _BleakScannerImplementation,
     )  # noqa: F401
+    from bleak.backends.device import (
+        BLEDevice as _BLEDeviceImplementation
+    )  # noqa: F401
     from bleak.backends.p4android.client import (
         BleakClientP4Android as _BleakClientImplementation,
+    )  # noqa: F401
+    from bleak.backends.p4android.service import (
+        BleakGATTServiceP4Android as _BleakGATTServiceImplementation,
+    ) # noqa: F401
+    from bleak.backends.p4android.characteristic import (   
+        BleakGATTCharacteristicP4Android as _BleakGATTCharacteristicImplementation
+    )  # noqa: F401
+    from bleak.backends.p4android.descriptor import (
+        BleakGATTDescriptorP4Android as _BleakGATTDescriptorImplementation
     )  # noqa: F401
 elif platform.system() == "Linux":
 
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as _BleakScannerImplementation,
     )  # noqa: F401
+    from bleak.backends.device import (
+        BLEDevice as _BLEDeviceImplementation
+    )  # noqa: F401
     from bleak.backends.bluezdbus.client import (
         BleakClientBlueZDBus as _BleakClientImplementation,
+    )  # noqa: F401
+    from bleak.backends.bluezdbus.service import (
+        BleakGATTServiceBlueZDBus as _BleakGATTServiceImplementation,
+    ) # noqa: F401
+    from bleak.backends.bluezdbus.characteristic import (   
+        BleakGATTCharacteristicBlueZDBus as _BleakGATTCharacteristicImplementation
+    )  # noqa: F401
+    from bleak.backends.bluezdbus.descriptor import (
+        BleakGATTDescriptorBlueZDBus as _BleakGATTDescriptorImplementation
     )  # noqa: F401
 elif platform.system() == "Darwin":
     try:
@@ -38,10 +74,21 @@ elif platform.system() == "Darwin":
     from bleak.backends.corebluetooth.scanner import (
         BleakScannerCoreBluetooth as _BleakScannerImplementation,
     )  # noqa: F401
+    from bleak.backends.corebluetooth.device import (
+        BLEDeviceCoreBluetooth as _BLEDeviceImplementation
+    )  # noqa: F401
     from bleak.backends.corebluetooth.client import (
         BleakClientCoreBluetooth as _BleakClientImplementation,
     )  # noqa: F401
-
+    from bleak.backends.corebluetooth.service import (
+        BleakGATTServiceCoreBluetooth as _BleakGATTServiceImplementation,
+    ) # noqa: F401
+    from bleak.backends.corebluetooth.characteristic import (   
+        BleakGATTCharacteristicCoreBluetooth as _BleakGATTCharacteristicImplementation
+    )  # noqa: F401
+    from bleak.backends.corebluetooth.descriptor import (
+        BleakGATTDescriptorCoreBluetooth as _BleakGATTDescriptorImplementation
+    )  # noqa: F401
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
@@ -60,10 +107,21 @@ elif platform.system() == "Windows":
     from bleak.backends.winrt.scanner import (
         BleakScannerWinRT as _BleakScannerImplementation,
     )  # noqa: F401
+    from bleak.backends.device import (
+        BLEDevice as _BLEDeviceImplementation
+    )  # noqa: F401
     from bleak.backends.winrt.client import (
         BleakClientWinRT as _BleakClientImplementation,
     )  # noqa: F401
-
+    from bleak.backends.winrt.service import (
+        BleakGATTServiceWinRT as _BleakGATTServiceImplementation,
+    ) # noqa: F401
+    from bleak.backends.winrt.characteristic import (   
+        BleakGATTCharacteristicWinRT as _BleakGATTCharacteristicImplementation
+    )  # noqa: F401
+    from bleak.backends.winrt.descriptor import (
+        BleakGATTDescriptorWinRT as _BleakGATTDescriptorImplementation
+    )  # noqa: F401
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
@@ -89,9 +147,26 @@ class BleakScanner(_BleakScannerImplementation):
 
     pass
 
+class BLEDevice(_BLEDeviceImplementation):
+    """Class representing a BLE server detected during a `discover` call.
+
+    It is usually instantiated by bleak and only inspected by the user code. It contains a
+    BleakGATTServiceCollection describing the services exported by the BLE server, and some
+    backend-dependent details:
+    
+    - When using Windows backend, `details` attribute is a
+      ``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement`` object, unless
+      it is created with the Windows.Devices.Enumeration discovery method, then is is a
+      ``Windows.Devices.Enumeration.DeviceInformation``.
+    - When using Linux backend, ``details`` attribute is a
+      dict with keys ``path`` which has the string path to the DBus device object and ``props``
+      which houses the properties dictionary of the D-Bus Device.
+    - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
+    """
+    pass
 
 class BleakClient(_BleakClientImplementation):
-    """The interface for communicating with BLE devices.
+    """The interface for communicating with BLE servers.
 
     The actual implementation is dependent on the backend used, and some the constructor and some methods may have
     additional optional arguments.
@@ -108,6 +183,44 @@ class BleakClient(_BleakClientImplementation):
 
     pass
 
+from bleak.backends.service import (
+    BleakGATTServiceCollection as _BleakGATTServiceCollectionImplementation
+)
+
+class BleakGATTServiceCollection(_BleakGATTServiceCollectionImplementation):
+    """A BleakGATTServiceCollection is the collection of all services (and characteristics) implemented by a BLEDevice.
+    
+    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
+    for different backends, but these present the same interface to user code.
+    """
+
+class BleakGATTService(_BleakGATTServiceImplementation):
+    """A BleakGATTService is a collection of BleakGATTCharacteristic objects that somehow belong together.
+    
+    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
+    for different backends, but these present the same interface to user code.
+    """
+
+class BleakGATTCharacteristic(_BleakGATTCharacteristicImplementation):
+    """A BleakGATTCharacteristic can be thought of as the name or address of a variable in the service.
+    
+    It can be passed to BleakClient methods to read, write or otherwise access those variables. It may contain
+    BleakGATTDescriptor objects that further describe the variable and its values.
+    
+    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
+    for different backends, but these present the same interface to user code.
+    """
+    pass
+
+class BleakGATTDescriptor(_BleakGATTDescriptorImplementation):
+    """A BleakGATTDescriptor is attached to a BleakGATTCharacteristic and describes attributes of that characteristic.
+
+    Attributes could be things like the human-readable name, or its presentation format.
+
+    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
+    for different backends, but these present the same interface to user code.
+    """
+    pass
 
 # for backward compatibility
 discover = BleakScanner.discover

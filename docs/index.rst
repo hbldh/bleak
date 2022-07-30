@@ -53,6 +53,7 @@ Contents:
    usage
    backends/index
    api
+   apiimplementations
    troubleshooting
    contributing
    authors
