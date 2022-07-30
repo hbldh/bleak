@@ -10,6 +10,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.15.0`_ (2022-07-29)
+======================
+
 Added
 -----
 
@@ -18,21 +21,22 @@ Added
 * Added support for passive scanning in the BlueZ backend. Fixes #606.
 * Added option to use cached services, characteristics and descriptors in WinRT backend. Fixes #686.
 * Added ``PendingDeprecationWarning`` to use of ``address_type`` as keyword argument. It will be moved into the
-  ``win`` keyword instead according to #623.
+  ``winrt`` keyword instead according to #623.
 * Added better error message when adapter is not present in BlueZ backend. Fixes #889.
 * ``BleakClient`` and ``BleakScanner`` are now toplevel classes that wrap the current backend implementation class.
 
 Changed
 -------
 
-* Add `py.typed` file so mypy discovers Bleak's type annotations
-* UUID descriptions updated to 2022-03-16 assigned numbers document
+* Add ``py.typed`` file so mypy discovers Bleak's type annotations.
+* UUID descriptions updated to 2022-03-16 assigned numbers document.
 * Replace use of deprecated ``asyncio.get_event_loop()`` in Android backend.
-* Adjust default timeout for read_gatt_char with CoreBluetooth to 10s
+* Adjust default timeout for ``read_gatt_char()`` with CoreBluetooth to 10s. Merged #891.
 * ``BleakScanner()`` args ``detection_callback`` and ``service_uuids`` are no longer keyword-only.
 * ``BleakScanner()`` arg ``scanning_mode`` is no longer Windows-only and is no longer keyword-only.
 * All ``BleakScanner()`` instances in BlueZ backend now use common D-Bus object manager.
 * Deprecated ``filters`` kwarg in ``BleakScanner`` in BlueZ backend.
+* BlueZ version is now checked on first connection instead of import to avoid import side effects. Merged #907.
 
 Fixed
 -----
@@ -40,7 +44,15 @@ Fixed
 * Documentation fixes.
 * On empty characteristic description from WinRT, use the lookup table instead of returning empty string.
 * Fixed detection of first advertisement in BlueZ backend. Merged #903.
+* Fixed performance issues in BlueZ backend caused by calling "GetManagedObjects" each time a
+  ``BleakScanner`` scans or ``BleakClient`` is connected. Fixes #500.
+* Fixed not handling "InterfacesRemoved" in ``BleakClient`` in BlueZ backend. Fixes #882.
+* Fixed leaking D-Bus socket file descriptors in BlueZ backend. Fixes #805.
 
+Removed
+-------
+
+* Removed fallback to call "ConnectDevice" when "Connect" fails in Bluez backend. Fixes #806.
 
 `0.14.3`_ (2022-04-29)
 ======================
@@ -700,7 +712,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.14.3...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.0...develop
+.. _0.15.0: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.0
 .. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3
 .. _0.14.2: https://github.com/hbldh/bleak/compare/v0.14.1...v0.14.2
 .. _0.14.1: https://github.com/hbldh/bleak/compare/v0.14.0...v0.14.1

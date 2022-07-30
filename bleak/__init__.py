@@ -32,7 +32,6 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
 
-
 def cli():
     import argparse
 
