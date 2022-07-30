@@ -30,17 +30,17 @@ from bleak._api import (
 )
 
 __all__ = [
-    "BleakError", 
-    "BleakScanner", 
-    "BleakClient", 
-    "BLEDevice", 
-    "BleakGATTServiceCollection", 
-    "BleakGATTService", 
+    "BleakError",
+    "BleakScanner",
+    "BleakClient",
+    "BLEDevice",
+    "BleakGATTServiceCollection",
+    "BleakGATTService",
     "BleakGATTCharacteristic",
     "BleakGATTDescriptor",
-    "discover", 
-    "cli"
-    ]
+    "discover",
+    "cli",
+]
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
