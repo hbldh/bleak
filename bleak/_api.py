@@ -231,7 +231,3 @@ class BleakGATTDescriptor(_BleakGATTDescriptorImplementation):
     """
 
     pass
-
-
-# for backward compatibility
-discover = BleakScanner.discover

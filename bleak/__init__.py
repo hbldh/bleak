@@ -26,7 +26,6 @@ from bleak._api import (
     _BleakGATTCharacteristicImplementation,
     BleakGATTDescriptor,
     _BleakGATTDescriptorImplementation,
-    discover,
 )
 
 __all__ = [
