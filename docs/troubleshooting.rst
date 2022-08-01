@@ -188,7 +188,7 @@ To capture Bluetooth traffic:
 
 
 .. _Wireshark:  https://www.wireshark.org/
-.. _the BTP software package: https://docs.microsoft.com/en-us/windows-hardware/drivers/bluetooth/testing-btp-software-package
+.. _the BTP software package: https://docs.microsoft.com/windows-hardware/drivers/bluetooth/testing-btp-setup-package
 
 
 macOS
