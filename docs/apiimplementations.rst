@@ -2,8 +2,10 @@ API Implementations
 ===================
 
 Bleak hides most of the details of the Bluetooth LE stack provided by the operating system,
-but sometimes it may be useful to access those details because it provides useful functionality 
-(even though your code may no longer be portable to other operating systems).
+but sometimes it may be useful to access those details because it provides useful functionality.
+
+But note that by using features described here your code may no longer be portable to other operating systems,
+ and moreover the backend APIs should not be considered stable, and can change between releases.
 
 Windows
 -------
