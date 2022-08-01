@@ -38,6 +38,18 @@ Scanner interface
     :members:
     :inherited-members:
 
+.. autoclass:: bleak.AdvertisementData
+    :members:
+    :inherited-members:
+
+.. autoclass:: bleak.AdvertisementDataCallback
+    :members:
+    :inherited-members:
+
+.. autoclass:: bleak.AdvertisementDataFilter
+    :members:
+    :inherited-members:
+
 Connecting
 ----------
 
