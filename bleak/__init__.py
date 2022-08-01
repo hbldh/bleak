@@ -44,7 +44,6 @@ __all__ = [
     "BleakGATTCharacteristic",
     "BleakGATTDescriptor",
     "discover",
-    "cli",
 ]
 
 _logger = logging.getLogger(__name__)
@@ -57,23 +56,3 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
 
-
-def cli():
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Perform Bluetooth Low Energy device scan"
-    )
-    parser.add_argument("-i", dest="adapter", default="hci0", help="HCI device")
-    parser.add_argument(
-        "-t", dest="timeout", type=int, default=5, help="Duration to scan for"
-    )
-    args = parser.parse_args()
-
-    out = asyncio.run(discover(adapter=args.adapter, timeout=float(args.timeout)))
-    for o in out:
-        print(str(o))
-
-
-if __name__ == "__main__":
-    cli()
