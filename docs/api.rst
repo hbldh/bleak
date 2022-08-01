@@ -54,7 +54,7 @@ Connecting
 ----------
 
 After you find the correct :py:class:`bleak.BLEDevice` you will use the top-level :py:class:`bleak.BleakClient` object to connect to a BLE 
-device annd communicate with it. Alternatively, you can pass the BLE address of the device you want to connect to, and an automatic scan
+device and communicate with it. Alternatively, you can pass the BLE address of the device you want to connect to, and an automatic scan
 operation is performed.
 
 Some of the methods, especially the constructor, may have 
@@ -69,15 +69,17 @@ Client interface
     :members:
     :inherited-members:
 
-Addressing items in the BLE device
-----------------------------------
+Enumerating
+-----------
 
-Once you have an open :py:class:`bleak.BleakClient` connection you can read from the BLE device (or write values, or be notified 
-by the device when a value changes), but you have to know how to specify the right value.
+Once you have an open :py:class:`bleak.BleakClient` connection you can read 
+from the BLE device (or write values, or be notified by the device when a value
+changes), but you have to know how to specify the right item.
 
-The set of all values made available by a BLE device, how you can access them (read, write, notify), what they mean
-(human readable description) and what sort of values they are (int, string, etc) are provided for instrospection with
-the following set of classes:
+For this there is a set of classes that allow you to enumerate over the services 
+and characteristics supported by the BLE device, how you can access them 
+(read, write, notify), what they mean (human readable description) and what type
+of values they are (int, string, etc):
 
 .. autoclass:: bleak.BleakGATTServiceCollection
     :members:
