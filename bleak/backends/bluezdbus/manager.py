@@ -669,7 +669,11 @@ class BlueZManager:
             return
 
         logger.debug(
-            f"received D-Bus signal: {message.interface}.{message.member} ({message.path}): {message.body}"
+            "received D-Bus signal: %s.%s (%s): %s",
+            message.interface,
+            message.member,
+            message.path,
+            message.body,
         )
 
         # type hints
