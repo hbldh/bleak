@@ -15,6 +15,11 @@ Fixed
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
 
 
+Changed
+-------
+* Switch to using async_timeout instead of asyncio.wait_for for performance.
+
+
 `0.15.0`_ (2022-07-29)
 ======================
 
