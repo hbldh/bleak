@@ -6,9 +6,9 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
-import enum
+import uuid
 from uuid import UUID
-from typing import Dict, List, Optional, Union, Iterator, Any
+from typing import Dict, List, Optional, Union, Iterator, Any, Callable
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 
@@ -288,3 +288,176 @@ class BLEDevice(abc.ABC):
 
     def __repr__(self):
         return str(self)
+
+
+class AbstractBleakClient(abc.ABC):
+    """API for connecting to a BLE server and communicating with it."""
+
+    #: BLE address of the server
+    address: Union[str, BLEDevice]
+    #: Services and characteristics exported by the server
+    services: BleakGATTServiceCollection
+
+    # Async Context managers
+
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.disconnect()
+
+    # Connectivity methods
+
+    def set_disconnected_callback(
+        self, callback: Optional[Callable[["AbstractBleakClient"], None]], **kwargs
+    ) -> None:
+        """Set the disconnect callback.
+
+        The callback will only be called on unsolicited disconnect event, with this BleakClient as parameter.
+
+        :param callback: callback, or None to clear the disconnection callback
+        """
+        self._disconnected_callback = callback
+
+    @abc.abstractmethod
+    async def connect(self, **kwargs) -> bool:
+        """Connect to the specified GATT server.
+
+        This method may have backend-specific additional keyword arguments.
+
+        :returns: true if succesful.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def disconnect(self) -> bool:
+        """Disconnect from the specified GATT server.
+
+        :returns: True if succesful
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def pair(self, *args, **kwargs) -> bool:
+        """Pair with the server.
+
+        This method may not be available (or needed) for some backends.
+        This method may have backend-specific additional keyword arguments.
+
+        :returns: True if succesful
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def unpair(self) -> bool:
+        """Unpair with the server.
+
+        :returns: True if succesful
+        """
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def is_connected(self) -> bool:
+        """True if we are currently connected to the server"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
+        """Get all services registered for this GATT server.
+
+        This method may have backend-specific additional keyword arguments.
+
+        Note that you should use this method in stead of directly accessing the
+        services attribute, which may not be valid. Using this method will honour
+        the caching settings specified.
+
+        :returns: Description of all services and characteristics
+        """
+        raise NotImplementedError()
+
+    # I/O methods
+
+    @abc.abstractmethod
+    async def read_gatt_char(
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        **kwargs,
+    ) -> bytearray:
+        """Perform read operation on the specified GATT characteristic.
+
+        This method may have backend-specific additional keyword arguments.
+
+        :param char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
+        :returns: The data read (bytearray without any conversion).
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
+        """Perform read operation on the specified GATT descriptor.
+
+        :param handle: The handle of the descriptor to read from.
+        :returns: (bytearray) The read data.
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def write_gatt_char(
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        data: Union[bytes, bytearray, memoryview],
+        response: bool = False,
+    ) -> None:
+        """Perform a write operation on the specified GATT characteristic.
+
+        :param char_specifier: The characteristic to write to ((BleakGATTCharacteristic, handle or UUID))
+        :param data: (bytes or bytearray): The data to send.
+        :param response: If write-with-response operation should be done. Defaults to `False`.
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
+    ) -> None:
+        """Perform a write operation on the specified GATT descriptor.
+
+        :param handle: The handle of the descriptor to read from.
+        :param data: (bytes or bytearray) The data to send.
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def start_notify(
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        callback: Callable[[int, bytearray], None],
+        **kwargs,
+    ) -> None:
+        """Activate notifications/indications on a characteristic.
+
+        When a notification or indication is received from the server the callback
+        is called with two parameters: the handle of the characteristic to which it pertains
+        and the data received.
+
+        :param char_specifier: The characteristic to activate notifications/indications on
+        :param callback: The function to be called on notification.
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def stop_notify(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ) -> None:
+        """Deactivate notification/indication on a specified characteristic.
+
+        :param char_specifier: The characteristic to deactivate notification/indication on
+        """
+        raise NotImplementedError()

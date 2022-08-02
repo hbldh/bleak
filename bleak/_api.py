@@ -14,8 +14,8 @@ if _on_rtd:
     from bleak.abstract_api import (
         BLEDevice as _BLEDeviceImplementation,
     )  # noqa: F401
-    from bleak.backends.client import (
-        BaseBleakClient as _BleakClientImplementation,
+    from bleak.abstract_api import (
+        AbstractBleakClient as _BleakClientImplementation,
     )  # noqa: F401
     from bleak.abstract_api import (
         BleakGATTService as _BleakGATTServiceImplementation,
@@ -165,14 +165,13 @@ class BleakClient(_BleakClientImplementation):
     The actual implementation is dependent on the backend used, and some the constructor and some methods may have
     additional optional arguments.
 
-    Args:
-        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
-        disconnected_callback (callable): Callback that will be scheduled in the
-            event loop when the client is disconnected. The callable must take one
-            argument, which will be this client object.
+    :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+    :type address_or_ble_device: Union[BLEDevice, str]
+    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
+    :type timeout: float
+    :param disconnected_callback: Callback that will be scheduled in the
+            event loop when the client is disconnected.
+    :type disconnected_callback: Callable[[BleakClient], None]
     """
 
     pass

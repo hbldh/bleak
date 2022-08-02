@@ -14,9 +14,10 @@ from warnings import warn
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
+from bleak import abstract_api
 
 
-class BaseBleakClient(abc.ABC):
+class BaseBleakClient(abstract_api.AbstractBleakClient):
     """The Client Interface for Bleak Backend implementations to implement.
 
     The documentation of this interface should thus be safe to use as a reference for your implementation.
