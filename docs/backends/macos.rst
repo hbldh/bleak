@@ -29,3 +29,43 @@ the scan and thus cached the device as ``243E23AE-4A99-406C-B317-18F1BD7B4CBE``.
 
 There is also no pairing functionality implemented in macOS right now, since it does not seem
 to be any explicit pairing methods in the COre Bluetooth.
+
+macOS backend implementation classes
+------------------------------------
+
+BleakScanner MacOS implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.corebluetooth.scanner
+    :members:
+
+BLEDevice MacOS implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.corebluetooth.device
+    :members:
+
+BleakClient MacOS implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.corebluetooth.client
+    :members:
+
+BleakGATTService MacOS implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.corebluetooth.service
+    :members:
+
+BleakGATTCharacteristic MacOS implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.corebluetooth.characteristic
+    :members:
+
+
+BleakGATTDescriptor MacOS implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.corebluetooth.descriptor
+    :members:

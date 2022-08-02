@@ -1,3 +1,5 @@
+.. _api:
+
 API
 ===
 
@@ -29,7 +31,7 @@ Scanning
 Use the top-level :py:class:`bleak.BleakScanner` object to scan for BLE 
 devices. The constructor may have 
 additional platform-specific arguments which you can find in the relevant 
-:doc:`apiimplementations` section. You can limit the scan to only look for a device with a specific name,
+:doc:`backends/index` section. You can limit the scan to only look for a device with a specific name,
 or only for devices that implement a specific service.
 
 The scanner will return :py:class:`bleak.BLEDevice` objects.
@@ -66,7 +68,7 @@ operation is performed.
 
 Some of the methods, especially the constructor, may have 
 additional platform-specific arguments which you can find in the relevant 
-:doc:`apiimplementations` section.
+:doc:`backends/index` section.
 
 
 Client interface

@@ -141,7 +141,7 @@ class BleakClientWinRT(BaseBleakClient):
     a package that enables Python developers to access Windows Runtime APIs directly from Python.
 
     :param address_or_ble_device: The Bluetooth address of the BLE peripheral
-            to connect to or the ``BLEDevice`` object representing it.
+            to connect to or the ``bleak.BLEDevice`` object representing it.
     :param winrt: A dictionary of Windows-specific configuration values.
     :param timeout: Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
     :param disconnected_callback: Callback that will be scheduled in the

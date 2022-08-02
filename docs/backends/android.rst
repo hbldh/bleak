@@ -57,3 +57,43 @@ succeed if the user does not accept permissions.
 
 For an example of building an android bluetooth app, see `the example <../../examples/kivy>`_
 and its accompanying `README <../../examples/kivy/README>`_.
+
+Android backend implementation classes
+--------------------------------------
+
+BleakScanner Python-for-Android/Kivy implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.scanner
+    :members:
+
+BLEDevice Python-for-Android/Kivy implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.device
+    :members:
+
+BleakClient Python-for-Android/Kivy implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.client
+    :members:
+
+BleakGATTService Python-for-Android/Kivy implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.service
+    :members:
+
+BleakGATTCharacteristic Python-for-Android/Kivy implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.characteristic
+    :members:
+
+
+BleakGATTDescriptor Python-for-Android/Kivy implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.p4android.descriptor
+    :members:

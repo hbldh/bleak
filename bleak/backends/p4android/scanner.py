@@ -36,7 +36,7 @@ class BleakScannerP4Android(BaseBleakScanner):
     :param detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-    :type detection_callback: Optional[Callable[[BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
+    :type detection_callback: Optional[Callable[[bleak.BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
     :param service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.

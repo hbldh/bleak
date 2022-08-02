@@ -23,3 +23,42 @@ Before that commit, ``Characteristic.WriteValue`` was only "Write with response"
 `Bluez 5.46 <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e>`_
 which can be used to "Write without response", but for older versions of Bluez (5.43, 5.44, 5.45), it is not possible to "Write without response".
 
+Linux backend implementation classes
+------------------------------------
+
+BleakScanner Linux Distributions with BlueZ implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.bluezdbus.scanner
+    :members:
+
+BLEDevice Linux Distributions with BlueZ implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.bluezdbus.device
+    :members:
+
+BleakClient Linux Distributions with BlueZ implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.bluezdbus.client
+    :members:
+
+BleakGATTService Linux Distributions with BlueZ implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.bluezdbus.service
+    :members:
+
+BleakGATTCharacteristic Linux Distributions with BlueZ implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.bluezdbus.characteristic
+    :members:
+
+
+BleakGATTDescriptor Linux Distributions with BlueZ implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.bluezdbus.descriptor
+    :members:

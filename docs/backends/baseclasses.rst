@@ -14,5 +14,17 @@ Implementation base classes
 .. automodule:: bleak.backends.scanner
     :members:
 
+.. automodule:: bleak.backends.device
+    :members:
+
 .. automodule:: bleak.backends.client
+    :members:
+
+.. automodule:: bleak.backends.service
+    :members:
+
+.. automodule:: bleak.backends.characteristic
+    :members:
+
+.. automodule:: bleak.backends.descriptor
     :members:

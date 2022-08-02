@@ -16,3 +16,42 @@ Client
  - The constructor keyword ``address_type`` which can have the values ``"public"`` or ``"random"``. This value
    makes sure that the connection is made in a fashion that suits the peripheral.
 
+Windows backend implementation classes
+--------------------------------------
+
+BleakScanner Windows implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.scanner
+    :members:
+
+BLEDevice Windows implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.device
+    :members:
+
+BleakClient Windows implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.client
+    :members:
+
+BleakGATTService Windows implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.service
+    :members:
+
+BleakGATTCharacteristic Windows implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.characteristic
+    :members:
+
+
+BleakGATTDescriptor Windows implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.descriptor
+    :members:

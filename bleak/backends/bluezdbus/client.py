@@ -43,7 +43,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     The adapter keyword argument is BlueZ specific.
 
     :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
-    :type address_or_ble_device: Union[BLEDevice, str]
+    :type address_or_ble_device: Union[bleak.BLEDevice, str]
     :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
     :type timeout: float
     :param disconnected_callback: Callback that will be scheduled in the
