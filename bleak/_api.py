@@ -167,9 +167,11 @@ class BLEDevice(_BLEDeviceImplementation):
 
     pass
 
+
 from bleak.backends.scanner import AdvertisementData
 from bleak.backends.scanner import AdvertisementDataCallback
 from bleak.backends.scanner import AdvertisementDataFilter
+
 
 class BleakClient(_BleakClientImplementation):
     """The interface for communicating with BLE servers.

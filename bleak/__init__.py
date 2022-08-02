@@ -55,4 +55,3 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     handler.setFormatter(logging.Formatter(fmt=FORMAT))
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
-
