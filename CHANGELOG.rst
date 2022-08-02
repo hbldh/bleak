@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
+* Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection.
 
 
 `0.15.0`_ (2022-07-29)
