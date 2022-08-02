@@ -7,9 +7,7 @@ from bleak.backends.device import BLEDevice
 
 
 class BLEDeviceCoreBluetooth(BLEDevice):
-    """
-    A CoreBlutooth class representing a BLE server detected during
-    a `discover` call.
+    """Class representing a BLE server detected during a discover call, CoreBluetooth implementation.
 
     - The `details` attribute will be a CBPeripheral object.
 
@@ -33,6 +31,7 @@ class BLEDeviceCoreBluetooth(BLEDevice):
     """
 
     def __init__(self, *args, **kwargs):
+        """Should not be called by end user, only by bleak itself"""
         super(BLEDeviceCoreBluetooth, self).__init__(*args, **kwargs)
 
     def _update(self, advertisementData: NSDictionary) -> None:

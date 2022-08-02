@@ -11,20 +11,13 @@ from bleak import abstract_api
 
 
 class BLEDevice(abstract_api.BLEDevice):
-    """A simple wrapper class representing a BLE server detected during
-    a `discover` call.
+    """Class representing a BLE server detected during a `discover` call.
 
-    - When using Windows backend, `details` attribute is a
-      ``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement`` object, unless
-      it is created with the Windows.Devices.Enumeration discovery method, then is is a
-      ``Windows.Devices.Enumeration.DeviceInformation``.
-    - When using Linux backend, ``details`` attribute is a
-      dict with keys ``path`` which has the string path to the DBus device object and ``props``
-      which houses the properties dictionary of the D-Bus Device.
-    - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
+
     """
 
     def __init__(self, address, name, details=None, rssi=0, **kwargs):
+        """Should not be called by end user, only by bleak itself"""
         #: The Bluetooth address of the device on this machine.
         self.address = address
         #: The advertised name of the device.

@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
-from bleak.backends.device import BLEDevice
+from bleak.backends.corebluetooth.device import BLEDevice, BLEDeviceCoreBluetooth
 from bleak.backends.scanner import (
     AdvertisementDataCallback,
     BaseBleakScanner,
@@ -113,7 +113,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 platform_data=(p, a, r),
             )
 
-            device = BLEDevice(
+            device = BLEDeviceCoreBluetooth(
                 p.identifier().UUIDString(),
                 p.name(),
                 p,
@@ -185,7 +185,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 service_data[cb_uuid_to_str(u)] = bytes(adv_service_data[u])
 
             found.append(
-                BLEDevice(
+                BLEDeviceCoreBluetooth(
                     address,
                     name,
                     details,

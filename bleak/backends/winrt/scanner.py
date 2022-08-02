@@ -11,7 +11,7 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
 )
 from typing_extensions import Literal
 
-from ..device import BLEDevice
+from .device import BLEDevice, BLEDeviceWinRT
 from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
 from ...assigned_numbers import AdvertisementDataType
 
@@ -259,6 +259,6 @@ class BleakScannerWinRT(BaseBleakScanner):
                 local_name = args.advertisement.local_name
             rssi = args.raw_signal_strength_in_d_bm
 
-        return BLEDevice(
+        return BLEDeviceWinRT(
             bdaddr, local_name, raw_data, rssi, uuids=uuids, manufacturer_data=data
         )

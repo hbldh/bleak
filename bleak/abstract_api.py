@@ -293,7 +293,7 @@ class BLEDevice(abc.ABC):
     address: str
     #: User-readable name the server announced in its advertisement
     name: str
-    #: Backend-specific details of the server discovered from its advertisement
+    #: Backend-specific details needed to connect to the BLE server
     details: Any
     #: Received Signal Strength Indicator, higher values mean the signal was stronger
     rssi: int

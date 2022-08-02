@@ -30,8 +30,8 @@ elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.scanner import (
         BleakScannerP4Android as _BleakScannerImplementation,
     )  # noqa: F401
-    from bleak.backends.device import (
-        BLEDevice as _BLEDeviceImplementation,
+    from bleak.backends.p4android.device import (
+        BLEDeviceP4Android as _BLEDeviceImplementation,
     )  # noqa: F401
     from bleak.backends.p4android.client import (
         BleakClientP4Android as _BleakClientImplementation,
@@ -50,8 +50,8 @@ elif platform.system() == "Linux":
     from bleak.backends.bluezdbus.scanner import (
         BleakScannerBlueZDBus as _BleakScannerImplementation,
     )  # noqa: F401
-    from bleak.backends.device import (
-        BLEDevice as _BLEDeviceImplementation,
+    from bleak.backends.bluezdbus.device import (
+        BLEDeviceBlueZDBus as _BLEDeviceImplementation,
     )  # noqa: F401
     from bleak.backends.bluezdbus.client import (
         BleakClientBlueZDBus as _BleakClientImplementation,
@@ -107,8 +107,8 @@ elif platform.system() == "Windows":
     from bleak.backends.winrt.scanner import (
         BleakScannerWinRT as _BleakScannerImplementation,
     )  # noqa: F401
-    from bleak.backends.device import (
-        BLEDevice as _BLEDeviceImplementation,
+    from bleak.backends.winrt.device import (
+        BLEDeviceWinRT as _BLEDeviceImplementation,
     )  # noqa: F401
     from bleak.backends.winrt.client import (
         BleakClientWinRT as _BleakClientImplementation,
@@ -151,8 +151,7 @@ class BleakScanner(_BleakScannerImplementation):
 
 
 class BLEDevice(_BLEDeviceImplementation):
-    """Class representing a BLE server detected during a `discover` call."""
-
+    __doc__ = _BLEDeviceImplementation.__doc__
     pass
 
 

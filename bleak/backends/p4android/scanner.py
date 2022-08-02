@@ -12,7 +12,7 @@ from bleak.backends.scanner import (
     BaseBleakScanner,
     AdvertisementData,
 )
-from bleak.backends.device import BLEDevice
+from bleak.backends.p4android.device import BLEDevice, BLEDeviceP4Android
 from bleak.exc import BleakError
 
 from android.broadcast import BroadcastReceiver
@@ -277,7 +277,7 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
             service_uuids=service_uuids,
             platform_data=(result,),
         )
-        device = BLEDevice(
+        device = BLEDeviceP4Android(
             device.getAddress(),
             device.getName(),
             rssi=result.getRssi(),

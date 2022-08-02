@@ -6,7 +6,8 @@ from dbus_next import Variant
 from typing_extensions import TypedDict, Literal
 
 from ...exc import BleakError
-from ..device import BLEDevice
+from .device import BLEDevice, BLEDeviceBlueZDBus
+
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .advertisement_monitor import OrPatternLike
 from .manager import Device1, get_global_bluez_manager
@@ -190,7 +191,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             uuids = props.get("UUIDs", [])
             manufacturer_data = props.get("ManufacturerData", {})
             discovered_devices.append(
-                BLEDevice(
+                BLEDeviceBlueZDBus(
                     props["Address"],
                     props["Alias"],
                     {"path": path, "props": props},
@@ -234,7 +235,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             platform_data=props,
         )
 
-        device = BLEDevice(
+        device = BLEDeviceBlueZDBus(
             props["Address"],
             props["Alias"],
             {"path": path, "props": props},
