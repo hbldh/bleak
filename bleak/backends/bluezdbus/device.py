@@ -8,4 +8,5 @@ class BLEDeviceBlueZDBus(BLEDevice):
       dict with keys ``path`` which has the string path to the DBus device object and ``props``
       which houses the properties dictionary of the D-Bus Device.
     """
+
     pass

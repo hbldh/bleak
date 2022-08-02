@@ -9,4 +9,5 @@ class BLEDeviceWinRT(BLEDevice):
       it is created with the Windows.Devices.Enumeration discovery method, then is is a
       ``Windows.Devices.Enumeration.DeviceInformation``.
     """
+
     pass

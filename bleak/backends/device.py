@@ -11,10 +11,7 @@ from bleak import abstract_api
 
 
 class BLEDevice(abstract_api.BLEDevice):
-    """Class representing a BLE server detected during a `discover` call.
-
-
-    """
+    """Class representing a BLE server detected during a `discover` call."""
 
     def __init__(self, address, name, details=None, rssi=0, **kwargs):
         """Should not be called by end user, only by bleak itself"""

@@ -45,6 +45,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             Must be set to "active" for CoreBluetooth
     :type scanning_mode: Literal['active', 'passive']
     """
+
     """The native macOS Bleak BLE Scanner.
 
     Documentation:
@@ -159,8 +160,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager.callbacks.pop(id(self), None)
 
     def set_scanning_filter(self, **kwargs):
-        """Not implemented for CoreBluetooth.
-        """
+        """Not implemented for CoreBluetooth."""
         raise NotImplementedError(
             "Need to evaluate which macOS versions to support first..."
         )

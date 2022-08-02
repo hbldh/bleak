@@ -52,7 +52,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
     :param adapter: Bluetooth adapter to use for discovery. [unused]
     """
 
-
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility

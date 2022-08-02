@@ -355,7 +355,7 @@ class BleakClientWinRT(BaseBleakClient):
     async def pair(self, protection_level: int = None, **kwargs) -> bool:
         """Attempts to pair with the device.
 
-        :param protection_level: 
+        :param protection_level:
                 A ``DevicePairingProtectionLevel`` enum value.
                 1. None - Pair the device using no levels of protection.
                 2. Encryption - Pair the device using encryption.

@@ -45,6 +45,7 @@ class BleakScannerP4Android(BaseBleakScanner):
             Set to "passive" to avoid the "active" scanning mode.
     :type scanning_mode: Literal['active', 'passive']
     """
+
     __scanner = None
 
     def __init__(
