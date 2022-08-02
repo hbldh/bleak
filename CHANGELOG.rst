@@ -13,6 +13,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Fixed
 -----
 * The global BlueZ manager now disconnects correctly on exception. Merged #918.
+* Handle the race in the BlueZ D-Bus backend where the device disconnects during
+  the connection process which presented as ``Failed to cancel connection``. Merged #919.
 
 `0.15.0`_ (2022-07-29)
 ======================
