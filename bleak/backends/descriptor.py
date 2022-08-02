@@ -8,6 +8,8 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 from typing import Any
 
+from bleak import abstract_api
+
 _descriptor_descriptions = {
     "00002905-0000-1000-8000-00805f9b34fb": [
         "Characteristic Aggregate Format",
@@ -102,38 +104,8 @@ _descriptor_descriptions = {
 }
 
 
-class BleakGATTDescriptor(abc.ABC):
+class BleakGATTDescriptor(abstract_api.BleakGATTDescriptor):
     """Interface for the Bleak representation of a GATT Descriptor"""
-
-    def __init__(self, obj: Any):
-        self.obj = obj
-
-    def __str__(self):
-        return f"{self.uuid} (Handle: {self.handle}): {self.description}"
-
-    @property
-    @abc.abstractmethod
-    def characteristic_uuid(self) -> str:
-        """UUID for the characteristic that this descriptor belongs to"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def characteristic_handle(self) -> int:
-        """handle for the characteristic that this descriptor belongs to"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def uuid(self) -> str:
-        """UUID for this descriptor"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def handle(self) -> int:
-        """Integer handle for this descriptor"""
-        raise NotImplementedError()
 
     @property
     def description(self) -> str:

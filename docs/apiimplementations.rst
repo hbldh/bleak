@@ -67,24 +67,14 @@ BleakScanner Python-for-Android/Kivy implementation
 .. automodule:: bleak.backends.p4android.scanner
     :members:
 
-Base classes
-------------
+Backend base classes
+--------------------
 
-The base class is usually not used directly, it is documented mainly for convenience
-of people writing a new backend.
-
-BleakClient base class
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: bleak.backends.client
-    :members:
-
-BleakScanner base class
-~~~~~~~~~~~~~~~~~~~~~~~
-
-The base class is usually not used directly, it is documented mainly for convenience
+The backend base classes are usually not used directly, they documented mainly for convenience
 of people writing a new backend.
 
 .. automodule:: bleak.backends.scanner
     :members:
 
+.. automodule:: bleak.backends.client
+    :members:

@@ -12,6 +12,7 @@ from typing import List, Union, Any
 
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.uuids import uuidstr_to_str
+from bleak import abstract_api
 
 
 class GattCharacteristicsFlags(enum.Enum):
@@ -27,62 +28,8 @@ class GattCharacteristicsFlags(enum.Enum):
     writable_auxiliaries = 0x0200
 
 
-class BleakGATTCharacteristic(abc.ABC):
+class BleakGATTCharacteristic(abstract_api.BleakGATTCharacteristic):
     """Interface for the Bleak representation of a GATT Characteristic"""
-
-    def __init__(self, obj: Any):
-        self.obj = obj
-
-    def __str__(self):
-        return f"{self.uuid} (Handle: {self.handle}): {self.description}"
-
-    @property
-    @abc.abstractmethod
-    def service_uuid(self) -> str:
-        """The UUID of the Service containing this characteristic"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def service_handle(self) -> int:
-        """The integer handle of the Service containing this characteristic"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def handle(self) -> int:
-        """The handle for this characteristic"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def uuid(self) -> str:
-        """The UUID for this characteristic"""
-        raise NotImplementedError()
-
-    @property
-    def description(self) -> str:
-        """Description for this characteristic"""
-        return uuidstr_to_str(self.uuid)
-
-    @property
-    @abc.abstractmethod
-    def properties(self) -> List[str]:
-        """Properties of this characteristic"""
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def descriptors(self) -> List:
-        """List of descriptors for this service"""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_descriptor(
-        self, specifier: Union[int, str, UUID]
-    ) -> Union[BleakGATTDescriptor, None]:
-        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
-        raise NotImplementedError()
 
     @abc.abstractmethod
     def add_descriptor(self, descriptor: BleakGATTDescriptor):

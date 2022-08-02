@@ -17,13 +17,13 @@ if _on_rtd:
     from bleak.backends.client import (
         BaseBleakClient as _BleakClientImplementation,
     )  # noqa: F401
-    from bleak.backends.service import (
+    from bleak.abstract_api import (
         BleakGATTService as _BleakGATTServiceImplementation,
     )  # noqa: F401
-    from bleak.backends.characteristic import (
+    from bleak.abstract_api import (
         BleakGATTCharacteristic as _BleakGATTCharacteristicImplementation,
     )  # noqa: F401
-    from bleak.backends.descriptor import (
+    from bleak.abstract_api import (
         BleakGATTDescriptor as _BleakGATTDescriptorImplementation,
     )  # noqa: F401
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
@@ -192,25 +192,11 @@ class BleakClient(_BleakClientImplementation):
     pass
 
 
-from bleak.backends.service import (
-    BleakGATTServiceCollection as _BleakGATTServiceCollectionImplementation,
-)
-
-
-class BleakGATTServiceCollection(_BleakGATTServiceCollectionImplementation):
-    """A BleakGATTServiceCollection is the collection of all services (and characteristics) implemented by a BLEDevice.
-
-    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
-    for different backends, but these present the same interface to user code.
-    """
+from bleak.abstract_api import BleakGATTServiceCollection
 
 
 class BleakGATTService(_BleakGATTServiceImplementation):
-    """A BleakGATTService is a collection of BleakGATTCharacteristic objects that somehow belong together.
-
-    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
-    for different backends, but these present the same interface to user code.
-    """
+    """A BleakGATTService is a collection of BleakGATTCharacteristic objects that somehow belong together."""
 
 
 class BleakGATTCharacteristic(_BleakGATTCharacteristicImplementation):
@@ -218,21 +204,15 @@ class BleakGATTCharacteristic(_BleakGATTCharacteristicImplementation):
 
     It can be passed to BleakClient methods to read, write or otherwise access those variables. It may contain
     BleakGATTDescriptor objects that further describe the variable and its values.
-
-    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
-    for different backends, but these present the same interface to user code.
     """
 
     pass
 
 
 class BleakGATTDescriptor(_BleakGATTDescriptorImplementation):
-    """A BleakGATTDescriptor is attached to a BleakGATTCharacteristic and describes attributes of that characteristic.
+    """A BleakGATTDescriptor is attached to a BleakGATTCharacteristic and describes aspects of that characteristic.
 
-    Attributes could be things like the human-readable name, or its presentation format.
-
-    It is usually instantiated by bleak and only inspected by the user code. There are different implementations
-    for different backends, but these present the same interface to user code.
+    The aspects could be things like the human-readable name, or its presentation format.
     """
 
     pass
