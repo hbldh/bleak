@@ -341,7 +341,7 @@ class BlueZManager:
 
             except BaseException:
                 # if setup failed, disconnect
-                await self._bus.disconnect()
+                self._bus.disconnect()
                 raise
 
     async def active_scan(
