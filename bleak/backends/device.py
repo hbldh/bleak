@@ -7,9 +7,10 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 from ._manufacturers import MANUFACTURERS
+from bleak import abstract_api
 
 
-class BLEDevice(object):
+class BLEDevice(abstract_api.BLEDevice):
     """A simple wrapper class representing a BLE server detected during
     a `discover` call.
 

@@ -270,3 +270,21 @@ class BleakGATTServiceCollection(abc.ABC):
     def get_descriptor(self, handle: int) -> Optional[BleakGATTDescriptor]:
         """Get a descriptor by integer handle"""
         return self.descriptors.get(handle)
+
+
+class BLEDevice(abc.ABC):
+    """Class representing a BLE server detected during a `discover` call."""
+
+    #: BLE address of the server (in a backend-specific notation)
+    address: str
+    #: User-readable name the server announced in its advertisement
+    name: str
+    #: Backend-specific details of the server discovered from its advertisement
+    details: Any
+    #: Received Signal Strength Indicator, higher values mean the signal was stronger
+    rssi: int
+    #: Other data received from the server in its advertisement
+    metadata: dict[str, Any]
+
+    def __repr__(self):
+        return str(self)

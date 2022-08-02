@@ -11,7 +11,7 @@ if _on_rtd:
     from bleak.backends.scanner import (
         BaseBleakScanner as _BleakScannerImplementation,
     )  # noqa: F401
-    from bleak.backends.device import (
+    from bleak.abstract_api import (
         BLEDevice as _BLEDeviceImplementation,
     )  # noqa: F401
     from bleak.backends.client import (
@@ -149,21 +149,7 @@ class BleakScanner(_BleakScannerImplementation):
 
 
 class BLEDevice(_BLEDeviceImplementation):
-    """Class representing a BLE server detected during a `discover` call.
-
-    It is usually instantiated by bleak and only inspected by the user code. It contains a
-    BleakGATTServiceCollection describing the services exported by the BLE server, and some
-    backend-dependent details:
-
-    - When using Windows backend, `details` attribute is a
-      ``Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisement`` object, unless
-      it is created with the Windows.Devices.Enumeration discovery method, then is is a
-      ``Windows.Devices.Enumeration.DeviceInformation``.
-    - When using Linux backend, ``details`` attribute is a
-      dict with keys ``path`` which has the string path to the DBus device object and ``props``
-      which houses the properties dictionary of the D-Bus Device.
-    - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
-    """
+    """Class representing a BLE server detected during a `discover` call."""
 
     pass
 
