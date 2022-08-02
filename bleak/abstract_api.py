@@ -485,11 +485,11 @@ class AdvertisementData(abc.ABC):
     #: The name of the ble device (if advertised)
     local_name: Optional[str]
     #: Manufacturer data from the device
-    manufacturer_data: dict[int, bytes]
+    manufacturer_data: Mapping[int, bytes]
     #: Service data from the device
-    service_data: dict[str, bytes]
+    service_data: Mapping[str, bytes]
     #: UUIDs associated with the device
-    service_uuids: list[str]
+    service_uuids: List[str]
     #: Tuple of platform specific advertisement data
     platform_data: Tuple
 
