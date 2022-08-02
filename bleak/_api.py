@@ -130,19 +130,21 @@ class BleakScanner(_BleakScannerImplementation):
     """
     Interface for Bleak Bluetooth LE Scanners.
 
-    The actual implementation is dependent on the backend used, and some methods (notably the
-    constructor) may have additional optional arguments.
+    The actual implementation is dependent on the backend used, and the
+    constructor may have additional optional arguments.
 
 
-    Args:
-        detection_callback:
+    :param detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        service_uuids:
+    :type detection_callback: Optional[Callable[[BLEDevice, AdvertisementData], Optional[Awaitable[NoneType]]]]
+    :param service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.
-        scanning_mode:
+    :type service_uuids: Optional[List[str]]
+    :param scanning_mode:
             Set to "passive" to avoid the "active" scanning mode.
+    :type scanning_mode: Literal['active', 'passive']
     """
 
     pass

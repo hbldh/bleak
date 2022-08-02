@@ -33,6 +33,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     def __init__(
         self, obj: dict, object_path: str, service_uuid: str, service_handle: int
     ):
+        """Should not be called by end user, only by bleak itself"""
         super(BleakGATTCharacteristicBlueZDBus, self).__init__(obj)
         self.__descriptors = []
         self.__path = object_path
@@ -42,22 +43,18 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
 
     @property
     def service_uuid(self) -> str:
-        """The uuid of the Service containing this characteristic"""
         return self.__service_uuid
 
     @property
     def service_handle(self) -> int:
-        """The handle of the Service containing this characteristic"""
         return self.__service_handle
 
     @property
     def handle(self) -> int:
-        """The handle of this characteristic"""
         return self._handle
 
     @property
     def uuid(self) -> str:
-        """The uuid of this characteristic"""
         return self.obj.get("UUID")
 
     @property
@@ -70,13 +67,11 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
 
     @property
     def descriptors(self) -> List:
-        """List of descriptors for this service"""
         return self.__descriptors
 
     def get_descriptor(
         self, specifier: Union[int, str, UUID]
     ) -> Union[BleakGATTDescriptor, None]:
-        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):
                 return next(filter(lambda x: x.handle == specifier, self.descriptors))
@@ -88,10 +83,6 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
             return None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
-        """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__descriptors.append(descriptor)
 
     @property

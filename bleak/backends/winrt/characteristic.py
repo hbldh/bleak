@@ -63,6 +63,7 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
     def __init__(self, obj: GattCharacteristicProperties):
+        """Should not be called by end user, only by bleak itself"""
         super().__init__(obj)
         self.__descriptors = []
         self.__props = [
@@ -73,27 +74,22 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
 
     @property
     def service_uuid(self) -> str:
-        """The uuid of the Service containing this characteristic"""
         return str(self.obj.service.uuid)
 
     @property
     def service_handle(self) -> int:
-        """The integer handle of the Service containing this characteristic"""
         return int(self.obj.service.attribute_handle)
 
     @property
     def handle(self) -> int:
-        """The handle of this characteristic"""
         return int(self.obj.attribute_handle)
 
     @property
     def uuid(self) -> str:
-        """The uuid of this characteristic"""
         return str(self.obj.uuid)
 
     @property
     def description(self) -> str:
-        """Description for this characteristic"""
         return (
             self.obj.user_description
             if self.obj.user_description
@@ -102,18 +98,15 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
 
     @property
     def properties(self) -> List[str]:
-        """Properties of this characteristic"""
         return self.__props
 
     @property
     def descriptors(self) -> List[BleakGATTDescriptorWinRT]:
-        """List of descriptors for this service"""
         return self.__descriptors
 
     def get_descriptor(
         self, specifier: Union[int, str, UUID]
     ) -> Union[BleakGATTDescriptorWinRT, None]:
-        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):
                 return next(filter(lambda x: x.handle == specifier, self.descriptors))
@@ -125,8 +118,4 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
             return None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
-        """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__descriptors.append(descriptor)

@@ -13,6 +13,7 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the python-for-android backend"""
 
     def __init__(self, java, service_uuid: str, service_handle: int):
+        """Should not be called by end user, only by bleak itself"""
         super(BleakGATTCharacteristicP4Android, self).__init__(java)
         self.__uuid = self.obj.getUuid().toString()
         self.__handle = self.obj.getInstanceId()
@@ -29,38 +30,34 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
 
     @property
     def service_uuid(self) -> str:
-        """The uuid of the Service containing this characteristic"""
         return self.__service_uuid
 
     @property
     def service_handle(self) -> int:
-        """The integer handle of the Service containing this characteristic"""
         return int(self.__service_handle)
 
     @property
     def handle(self) -> int:
-        """The handle of this characteristic"""
         return self.__handle
 
     @property
     def uuid(self) -> str:
-        """The uuid of this characteristic"""
         return self.__uuid
 
     @property
     def properties(self) -> List:
-        """Properties of this characteristic"""
         return self.__properties
 
     @property
     def descriptors(self) -> List:
-        """List of descriptors for this service"""
         return self.__descriptors
 
     def get_descriptor(
         self, specifier: Union[str, UUID]
     ) -> Union[BleakGATTDescriptor, None]:
-        """Get a descriptor by UUID (str or uuid.UUID)"""
+        """Get a descriptor by UUID (str or uuid.UUID)
+        Note that the Android Bluetooth API does not provide access to descriptor handles.
+        """
         if isinstance(specifier, int):
             raise BleakError(
                 "The Android Bluetooth API does not provide access to descriptor handles."
@@ -76,10 +73,6 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
         return matches[0]
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
-        """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__descriptors.append(descriptor)
         if descriptor.uuid == defs.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID:
             self.__notification_descriptor = descriptor

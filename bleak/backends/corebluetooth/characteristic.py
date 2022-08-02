@@ -58,6 +58,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
     def __init__(self, obj: CBCharacteristic):
+        """Should not be called by end user, only by bleak itself"""
         super().__init__(obj)
         self.__descriptors: List[BleakGATTDescriptorCoreBluetooth] = []
         # self.__props = obj.properties()
@@ -70,7 +71,6 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
 
     @property
     def service_uuid(self) -> str:
-        """The uuid of the Service containing this characteristic"""
         return cb_uuid_to_str(self.obj.service().UUID())
 
     @property
@@ -79,28 +79,23 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
 
     @property
     def handle(self) -> int:
-        """Integer handle for this characteristic"""
         return int(self.obj.handle())
 
     @property
     def uuid(self) -> str:
-        """The uuid of this characteristic"""
         return self._uuid
 
     @property
     def properties(self) -> List[str]:
-        """Properties of this characteristic"""
         return self.__props
 
     @property
     def descriptors(self) -> List[BleakGATTDescriptorCoreBluetooth]:
-        """List of descriptors for this service"""
         return self.__descriptors
 
     def get_descriptor(
         self, specifier
     ) -> Union[BleakGATTDescriptorCoreBluetooth, None]:
-        """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):
                 return next(filter(lambda x: x.handle == specifier, self.descriptors))
@@ -112,8 +107,4 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
             return None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptorCoreBluetooth):
-        """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__descriptors.append(descriptor)
