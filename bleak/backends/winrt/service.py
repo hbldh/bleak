@@ -12,6 +12,7 @@ class BleakGATTServiceWinRT(BleakGATTService):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
     def __init__(self, obj: GattDeviceService):
+        """Should not be called by end user, only by bleak itself"""
         super().__init__(obj)
         self.__characteristics = []
 
@@ -25,12 +26,7 @@ class BleakGATTServiceWinRT(BleakGATTService):
 
     @property
     def characteristics(self) -> List[BleakGATTCharacteristicWinRT]:
-        """List of characteristics for this service"""
         return self.__characteristics
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristicWinRT):
-        """Add a :py:class:`~BleakGATTCharacteristicWinRT` to the service.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__characteristics.append(characteristic)

@@ -13,6 +13,7 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
     def __init__(self, obj: CBService):
+        """Should not be called by end user, only by bleak itself"""
         super().__init__(obj)
         self.__characteristics: List[BleakGATTCharacteristicCoreBluetooth] = []
         # N.B. the `startHandle` method of the CBService is an undocumented Core Bluetooth feature,
@@ -21,22 +22,15 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
 
     @property
     def handle(self) -> int:
-        """The integer handle of this service"""
         return self.__handle
 
     @property
     def uuid(self) -> str:
-        """UUID for this service."""
         return cb_uuid_to_str(self.obj.UUID())
 
     @property
     def characteristics(self) -> List[BleakGATTCharacteristicCoreBluetooth]:
-        """List of characteristics for this service"""
         return self.__characteristics
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristicCoreBluetooth):
-        """Add a :py:class:`~BleakGATTCharacteristicCoreBluetooth` to the service.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__characteristics.append(characteristic)

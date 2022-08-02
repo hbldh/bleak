@@ -9,6 +9,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
     """GATT Service implementation for the BlueZ DBus backend"""
 
     def __init__(self, obj, path):
+        """Should not be called by end user, only by bleak itself"""
         super().__init__(obj)
         self.__characteristics = []
         self.__path = path
@@ -16,24 +17,17 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
 
     @property
     def uuid(self) -> str:
-        """The UUID to this service"""
         return self.obj["UUID"]
 
     @property
     def handle(self) -> int:
-        """The integer handle of this service"""
         return self.__handle
 
     @property
     def characteristics(self) -> List[BleakGATTCharacteristicBlueZDBus]:
-        """List of characteristics for this service"""
         return self.__characteristics
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristicBlueZDBus):
-        """Add a :py:class:`~BleakGATTCharacteristicBlueZDBus` to the service.
-
-        Should not be used by end user, but rather by `bleak` itself.
-        """
         self.__characteristics.append(characteristic)
 
     @property
