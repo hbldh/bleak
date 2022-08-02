@@ -8,8 +8,8 @@ from bleak.backends.client import BaseBleakClient
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 if _on_rtd:
-    from bleak.backends.scanner import (
-        BaseBleakScanner as _BleakScannerImplementation,
+    from bleak.abstract_api import (
+        AbstractBleakScanner as _BleakScannerImplementation,
     )  # noqa: F401
     from bleak.abstract_api import (
         BLEDevice as _BLEDeviceImplementation,
@@ -154,15 +154,27 @@ class BLEDevice(_BLEDeviceImplementation):
     pass
 
 
-from bleak.backends.scanner import AdvertisementData
-from bleak.backends.scanner import AdvertisementDataCallback
-from bleak.backends.scanner import AdvertisementDataFilter
+if _on_rtd:
+    from bleak.abstract_api import AdvertisementData as AbstractAdvertisementData
+
+    class AdvertisementData(AbstractAdvertisementData):
+        pass
+
+    from bleak.abstract_api import AdvertisementDataCallback
+    from bleak.abstract_api import AdvertisementDataFilter
+else:
+    from bleak.backends.scanner import AdvertisementData
+    from bleak.backends.scanner import AdvertisementDataCallback
+    from bleak.backends.scanner import AdvertisementDataFilter
 
 
 class BleakClient(_BleakClientImplementation):
     """The interface for communicating with BLE servers.
 
-    The actual implementation is dependent on the backend used, and some the constructor and some methods may have
+    A BleakClient can be used as an asynchronous context manager in which case it automatically
+    connects and disconnects.
+
+    The actual implementation is dependent on the backend used, and the constructor may have
     additional optional arguments.
 
     :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.

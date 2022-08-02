@@ -6,9 +6,20 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
+import asyncio
 import uuid
 from uuid import UUID
-from typing import Dict, List, Optional, Union, Iterator, Any, Callable
+from typing import (
+    Dict,
+    List,
+    Tuple,
+    Optional,
+    Union,
+    Iterator,
+    Any,
+    Callable,
+    Awaitable,
+)
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 
@@ -461,3 +472,208 @@ class AbstractBleakClient(abc.ABC):
         :param char_specifier: The characteristic to deactivate notification/indication on
         """
         raise NotImplementedError()
+
+
+class AdvertisementData(abc.ABC):
+    """
+    Wrapper around the advertisement data that each platform returns upon discovery
+    """
+
+    #: The name of the ble device (if advertised)
+    local_name: Optional[str]
+    #: Manufacturer data from the device
+    manufacturer_data: dict[int, bytes]
+    #: Service data from the device
+    service_data: dict[str, bytes]
+    #: UUIDs associated with the device
+    service_uuids: list[str]
+    #: Tuple of platform specific advertisement data
+    platform_data: Tuple
+
+    def __repr__(self) -> str:
+        kwargs = []
+        if self.local_name:
+            kwargs.append(f"local_name={repr(self.local_name)}")
+        if self.manufacturer_data:
+            kwargs.append(f"manufacturer_data={repr(self.manufacturer_data)}")
+        if self.service_data:
+            kwargs.append(f"service_data={repr(self.service_data)}")
+        if self.service_uuids:
+            kwargs.append(f"service_uuids={repr(self.service_uuids)}")
+        return f"AdvertisementData({', '.join(kwargs)})"
+
+
+#: function that will be called with (partial) advertisement data as it is received
+AdvertisementDataCallback = Callable[
+    [BLEDevice, AdvertisementData],
+    Optional[Awaitable[None]],
+]
+
+#: filter function for use during discovery: return True if this BLEDevice should be included in the discover() results
+AdvertisementDataFilter = Callable[
+    [BLEDevice, AdvertisementData],
+    bool,
+]
+
+
+class AbstractBleakScanner(abc.ABC):
+    """
+    Interface for Bleak Bluetooth LE Scanners
+
+    A BleakScanner can be used as an asynchronous context manager, in which case it will start and stop scanning.
+
+    :param detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
+    :type detection_callback: Optional[AdvertisementDataCallback]
+    :param service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
+    :type service_uuids: Optional[List[str]]
+    """
+
+    async def __aenter__(self):
+        await self.start()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.stop()
+
+    @classmethod
+    async def discover(cls, timeout: float = 5.0, **kwargs) -> List[BLEDevice]:
+        """Scan continuously for ``timeout`` seconds and return discovered devices.
+
+        This method may have additional backend-dependent keyword arguments.
+
+        :param timeout: Time to scan for.
+        :param detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
+        :type detection_callback: Optional[AdvertisementDataCallback]
+        :param service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
+        :type service_uuids: Optional[List[str]]
+        :returns: List of devices found (after possibly filtering on uuid)
+        """
+        async with cls(**kwargs) as scanner:
+            await asyncio.sleep(timeout)
+            devices = scanner.discovered_devices
+        return devices
+
+    def register_detection_callback(
+        self, callback: Optional[AdvertisementDataCallback]
+    ) -> None:
+        """Register a callback that is called when a device is discovered or has a property changed.
+
+        If another callback has already been registered, it will be replaced with ``callback``.
+        ``None`` can be used to remove the current callback.
+
+        The ``callback`` is a function or coroutine that takes two arguments: :class:`BLEDevice`
+        and :class:`AdvertisementData`.
+
+        :param callback: A function, coroutine or ``None``.
+
+        """
+        if callback is not None:
+            error_text = "callback must be callable with 2 parameters"
+            if not callable(callback):
+                raise TypeError(error_text)
+
+            handler_signature = inspect.signature(callback)
+            if len(handler_signature.parameters) != 2:
+                raise TypeError(error_text)
+
+        if inspect.iscoroutinefunction(callback):
+
+            def detection_callback(s, d):
+                asyncio.ensure_future(callback(s, d))
+
+        else:
+            detection_callback = callback
+
+        self._callback = detection_callback
+
+    @abc.abstractmethod
+    async def start(self):
+        """Start scanning for devices"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def stop(self):
+        """Stop scanning for devices"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def set_scanning_filter(self, **kwargs):
+        """Set scanning filter for the BleakScanner.
+
+        Args:
+            **kwargs: The filter details. This will differ a lot between backend implementations.
+
+        """
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def discovered_devices(self) -> List[BLEDevice]:
+        """Gets the devices registered by the BleakScanner.
+
+        Returns:
+            A list of the devices that the scanner has discovered during the scanning.
+        """
+        raise NotImplementedError()
+
+    async def get_discovered_devices(self) -> List[BLEDevice]:
+        """Gets the devices registered by the BleakScanner.
+
+        .. deprecated:: 0.11.0
+            This method will be removed in a future version of Bleak. Use the
+            :attr:`.discovered_devices` property instead.
+
+        Returns:
+            A list of the devices that the scanner has discovered during the scanning.
+
+        """
+        warn(
+            "This method will be removed in a future version of Bleak. Use the `discovered_devices` property instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.discovered_devices
+
+    @classmethod
+    async def find_device_by_address(
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs
+    ) -> Optional[BLEDevice]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
+
+        :param device_identifier: The (backend dependent) address of the Bluetooth peripheral sought.
+        :param timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+        :param adapter: Bluetooth adapter to use for discovery.
+        :type adapter: Optional[str]
+        :returns: The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        device_identifier = device_identifier.lower()
+        return await cls.find_device_by_filter(
+            lambda d, ad: d.address.lower() == device_identifier,
+            timeout=timeout,
+            **kwargs,
+        )
+
+    @classmethod
+    async def find_device_by_filter(
+        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
+    ) -> Optional[BLEDevice]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
+
+        :param filterfunc: A function that is called for every BLEDevice found. It should return True only for the wanted device.
+        :param timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+        :param adapter: Bluetooth adapter to use for discovery.
+        :type adapter: Optional[str]
+        :returns: The ``BLEDevice`` sought or ``None`` if not detected.
+        """
+        found_device_queue = asyncio.Queue()
+
+        def apply_filter(d: BLEDevice, ad: AdvertisementData):
+            if filterfunc(d, ad):
+                found_device_queue.put_nowait(d)
+
+        async with cls(detection_callback=apply_filter, **kwargs):
+            try:
+                return await asyncio.wait_for(found_device_queue.get(), timeout=timeout)
+            except asyncio.TimeoutError:
+                return None
