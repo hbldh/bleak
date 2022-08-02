@@ -10,7 +10,7 @@ from bleak.backends.service import BleakGATTService
 
 
 class BleakGATTServiceCoreBluetooth(BleakGATTService):
-    """GATT Characteristic implementation for the CoreBluetooth backend"""
+    """GATT Service implementation for the CoreBluetooth backend"""
 
     def __init__(self, obj: CBService):
         """Should not be called by end user, only by bleak itself"""

@@ -127,12 +127,13 @@ else:
 
 # Now let's tie together the abstract class and the backend implementation
 class BleakScanner(_BleakScannerImplementation):
-    """
-    Interface for Bleak Bluetooth LE Scanners.
+    """Interface for Bleak Bluetooth LE Scanners.
+
+    A BleakScanner can be used as an asynchronous context manager in which case it automatically
+    starts and stops scanning.
 
     The actual implementation is dependent on the backend used, and the
     constructor may have additional optional arguments.
-
 
     :param detection_callback:
             Optional function that will be called each time a device is
@@ -194,23 +195,13 @@ from bleak.abstract_api import BleakGATTServiceCollection
 
 
 class BleakGATTService(_BleakGATTServiceImplementation):
-    """A BleakGATTService is a collection of BleakGATTCharacteristic objects that somehow belong together."""
+    __doc__ = _BleakGATTServiceImplementation.__doc__
 
 
 class BleakGATTCharacteristic(_BleakGATTCharacteristicImplementation):
-    """A BleakGATTCharacteristic can be thought of as the name or address of a variable in the service.
-
-    It can be passed to BleakClient methods to read, write or otherwise access those variables. It may contain
-    BleakGATTDescriptor objects that further describe the variable and its values.
-    """
-
-    pass
+    __doc__ = _BleakGATTCharacteristicImplementation.__doc__
 
 
 class BleakGATTDescriptor(_BleakGATTDescriptorImplementation):
-    """A BleakGATTDescriptor is attached to a BleakGATTCharacteristic and describes aspects of that characteristic.
+    __doc__ = _BleakGATTDescriptorImplementation.__doc__
 
-    The aspects could be things like the human-readable name, or its presentation format.
-    """
-
-    pass
