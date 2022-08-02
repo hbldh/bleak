@@ -147,6 +147,8 @@ class BleakScanner(_BleakScannerImplementation):
             Set to "passive" to avoid the "active" scanning mode.
     :type scanning_mode: Literal['active', 'passive']
     """
+    # Gross hack to get the best docstring:
+    if len(__doc__) < len(_BleakScannerImplementation.__doc__): __doc__ = _BleakScannerImplementation.__doc__
 
     pass
 
@@ -187,6 +189,8 @@ class BleakClient(_BleakClientImplementation):
             event loop when the client is disconnected.
     :type disconnected_callback: Callable[[BleakClient], None]
     """
+    # Gross hack to get the best docstring:
+    if len(__doc__) < len(_BleakClientImplementation.__doc__): __doc__ = _BleakClientImplementation.__doc__
 
     pass
 

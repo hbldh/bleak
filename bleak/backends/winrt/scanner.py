@@ -51,20 +51,24 @@ class _RawAdvData(NamedTuple):
 
 
 class BleakScannerWinRT(BaseBleakScanner):
-    """The native Windows Bleak BLE Scanner.
+    """Interface for Bleak Bluetooth LE Scanners, Windows implementation.
 
     Implemented using `Python/WinRT <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection/>`_.
 
-    Args:
-        detection_callback:
+    A BleakScanner can be used as an asynchronous context manager in which case it automatically
+    starts and stops scanning.
+
+    :param detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        service_uuids:
+    :type detection_callback: Optional[Callable[[BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
+    :param service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
-
+    :type service_uuids: Optional[List[str]]
+    :param scanning_mode:
+            Set to "passive" to avoid the "active" scanning mode.
+    :type scanning_mode: Literal['active', 'passive']
     """
 
     def __init__(
@@ -217,16 +221,14 @@ class BleakScannerWinRT(BaseBleakScanner):
         self.watcher = None
 
     def set_scanning_filter(self, **kwargs):
-        """Set a scanning filter for the BleakScanner.
+        """Set a scanning filter for the BleakScanner, Windows specific.
 
-        Keyword Args:
-          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
-            BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+        :param SignalStrengthFilter: A BluetoothSignalStrengthFilter object used for configuration of Bluetooth
             LE advertisement filtering that uses signal strength-based filtering.
-          AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
-            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+        :type SignalStrengthFilter: Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter
+        :param AdvertisementFilter: A BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
             advertisement filtering that uses payload section-based filtering.
-
+        :type AdvertisementFilter: Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter
         """
         if "SignalStrengthFilter" in kwargs:
             # TODO: Handle SignalStrengthFilter parameters

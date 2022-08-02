@@ -26,21 +26,25 @@ logger = logging.getLogger(__name__)
 
 
 class BleakScannerP4Android(BaseBleakScanner):
-    """
-    The python-for-android Bleak BLE Scanner.
+    """Interface for Bleak Bluetooth LE Scanners, python-for-android implementation.
 
-    Args:
-        detection_callback:
+    Implemented using `Python/WinRT <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection/>`_.
+
+    A BleakScanner can be used as an asynchronous context manager in which case it automatically
+    starts and stops scanning.
+
+    :param detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-        service_uuids:
+    :type detection_callback: Optional[Callable[[BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
+    :param service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
-            containing this advertising data will be received. Specifying this
-            also enables scanning while the screen is off on Android.
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+            containing this advertising data will be received.
+    :type service_uuids: Optional[List[str]]
+    :param scanning_mode:
+            Set to "passive" to avoid the "active" scanning mode.
+    :type scanning_mode: Literal['active', 'passive']
     """
-
     __scanner = None
 
     def __init__(
@@ -224,6 +228,7 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__stop()
 
     def set_scanning_filter(self, **kwargs):
+        """Not implemented in Android"""
         # If we do end up implementing this, this should accept List<ScanFilter>
         # and ScanSettings java objects to pass to startScan().
         raise NotImplementedError("not implemented in Android backend")

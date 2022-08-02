@@ -46,26 +46,21 @@ class BlueZScannerArgs(TypedDict, total=False):
 
 
 class BleakScannerBlueZDBus(BaseBleakScanner):
-    """The native Linux Bleak BLE Scanner.
+    """API for Bleak Bluetooth LE Scanners, BlueZ implementation.
 
-    For possible values for `filters`, see the parameters to the
+    A BleakScanner can be used as an asynchronous context manager, in which case it will start and stop scanning.
+
+    For possible values for ``bluez['filters']``, see the parameters to the
     ``SetDiscoveryFilter`` method in the `BlueZ docs
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
-    Args:
-        detection_callback:
-            Optional function that will be called each time a device is
-            discovered or advertising data has changed.
-        service_uuids:
-            Optional list of service UUIDs to filter on. Only advertisements
-            containing this advertising data will be received. Specifying this
-            also enables scanning while the screen is off on Android.
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
-        **bluez:
-            Dictionary of arguments specific to the BlueZ backend.
-        **adapter (str):
-            Bluetooth adapter to use for discovery.
+    :param detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
+    :type detection_callback: Optional[AdvertisementDataCallback]
+    :param service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
+    :type service_uuids: Optional[List[str]]
+    :param bluez: Dictionary of arguments specific to the BlueZ backend.
+    :param adapter: Bluetooth adapter to use for discovery.
+    :type adapter: str
     """
 
     def __init__(
@@ -155,9 +150,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         See variant types here: <https://python-dbus-next.readthedocs.io/en/latest/type-system/>
 
-        Keyword Args:
-            filters (dict): A dict of filters to be applied on discovery.
-
+        :param filters: A dict of filters to be applied on discovery.
+        :type filters: dict
         """
         for k, v in kwargs.get("filters", {}).items():
             if k == "UUIDs":

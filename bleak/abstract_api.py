@@ -520,8 +520,7 @@ AdvertisementDataFilter = Callable[
 
 
 class AbstractBleakScanner(abc.ABC):
-    """
-    Interface for Bleak Bluetooth LE Scanners
+    """API for Bleak Bluetooth LE Scanners.
 
     A BleakScanner can be used as an asynchronous context manager, in which case it will start and stop scanning.
 

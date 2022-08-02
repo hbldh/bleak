@@ -39,6 +39,14 @@ logger = logging.getLogger(__name__)
 class BleakClientCoreBluetooth(BaseBleakClient):
     """API for connecting to a BLE server and communicating with it, CoreBluetooth implementation.
 
+    Documentation:
+    https://developer.apple.com/documentation/corebluetooth/cbcentralmanager
+
+    CoreBluetooth doesn't explicitly use Bluetooth addresses to identify peripheral
+    devices because private devices may obscure their Bluetooth addresses. To cope
+    with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
+    this for the BLEDevice address on macOS.
+
     A BleakClient can be used as an asynchronous context manager in which case it automatically
     connects and disconnects.
 

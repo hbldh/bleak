@@ -20,6 +20,31 @@ logger = logging.getLogger(__name__)
 
 
 class BleakScannerCoreBluetooth(BaseBleakScanner):
+    """Interface for Bleak Bluetooth LE Scanners, CoreBluetooth implementation.
+
+    Documentation:
+    https://developer.apple.com/documentation/corebluetooth/cbcentralmanager
+
+    CoreBluetooth doesn't explicitly use Bluetooth addresses to identify peripheral
+    devices because private devices may obscure their Bluetooth addresses. To cope
+    with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
+    this for the BLEDevice address on macOS.
+
+    A BleakScanner can be used as an asynchronous context manager in which case it automatically
+    starts and stops scanning.
+
+    :param detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+    :type detection_callback: Optional[Callable[[BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
+    :param service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received.
+    :type service_uuids: Optional[List[str]]
+    :param scanning_mode:
+            Must be set to "active" for CoreBluetooth
+    :type scanning_mode: Literal['active', 'passive']
+    """
     """The native macOS Bleak BLE Scanner.
 
     Documentation:
@@ -134,16 +159,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager.callbacks.pop(id(self), None)
 
     def set_scanning_filter(self, **kwargs):
-        """Set scanning filter for the scanner.
-
-        .. note::
-
-            This is not implemented for macOS yet.
-
-        Raises:
-
-           ``NotImplementedError``
-
+        """Not implemented for CoreBluetooth.
         """
         raise NotImplementedError(
             "Need to evaluate which macOS versions to support first..."
