@@ -109,5 +109,4 @@ class BleakGATTDescriptor(abstract_api.BleakGATTDescriptor):
 
     @property
     def description(self) -> str:
-        """A text description of what this descriptor represents"""
         return _descriptor_descriptions.get(self.uuid.lower(), ["None"])[0]
