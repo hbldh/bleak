@@ -16,6 +16,11 @@ types used in bleak and their meaning, roughly in the order in which you will of
 You can then read and write characteristic values by calling methods of :py:class:`bleak.BleakClient`,
 passing the :py:class:`bleak.backends.service.BleakGATTCharacteristic` of the value you are interested in.
 
+In this documentation and in other literature on Bluetooth LE GATT you will also come across the terms _attribute_ and _handle_.
+You probably need not bother with attribute (it is the "superclass" of the other GATT types). A handle is the low-level
+way to address services, characteristics, descriptors and values. Using handles is supported by various bleak APIs, and while
+it can sometimes be useful, for example to communicate with devices that have strange GATT implementations.
+
 Scanning
 --------
 
