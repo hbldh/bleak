@@ -163,6 +163,7 @@ if _on_rtd:
         pass
 
     from bleak.abstract_api import AdvertisementDataCallback
+    AdvertisementDataCallback.__doc__ = """Rabarber, rabarber"""
     from bleak.abstract_api import AdvertisementDataFilter
 else:
     from bleak.backends.scanner import AdvertisementData
