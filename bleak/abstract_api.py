@@ -13,6 +13,7 @@ from uuid import UUID
 from typing import (
     Dict,
     List,
+    Mapping,
     Tuple,
     Optional,
     Union,
@@ -296,7 +297,7 @@ class BLEDevice(abc.ABC):
     #: Received Signal Strength Indicator, higher values mean the signal was stronger
     rssi: int
     #: Other data received from the server in its advertisement
-    metadata: dict[str, Any]
+    metadata: Mapping[str, Any]
 
     def __repr__(self):
         return str(self)
