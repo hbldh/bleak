@@ -135,17 +135,16 @@ class WinRTClientArgs(TypedDict, total=False):
 
 
 class BleakClientWinRT(BaseBleakClient):
-    """Native Windows Bleak Client.
+    """API for connecting to a BLE server and communicating with it, Windows implementation.
 
     Implemented using `winrt <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection>`_,
     a package that enables Python developers to access Windows Runtime APIs directly from Python.
 
-    Args:
-        address_or_ble_device (str or BLEDevice): The Bluetooth address of the BLE peripheral
+    :param address_or_ble_device: The Bluetooth address of the BLE peripheral
             to connect to or the ``BLEDevice`` object representing it.
-        winrt (dict): A dictionary of Windows-specific configuration values.
-        **timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        **disconnected_callback (callable): Callback that will be scheduled in the
+    :param winrt: A dictionary of Windows-specific configuration values.
+    :param timeout: Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+    :param disconnected_callback: Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
     """
@@ -188,15 +187,6 @@ class BleakClientWinRT(BaseBleakClient):
     # Connectivity methods
 
     async def connect(self, **kwargs) -> bool:
-        """Connect to the specified GATT server.
-
-        Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
-        Returns:
-            Boolean representing connection status.
-
-        """
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_info is None:
@@ -316,12 +306,6 @@ class BleakClientWinRT(BaseBleakClient):
         return True
 
     async def disconnect(self) -> bool:
-        """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing if device is disconnected.
-
-        """
         logger.debug("Disconnecting from BLE device...")
         # Remove notifications.
         for handle, event_handler_token in list(self._notification_callbacks.items()):
@@ -357,12 +341,6 @@ class BleakClientWinRT(BaseBleakClient):
 
     @property
     def is_connected(self) -> bool:
-        """Check connection status between this client and the server.
-
-        Returns:
-            Boolean representing connection status.
-
-        """
         return self._DeprecatedIsConnectedReturn(
             False
             if self._session is None
@@ -371,23 +349,18 @@ class BleakClientWinRT(BaseBleakClient):
 
     @property
     def mtu_size(self) -> int:
-        """Get ATT MTU size for active connection"""
+        """Get ATT MTU size for active connection (Windows-specific)"""
         return self._session.max_pdu_size
 
     async def pair(self, protection_level: int = None, **kwargs) -> bool:
         """Attempts to pair with the device.
 
-        Keyword Args:
-            protection_level (int): A ``DevicePairingProtectionLevel`` enum value:
-
+        :param protection_level: 
+                A ``DevicePairingProtectionLevel`` enum value.
                 1. None - Pair the device using no levels of protection.
                 2. Encryption - Pair the device using encryption.
-                3. EncryptionAndAuthentication - Pair the device using
-                   encryption and authentication. (This will not work in Bleak...)
-
-        Returns:
-            Boolean regarding success of pairing.
-
+                3. EncryptionAndAuthentication - Pair the device using encryption and authentication. (This will not work in Bleak...)
+        :returns: Boolean regarding success of pairing.
         """
         # New local device information object created since the object from the requester isn't updated
         device_information = await DeviceInformation.create_from_id_async(
@@ -444,9 +417,8 @@ class BleakClientWinRT(BaseBleakClient):
 
         N.B. unpairing also leads to disconnection in the Windows backend.
 
-        Returns:
+        :returns:
             Boolean on whether the unparing was successful.
-
         """
 
         # New local device information object created since the object from the requester isn't updated
@@ -475,12 +447,6 @@ class BleakClientWinRT(BaseBleakClient):
     # GATT services methods
 
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
-        """Get all services registered for this GATT server.
-
-        Returns:
-           A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
-
-        """
         # Return the Service Collection.
         if self._services_resolved:
             return self.services
@@ -554,19 +520,16 @@ class BleakClientWinRT(BaseBleakClient):
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         **kwargs,
     ) -> bytearray:
-        """Perform read operation on the specified GATT characteristic.
+        """Perform read operation on the specified GATT characteristic, Windows implementation.
 
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
+        The use_cached keyword argument is Windows-specific.
 
-        Keyword Args:
-            use_cached (bool): ``False`` forces Windows to read the value from the
+        :param char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
+        :param use_cached: ``False`` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
 
-        Returns:
-            (bytearray) The read data.
+
+        :returns: The data read (bytearray without any conversion).
 
         """
         use_cached = kwargs.get("use_cached", False)
@@ -597,15 +560,12 @@ class BleakClientWinRT(BaseBleakClient):
     async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
-        Args:
-            handle (int): The handle of the descriptor to read from.
+        The use_cached keyword argument is Windows-specific.
 
-        Keyword Args:
-            use_cached (bool): `False` forces Windows to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
-
-        Returns:
-            (bytearray) The read data.
+        :param handle: The handle of the descriptor to read from.
+        :param use_cached: ``False`` forces Windows to read the value from the
+                device again and not use its own cached value. Defaults to ``False``.
+        :returns: (bytearray) The read data.
 
         """
         use_cached = kwargs.get("use_cached", False)
@@ -636,16 +596,6 @@ class BleakClientWinRT(BaseBleakClient):
         data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
-        """Perform a write operation of the specified GATT characteristic.
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
-        """
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -671,13 +621,6 @@ class BleakClientWinRT(BaseBleakClient):
     async def write_gatt_descriptor(
         self, handle: int, data: Union[bytes, bytearray, memoryview]
     ) -> None:
-        """Perform a write operation on the specified GATT descriptor.
-
-        Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
-
-        """
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
@@ -700,28 +643,6 @@ class BleakClientWinRT(BaseBleakClient):
         callback: Callable[[int, bytearray], None],
         **kwargs,
     ) -> None:
-        """Activate notifications/indications on a characteristic.
-
-        Callbacks must accept two inputs. The first will be a uuid string
-        object and the second will be a bytearray.
-
-        .. code-block:: python
-
-            def callback(sender, data):
-                print(f"{sender}: {data}")
-            client.start_notify(char_uuid, callback)
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to activate
-                notifications/indications on a characteristic, specified by either integer handle,
-                UUID or directly by the BleakGATTCharacteristic object representing it.
-            callback (function): The function to be called on notification.
-
-        Keyword Args:
-            force_indicate (bool): If this is set to True, then Bleak will set up a indication request instead of a
-                notification request, given that the characteristic supports notifications as well as indications.
-
-        """
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
@@ -785,14 +706,6 @@ class BleakClientWinRT(BaseBleakClient):
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
     ) -> None:
-        """Deactivate notification/indication on a specified characteristic.
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristic object representing it.
-
-        """
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:

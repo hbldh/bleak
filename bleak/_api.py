@@ -171,7 +171,7 @@ else:
 
 
 class BleakClient(_BleakClientImplementation):
-    """The interface for communicating with BLE servers.
+    """API for connecting to a BLE server and communicating with it.
 
     A BleakClient can be used as an asynchronous context manager in which case it automatically
     connects and disconnects.

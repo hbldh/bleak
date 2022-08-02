@@ -22,12 +22,9 @@ class BaseBleakClient(abstract_api.AbstractBleakClient):
 
     The documentation of this interface should thus be safe to use as a reference for your implementation.
 
-    Args:
-        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
-        disconnected_callback (callable): Callback that will be scheduled in the
+    :param address_or_ble_device: The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
+    :param disconnected_callback: Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
     """

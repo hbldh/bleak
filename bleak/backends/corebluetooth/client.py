@@ -37,14 +37,18 @@ logger = logging.getLogger(__name__)
 
 
 class BleakClientCoreBluetooth(BaseBleakClient):
-    """CoreBluetooth class interface for BleakClient
+    """API for connecting to a BLE server and communicating with it, CoreBluetooth implementation.
 
-    Args:
-        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
+    A BleakClient can be used as an asynchronous context manager in which case it automatically
+    connects and disconnects.
 
-    Keyword Args:
-        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
+    :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+    :type address_or_ble_device: Union[BLEDevice, str]
+    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
+    :type timeout: float
+    :param disconnected_callback: Callback that will be scheduled in the
+            event loop when the client is disconnected.
+    :type disconnected_callback: Callable[[BleakClient], None]
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
@@ -64,14 +68,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
     async def connect(self, **kwargs) -> bool:
-        """Connect to a specified Peripheral
+        """Connect to the specified GATT server, CoreBluetooth implementation.
 
-        Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
-        Returns:
-            Boolean representing connection status.
-
+        :param timeout: Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+        :type timeout: float
+        :returns: true if succesful.
         """
         timeout = kwargs.get("timeout", self._timeout)
         if self._peripheral is None:
@@ -123,7 +124,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return True
 
     async def disconnect(self) -> bool:
-        """Disconnect from the peripheral device"""
         if (
             self._peripheral is None
             or self._peripheral.state() != CBPeripheralStateConnected
@@ -136,7 +136,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @property
     def is_connected(self) -> bool:
-        """Checks for current active connection"""
         return self._DeprecatedIsConnectedReturn(
             False
             if self._peripheral is None
@@ -145,7 +144,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @property
     def mtu_size(self) -> int:
-        """Get ATT MTU size for active connection"""
+        """Get ATT MTU size for active connection (CoreBluetooth specific)"""
         # Use type CBCharacteristicWriteWithoutResponse to get maximum write
         # value length based on the negotiated ATT MTU size. Add the ATT header
         # length (+3) to get the actual ATT MTU size.
@@ -157,7 +156,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
     async def pair(self, *args, **kwargs) -> bool:
-        """Attempt to pair with a peripheral.
+        """Attempt to pair with a peripheral, CoreBluetooth implementation.
 
         .. note::
 
@@ -178,20 +177,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
     async def unpair(self) -> bool:
-        """
-
-        Returns:
-
-        """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
-        """Get all services registered for this GATT server.
-
-        Returns:
-           A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
-
-        """
         if self._services is not None:
             return self.services
 
@@ -236,17 +224,16 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         use_cached=False,
         **kwargs,
     ) -> bytearray:
-        """Perform read operation on the specified GATT characteristic.
+        """Perform read operation on the specified GATT characteristic, CoreBluetooth implementation.
 
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
-            use_cached (bool): `False` forces macOS to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
+        The use_cached keyword argument is CoreBluetooth-specific.
 
-        Returns:
-            (bytearray) The read data.
+        :param char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
+        :param use_cached: ``False`` forces CoreBluetooth to read the value from the
+                device again and not use its own cached value. Defaults to ``False``.
+
+
+        :returns: The data read (bytearray without any conversion).
 
         """
         if not isinstance(char_specifier, BleakGATTCharacteristic):
@@ -266,15 +253,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def read_gatt_descriptor(
         self, handle: int, use_cached=False, **kwargs
     ) -> bytearray:
-        """Perform read operation on the specified GATT descriptor.
+        """Perform read operation on the specified GATT descriptor, CoreBluetooth implementation.
 
-        Args:
-            handle (int): The handle of the descriptor to read from.
-            use_cached (bool): `False` forces Windows to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
+        The use_cached keyword argument is CoreBluetooth-specific.
 
-        Returns:
-            (bytearray) The read data.
+        :param handle: The handle of the descriptor to read from.
+        :param use_cached: ``False`` forces CoreBluetooth to read the value from the
+                device again and not use its own cached value. Defaults to ``False``.
+        :returns: (bytearray) The read data.
+
         """
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
@@ -298,16 +285,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         data: Union[bytes, bytearray, memoryview],
         response: bool = False,
     ) -> None:
-        """Perform a write operation of the specified GATT characteristic.
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
-        """
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -328,13 +305,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def write_gatt_descriptor(
         self, handle: int, data: Union[bytes, bytearray, memoryview]
     ) -> None:
-        """Perform a write operation on the specified GATT descriptor.
-
-        Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
-
-        """
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor {} was not found!".format(handle))
@@ -349,24 +319,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         callback: Callable[[int, bytearray], None],
         **kwargs,
     ) -> None:
-        """Activate notifications/indications on a characteristic.
-
-        Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
-        data and the second will be a ``bytearray`` containing the data sent from the connected server.
-
-        .. code-block:: python
-
-            def callback(sender: int, data: bytearray):
-                print(f"{sender}: {data}")
-            client.start_notify(char_uuid, callback)
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to activate
-                notifications/indications on a characteristic, specified by either integer handle,
-                UUID or directly by the BleakGATTCharacteristic object representing it.
-            callback (function): The function to be called on notification.
-
-        """
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
@@ -387,15 +339,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
     ) -> None:
-        """Deactivate notification/indication on a specified characteristic.
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristic object representing it.
-
-
-        """
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -406,5 +349,5 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await self._delegate.stop_notifications(characteristic.obj)
 
     async def get_rssi(self) -> int:
-        """To get RSSI value in dBm of the connected Peripheral"""
+        """Get RSSI value in dBm of the connected Peripheral, CoreBluetooth-specific"""
         return int(await self._delegate.read_rssi())
