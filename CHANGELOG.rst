@@ -723,7 +723,7 @@ Fixed
 
 
 .. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.1...develop
-.. _0.15.1: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.1
+.. _0.15.1: https://github.com/hbldh/bleak/compare/v0.15.0...v0.15.1
 .. _0.15.0: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.0
 .. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3
 .. _0.14.2: https://github.com/hbldh/bleak/compare/v0.14.1...v0.14.2
