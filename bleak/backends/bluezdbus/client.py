@@ -10,6 +10,8 @@ import warnings
 from typing import Callable, Optional, Union
 from uuid import UUID
 
+import async_timeout
+
 from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType, ErrorType
 from dbus_next.message import Message
@@ -153,43 +155,45 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                reply = await asyncio.wait_for(
-                    self._bus.call(
+                async with async_timeout.timeout(timeout):
+                    reply = await self._bus.call(
                         Message(
                             destination=defs.BLUEZ_SERVICE,
                             interface=defs.DEVICE_INTERFACE,
                             path=self._device_path,
                             member="Connect",
                         )
-                    ),
-                    timeout,
-                )
+                    )
                 assert_reply(reply)
 
                 self._is_connected = True
             except BaseException:
                 # calling Disconnect cancels any pending connect request
-                try:
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Disconnect",
-                        )
-                    )
+                if self._bus:
+                    # If disconnected callback already fired, this will be a no-op
+                    # since self._bus will be None and the _cleanup_all call will
+                    # have already disconnected.
                     try:
-                        assert_reply(reply)
-                    except BleakDBusError as e:
-                        # if the object no longer exists, then we know we
-                        # are disconnected for sure, so don't need to log a
-                        # warning about it
-                        if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
-                            raise
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to cancel connection ({self._device_path}): {e}"
-                    )
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Disconnect",
+                            )
+                        )
+                        try:
+                            assert_reply(reply)
+                        except BleakDBusError as e:
+                            # if the object no longer exists, then we know we
+                            # are disconnected for sure, so don't need to log a
+                            # warning about it
+                            if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
+                                raise
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to cancel connection ({self._device_path}): {e}"
+                        )
 
                 raise
 
@@ -290,7 +294,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
             logger.debug(f"already in progress ({self._device_path})")
-            await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+            async with async_timeout.timeout(10):
+                await self._disconnecting_event.wait()
         elif self.is_connected:
             self._disconnecting_event = asyncio.Event()
             try:
@@ -304,7 +309,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 assert_reply(reply)
-                await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+                async with async_timeout.timeout(10):
+                    await self._disconnecting_event.wait()
             finally:
                 self._disconnecting_event = None
 

@@ -14,6 +14,8 @@ import warnings
 from functools import wraps
 from typing import Callable, Any, List, Optional, Sequence, Union
 
+import async_timeout
+
 from bleak_winrt.windows.devices.bluetooth import (
     BluetoothError,
     BluetoothLEDevice,
@@ -303,7 +305,8 @@ class BleakClientWinRT(BaseBleakClient):
             # This keeps the device connected until we set maintain_connection = False.
 
             # wait for the session to become active
-            await asyncio.wait_for(event.wait(), timeout=timeout)
+            async with async_timeout.timeout(timeout):
+                await event.wait()
         except BaseException:
             handle_disconnect()
             raise
@@ -349,7 +352,8 @@ class BleakClientWinRT(BaseBleakClient):
             self._session_closed_events.append(event)
             try:
                 self._requester.close()
-                await asyncio.wait_for(event.wait(), timeout=10)
+                async with async_timeout.timeout(10):
+                    await event.wait()
             finally:
                 self._session_closed_events.remove(event)
 

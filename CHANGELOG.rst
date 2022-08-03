@@ -13,8 +13,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
+* The global BlueZ manager now disconnects correctly on exception.
+* Handle the race in the BlueZ D-Bus backend where the device disconnects
+  during the connection process which presented as ``Failed to cancel connection``
 * Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection.
 
+Changed
+-------
+* Switch to using async_timeout instead of asyncio.wait_for for performance.
 
 `0.15.0`_ (2022-07-29)
 ======================

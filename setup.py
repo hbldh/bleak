@@ -19,6 +19,7 @@ EMAIL = "henrik.blidh@nedomkull.com"
 AUTHOR = "Henrik Blidh"
 
 REQUIRED = [
+    "async_timeout>=4.0.1",
     "typing-extensions>=4.2.0",
     # Linux reqs
     'dbus-next;platform_system=="Linux"',
