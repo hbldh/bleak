@@ -17,6 +17,7 @@ from typing import (
     Iterable,
     List,
     NamedTuple,
+    Optional,
     Set,
     Tuple,
     cast,
@@ -266,7 +267,7 @@ class BlueZManager:
     """
 
     def __init__(self):
-        self._bus = MessageBus(bus_type=BusType.SYSTEM)
+        self._bus: Optional[MessageBus] = None
         self._bus_lock = asyncio.Lock()
 
         # dict of object path: dict of interface name: dict of property name: property value
@@ -284,22 +285,26 @@ class BlueZManager:
         connected, no action is performed.
         """
         async with self._bus_lock:
-            if self._bus.connected:
+            if self._bus and self._bus.connected:
                 return
 
-            await self._bus.connect()
+            # We need to create a new MessageBus each time as
+            # dbus-next will destory the underlying file descriptors
+            # when the previous one is closed in its finalizer.
+            bus = MessageBus(bus_type=BusType.SYSTEM)
+            await bus.connect()
 
             try:
                 # Add signal listeners
 
-                self._bus.add_message_handler(self._parse_msg)
+                bus.add_message_handler(self._parse_msg)
 
                 rules = MatchRules(
                     interface=defs.OBJECT_MANAGER_INTERFACE,
                     member="InterfacesAdded",
                     arg0path="/org/bluez/",
                 )
-                reply = await add_match(self._bus, rules)
+                reply = await add_match(bus, rules)
                 assert_reply(reply)
 
                 rules = MatchRules(
@@ -307,7 +312,7 @@ class BlueZManager:
                     member="InterfacesRemoved",
                     arg0path="/org/bluez/",
                 )
-                reply = await add_match(self._bus, rules)
+                reply = await add_match(bus, rules)
                 assert_reply(reply)
 
                 rules = MatchRules(
@@ -315,13 +320,13 @@ class BlueZManager:
                     member="PropertiesChanged",
                     path_namespace="/org/bluez",
                 )
-                reply = await add_match(self._bus, rules)
+                reply = await add_match(bus, rules)
                 assert_reply(reply)
 
                 # get existing objects after adding signal handlers to avoid
                 # race condition
 
-                reply = await self._bus.call(
+                reply = await bus.call(
                     Message(
                         destination=defs.BLUEZ_SERVICE,
                         path="/",
@@ -341,8 +346,11 @@ class BlueZManager:
 
             except BaseException:
                 # if setup failed, disconnect
-                self._bus.disconnect()
+                bus.disconnect()
                 raise
+
+            # Everything is setup, so save the bus
+            self._bus = bus
 
     async def active_scan(
         self,

@@ -16,6 +16,7 @@ Fixed
 * The global BlueZ manager now disconnects correctly on exception.
 * Handle the race in the BlueZ D-Bus backend where the device disconnects
   during the connection process which presented as ``Failed to cancel connection``
+* Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection.
 
 Changed
 -------
