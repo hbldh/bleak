@@ -10,6 +10,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.15.1`_ (2022-08-03)
+======================
+
 Fixed
 -----
 * The global BlueZ manager now disconnects correctly on exception. Merged #918.
@@ -719,7 +722,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.1...develop
+.. _0.15.1: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.1
 .. _0.15.0: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.0
 .. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3
 .. _0.14.2: https://github.com/hbldh/bleak/compare/v0.14.1...v0.14.2
