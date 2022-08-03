@@ -11,6 +11,7 @@ import itertools
 import logging
 from typing import Callable, Any, Dict, Iterable, NewType, Optional
 
+import async_timeout
 import objc
 from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
 from CoreBluetooth import (
@@ -144,7 +145,8 @@ class PeripheralDelegate(NSObject):
         self._characteristic_read_futures[characteristic.handle()] = future
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
-            return await asyncio.wait_for(future, timeout=timeout)
+            async with async_timeout.timeout(timeout):
+                return await future
         finally:
             del self._characteristic_read_futures[characteristic.handle()]
 

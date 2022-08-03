@@ -10,6 +10,7 @@ from typing import (
     Tuple,
 )
 from warnings import warn
+import async_timeout
 
 from bleak.backends.device import BLEDevice
 
@@ -249,6 +250,7 @@ class BaseBleakScanner(abc.ABC):
 
         async with cls(detection_callback=apply_filter, **kwargs):
             try:
-                return await asyncio.wait_for(found_device_queue.get(), timeout=timeout)
+                async with async_timeout.timeout(timeout):
+                    return await found_device_queue.get()
             except asyncio.TimeoutError:
                 return None
