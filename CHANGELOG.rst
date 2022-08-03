@@ -13,7 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
-
+* The global BlueZ manager now disconnects correctly on exception.
 
 Changed
 -------
