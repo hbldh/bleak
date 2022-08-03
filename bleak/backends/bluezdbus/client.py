@@ -169,27 +169,31 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self._is_connected = True
             except BaseException:
                 # calling Disconnect cancels any pending connect request
-                try:
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Disconnect",
-                        )
-                    )
+                if self._bus:
+                    # If disconnected callback already fired, this will be a no-op
+                    # since self._bus will be None and the _cleanup_all call will
+                    # have already disconnected.
                     try:
-                        assert_reply(reply)
-                    except BleakDBusError as e:
-                        # if the object no longer exists, then we know we
-                        # are disconnected for sure, so don't need to log a
-                        # warning about it
-                        if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
-                            raise
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to cancel connection ({self._device_path}): {e}"
-                    )
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Disconnect",
+                            )
+                        )
+                        try:
+                            assert_reply(reply)
+                        except BleakDBusError as e:
+                            # if the object no longer exists, then we know we
+                            # are disconnected for sure, so don't need to log a
+                            # warning about it
+                            if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
+                                raise
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to cancel connection ({self._device_path}): {e}"
+                        )
 
                 raise
 
