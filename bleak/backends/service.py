@@ -81,7 +81,7 @@ class BleakGATTService(abc.ABC):
             return None
 
 
-class BleakGATTServiceCollection(object):
+class BleakGATTServiceCollection:
     """Simple data container for storing the peripheral's service complement."""
 
     def __init__(self):
