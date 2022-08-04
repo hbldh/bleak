@@ -10,6 +10,7 @@ _on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 if _on_rtd:
     from bleak.abstract_api import AbstractBleakScanner
+
     # We need to document the constructor in a backend-independent way. Do it here.
     class _BleakScannerImplementation(AbstractBleakScanner):
         """Interface for Bleak Bluetooth LE Scanners.
@@ -32,13 +33,23 @@ if _on_rtd:
                 Set to "passive" to avoid the "active" scanning mode.
         :type scanning_mode: Literal['active', 'passive']
         """
-        def __init__(self, detection_callback : Optional[Callable[["BLEDevice", "AdvertisementData"], Optional[Awaitable[None]]]] = None, service_uuids : Optional[List[str]] = None, scanning_mode : Literal['active', 'passive'] = "active", **kwargs):
+
+        def __init__(
+            self,
+            detection_callback: Optional[
+                Callable[["BLEDevice", "AdvertisementData"], Optional[Awaitable[None]]]
+            ] = None,
+            service_uuids: Optional[List[str]] = None,
+            scanning_mode: Literal["active", "passive"] = "active",
+            **kwargs,
+        ):
             pass
 
     from bleak.abstract_api import (
         BLEDevice as _BLEDeviceImplementation,
     )  # noqa: F401
     from bleak.abstract_api import AbstractBleakClient
+
     # We need to document the constructor in a backend-independent way. Do it here.
     class _BleakClientImplementation(AbstractBleakClient):
         """API for connecting to a BLE server and communicating with it.
@@ -57,9 +68,17 @@ if _on_rtd:
                 event loop when the client is disconnected.
         :type disconnected_callback: Callable[[BleakClient], None]
         """
-        def __init__(self, address_or_ble_device : Union["BLEDevice", str], timeout : float = 10.0, disconnected_callback : Optional[Callable[["BleakClient"], None]] = None, **kwargs):
+
+        def __init__(
+            self,
+            address_or_ble_device: Union["BLEDevice", str],
+            timeout: float = 10.0,
+            disconnected_callback: Optional[Callable[["BleakClient"], None]] = None,
+            **kwargs,
+        ):
             pass
 
+    from bleak.abstract_api import BleakGATTServiceCollection
     from bleak.abstract_api import (
         BleakGATTService as _BleakGATTServiceImplementation,
     )  # noqa: F401
@@ -69,6 +88,14 @@ if _on_rtd:
     from bleak.abstract_api import (
         BleakGATTDescriptor as _BleakGATTDescriptorImplementation,
     )  # noqa: F401
+    from bleak.abstract_api import AdvertisementData as AbstractAdvertisementData
+
+    class AdvertisementData(AbstractAdvertisementData):
+        __doc__ = AbstractAdvertisementData.__doc__
+        pass
+
+    from bleak.abstract_api import AdvertisementDataCallback
+    from bleak.abstract_api import AdvertisementDataFilter
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.scanner import (
         BleakScannerP4Android as _BleakScannerImplementation,
@@ -79,6 +106,7 @@ elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.client import (
         BleakClientP4Android as _BleakClientImplementation,
     )  # noqa: F401
+    from bleak.abstract_api import BleakGATTServiceCollection
     from bleak.backends.p4android.service import (
         BleakGATTServiceP4Android as _BleakGATTServiceImplementation,
     )  # noqa: F401
@@ -88,6 +116,9 @@ elif os.environ.get("P4A_BOOTSTRAP") is not None:
     from bleak.backends.p4android.descriptor import (
         BleakGATTDescriptorP4Android as _BleakGATTDescriptorImplementation,
     )  # noqa: F401
+    from bleak.backends.scanner import AdvertisementData
+    from bleak.backends.scanner import AdvertisementDataCallback
+    from bleak.backends.scanner import AdvertisementDataFilter
 elif platform.system() == "Linux":
 
     from bleak.backends.bluezdbus.scanner import (
@@ -99,6 +130,7 @@ elif platform.system() == "Linux":
     from bleak.backends.bluezdbus.client import (
         BleakClientBlueZDBus as _BleakClientImplementation,
     )  # noqa: F401
+    from bleak.abstract_api import BleakGATTServiceCollection
     from bleak.backends.bluezdbus.service import (
         BleakGATTServiceBlueZDBus as _BleakGATTServiceImplementation,
     )  # noqa: F401
@@ -108,6 +140,9 @@ elif platform.system() == "Linux":
     from bleak.backends.bluezdbus.descriptor import (
         BleakGATTDescriptorBlueZDBus as _BleakGATTDescriptorImplementation,
     )  # noqa: F401
+    from bleak.backends.scanner import AdvertisementData
+    from bleak.backends.scanner import AdvertisementDataCallback
+    from bleak.backends.scanner import AdvertisementDataFilter
 elif platform.system() == "Darwin":
     try:
         from CoreBluetooth import CBPeripheral  # noqa: F401
@@ -123,6 +158,7 @@ elif platform.system() == "Darwin":
     from bleak.backends.corebluetooth.client import (
         BleakClientCoreBluetooth as _BleakClientImplementation,
     )  # noqa: F401
+    from bleak.abstract_api import BleakGATTServiceCollection
     from bleak.backends.corebluetooth.service import (
         BleakGATTServiceCoreBluetooth as _BleakGATTServiceImplementation,
     )  # noqa: F401
@@ -132,6 +168,9 @@ elif platform.system() == "Darwin":
     from bleak.backends.corebluetooth.descriptor import (
         BleakGATTDescriptorCoreBluetooth as _BleakGATTDescriptorImplementation,
     )  # noqa: F401
+    from bleak.backends.scanner import AdvertisementData
+    from bleak.backends.scanner import AdvertisementDataCallback
+    from bleak.backends.scanner import AdvertisementDataFilter
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
     _vtup = platform.win32_ver()[1].split(".")
@@ -156,6 +195,7 @@ elif platform.system() == "Windows":
     from bleak.backends.winrt.client import (
         BleakClientWinRT as _BleakClientImplementation,
     )  # noqa: F401
+    from bleak.abstract_api import BleakGATTServiceCollection
     from bleak.backends.winrt.service import (
         BleakGATTServiceWinRT as _BleakGATTServiceImplementation,
     )  # noqa: F401
@@ -165,37 +205,23 @@ elif platform.system() == "Windows":
     from bleak.backends.winrt.descriptor import (
         BleakGATTDescriptorWinRT as _BleakGATTDescriptorImplementation,
     )  # noqa: F401
+    from bleak.backends.scanner import AdvertisementData
+    from bleak.backends.scanner import AdvertisementDataCallback
+    from bleak.backends.scanner import AdvertisementDataFilter
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
 # Now let's tie together the abstract class and the backend implementation
 class BleakScanner(_BleakScannerImplementation):
     __doc__ = _BleakScannerImplementation.__doc__
-    pass
 
 
 class BLEDevice(_BLEDeviceImplementation):
     __doc__ = _BLEDeviceImplementation.__doc__
 
-if _on_rtd:
-    from bleak.abstract_api import AdvertisementData as AbstractAdvertisementData
-
-    class AdvertisementData(AbstractAdvertisementData):
-        pass
-
-    from bleak.abstract_api import AdvertisementDataCallback
-    from bleak.abstract_api import AdvertisementDataFilter
-else:
-    from bleak.backends.scanner import AdvertisementData
-    from bleak.backends.scanner import AdvertisementDataCallback
-    from bleak.backends.scanner import AdvertisementDataFilter
-
 
 class BleakClient(_BleakClientImplementation):
     __doc__ = _BleakClientImplementation.__doc__
-
-
-from bleak.abstract_api import BleakGATTServiceCollection
 
 
 class BleakGATTService(_BleakGATTServiceImplementation):
