@@ -58,17 +58,15 @@ class BleakScannerWinRT(BaseBleakScanner):
     A BleakScanner can be used as an asynchronous context manager in which case it automatically
     starts and stops scanning.
 
-    :param detection_callback:
+    Args:
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-    :type detection_callback: Optional[Callable[[bleak.BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
-    :param service_uuids:
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.
-    :type service_uuids: Optional[List[str]]
-    :param scanning_mode:
+        scanning_mode:
             Set to "passive" to avoid the "active" scanning mode.
-    :type scanning_mode: Literal['active', 'passive']
     """
 
     def __init__(
@@ -223,12 +221,13 @@ class BleakScannerWinRT(BaseBleakScanner):
     def set_scanning_filter(self, **kwargs):
         """Set a scanning filter for the BleakScanner, Windows specific.
 
-        :param SignalStrengthFilter: A BluetoothSignalStrengthFilter object used for configuration of Bluetooth
-            LE advertisement filtering that uses signal strength-based filtering.
-        :type SignalStrengthFilter: Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter
-        :param AdvertisementFilter: A BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-            advertisement filtering that uses payload section-based filtering.
-        :type AdvertisementFilter: Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter
+        Args:
+            SignalStrengthFilter (Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter):
+                A BluetoothSignalStrengthFilter object used for configuration of Bluetooth
+                LE advertisement filtering that uses signal strength-based filtering.
+            AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter):
+                A BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
+                advertisement filtering that uses payload section-based filtering.
         """
         if "SignalStrengthFilter" in kwargs:
             # TODO: Handle SignalStrengthFilter parameters

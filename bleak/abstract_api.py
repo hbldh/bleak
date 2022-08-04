@@ -161,8 +161,11 @@ class BleakGATTService(abc.ABC):
     ) -> Union[BleakGATTCharacteristic, None]:
         """Get a characteristic by UUID.
 
-        :param uuid: The UUID to match.
-        :returns: The first characteristic matching ``uuid`` or ``None`` if no
+        Args:
+            uuid: The UUID to match.
+
+        Returns:
+            The first characteristic matching ``uuid`` or ``None`` if no
             matching characteristic was found.
         """
         if type(uuid) == str and len(uuid) == 4:
@@ -228,8 +231,11 @@ class BleakGATTServiceCollection(abc.ABC):
     ) -> Optional[BleakGATTService]:
         """Get a single service.
 
-        :param specifier: UUID or handle for the service to get
-        :returns: The BleakGATTService object (or None if it does not exist)
+        Args:
+            specifier: UUID or handle for the service to get
+
+        Returns:
+            The BleakGATTService object (or None if it does not exist)
         """
         if isinstance(specifier, int):
             return self.services.get(specifier)
@@ -260,8 +266,11 @@ class BleakGATTServiceCollection(abc.ABC):
     ) -> Optional[BleakGATTCharacteristic]:
         """Get a single characteristic.
 
-        :param specifier: UUID or handle for the characteristic to get
-        :returns: The BleakGATTService object (or None if it does not exist)
+        Args:
+            specifier: UUID or handle for the characteristic to get
+
+        Returns:
+            The BleakGATTService object (or None if it does not exist)
         """
         if isinstance(specifier, int):
             return self.characteristics.get(specifier)
@@ -330,7 +339,8 @@ class AbstractBleakClient(abc.ABC):
 
         The callback will only be called on unsolicited disconnect event, with this BleakClient as parameter.
 
-        :param callback: callback, or None to clear the disconnection callback
+        Args:
+            callback: callback, or None to clear the disconnection callback
         """
         self._disconnected_callback = callback
 
@@ -403,8 +413,11 @@ class AbstractBleakClient(abc.ABC):
 
         This method may have backend-specific additional keyword arguments.
 
-        :param char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
-        :returns: The data read (bytearray without any conversion).
+        Args:
+            char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
+
+        Returns:
+            The data read (bytearray without any conversion).
 
         """
         raise NotImplementedError()
@@ -413,8 +426,11 @@ class AbstractBleakClient(abc.ABC):
     async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
-        :param handle: The handle of the descriptor to read from.
-        :returns: (bytearray) The read data.
+        Args:
+            handle: The handle of the descriptor to read from.
+
+        Returns:
+            The read data.
 
         """
         raise NotImplementedError()
@@ -428,10 +444,10 @@ class AbstractBleakClient(abc.ABC):
     ) -> None:
         """Perform a write operation on the specified GATT characteristic.
 
-        :param char_specifier: The characteristic to write to ((BleakGATTCharacteristic, handle or UUID))
-        :param data: (bytes or bytearray): The data to send.
-        :param response: If write-with-response operation should be done. Defaults to `False`.
-
+        Args:
+            char_specifier: The characteristic to write to ((BleakGATTCharacteristic, handle or UUID))
+            data: (bytes or bytearray): The data to send.
+            response: If write-with-response operation should be done. Defaults to `False`.
         """
         raise NotImplementedError()
 
@@ -441,9 +457,9 @@ class AbstractBleakClient(abc.ABC):
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
-        :param handle: The handle of the descriptor to read from.
-        :param data: (bytes or bytearray) The data to send.
-
+        Args:
+            handle: The handle of the descriptor to read from.
+            data: (bytes or bytearray) The data to send.
         """
         raise NotImplementedError()
 
@@ -460,8 +476,9 @@ class AbstractBleakClient(abc.ABC):
         is called with two parameters: the handle of the characteristic to which it pertains
         and the data received.
 
-        :param char_specifier: The characteristic to activate notifications/indications on
-        :param callback: The function to be called on notification.
+        Args:
+            char_specifier: The characteristic to activate notifications/indications on
+            callback: The function to be called on notification.
 
         """
         raise NotImplementedError()
@@ -472,7 +489,8 @@ class AbstractBleakClient(abc.ABC):
     ) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
-        :param char_specifier: The characteristic to deactivate notification/indication on
+        Args:
+            char_specifier: The characteristic to deactivate notification/indication on
         """
         raise NotImplementedError()
 
@@ -523,11 +541,6 @@ class AbstractBleakScanner(abc.ABC):
     """API for Bleak Bluetooth LE Scanners.
 
     A BleakScanner can be used as an asynchronous context manager, in which case it will start and stop scanning.
-
-    :param detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
-    :type detection_callback: Optional[AdvertisementDataCallback]
-    :param service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
-    :type service_uuids: Optional[List[str]]
     """
 
     async def __aenter__(self):
@@ -543,12 +556,13 @@ class AbstractBleakScanner(abc.ABC):
 
         This method may have additional backend-dependent keyword arguments.
 
-        :param timeout: Time to scan for.
-        :param detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
-        :type detection_callback: Optional[AdvertisementDataCallback]
-        :param service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
-        :type service_uuids: Optional[List[str]]
-        :returns: List of devices found (after possibly filtering on uuid)
+        Args:
+            timeout: Time to scan for.
+            detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
+            service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
+
+        Returns:
+            List of devices found (after possibly filtering on uuid)
         """
         async with cls(**kwargs) as scanner:
             await asyncio.sleep(timeout)
@@ -566,7 +580,8 @@ class AbstractBleakScanner(abc.ABC):
         The ``callback`` is a function or coroutine that takes two arguments: :class:`BLEDevice`
         and :class:`AdvertisementData`.
 
-        :param callback: A function, coroutine or ``None``.
+        Args:
+            callback: A function, coroutine or ``None``.
 
         """
         if callback is not None:
@@ -642,11 +657,12 @@ class AbstractBleakScanner(abc.ABC):
     ) -> Optional[BLEDevice]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
 
-        :param device_identifier: The (backend dependent) address of the Bluetooth peripheral sought.
-        :param timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-        :param adapter: Bluetooth adapter to use for discovery.
-        :type adapter: Optional[str]
-        :returns: The ``BLEDevice`` sought or ``None`` if not detected.
+        Args:
+            device_identifier: The (backend dependent) address of the Bluetooth peripheral sought.
+            timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
 
         """
         device_identifier = device_identifier.lower()
@@ -662,11 +678,12 @@ class AbstractBleakScanner(abc.ABC):
     ) -> Optional[BLEDevice]:
         """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
 
-        :param filterfunc: A function that is called for every BLEDevice found. It should return True only for the wanted device.
-        :param timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-        :param adapter: Bluetooth adapter to use for discovery.
-        :type adapter: Optional[str]
-        :returns: The ``BLEDevice`` sought or ``None`` if not detected.
+        Args:
+            filterfunc: A function that is called for every BLEDevice found. It should return True only for the wanted device.
+            timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
         """
         found_device_queue = asyncio.Queue()
 

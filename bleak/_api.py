@@ -21,17 +21,15 @@ if _on_rtd:
         The actual implementation is dependent on the backend used, and the
         constructor may have additional optional arguments.
 
-        :param detection_callback:
+        Args:
+            detection_callback:
                 Optional function that will be called each time a device is
                 discovered or advertising data has changed.
-        :type detection_callback: Optional[Callable[[BLEDevice, AdvertisementData], Optional[Awaitable[NoneType]]]]
-        :param service_uuids:
+            service_uuids:
                 Optional list of service UUIDs to filter on. Only advertisements
                 containing this advertising data will be received.
-        :type service_uuids: Optional[List[str]]
-        :param scanning_mode:
+            scanning_mode:
                 Set to "passive" to avoid the "active" scanning mode.
-        :type scanning_mode: Literal['active', 'passive']
         """
 
         def __init__(
@@ -60,13 +58,14 @@ if _on_rtd:
         The actual implementation is dependent on the backend used, and the constructor may have
         additional optional arguments.
 
-        :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
-        :type address_or_ble_device: Union[BLEDevice, str]
-        :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
-        :type timeout: float
-        :param disconnected_callback: Callback that will be scheduled in the
+        Args:
+            address_or_ble_device:
+                The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+            timeout:
+                Timeout for required ``discover`` call. Defaults to 10.0.
+            disconnected_callback:
+                Callback that will be scheduled in the
                 event loop when the client is disconnected.
-        :type disconnected_callback: Callable[[BleakClient], None]
         """
 
         def __init__(

@@ -42,14 +42,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     The adapter keyword argument is BlueZ specific.
 
-    :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
-    :type address_or_ble_device: Union[bleak.BLEDevice, str]
-    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
-    :type timeout: float
-    :param disconnected_callback: Callback that will be scheduled in the
+    Args:
+        address_or_ble_device:
+            The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+        timeout:
+            Timeout for required ``discover`` call. Defaults to 10.0.
+        disconnected_callback:
+            Callback that will be scheduled in the
             event loop when the client is disconnected.
-    :type disconnected_callback: Callable[[BleakClient], None]
-    :param adapter: Bluetooth adapter to use for discovery. [unused]
+        adapter (str):
+            Bluetooth adapter to use for discovery. [unused]
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
@@ -84,12 +86,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server, BlueZ implementation.
 
-        :param timeout: Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        :type timeout: float
-        :returns: true if succesful.
-        :raises BleakError: If the device is already connected or if the device could not be found.
-        :raises BleakDBusError: If there was a D-Bus error
-        :raises asyncio.TimeoutError: If the connection timed out
+        Args:
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+
+        Returns:
+            true if succesful.
+        Raises:
+            BleakError:
+                If the device is already connected or if the device could not be found.
+            BleakDBusError:
+                If there was a D-Bus error
+            asyncio.TimeoutError:
+                If the connection timed out
         """
 
         logger.debug(f"Connecting to device @ {self.address} with {self._adapter}")

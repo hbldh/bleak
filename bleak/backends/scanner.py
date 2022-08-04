@@ -52,14 +52,13 @@ class BaseBleakScanner(abstract_api.AbstractBleakScanner):
     A BleakScanner can be used as an asynchronous context manager in which case it automatically
     starts and stops scanning.
 
-    :param detection_callback:
+    Args:
+        detection_callback:
             Optional function that will be called each time a device is
             discovered or advertising data has changed.
-    :type detection_callback: Optional[Callable[[bleak.BLEDevice, AdvertisementData], Optional[Awaitable[NoneType]]]]
-    :param service_uuids:
+        service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.
-    :type service_uuids: Optional[List[str]]
     """
 
     def __init__(

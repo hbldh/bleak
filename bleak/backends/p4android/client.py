@@ -33,14 +33,16 @@ class BleakClientP4Android(BaseBleakClient):
 
     The adapter keyword argument is python-for-android specific.
 
-    :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
-    :type address_or_ble_device: Union[bleak.BLEDevice, str]
-    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
-    :type timeout: float
-    :param disconnected_callback: Callback that will be scheduled in the
+    Args:
+        address_or_ble_device:
+            The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+        timeout (float):
+            Timeout for required ``discover`` call. Defaults to 10.0.
+        disconnected_callback (Callable[[BleakClient], None]):
+            Callback that will be scheduled in the
             event loop when the client is disconnected.
-    :type disconnected_callback: Callable[[BleakClient], None]
-    :param adapter: Bluetooth adapter to use for discovery. [unused]
+        adapter:
+            Bluetooth adapter to use for discovery. [unused]
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):

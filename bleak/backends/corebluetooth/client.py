@@ -50,13 +50,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     A BleakClient can be used as an asynchronous context manager in which case it automatically
     connects and disconnects.
 
-    :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
-    :type address_or_ble_device: Union[bleak.BLEDevice, str]
-    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
-    :type timeout: float
-    :param disconnected_callback: Callback that will be scheduled in the
+    Args:
+        address_or_ble_device:
+            The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+        timeout (float):
+            Timeout for required ``discover`` call. Defaults to 10.0.
+        disconnected_callback (Callable[[BleakClient], None]):
+            Callback that will be scheduled in the
             event loop when the client is disconnected.
-    :type disconnected_callback: Callable[[BleakClient], None]
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
@@ -78,9 +79,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server, CoreBluetooth implementation.
 
-        :param timeout: Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        :type timeout: float
-        :returns: true if succesful.
+        Args:
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+
+        Returns:
+            true if succesful.
         """
         timeout = kwargs.get("timeout", self._timeout)
         if self._peripheral is None:
@@ -236,8 +239,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         The use_cached keyword argument is CoreBluetooth-specific.
 
-        :param char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
-        :param use_cached: ``False`` forces CoreBluetooth to read the value from the
+        Args:
+            char_specifier:
+                The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
+            use_cached:
+                ``False`` forces CoreBluetooth to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
 
 
@@ -265,10 +271,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         The use_cached keyword argument is CoreBluetooth-specific.
 
-        :param handle: The handle of the descriptor to read from.
-        :param use_cached: ``False`` forces CoreBluetooth to read the value from the
+        Args:
+            handle: The handle of the descriptor to read from.
+            use_cached:
+                ``False`` forces CoreBluetooth to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
-        :returns: (bytearray) The read data.
+
+        Returns:
+            The read data.
 
         """
         descriptor = self.services.get_descriptor(handle)

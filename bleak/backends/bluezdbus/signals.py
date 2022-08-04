@@ -28,11 +28,11 @@ def is_message_type_valid(type: str) -> bool:
 
     .. seealso:: https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-routing-match-rules
 
-    :param type: The message type to validate.
-    :type name: str
+    Args:
+        type: The message type to validate.
 
-    :returns: Whether the name is a valid message type.
-    :rtype: bool
+    Returns:
+        Whether the name is a valid message type.
     """
     return type in _message_types
 
@@ -42,10 +42,10 @@ def assert_bus_name_valid(type: str):
 
     .. seealso:: https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-routing-match-rules
 
-    :param type: The message type to validate.
-    :type name: str
+    Args:
+        type: The message type to validate.
 
-    :raises:
+    Raises:
         - :class:`InvalidMessageTypeError` - If this is not a valid message type.
     """
     if not is_message_type_valid(type):

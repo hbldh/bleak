@@ -54,13 +54,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     ``SetDiscoveryFilter`` method in the `BlueZ docs
     <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
 
-    :param detection_callback: Optional function that will be called each time a device is discovered or advertising data has changed.
-    :type detection_callback: Optional[AdvertisementDataCallback]
-    :param service_uuids: Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
-    :type service_uuids: Optional[List[str]]
-    :param bluez: Dictionary of arguments specific to the BlueZ backend.
-    :param adapter: Bluetooth adapter to use for discovery.
-    :type adapter: str
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements containing this advertising data will be received.
+        bluez (dict):
+            Dictionary of arguments specific to the BlueZ backend.
+        adapter (str):
+            Bluetooth adapter to use for discovery (optional).
     """
 
     def __init__(
@@ -150,8 +152,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         See variant types here: <https://python-dbus-next.readthedocs.io/en/latest/type-system/>
 
-        :param filters: A dict of filters to be applied on discovery.
-        :type filters: dict
+        Args:
+            filters (dict): A dict of filters to be applied on discovery.
         """
         for k, v in kwargs.get("filters", {}).items():
             if k == "UUIDs":

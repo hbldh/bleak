@@ -33,29 +33,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     A BleakScanner can be used as an asynchronous context manager in which case it automatically
     starts and stops scanning.
 
-    :param detection_callback:
-            Optional function that will be called each time a device is
-            discovered or advertising data has changed.
-    :type detection_callback: Optional[Callable[[bleak.BLEDevice, bleak.AdvertisementData], Optional[Awaitable[NoneType]]]]
-    :param service_uuids:
-            Optional list of service UUIDs to filter on. Only advertisements
-            containing this advertising data will be received.
-    :type service_uuids: Optional[List[str]]
-    :param scanning_mode:
-            Must be set to "active" for CoreBluetooth
-    :type scanning_mode: Literal['active', 'passive']
-    """
-
-    """The native macOS Bleak BLE Scanner.
-
-    Documentation:
-    https://developer.apple.com/documentation/corebluetooth/cbcentralmanager
-
-    CoreBluetooth doesn't explicitly use Bluetooth addresses to identify peripheral
-    devices because private devices may obscure their Bluetooth addresses. To cope
-    with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
-    this for the BLEDevice address on macOS.
-
     Args:
         detection_callback:
             Optional function that will be called each time a device is

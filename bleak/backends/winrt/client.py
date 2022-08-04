@@ -140,11 +140,16 @@ class BleakClientWinRT(BaseBleakClient):
     Implemented using `winrt <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection>`_,
     a package that enables Python developers to access Windows Runtime APIs directly from Python.
 
-    :param address_or_ble_device: The Bluetooth address of the BLE peripheral
+    Args:
+        address_or_ble_device:
+            The Bluetooth address of the BLE peripheral
             to connect to or the ``bleak.BLEDevice`` object representing it.
-    :param winrt: A dictionary of Windows-specific configuration values.
-    :param timeout: Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-    :param disconnected_callback: Callback that will be scheduled in the
+        winrt:
+            A dictionary of Windows-specific configuration values.
+        timeout (float):
+            Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+        disconnected_callback (Callable[[BleakClient], None]):
+            Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
     """
@@ -355,12 +360,14 @@ class BleakClientWinRT(BaseBleakClient):
     async def pair(self, protection_level: int = None, **kwargs) -> bool:
         """Attempts to pair with the device.
 
-        :param protection_level:
-                A ``DevicePairingProtectionLevel`` enum value.
+        Args:
+            protection_level:
+                A ``DevicePairingProtectionLevel`` enum value:
                 1. None - Pair the device using no levels of protection.
                 2. Encryption - Pair the device using encryption.
                 3. EncryptionAndAuthentication - Pair the device using encryption and authentication. (This will not work in Bleak...)
-        :returns: Boolean regarding success of pairing.
+
+        Returns: Boolean regarding success of pairing.
         """
         # New local device information object created since the object from the requester isn't updated
         device_information = await DeviceInformation.create_from_id_async(
@@ -524,12 +531,16 @@ class BleakClientWinRT(BaseBleakClient):
 
         The use_cached keyword argument is Windows-specific.
 
-        :param char_specifier: The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
-        :param use_cached: ``False`` forces Windows to read the value from the
+        Args:
+            char_specifier:
+                The characteristic to read from ((BleakGATTCharacteristic, handle or UUID))
+            use_cached:
+                ``False`` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
 
 
-        :returns: The data read (bytearray without any conversion).
+        Returns:
+            The data read (bytearray without any conversion).
 
         """
         use_cached = kwargs.get("use_cached", False)
@@ -562,10 +573,15 @@ class BleakClientWinRT(BaseBleakClient):
 
         The use_cached keyword argument is Windows-specific.
 
-        :param handle: The handle of the descriptor to read from.
-        :param use_cached: ``False`` forces Windows to read the value from the
+        Args:
+            handle:
+                The handle of the descriptor to read from.
+            use_cached:
+                ``False`` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to ``False``.
-        :returns: (bytearray) The read data.
+
+        Returns:
+            The read data.
 
         """
         use_cached = kwargs.get("use_cached", False)
