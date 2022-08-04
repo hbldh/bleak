@@ -693,6 +693,8 @@ class AbstractBleakScanner(abc.ABC):
 
         async with cls(detection_callback=apply_filter, **kwargs):
             try:
+                async with async_timeout.timeout(timeout):
+                    return await found_device_queue.get()
                 return await asyncio.wait_for(found_device_queue.get(), timeout=timeout)
             except asyncio.TimeoutError:
                 return None
