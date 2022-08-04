@@ -23,6 +23,7 @@ from typing import (
     Callable,
     Awaitable,
 )
+import async_timeout
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 
