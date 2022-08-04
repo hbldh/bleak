@@ -36,24 +36,36 @@ or only for devices that implement a specific service.
 
 The scanner will return :py:class:`bleak.BLEDevice` objects.
 
-Scanner interface
-~~~~~~~~~~~~~~~~~
+BleakScanner
+~~~~~~~~~~~~
 
 .. autoclass:: bleak.BleakScanner
     :members:
     :inherited-members:
 
+BLEDevice
+~~~~~~~~~
+
 .. autoclass:: bleak.BLEDevice
     :members:
     :inherited-members:
+
+AdvertisementData
+~~~~~~~~~~~~~~~~~
 
 .. autoclass:: bleak.AdvertisementData
     :members:
     :inherited-members:
 
+AdvertisementDataCallback
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autoclass:: bleak.AdvertisementDataCallback
     :members:
     :inherited-members:
+
+AdvertisementDataFilter
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: bleak.AdvertisementDataFilter
     :members:
@@ -71,8 +83,8 @@ additional platform-specific arguments which you can find in the relevant
 :doc:`backends/index` section.
 
 
-Client interface
-~~~~~~~~~~~~~~~~
+BleakClient
+~~~~~~~~~~~
 
 .. autoclass:: bleak.BleakClient
     :members:
@@ -90,17 +102,29 @@ and characteristics supported by the BLE device, how you can access them
 (read, write, notify), what they mean (human readable description) and what type
 of values they are (int, string, etc):
 
+BleakGATTServiceCollection
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autoclass:: bleak.BleakGATTServiceCollection
     :members:
     :inherited-members:
+
+BleakGATTService
+~~~~~~~~~~~~~~~~
 
 .. autoclass:: bleak.BleakGATTService
     :members:
     :inherited-members:
 
+BleakGATTCharacteristic
+~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autoclass:: bleak.BleakGATTCharacteristic
     :members:
     :inherited-members:
+
+BleakGATTDescriptor
+~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: bleak.BleakGATTDescriptor
     :members:
