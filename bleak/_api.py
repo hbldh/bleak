@@ -1,6 +1,7 @@
 import os
 import platform
-from typing import Union, Optional, Callable, Awaitable, List, Literal
+from typing import Union, Optional, Callable, Awaitable, List
+from typing_extensions import Literal
 from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.client import BaseBleakClient
