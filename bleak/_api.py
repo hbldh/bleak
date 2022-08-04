@@ -1,5 +1,6 @@
 import os
 import platform
+from typing import Union, Optional, Callable, Awaitable, List, Literal
 from bleak.exc import BleakError
 from bleak.backends.scanner import BaseBleakScanner
 from bleak.backends.client import BaseBleakClient
@@ -8,15 +9,57 @@ from bleak.backends.client import BaseBleakClient
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 if _on_rtd:
-    from bleak.abstract_api import (
-        AbstractBleakScanner as _BleakScannerImplementation,
-    )  # noqa: F401
+    from bleak.abstract_api import AbstractBleakScanner
+    # We need to document the constructor in a backend-independent way. Do it here.
+    class _BleakScannerImplementation(AbstractBleakScanner):
+        """Interface for Bleak Bluetooth LE Scanners.
+
+        A BleakScanner can be used as an asynchronous context manager in which case it automatically
+        starts and stops scanning.
+
+        The actual implementation is dependent on the backend used, and the
+        constructor may have additional optional arguments.
+
+        :param detection_callback:
+                Optional function that will be called each time a device is
+                discovered or advertising data has changed.
+        :type detection_callback: Optional[Callable[[BLEDevice, AdvertisementData], Optional[Awaitable[NoneType]]]]
+        :param service_uuids:
+                Optional list of service UUIDs to filter on. Only advertisements
+                containing this advertising data will be received.
+        :type service_uuids: Optional[List[str]]
+        :param scanning_mode:
+                Set to "passive" to avoid the "active" scanning mode.
+        :type scanning_mode: Literal['active', 'passive']
+        """
+        def __init__(self, detection_callback : Optional[Callable[["BLEDevice", "AdvertisementData"], Optional[Awaitable[None]]]] = None, service_uuids : Optional[List[str]] = None, scanning_mode : Literal['active', 'passive'] = "active", **kwargs):
+            pass
+
     from bleak.abstract_api import (
         BLEDevice as _BLEDeviceImplementation,
     )  # noqa: F401
-    from bleak.abstract_api import (
-        AbstractBleakClient as _BleakClientImplementation,
-    )  # noqa: F401
+    from bleak.abstract_api import AbstractBleakClient
+    # We need to document the constructor in a backend-independent way. Do it here.
+    class _BleakClientImplementation(AbstractBleakClient):
+        """API for connecting to a BLE server and communicating with it.
+
+        A BleakClient can be used as an asynchronous context manager in which case it automatically
+        connects and disconnects.
+
+        The actual implementation is dependent on the backend used, and the constructor may have
+        additional optional arguments.
+
+        :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
+        :type address_or_ble_device: Union[BLEDevice, str]
+        :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
+        :type timeout: float
+        :param disconnected_callback: Callback that will be scheduled in the
+                event loop when the client is disconnected.
+        :type disconnected_callback: Callable[[BleakClient], None]
+        """
+        def __init__(self, address_or_ble_device : Union["BLEDevice", str], timeout : float = 10.0, disconnected_callback : Optional[Callable[["BleakClient"], None]] = None, **kwargs):
+            pass
+
     from bleak.abstract_api import (
         BleakGATTService as _BleakGATTServiceImplementation,
     )  # noqa: F401
@@ -127,38 +170,12 @@ else:
 
 # Now let's tie together the abstract class and the backend implementation
 class BleakScanner(_BleakScannerImplementation):
-    """Interface for Bleak Bluetooth LE Scanners.
-
-    A BleakScanner can be used as an asynchronous context manager in which case it automatically
-    starts and stops scanning.
-
-    The actual implementation is dependent on the backend used, and the
-    constructor may have additional optional arguments.
-
-    :param detection_callback:
-            Optional function that will be called each time a device is
-            discovered or advertising data has changed.
-    :type detection_callback: Optional[Callable[[BLEDevice, AdvertisementData], Optional[Awaitable[NoneType]]]]
-    :param service_uuids:
-            Optional list of service UUIDs to filter on. Only advertisements
-            containing this advertising data will be received.
-    :type service_uuids: Optional[List[str]]
-    :param scanning_mode:
-            Set to "passive" to avoid the "active" scanning mode.
-    :type scanning_mode: Literal['active', 'passive']
-    """
-
-    # Gross hack to get the best docstring:
-    if len(__doc__) < len(_BleakScannerImplementation.__doc__):
-        __doc__ = _BleakScannerImplementation.__doc__
-
+    __doc__ = _BleakScannerImplementation.__doc__
     pass
 
 
 class BLEDevice(_BLEDeviceImplementation):
     __doc__ = _BLEDeviceImplementation.__doc__
-    pass
-
 
 if _on_rtd:
     from bleak.abstract_api import AdvertisementData as AbstractAdvertisementData
@@ -175,28 +192,7 @@ else:
 
 
 class BleakClient(_BleakClientImplementation):
-    """API for connecting to a BLE server and communicating with it.
-
-    A BleakClient can be used as an asynchronous context manager in which case it automatically
-    connects and disconnects.
-
-    The actual implementation is dependent on the backend used, and the constructor may have
-    additional optional arguments.
-
-    :param address_or_ble_device: The server to connect to, specified as BLEDevice or backend-dependent Bluetooth address.
-    :type address_or_ble_device: Union[BLEDevice, str]
-    :param timeout: Timeout for required ``discover`` call. Defaults to 10.0.
-    :type timeout: float
-    :param disconnected_callback: Callback that will be scheduled in the
-            event loop when the client is disconnected.
-    :type disconnected_callback: Callable[[BleakClient], None]
-    """
-
-    # Gross hack to get the best docstring:
-    if len(__doc__) < len(_BleakClientImplementation.__doc__):
-        __doc__ = _BleakClientImplementation.__doc__
-
-    pass
+    __doc__ = _BleakClientImplementation.__doc__
 
 
 from bleak.abstract_api import BleakGATTServiceCollection
