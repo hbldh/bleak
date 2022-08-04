@@ -5,6 +5,7 @@ import logging
 from typing import List, Optional
 import warnings
 
+import async_timeout
 from typing_extensions import Literal
 
 from bleak.backends.scanner import (
@@ -143,7 +144,8 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__javascanner.flushPendingScanResults(self.__callback.java)
 
         try:
-            await asyncio.wait_for(scanfuture, timeout=0.2)
+            async with async_timeout.timeout(0.2):
+                await scanfuture
         except asyncio.exceptions.TimeoutError:
             pass
         except BleakError as bleakerror:

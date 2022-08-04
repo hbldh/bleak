@@ -14,6 +14,20 @@ Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
 
+Changed
+-------
+* Switch to using async_timeout instead of asyncio.wait_for for performance.
+
+`0.15.1`_ (2022-08-03)
+======================
+
+Fixed
+-----
+* The global BlueZ manager now disconnects correctly on exception. Merged #918.
+* Handle the race in the BlueZ D-Bus backend where the device disconnects during
+  the connection process which presented as ``Failed to cancel connection``. Merged #919.
+* Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection. Merged #920.
+
 
 `0.15.0`_ (2022-07-29)
 ======================
@@ -717,7 +731,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.1...develop
+.. _0.15.1: https://github.com/hbldh/bleak/compare/v0.15.0...v0.15.1
 .. _0.15.0: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.0
 .. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3
 .. _0.14.2: https://github.com/hbldh/bleak/compare/v0.14.1...v0.14.2

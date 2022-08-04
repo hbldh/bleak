@@ -11,6 +11,7 @@ import logging
 import threading
 from typing import Any, Callable, Dict, Optional
 
+import async_timeout
 import objc
 from CoreBluetooth import (
     CBCentralManager,
@@ -158,7 +159,8 @@ class CentralManagerDelegate(NSObject):
             self._connect_futures[peripheral.identifier()] = future
             try:
                 self.central_manager.connectPeripheral_options_(peripheral, None)
-                await asyncio.wait_for(future, timeout=timeout)
+                async with async_timeout.timeout(timeout):
+                    await future
             finally:
                 del self._connect_futures[peripheral.identifier()]
 
