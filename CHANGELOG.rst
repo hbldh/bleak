@@ -17,6 +17,9 @@ Fixed
 Changed
 -------
 * Switch to using async_timeout instead of asyncio.wait_for for performance.
+* The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
+  To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
+  argument to avoid services being resolved again.
 
 `0.15.1`_ (2022-08-03)
 ======================

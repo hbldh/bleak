@@ -276,6 +276,7 @@ class BlueZManager:
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
         self._condition_callbacks: Set[Callable] = set()
+        self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     async def async_init(self):
         """
@@ -287,6 +288,8 @@ class BlueZManager:
         async with self._bus_lock:
             if self._bus and self._bus.connected:
                 return
+
+            self._services_cache = {}
 
             # We need to create a new MessageBus each time as
             # dbus-next will destory the underlying file descriptors
@@ -561,7 +564,9 @@ class BlueZManager:
         """
         self._device_watchers.remove(watcher)
 
-    async def get_services(self, device_path: str) -> BleakGATTServiceCollection:
+    async def get_services(
+        self, device_path: str, use_cached: bool
+    ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
 
@@ -571,6 +576,12 @@ class BlueZManager:
         Returns:
             A new :class:`BleakGATTServiceCollection`.
         """
+        if use_cached:
+            services = self._services_cache.get(device_path)
+            if services is not None:
+                logger.debug("Using cached services for %s", device_path)
+                return services
+
         await self._wait_condition(device_path, "ServicesResolved", True)
 
         services = BleakGATTServiceCollection()
@@ -619,6 +630,8 @@ class BlueZManager:
                     )
 
                     services.add_descriptor(desc)
+
+        self._services_cache[device_path] = services
 
         return services
 
@@ -713,6 +726,9 @@ class BlueZManager:
 
             for interface in interfaces:
                 del self._properties[obj_path][interface]
+
+                if interface == defs.DEVICE_INTERFACE:
+                    self._services_cache.pop(obj_path, None)
         elif message.member == "PropertiesChanged":
             assert message.path is not None
 

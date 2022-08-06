@@ -79,7 +79,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self, **kwargs) -> bool:
+    async def connect(self, dangerous_use_bleak_cache: bool = False, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
         Keyword Args:
@@ -202,7 +202,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             asyncio.ensure_future(self._disconnect_monitor())
 
             # Get all services. This means making the actual connection.
-            await self.get_services()
+            #
+            # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
+            # is True.
+            #
+            await self.get_services(dangerous_use_bleak_cache=dangerous_use_bleak_cache)
 
             return True
         except BaseException:
@@ -469,8 +473,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
+    async def get_services(
+        self, dangerous_use_bleak_cache: bool = False, **kwargs
+    ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
+
+        Args:
+            dangerous_use_bleak_cache (bool): Use cached services if available.
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
@@ -484,7 +493,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         manager = await get_global_bluez_manager()
 
-        self.services = await manager.get_services(self._device_path)
+        self.services = await manager.get_services(
+            self._device_path, dangerous_use_bleak_cache
+        )
         self._services_resolved = True
 
         return self.services
