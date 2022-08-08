@@ -134,7 +134,7 @@ class PeripheralDelegate(NSObject):
         self,
         characteristic: CBCharacteristic,
         use_cached: bool = True,
-        timeout: int = 10,
+        timeout: int = 20,
     ) -> NSData:
         if characteristic.value() is not None and use_cached:
             return characteristic.value()
