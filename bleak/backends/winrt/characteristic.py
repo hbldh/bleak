@@ -6,7 +6,7 @@ from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattCharacteristicProperties,
 )
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.characteristic import ATT_HEADER_SIZE, BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 
@@ -62,7 +62,7 @@ _GattCharacteristicsPropertiesMap = {
 class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
-    def __init__(self, obj: GattCharacteristicProperties):
+    def __init__(self, obj: GattCharacteristicProperties, mtu_size: int) -> None:
         super().__init__(obj)
         self.__descriptors = []
         self.__props = [
@@ -70,6 +70,7 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
             for v in [2**n for n in range(10)]
             if (self.obj.characteristic_properties & v)
         ]
+        self.__mtu_size = mtu_size
 
     @property
     def service_uuid(self) -> str:
@@ -90,6 +91,11 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return str(self.obj.uuid)
+
+    @property
+    def max_write_without_response_size(self) -> int:
+        """The maximum size of a write without response."""
+        return self.__mtu_size - ATT_HEADER_SIZE
 
     @property
     def description(self) -> str:

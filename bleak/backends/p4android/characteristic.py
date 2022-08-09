@@ -1,7 +1,7 @@
 from uuid import UUID
 from typing import Union, List
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.characteristic import ATT_HEADER_SIZE, BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.exc import BleakError
 
@@ -12,7 +12,9 @@ from . import defs
 class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the python-for-android backend"""
 
-    def __init__(self, java, service_uuid: str, service_handle: int):
+    def __init__(
+        self, java, service_uuid: str, service_handle: int, mtu_size: int
+    ) -> None:
         super(BleakGATTCharacteristicP4Android, self).__init__(java)
         self.__uuid = self.obj.getUuid().toString()
         self.__handle = self.obj.getInstanceId()
@@ -20,6 +22,7 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
         self.__service_handle = service_handle
         self.__descriptors = []
         self.__notification_descriptor = None
+        self.__mtu_size = mtu_size
 
         self.__properties = [
             name
@@ -46,6 +49,11 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return self.__uuid
+
+    @property
+    def max_write_without_response_size(self) -> int:
+        """The maximum size of a write without response."""
+        return self.__mtu_size - ATT_HEADER_SIZE
 
     @property
     def properties(self) -> List:

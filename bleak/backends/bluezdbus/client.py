@@ -25,6 +25,7 @@ from bleak.backends.bluezdbus.utils import (
     assert_reply,
     extract_service_handle_from_path,
 )
+from bleak.backends.characteristic import DEFAULT_MTU_SIZE
 from bleak.backends.client import BaseBleakClient
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
@@ -463,7 +464,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             warnings.warn(
                 "Using default MTU value. Call _acquire_mtu() or set _mtu_size first to avoid this warning."
             )
-            return 23
+            return DEFAULT_MTU_SIZE
 
         return self._mtu_size
 
@@ -484,7 +485,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         manager = await get_global_bluez_manager()
 
-        self.services = await manager.get_services(self._device_path)
+        self.services = await manager.get_services(self._device_path, self._mtu_size)
         self._services_resolved = True
 
         return self.services

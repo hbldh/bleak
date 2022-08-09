@@ -29,7 +29,7 @@ from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.characteristic import ATT_HEADER_SIZE, BleakGATTCharacteristic
 
 from bleak.exc import BleakError
 
@@ -153,7 +153,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             self._peripheral.maximumWriteValueLengthForType_(
                 CBCharacteristicWriteWithoutResponse
             )
-            + 3
+            + ATT_HEADER_SIZE
         )
 
     async def pair(self, *args, **kwargs) -> bool:
@@ -197,6 +197,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         logger.debug("Retrieving services...")
         services = await self._delegate.discover_services()
+        mtu_size = self.mtu_size
 
         for service in services:
             serviceUUID = service.UUID().UUIDString()
@@ -215,7 +216,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 descriptors = await self._delegate.discover_descriptors(characteristic)
 
                 self.services.add_characteristic(
-                    BleakGATTCharacteristicCoreBluetooth(characteristic)
+                    BleakGATTCharacteristicCoreBluetooth(characteristic, mtu_size)
                 )
                 for descriptor in descriptors:
                     self.services.add_descriptor(

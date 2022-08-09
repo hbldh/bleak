@@ -13,6 +13,9 @@ from typing import List, Union, Any
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.uuids import uuidstr_to_str
 
+DEFAULT_MTU_SIZE = 23
+ATT_HEADER_SIZE = 3
+
 
 class GattCharacteristicsFlags(enum.Enum):
     broadcast = 0x0001
@@ -58,6 +61,15 @@ class BleakGATTCharacteristic(abc.ABC):
     @abc.abstractmethod
     def uuid(self) -> str:
         """The UUID for this characteristic"""
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def max_write_without_response_size(self) -> int:
+        """The maximum size of a write without response.
+
+        This is is the MTU - 3 (ATT_HEADER_SIZE) for the GATT header
+        """
         raise NotImplementedError()
 
     @property

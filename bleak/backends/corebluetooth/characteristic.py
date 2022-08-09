@@ -9,7 +9,11 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from CoreBluetooth import CBCharacteristic
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.characteristic import (
+    DEFAULT_MTU_SIZE,
+    ATT_HEADER_SIZE,
+    BleakGATTCharacteristic,
+)
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 
@@ -57,7 +61,7 @@ _GattCharacteristicsPropertiesEnum: Dict[Optional[int], Tuple[str, str]] = {
 class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
-    def __init__(self, obj: CBCharacteristic):
+    def __init__(self, obj: CBCharacteristic, mtu_size: int) -> None:
         super().__init__(obj)
         self.__descriptors: List[BleakGATTDescriptorCoreBluetooth] = []
         # self.__props = obj.properties()
@@ -66,6 +70,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
             for v in [2**n for n in range(10)]
             if (self.obj.properties() & v)
         ]
+        self._mtu_size = mtu_size
         self._uuid: str = cb_uuid_to_str(self.obj.UUID())
 
     @property
@@ -86,6 +91,11 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return self._uuid
+
+    @property
+    def max_write_without_response_size(self) -> int:
+        """The maximum size of a write without response."""
+        return self._mtu_size - ATT_HEADER_SIZE
 
     @property
     def properties(self) -> List[str]:

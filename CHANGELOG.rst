@@ -10,6 +10,12 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* BleakGATTCharacteristic now have a ``max_write_without_response_size`` property which is
+  the maximum size of a write without response that can be sent to the remote device. This
+  value is the MTU for the characteristic - 3 bytes for the ATT header.
+
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.

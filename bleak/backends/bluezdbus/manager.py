@@ -561,7 +561,9 @@ class BlueZManager:
         """
         self._device_watchers.remove(watcher)
 
-    async def get_services(self, device_path: str) -> BleakGATTServiceCollection:
+    async def get_services(
+        self, device_path: str, discovered_mtu_size: Optional[int]
+    ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
 
@@ -600,6 +602,7 @@ class BlueZManager:
                     char_path,
                     service.uuid,
                     service.handle,
+                    discovered_mtu_size,
                 )
 
                 services.add_characteristic(char)

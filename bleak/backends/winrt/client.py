@@ -512,6 +512,8 @@ class BleakClientWinRT(BaseBleakClient):
                 "Could not get GATT services",
             )
 
+            mtu_size = self.mtu_size
+
             for service in services:
                 # Windows returns an ACCESS_DENIED error when trying to enumerate
                 # characteristics of services used by the OS, like the HID service
@@ -529,7 +531,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                 for characteristic in characteristics:
                     self.services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(characteristic)
+                        BleakGATTCharacteristicWinRT(characteristic, mtu_size)
                     )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(

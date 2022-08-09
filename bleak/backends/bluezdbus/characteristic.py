@@ -1,10 +1,13 @@
 from uuid import UUID
-from typing import Union, List
+from typing import Union, List, Optional
 
 from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
-from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.characteristic import (
+    BleakGATTCharacteristic,
+    DEFAULT_MTU_SIZE,
+    ATT_HEADER_SIZE,
+)
 from bleak.backends.descriptor import BleakGATTDescriptor
-
 
 _GattCharacteristicsFlagsEnum = {
     0x0001: "broadcast",
@@ -31,13 +34,21 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the BlueZ DBus backend"""
 
     def __init__(
-        self, obj: dict, object_path: str, service_uuid: str, service_handle: int
-    ):
+        self,
+        obj: dict,
+        object_path: str,
+        service_uuid: str,
+        service_handle: int,
+        discovered_mtu_size: Optional[int],
+    ) -> None:
         super(BleakGATTCharacteristicBlueZDBus, self).__init__(obj)
         self.__descriptors = []
         self.__path = object_path
         self.__service_uuid = service_uuid
         self.__service_handle = service_handle
+        # With BlueZ its possible that the characteristic has
+        # its own MTU size, if not, use the default
+        self.__mtu_size = self.obj.get("MTU") or discovered_mtu_size or DEFAULT_MTU_SIZE
         self._handle = extract_service_handle_from_path(object_path)
 
     @property
@@ -59,6 +70,11 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     def uuid(self) -> str:
         """The uuid of this characteristic"""
         return self.obj.get("UUID")
+
+    @property
+    def max_write_without_response_size(self) -> int:
+        """The maximum size of a write without response."""
+        return self.__mtu_size - ATT_HEADER_SIZE
 
     @property
     def properties(self) -> List:
