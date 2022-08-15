@@ -665,7 +665,7 @@ class BleakClientWinRT(BaseBleakClient):
         buf = Buffer(len(data))
         buf.length = buf.capacity
         with memoryview(buf) as mv:
-            mv[:] = data
+            mv[:] = bytes(data)
         _ensure_success(
             await characteristic.obj.write_value_with_result_async(buf, response),
             None,
