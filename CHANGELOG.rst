@@ -17,6 +17,7 @@ Fixed
 Changed
 -------
 * Switch to using async_timeout instead of asyncio.wait_for for performance.
+* Changed line 668 in bleak\bleak\backends\winrt - sets data to bytes
 
 `0.15.1`_ (2022-08-03)
 ======================
