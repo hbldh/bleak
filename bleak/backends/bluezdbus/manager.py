@@ -721,7 +721,7 @@ class BlueZManager:
             try:
                 self_interface = self._properties[message.path][interface]
             except KeyError:
-                # This can happen during initialization. The "PropertyChanged"
+                # This can happen during initialization. The "PropertiesChanged"
                 # handler is attached before "GetManagedObjects" is called
                 # and so self._properties may not yet be populated.
                 # This is not a problem. We just discard the property value
