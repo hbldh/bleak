@@ -27,6 +27,7 @@ Fixed
 * Handle the race in the BlueZ D-Bus backend where the device disconnects during
   the connection process which presented as ``Failed to cancel connection``. Merged #919.
 * Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection. Merged #920.
+* Adjust default timeout for ``read_gatt_char()`` with CoreBluetooth to 20s. Fixes #926.
 
 
 `0.15.0`_ (2022-07-29)
