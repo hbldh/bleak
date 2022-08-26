@@ -12,8 +12,16 @@ from . import defs
 class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the python-for-android backend"""
 
-    def __init__(self, java, service_uuid: str, service_handle: int):
-        super(BleakGATTCharacteristicP4Android, self).__init__(java)
+    def __init__(
+        self,
+        java,
+        service_uuid: str,
+        service_handle: int,
+        max_write_without_response_size: int,
+    ):
+        super(BleakGATTCharacteristicP4Android, self).__init__(
+            java, max_write_without_response_size
+        )
         self.__uuid = self.obj.getUuid().toString()
         self.__handle = self.obj.getInstanceId()
         self.__service_uuid = service_uuid

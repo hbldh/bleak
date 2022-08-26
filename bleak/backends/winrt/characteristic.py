@@ -62,8 +62,10 @@ _GattCharacteristicsPropertiesMap = {
 class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
-    def __init__(self, obj: GattCharacteristicProperties):
-        super().__init__(obj)
+    def __init__(
+        self, obj: GattCharacteristicProperties, max_write_without_response_size: int
+    ):
+        super().__init__(obj, max_write_without_response_size)
         self.__descriptors = []
         self.__props = [
             _GattCharacteristicsPropertiesMap[v][0]

@@ -30,7 +30,7 @@ from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
 from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .defs import Device1
+from .defs import Device1, GattCharacteristic1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
@@ -452,11 +452,18 @@ class BlueZManager:
                 ):
                     continue
 
+                char_props = cast(
+                    GattCharacteristic1, char_ifaces[defs.GATT_CHARACTERISTIC_INTERFACE]
+                )
+
                 char = BleakGATTCharacteristicBlueZDBus(
-                    char_ifaces[defs.GATT_CHARACTERISTIC_INTERFACE],
+                    char_props,
                     char_path,
                     service.uuid,
                     service.handle,
+                    # "MTU" property was added in BlueZ 5.62, otherwise fall
+                    # back to minimum MTU according to Bluetooth spec.
+                    char_props.get("MTU", 23) - 3,
                 )
 
                 services.add_characteristic(char)

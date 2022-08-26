@@ -57,8 +57,8 @@ _GattCharacteristicsPropertiesEnum: Dict[Optional[int], Tuple[str, str]] = {
 class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
-    def __init__(self, obj: CBCharacteristic):
-        super().__init__(obj)
+    def __init__(self, obj: CBCharacteristic, max_write_without_response_size: int):
+        super().__init__(obj, max_write_without_response_size)
         self.__descriptors: List[BleakGATTDescriptorCoreBluetooth] = []
         # self.__props = obj.properties()
         self.__props: List[str] = [
