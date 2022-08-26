@@ -18,6 +18,10 @@ Changed
 -------
 * Switch to using async_timeout instead of asyncio.wait_for for performance.
 
+Removed
+-------
+* Removed explicit inheritance from object in class declarations.
+
 `0.15.1`_ (2022-08-03)
 ======================
 
