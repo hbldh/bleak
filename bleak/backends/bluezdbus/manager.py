@@ -19,167 +19,24 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
-    Tuple,
     cast,
 )
 
 from dbus_next import BusType, Message, MessageType, Variant
 from dbus_next.aio.message_bus import MessageBus
-from typing_extensions import Literal, TypedDict
 
 from ...exc import BleakError
 from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
 from .characteristic import BleakGATTCharacteristicBlueZDBus
+from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
 from .utils import assert_reply, unpack_variants
 
 logger = logging.getLogger(__name__)
-
-
-# D-Bus properties for interfaces
-# https://github.com/bluez/bluez/blob/master/doc/adapter-api.txt
-
-
-class Adapter1(TypedDict):
-    Address: str
-    Name: str
-    Alias: str
-    Class: int
-    Powered: bool
-    Discoverable: bool
-    Pairable: bool
-    PairableTimeout: int
-    DiscoverableTimeout: int
-    Discovering: int
-    UUIDs: List[str]
-    Modalias: str
-    Roles: List[str]
-    ExperimentalFeatures: List[str]
-
-
-# https://github.com/bluez/bluez/blob/master/doc/advertisement-monitor-api.txt
-
-
-class AdvertisementMonitor1(TypedDict):
-    Type: str
-    RSSILowThreshold: int
-    RSSIHighThreshold: int
-    RSSILowTimeout: int
-    RSSIHighTimeout: int
-    RSSISamplingPeriod: int
-    Patterns: List[Tuple[int, int, bytes]]
-
-
-class AdvertisementMonitorManager1(TypedDict):
-    SupportedMonitorTypes: List[str]
-    SupportedFeatures: List[str]
-
-
-# https://github.com/bluez/bluez/blob/master/doc/battery-api.txt
-
-
-class Battery1(TypedDict):
-    SupportedMonitorTypes: List[str]
-    SupportedFeatures: List[str]
-
-
-# https://github.com/bluez/bluez/blob/master/doc/device-api.txt
-
-
-class Device1(TypedDict):
-    Address: str
-    AddressType: str
-    Name: str
-    Icon: str
-    Class: int
-    Appearance: int
-    UUIDs: List[str]
-    Paired: bool
-    Bonded: bool
-    Connected: bool
-    Trusted: bool
-    Blocked: bool
-    WakeAllowed: bool
-    Alias: str
-    Adapter: str
-    LegacyPairing: bool
-    Modalias: str
-    RSSI: int
-    TxPower: int
-    ManufacturerData: Dict[int, bytes]
-    ServiceData: Dict[str, bytes]
-    ServicesResolved: bool
-    AdvertisingFlags: bytes
-    AdvertisingData: Dict[int, bytes]
-
-
-# https://github.com/bluez/bluez/blob/master/doc/gatt-api.txt
-
-
-class GattService1(TypedDict):
-    UUID: str
-    Primary: bool
-    Device: str
-    Includes: List[str]
-    # Handle is server-only and not available in Bleak
-
-
-class GattCharacteristic1(TypedDict):
-    UUID: str
-    Service: str
-    Value: bytes
-    WriteAcquired: bool
-    NotifyAcquired: bool
-    Notifying: bool
-    Flags: List[
-        Literal[
-            "broadcast",
-            "read",
-            "write-without-response",
-            "write",
-            "notify",
-            "indicate",
-            "authenticated-signed-writes",
-            "extended-properties",
-            "reliable-write",
-            "writable-auxiliaries",
-            "encrypt-read",
-            "encrypt-write",
-            # "encrypt-notify" and "encrypt-indicate" are server-only
-            "encrypt-authenticated-read",
-            "encrypt-authenticated-write",
-            # "encrypt-authenticated-notify", "encrypt-authenticated-indicate",
-            # "secure-read", "secure-write", "secure-notify", "secure-indicate"
-            # are server-only
-            "authorize",
-        ]
-    ]
-    MTU: int
-    # Handle is server-only and not available in Bleak
-
-
-class GattDescriptor1(TypedDict):
-    UUID: str
-    Characteristic: str
-    Value: bytes
-    Flags: List[
-        Literal[
-            "read",
-            "write",
-            "encrypt-read",
-            "encrypt-write",
-            "encrypt-authenticated-read",
-            "encrypt-authenticated-write",
-            # "secure-read" and "secure-write" are server-only and not available in Bleak
-            "authorize",
-        ]
-    ]
-    # Handle is server-only and not available in Bleak
-
 
 AdvertisementCallback = Callable[[str, Device1], None]
 """
@@ -273,6 +130,16 @@ class BlueZManager:
         # dict of object path: dict of interface name: dict of property name: property value
         self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
+        # The BlueZ APIs only maps children to parents, so we need to keep maps
+        # to quickly find the children of a parent D-Bus object.
+
+        # map of device d-bus object paths to set of service d-bus object paths
+        self._service_map: Dict[str, Set[str]] = {}
+        # map of service d-bus object paths to set of characteristic d-bus object paths
+        self._characteristic_map: Dict[str, Set[str]] = {}
+        # map of characteristic d-bus object paths to set of descriptor d-bus object paths
+        self._descriptor_map: Dict[str, Set[str]] = {}
+
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
         self._condition_callbacks: Set[Callable] = set()
@@ -336,11 +203,44 @@ class BlueZManager:
                 )
                 assert_reply(reply)
 
-                # dictionary is replaced in case AddInterfaces was received first
-                self._properties = {
-                    path: unpack_variants(interfaces)
-                    for path, interfaces in reply.body[0].items()
-                }
+                # dictionaries are cleared in case AddInterfaces was received first
+                # or there was a bus reset and we are reconnecting
+                self._properties.clear()
+                self._service_map.clear()
+                self._characteristic_map.clear()
+                self._descriptor_map.clear()
+
+                for path, interfaces in reply.body[0].items():
+                    props = unpack_variants(interfaces)
+                    self._properties[path] = props
+
+                    service_props = cast(
+                        GattService1, props.get(defs.GATT_SERVICE_INTERFACE)
+                    )
+
+                    if service_props:
+                        self._service_map.setdefault(
+                            service_props["Device"], set()
+                        ).add(path)
+
+                    char_props = cast(
+                        GattCharacteristic1,
+                        props.get(defs.GATT_CHARACTERISTIC_INTERFACE),
+                    )
+
+                    if char_props:
+                        self._characteristic_map.setdefault(
+                            char_props["Service"], set()
+                        ).add(path)
+
+                    desc_props = cast(
+                        GattDescriptor1, props.get(defs.GATT_DESCRIPTOR_INTERFACE)
+                    )
+
+                    if desc_props:
+                        self._descriptor_map.setdefault(
+                            desc_props["Characteristic"], set()
+                        ).add(path)
 
                 logger.debug(f"initial properties: {self._properties}")
 
@@ -575,28 +475,24 @@ class BlueZManager:
 
         services = BleakGATTServiceCollection()
 
-        for service_path, service_ifaces in self._properties.items():
-            if (
-                not service_path.startswith(device_path)
-                or defs.GATT_SERVICE_INTERFACE not in service_ifaces
-            ):
-                continue
-
-            service = BleakGATTServiceBlueZDBus(
-                service_ifaces[defs.GATT_SERVICE_INTERFACE], service_path
+        for service_path in self._service_map.get(device_path, set()):
+            service_props = cast(
+                GattService1,
+                self._properties[service_path][defs.GATT_SERVICE_INTERFACE],
             )
+
+            service = BleakGATTServiceBlueZDBus(service_props, service_path)
 
             services.add_service(service)
 
-            for char_path, char_ifaces in self._properties.items():
-                if (
-                    not char_path.startswith(service_path)
-                    or defs.GATT_CHARACTERISTIC_INTERFACE not in char_ifaces
-                ):
-                    continue
+            for char_path in self._characteristic_map.get(service_path, set()):
+                char_props = cast(
+                    GattCharacteristic1,
+                    self._properties[char_path][defs.GATT_CHARACTERISTIC_INTERFACE],
+                )
 
                 char = BleakGATTCharacteristicBlueZDBus(
-                    char_ifaces[defs.GATT_CHARACTERISTIC_INTERFACE],
+                    char_props,
                     char_path,
                     service.uuid,
                     service.handle,
@@ -604,15 +500,14 @@ class BlueZManager:
 
                 services.add_characteristic(char)
 
-                for desc_path, desc_ifaces in self._properties.items():
-                    if (
-                        not desc_path.startswith(char_path)
-                        or defs.GATT_DESCRIPTOR_INTERFACE not in desc_ifaces
-                    ):
-                        continue
+                for desc_path in self._descriptor_map.get(char_path, set()):
+                    desc_props = cast(
+                        GattDescriptor1,
+                        self._properties[desc_path][defs.GATT_DESCRIPTOR_INTERFACE],
+                    )
 
                     desc = BleakGATTDescriptorBlueZDBus(
-                        desc_ifaces[defs.GATT_DESCRIPTOR_INTERFACE],
+                        desc_props,
                         desc_path,
                         char.uuid,
                         char.handle,
@@ -699,6 +594,22 @@ class BlueZManager:
                 unpacked_props = unpack_variants(props)
                 self._properties.setdefault(obj_path, {})[interface] = unpacked_props
 
+                if interface == defs.GATT_SERVICE_INTERFACE:
+                    service_props = cast(GattService1, unpacked_props)
+                    self._service_map.setdefault(service_props["Device"], set()).add(
+                        obj_path
+                    )
+                elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
+                    char_props = cast(GattCharacteristic1, unpacked_props)
+                    self._characteristic_map.setdefault(
+                        char_props["Service"], set()
+                    ).add(obj_path)
+                elif interface == defs.GATT_DESCRIPTOR_INTERFACE:
+                    desc_props = cast(GattDescriptor1, unpacked_props)
+                    self._descriptor_map.setdefault(
+                        desc_props["Characteristic"], set()
+                    ).add(obj_path)
+
                 # If this is a device and it has advertising data properties,
                 # then it should mean that this device just started advertising.
                 # Previously, we just relied on RSSI updates to determine if
@@ -713,6 +624,22 @@ class BlueZManager:
 
             for interface in interfaces:
                 del self._properties[obj_path][interface]
+
+                if interface == defs.DEVICE_INTERFACE:
+                    try:
+                        del self._service_map[obj_path]
+                    except KeyError:
+                        pass
+                elif interface == defs.GATT_SERVICE_INTERFACE:
+                    try:
+                        del self._characteristic_map[obj_path]
+                    except KeyError:
+                        pass
+                elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
+                    try:
+                        del self._descriptor_map[obj_path]
+                    except KeyError:
+                        pass
         elif message.member == "PropertiesChanged":
             assert message.path is not None
 

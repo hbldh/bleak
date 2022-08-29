@@ -17,6 +17,7 @@ Fixed
 Changed
 -------
 * Switch to using async_timeout instead of asyncio.wait_for for performance.
+* Improved performance of ``BlueZManager.get_services()``. Fixes #927.
 
 Removed
 -------

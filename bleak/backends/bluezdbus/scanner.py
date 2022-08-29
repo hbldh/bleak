@@ -9,7 +9,8 @@ from ...exc import BleakError
 from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .advertisement_monitor import OrPatternLike
-from .manager import Device1, get_global_bluez_manager
+from .defs import Device1
+from .manager import get_global_bluez_manager
 
 logger = logging.getLogger(__name__)
 
