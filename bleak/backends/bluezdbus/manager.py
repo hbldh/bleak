@@ -491,6 +491,9 @@ class BlueZManager:
                     char_path,
                     service.uuid,
                     service.handle,
+                    # "MTU" property was added in BlueZ 5.62, otherwise fall
+                    # back to minimum MTU according to Bluetooth spec.
+                    char_props.get("MTU", 23) - 3,
                 )
 
                 services.add_characteristic(char)

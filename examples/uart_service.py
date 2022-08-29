@@ -9,18 +9,25 @@ An example showing how to write a simple program using the Nordic Semiconductor
 
 import asyncio
 import sys
+from itertools import count, takewhile
+from typing import Iterator
 
-from bleak import BleakScanner, BleakClient
-from bleak.backends.scanner import AdvertisementData
+from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
-# All BLE devices have MTU of at least 23. Subtracting 3 bytes overhead, we can
-# safely send 20 bytes at a time to any device supporting this service.
-UART_SAFE_SIZE = 20
+
+# TIP: you can get this function and more from the ``more-itertools`` package.
+def sliced(data: bytes, n: int) -> Iterator[bytes]:
+    """
+    Slices *data* into chunks of size *n*. The last slice may be smaller than
+    *n*.
+    """
+    return takewhile(len, (data[i : i + n] for i in count(0, n)))
 
 
 async def uart_terminal():
@@ -40,6 +47,10 @@ async def uart_terminal():
 
     device = await BleakScanner.find_device_by_filter(match_nus_uuid)
 
+    if device is None:
+        print("no matching device found, you may need to edit match_nus_uuid().")
+        sys.exit(1)
+
     def handle_disconnect(_: BleakClient):
         print("Device was disconnected, goodbye.")
         # cancelling all tasks effectively ends the program
@@ -55,6 +66,8 @@ async def uart_terminal():
         print("Connected, start typing and press ENTER...")
 
         loop = asyncio.get_running_loop()
+        nus = client.services.get_service(UART_SERVICE_UUID)
+        rx_char = nus.get_characteristic(UART_RX_CHAR_UUID)
 
         while True:
             # This waits until you type a line and press ENTER.
@@ -70,7 +83,13 @@ async def uart_terminal():
             # line endings (uncomment line below if needed)
             # data = data.replace(b"\n", b"\r\n")
 
-            await client.write_gatt_char(UART_RX_CHAR_UUID, data)
+            # Writing without response requires that the data can fit in a
+            # single BLE packet. We can use the max_write_without_response_size
+            # property to split the data into chunks that will fit.
+
+            for s in sliced(data, rx_char.max_write_without_response_size):
+                await client.write_gatt_char(rx_char, s)
+
             print("sent:", data)
 
 

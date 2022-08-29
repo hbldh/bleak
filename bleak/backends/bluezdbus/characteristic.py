@@ -2,8 +2,8 @@ from typing import List, Union
 from uuid import UUID
 
 from ..characteristic import BleakGATTCharacteristic
+from ..descriptor import BleakGATTDescriptor
 from .defs import GattCharacteristic1
-from .descriptor import BleakGATTDescriptor
 from .utils import extract_service_handle_from_path
 
 _GattCharacteristicsFlagsEnum = {
@@ -36,8 +36,11 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         object_path: str,
         service_uuid: str,
         service_handle: int,
+        max_write_without_response_size: int,
     ):
-        super(BleakGATTCharacteristicBlueZDBus, self).__init__(obj)
+        super(BleakGATTCharacteristicBlueZDBus, self).__init__(
+            obj, max_write_without_response_size
+        )
         self.__descriptors = []
         self.__path = object_path
         self.__service_uuid = service_uuid

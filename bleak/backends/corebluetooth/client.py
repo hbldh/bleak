@@ -215,7 +215,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 descriptors = await self._delegate.discover_descriptors(characteristic)
 
                 self.services.add_characteristic(
-                    BleakGATTCharacteristicCoreBluetooth(characteristic)
+                    BleakGATTCharacteristicCoreBluetooth(
+                        characteristic,
+                        self._peripheral.maximumWriteValueLengthForType_(
+                            CBCharacteristicWriteWithoutResponse
+                        ),
+                    )
                 )
                 for descriptor in descriptors:
                     self.services.add_descriptor(

@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``BleakGattCharacteristic.max_write_without_response_size`` property. Fixes #738.
+
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
