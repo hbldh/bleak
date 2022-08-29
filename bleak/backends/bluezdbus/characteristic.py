@@ -1,10 +1,10 @@
+from typing import List, Union
 from uuid import UUID
-from typing import Union, List
 
-from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
-
+from ..characteristic import BleakGATTCharacteristic
+from ..descriptor import BleakGATTDescriptor
+from .defs import GattCharacteristic1
+from .utils import extract_service_handle_from_path
 
 _GattCharacteristicsFlagsEnum = {
     0x0001: "broadcast",
@@ -31,9 +31,16 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the BlueZ DBus backend"""
 
     def __init__(
-        self, obj: dict, object_path: str, service_uuid: str, service_handle: int
+        self,
+        obj: GattCharacteristic1,
+        object_path: str,
+        service_uuid: str,
+        service_handle: int,
+        max_write_without_response_size: int,
     ):
-        super(BleakGATTCharacteristicBlueZDBus, self).__init__(obj)
+        super(BleakGATTCharacteristicBlueZDBus, self).__init__(
+            obj, max_write_without_response_size
+        )
         self.__descriptors = []
         self.__path = object_path
         self.__service_uuid = service_uuid

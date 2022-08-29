@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``BleakGattCharacteristic.max_write_without_response_size`` property. Fixes #738.
+
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
@@ -20,6 +24,12 @@ Changed
 * The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
   To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
   argument to avoid services being resolved again.
+* Improved performance of ``BlueZManager.get_services()``. Fixes #927.
+
+Removed
+-------
+* Removed explicit inheritance from object in class declarations.
+* Removed first seen filter in ``BleakScanner`` detection callbacks on BlueZ backend.
 
 `0.15.1`_ (2022-08-03)
 ======================
@@ -30,6 +40,7 @@ Fixed
 * Handle the race in the BlueZ D-Bus backend where the device disconnects during
   the connection process which presented as ``Failed to cancel connection``. Merged #919.
 * Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection. Merged #920.
+* Adjust default timeout for ``read_gatt_char()`` with CoreBluetooth to 20s. Fixes #926.
 
 
 `0.15.0`_ (2022-07-29)

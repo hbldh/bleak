@@ -183,6 +183,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = winrt.get("address_type", kwargs.get("address_type"))
 
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
+        self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
     def __str__(self):
         return "BleakClientWinRT ({0})".format(self.address)
@@ -240,6 +241,12 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 self._session_status_changed_token = None
 
+            if self._max_pdu_size_changed_token:
+                self._session.remove_max_pdu_size_changed(
+                    self._max_pdu_size_changed_token
+                )
+                self._max_pdu_size_changed_token = None
+
             if self._requester:
                 self._requester.close()
                 self._requester = None
@@ -281,6 +288,9 @@ class BleakClientWinRT(BaseBleakClient):
             )
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
+        def max_pdu_size_changed_handler(sender: GattSession, args):
+            logger.debug("max_pdu_size_changed_handler: %d", self._session.max_pdu_size)
+
         # Start a GATT Session to connect
         event = asyncio.Event()
         self._session_active_events.append(event)
@@ -296,6 +306,10 @@ class BleakClientWinRT(BaseBleakClient):
                 self._session.add_session_status_changed(
                     session_status_changed_event_handler
                 )
+            )
+
+            self._max_pdu_size_changed_token = self._session.add_max_pdu_size_changed(
+                max_pdu_size_changed_handler
             )
 
             # Windows does not support explicitly connecting to a device.
@@ -529,7 +543,9 @@ class BleakClientWinRT(BaseBleakClient):
 
                 for characteristic in characteristics:
                     self.services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(characteristic)
+                        BleakGATTCharacteristicWinRT(
+                            characteristic, self._session.max_pdu_size - 3
+                        )
                     )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
