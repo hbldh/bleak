@@ -22,6 +22,7 @@ Changed
 Removed
 -------
 * Removed explicit inheritance from object in class declarations.
+* Removed first seen filter in ``BleakScanner`` detection callbacks on BlueZ backend.
 
 `0.15.1`_ (2022-08-03)
 ======================

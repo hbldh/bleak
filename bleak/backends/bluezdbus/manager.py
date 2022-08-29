@@ -63,11 +63,6 @@ class CallbackAndState(NamedTuple):
     The D-Bus object path of the adapter associated with the callback.
     """
 
-    seen_devices: Set[str]
-    """
-    Set of device D-Bus object paths that have been "seen" already by this callback.
-    """
-
 
 DeviceConnectedChangedCallback = Callable[[bool], None]
 """
@@ -276,7 +271,7 @@ class BlueZManager:
             if adapter_path not in self._properties:
                 raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
 
-            callback_and_state = CallbackAndState(callback, adapter_path, set())
+            callback_and_state = CallbackAndState(callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
 
             try:
@@ -361,7 +356,7 @@ class BlueZManager:
             if adapter_path not in self._properties:
                 raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
 
-            callback_and_state = CallbackAndState(callback, adapter_path, set())
+            callback_and_state = CallbackAndState(callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
 
             try:
@@ -648,7 +643,7 @@ class BlueZManager:
             try:
                 self_interface = self._properties[message.path][interface]
             except KeyError:
-                # This can happen during initialization. The "PropertyChanged"
+                # This can happen during initialization. The "PropertiesChanged"
                 # handler is attached before "GetManagedObjects" is called
                 # and so self._properties may not yet be populated.
                 # This is not a problem. We just discard the property value
@@ -707,27 +702,13 @@ class BlueZManager:
             device: The current D-Bus properties of the device.
             changed: A list of properties that have changed since the last call.
         """
-        for (
-            callback,
-            adapter_path,
-            seen_devices,
-        ) in self._advertisement_callbacks:
+        for (callback, adapter_path) in self._advertisement_callbacks:
             # filter messages from other adapters
             if not device_path.startswith(adapter_path):
                 continue
 
-            first_time_seen = False
-
-            if device_path not in seen_devices:
-                first_time_seen = True
-                seen_devices.add(device_path)
-
-            # Only do advertising data callback if this is the first time the
-            # device has been seen or if an advertising data property changed.
-            # Otherwise we get a flood of callbacks from RSSI changing.
-            if first_time_seen or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(changed):
-                # TODO: this should be deep copy, not shallow
-                callback(device_path, cast(Device1, device.copy()))
+            # TODO: this should be deep copy, not shallow
+            callback(device_path, device.copy())
 
 
 async def get_global_bluez_manager() -> BlueZManager:
