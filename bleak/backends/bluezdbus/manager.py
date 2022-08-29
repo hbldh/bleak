@@ -30,7 +30,7 @@ from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
 from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .defs import Device1, GattCharacteristic1
+from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
@@ -61,11 +61,6 @@ class CallbackAndState(NamedTuple):
     adapter_path: str
     """
     The D-Bus object path of the adapter associated with the callback.
-    """
-
-    seen_devices: Set[str]
-    """
-    Set of device D-Bus object paths that have been "seen" already by this callback.
     """
 
 
@@ -130,6 +125,16 @@ class BlueZManager:
         # dict of object path: dict of interface name: dict of property name: property value
         self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
+        # The BlueZ APIs only maps children to parents, so we need to keep maps
+        # to quickly find the children of a parent D-Bus object.
+
+        # map of device d-bus object paths to set of service d-bus object paths
+        self._service_map: Dict[str, Set[str]] = {}
+        # map of service d-bus object paths to set of characteristic d-bus object paths
+        self._characteristic_map: Dict[str, Set[str]] = {}
+        # map of characteristic d-bus object paths to set of descriptor d-bus object paths
+        self._descriptor_map: Dict[str, Set[str]] = {}
+
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
         self._condition_callbacks: Set[Callable] = set()
@@ -193,11 +198,44 @@ class BlueZManager:
                 )
                 assert_reply(reply)
 
-                # dictionary is replaced in case AddInterfaces was received first
-                self._properties = {
-                    path: unpack_variants(interfaces)
-                    for path, interfaces in reply.body[0].items()
-                }
+                # dictionaries are cleared in case AddInterfaces was received first
+                # or there was a bus reset and we are reconnecting
+                self._properties.clear()
+                self._service_map.clear()
+                self._characteristic_map.clear()
+                self._descriptor_map.clear()
+
+                for path, interfaces in reply.body[0].items():
+                    props = unpack_variants(interfaces)
+                    self._properties[path] = props
+
+                    service_props = cast(
+                        GattService1, props.get(defs.GATT_SERVICE_INTERFACE)
+                    )
+
+                    if service_props:
+                        self._service_map.setdefault(
+                            service_props["Device"], set()
+                        ).add(path)
+
+                    char_props = cast(
+                        GattCharacteristic1,
+                        props.get(defs.GATT_CHARACTERISTIC_INTERFACE),
+                    )
+
+                    if char_props:
+                        self._characteristic_map.setdefault(
+                            char_props["Service"], set()
+                        ).add(path)
+
+                    desc_props = cast(
+                        GattDescriptor1, props.get(defs.GATT_DESCRIPTOR_INTERFACE)
+                    )
+
+                    if desc_props:
+                        self._descriptor_map.setdefault(
+                            desc_props["Characteristic"], set()
+                        ).add(path)
 
                 logger.debug(f"initial properties: {self._properties}")
 
@@ -233,7 +271,7 @@ class BlueZManager:
             if adapter_path not in self._properties:
                 raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
 
-            callback_and_state = CallbackAndState(callback, adapter_path, set())
+            callback_and_state = CallbackAndState(callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
 
             try:
@@ -318,7 +356,7 @@ class BlueZManager:
             if adapter_path not in self._properties:
                 raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
 
-            callback_and_state = CallbackAndState(callback, adapter_path, set())
+            callback_and_state = CallbackAndState(callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
 
             try:
@@ -432,28 +470,20 @@ class BlueZManager:
 
         services = BleakGATTServiceCollection()
 
-        for service_path, service_ifaces in self._properties.items():
-            if (
-                not service_path.startswith(device_path)
-                or defs.GATT_SERVICE_INTERFACE not in service_ifaces
-            ):
-                continue
-
-            service = BleakGATTServiceBlueZDBus(
-                service_ifaces[defs.GATT_SERVICE_INTERFACE], service_path
+        for service_path in self._service_map.get(device_path, set()):
+            service_props = cast(
+                GattService1,
+                self._properties[service_path][defs.GATT_SERVICE_INTERFACE],
             )
+
+            service = BleakGATTServiceBlueZDBus(service_props, service_path)
 
             services.add_service(service)
 
-            for char_path, char_ifaces in self._properties.items():
-                if (
-                    not char_path.startswith(service_path)
-                    or defs.GATT_CHARACTERISTIC_INTERFACE not in char_ifaces
-                ):
-                    continue
-
+            for char_path in self._characteristic_map.get(service_path, set()):
                 char_props = cast(
-                    GattCharacteristic1, char_ifaces[defs.GATT_CHARACTERISTIC_INTERFACE]
+                    GattCharacteristic1,
+                    self._properties[char_path][defs.GATT_CHARACTERISTIC_INTERFACE],
                 )
 
                 char = BleakGATTCharacteristicBlueZDBus(
@@ -468,15 +498,14 @@ class BlueZManager:
 
                 services.add_characteristic(char)
 
-                for desc_path, desc_ifaces in self._properties.items():
-                    if (
-                        not desc_path.startswith(char_path)
-                        or defs.GATT_DESCRIPTOR_INTERFACE not in desc_ifaces
-                    ):
-                        continue
+                for desc_path in self._descriptor_map.get(char_path, set()):
+                    desc_props = cast(
+                        GattDescriptor1,
+                        self._properties[desc_path][defs.GATT_DESCRIPTOR_INTERFACE],
+                    )
 
                     desc = BleakGATTDescriptorBlueZDBus(
-                        desc_ifaces[defs.GATT_DESCRIPTOR_INTERFACE],
+                        desc_props,
                         desc_path,
                         char.uuid,
                         char.handle,
@@ -563,6 +592,22 @@ class BlueZManager:
                 unpacked_props = unpack_variants(props)
                 self._properties.setdefault(obj_path, {})[interface] = unpacked_props
 
+                if interface == defs.GATT_SERVICE_INTERFACE:
+                    service_props = cast(GattService1, unpacked_props)
+                    self._service_map.setdefault(service_props["Device"], set()).add(
+                        obj_path
+                    )
+                elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
+                    char_props = cast(GattCharacteristic1, unpacked_props)
+                    self._characteristic_map.setdefault(
+                        char_props["Service"], set()
+                    ).add(obj_path)
+                elif interface == defs.GATT_DESCRIPTOR_INTERFACE:
+                    desc_props = cast(GattDescriptor1, unpacked_props)
+                    self._descriptor_map.setdefault(
+                        desc_props["Characteristic"], set()
+                    ).add(obj_path)
+
                 # If this is a device and it has advertising data properties,
                 # then it should mean that this device just started advertising.
                 # Previously, we just relied on RSSI updates to determine if
@@ -577,6 +622,22 @@ class BlueZManager:
 
             for interface in interfaces:
                 del self._properties[obj_path][interface]
+
+                if interface == defs.DEVICE_INTERFACE:
+                    try:
+                        del self._service_map[obj_path]
+                    except KeyError:
+                        pass
+                elif interface == defs.GATT_SERVICE_INTERFACE:
+                    try:
+                        del self._characteristic_map[obj_path]
+                    except KeyError:
+                        pass
+                elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
+                    try:
+                        del self._descriptor_map[obj_path]
+                    except KeyError:
+                        pass
         elif message.member == "PropertiesChanged":
             assert message.path is not None
 
@@ -585,7 +646,7 @@ class BlueZManager:
             try:
                 self_interface = self._properties[message.path][interface]
             except KeyError:
-                # This can happen during initialization. The "PropertyChanged"
+                # This can happen during initialization. The "PropertiesChanged"
                 # handler is attached before "GetManagedObjects" is called
                 # and so self._properties may not yet be populated.
                 # This is not a problem. We just discard the property value
@@ -644,27 +705,13 @@ class BlueZManager:
             device: The current D-Bus properties of the device.
             changed: A list of properties that have changed since the last call.
         """
-        for (
-            callback,
-            adapter_path,
-            seen_devices,
-        ) in self._advertisement_callbacks:
+        for (callback, adapter_path) in self._advertisement_callbacks:
             # filter messages from other adapters
             if not device_path.startswith(adapter_path):
                 continue
 
-            first_time_seen = False
-
-            if device_path not in seen_devices:
-                first_time_seen = True
-                seen_devices.add(device_path)
-
-            # Only do advertising data callback if this is the first time the
-            # device has been seen or if an advertising data property changed.
-            # Otherwise we get a flood of callbacks from RSSI changing.
-            if first_time_seen or not _ADVERTISING_DATA_PROPERTIES.isdisjoint(changed):
-                # TODO: this should be deep copy, not shallow
-                callback(device_path, cast(Device1, device.copy()))
+            # TODO: this should be deep copy, not shallow
+            callback(device_path, device.copy())
 
 
 async def get_global_bluez_manager() -> BlueZManager:

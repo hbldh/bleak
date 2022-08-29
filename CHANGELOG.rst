@@ -21,10 +21,12 @@ Fixed
 Changed
 -------
 * Switch to using async_timeout instead of asyncio.wait_for for performance.
+* Improved performance of ``BlueZManager.get_services()``. Fixes #927.
 
 Removed
 -------
 * Removed explicit inheritance from object in class declarations.
+* Removed first seen filter in ``BleakScanner`` detection callbacks on BlueZ backend.
 
 `0.15.1`_ (2022-08-03)
 ======================
