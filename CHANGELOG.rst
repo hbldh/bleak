@@ -17,6 +17,7 @@ Added
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
+* Fixed possible bad connection state in BlueZ backend. Fixes #951.
 
 Changed
 -------
