@@ -17,6 +17,8 @@ Added
 Fixed
 -----
 * Made BlueZ D-Bus signal callback logging lazy to improve performance.
+* Fixed regression in v0.15 where devices removed from BlueZ while scanning
+  were still listed in ``BleakScanner.discovered_devices``. Fixes #942.
 * Fixed possible bad connection state in BlueZ backend. Fixes #951.
 
 Changed
