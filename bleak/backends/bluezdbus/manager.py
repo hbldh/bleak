@@ -64,6 +64,31 @@ class CallbackAndState(NamedTuple):
     """
 
 
+DeviceRemovedCallback = Callable[[str], None]
+"""
+A callback that is called when a device is removed from BlueZ.
+
+Args:
+    arg0: The D-Bus object path of the device.
+"""
+
+
+class DeviceRemovedCallbackAndState(NamedTuple):
+    """
+    Encapsulates an :data:`DeviceRemovedCallback` and some state.
+    """
+
+    callback: DeviceRemovedCallback
+    """
+    The callback.
+    """
+
+    adapter_path: str
+    """
+    The D-Bus object path of the adapter associated with the callback.
+    """
+
+
 DeviceConnectedChangedCallback = Callable[[bool], None]
 """
 A callback that is called when a device's "Connected" property changes.
@@ -136,6 +161,7 @@ class BlueZManager:
         self._descriptor_map: Dict[str, Set[str]] = {}
 
         self._advertisement_callbacks: List[CallbackAndState] = []
+        self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
         self._condition_callbacks: Set[Callable] = set()
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
@@ -254,7 +280,8 @@ class BlueZManager:
         self,
         adapter_path: str,
         filters: Dict[str, Variant],
-        callback: AdvertisementCallback,
+        advertisement_callback: AdvertisementCallback,
+        device_removed_callback: DeviceRemovedCallback,
     ) -> Callable[[], Coroutine]:
         """
         Configures the advertisement data filters and starts scanning.
@@ -262,7 +289,10 @@ class BlueZManager:
         Args:
             adapter_path: The D-Bus object path of the adapter to use for scanning.
             filters: A dictionary of filters to pass to ``SetDiscoveryFilter``.
-            callback: A callable that will be called when new advertisement data is received.
+            advertisement_callback:
+                A callable that will be called when new advertisement data is received.
+            device_removed_callback:
+                A callable that will be called when a device is removed from BlueZ.
 
         Returns:
             An async function that is used to stop scanning and remove the filters.
@@ -274,8 +304,13 @@ class BlueZManager:
             if adapter_path not in self._properties:
                 raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
 
-            callback_and_state = CallbackAndState(callback, adapter_path)
+            callback_and_state = CallbackAndState(advertisement_callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
+
+            device_removed_callback_and_state = DeviceRemovedCallbackAndState(
+                device_removed_callback, adapter_path
+            )
+            self._device_removed_callbacks.append(device_removed_callback_and_state)
 
             try:
                 # Apply the filters
@@ -328,18 +363,23 @@ class BlueZManager:
                         assert_reply(reply)
 
                         self._advertisement_callbacks.remove(callback_and_state)
+                        self._device_removed_callbacks.remove(
+                            device_removed_callback_and_state
+                        )
 
                 return stop
             except BaseException:
-                # if starting scanning failed, don't leak the callback
+                # if starting scanning failed, don't leak the callbacks
                 self._advertisement_callbacks.remove(callback_and_state)
+                self._device_removed_callbacks.remove(device_removed_callback_and_state)
                 raise
 
     async def passive_scan(
         self,
         adapter_path: str,
         filters: List[OrPatternLike],
-        callback: AdvertisementCallback,
+        advertisement_callback: AdvertisementCallback,
+        device_removed_callback: DeviceRemovedCallback,
     ) -> Callable[[], Coroutine]:
         """
         Configures the advertisement data filters and starts scanning.
@@ -347,7 +387,10 @@ class BlueZManager:
         Args:
             adapter_path: The D-Bus object path of the adapter to use for scanning.
             filters: A list of "or patterns" to pass to ``org.bluez.AdvertisementMonitor1``.
-            callback: A callable that will be called when new advertisement data is received.
+            advertisement_callback:
+                A callable that will be called when new advertisement data is received.
+            device_removed_callback:
+                A callable that will be called when a device is removed from BlueZ.
 
         Returns:
             An async function that is used to stop scanning and remove the filters.
@@ -359,8 +402,13 @@ class BlueZManager:
             if adapter_path not in self._properties:
                 raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
 
-            callback_and_state = CallbackAndState(callback, adapter_path)
+            callback_and_state = CallbackAndState(advertisement_callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
+
+            device_removed_callback_and_state = DeviceRemovedCallbackAndState(
+                device_removed_callback, adapter_path
+            )
+            self._device_removed_callbacks.append(device_removed_callback_and_state)
 
             try:
                 monitor = AdvertisementMonitor(filters)
@@ -411,12 +459,16 @@ class BlueZManager:
                         assert_reply(reply)
 
                         self._advertisement_callbacks.remove(callback_and_state)
+                        self._device_removed_callbacks.remove(
+                            device_removed_callback_and_state
+                        )
 
                 return stop
 
             except BaseException:
-                # if starting scanning failed, don't leak the callback
+                # if starting scanning failed, don't leak the callbacks
                 self._advertisement_callbacks.remove(callback_and_state)
+                self._device_removed_callbacks.remove(device_removed_callback_and_state)
                 raise
 
     def add_device_watcher(
@@ -642,6 +694,10 @@ class BlueZManager:
                         del self._service_map[obj_path]
                     except KeyError:
                         pass
+
+                    for callback, adapter_path in self._device_removed_callbacks:
+                        if obj_path.startswith(adapter_path):
+                            callback(obj_path)
                 elif interface == defs.GATT_SERVICE_INTERFACE:
                     try:
                         del self._characteristic_map[obj_path]

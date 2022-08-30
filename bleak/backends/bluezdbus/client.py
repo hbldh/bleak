@@ -167,8 +167,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 assert_reply(reply)
 
                 self._is_connected = True
+
+                # Create a task that runs until the device is disconnected.
+                self._disconnect_monitor_event = asyncio.Event()
+                asyncio.ensure_future(self._disconnect_monitor())
+
+                #
+                # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
+                # is True.
+                #
+                await self.get_services(dangerous_use_bleak_cache=dangerous_use_bleak_cache)
+
+                return True
             except BaseException:
-                # calling Disconnect cancels any pending connect request
+                # Calling Disconnect cancels any pending connect request. Also,
+                # if connection was successful but get_services() raises (e.g.
+                # because task was cancelled), the we still need to disconnect
+                # before passing on the exception.
                 if self._bus:
                     # If disconnected callback already fired, this will be a no-op
                     # since self._bus will be None and the _cleanup_all call will
@@ -196,19 +211,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         )
 
                 raise
-
-            # Create a task that runs until the device is disconnected.
-            self._disconnect_monitor_event = asyncio.Event()
-            asyncio.ensure_future(self._disconnect_monitor())
-
-            # Get all services. This means making the actual connection.
-            #
-            # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
-            # is True.
-            #
-            await self.get_services(dangerous_use_bleak_cache=dangerous_use_bleak_cache)
-
-            return True
         except BaseException:
             self._cleanup_all()
             raise

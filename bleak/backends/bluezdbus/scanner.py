@@ -132,11 +132,17 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         if self._scanning_mode == "passive":
             self._stop = await manager.passive_scan(
-                self._adapter_path, self._or_patterns, self._handle_advertising_data
+                self._adapter_path,
+                self._or_patterns,
+                self._handle_advertising_data,
+                self._handle_device_removed,
             )
         else:
             self._stop = await manager.active_scan(
-                self._adapter_path, self._filters, self._handle_advertising_data
+                self._adapter_path,
+                self._filters,
+                self._handle_advertising_data,
+                self._handle_device_removed,
             )
 
     async def stop(self):
@@ -179,15 +185,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     @property
     def discovered_devices(self) -> List[BLEDevice]:
-        # Reduce output.
         discovered_devices = []
-        for path, props in self._devices.items():
-            if not props:
-                logger.debug(
-                    "Disregarding %s since no properties could be obtained." % path
-                )
-                continue
 
+        for path, props in self._devices.items():
             uuids = props.get("UUIDs", [])
             manufacturer_data = props.get("ManufacturerData", {})
             discovered_devices.append(
@@ -245,3 +245,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         )
 
         self._callback(device, advertisement_data)
+
+    def _handle_device_removed(self, device_path: str) -> None:
+        """
+        Handles a device being removed from BlueZ.
+        """
+        try:
+            del self._devices[device_path]
+        except KeyError:
+            # The device will not have been added to self._devices if no
+            # advertising data was received, so this is expected to happen
+            # occasionally.
+            pass
