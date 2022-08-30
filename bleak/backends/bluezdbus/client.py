@@ -176,7 +176,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
                 # is True.
                 #
-                await self.get_services(dangerous_use_bleak_cache=dangerous_use_bleak_cache)
+                await self.get_services(
+                    dangerous_use_bleak_cache=dangerous_use_bleak_cache
+                )
 
                 return True
             except BaseException:
