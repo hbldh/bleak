@@ -43,7 +43,7 @@ class BleakClientP4Android(BaseBleakClient):
         # kwarg "device" is for backwards compatibility
         self.__adapter = kwargs.get("adapter", kwargs.get("device", None))
         self.__gatt = None
-        self.__mtu = None
+        self.__mtu = 23
 
     def __del__(self):
         if self.__gatt is not None:
@@ -259,7 +259,10 @@ class BleakClientP4Android(BaseBleakClient):
             for java_characteristic in java_service.getCharacteristics():
 
                 characteristic = BleakGATTCharacteristicP4Android(
-                    java_characteristic, service.uuid, service.handle
+                    java_characteristic,
+                    service.uuid,
+                    service.handle,
+                    self.__mtu - 3,
                 )
                 self.services.add_characteristic(characteristic)
 

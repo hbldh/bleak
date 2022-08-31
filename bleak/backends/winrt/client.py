@@ -14,6 +14,8 @@ import warnings
 from functools import wraps
 from typing import Callable, Any, List, Optional, Sequence, Union
 
+import async_timeout
+
 from bleak_winrt.windows.devices.bluetooth import (
     BluetoothError,
     BluetoothLEDevice,
@@ -181,6 +183,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = winrt.get("address_type", kwargs.get("address_type"))
 
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
+        self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
     def __str__(self):
         return "BleakClientWinRT ({0})".format(self.address)
@@ -238,6 +241,12 @@ class BleakClientWinRT(BaseBleakClient):
                 )
                 self._session_status_changed_token = None
 
+            if self._max_pdu_size_changed_token:
+                self._session.remove_max_pdu_size_changed(
+                    self._max_pdu_size_changed_token
+                )
+                self._max_pdu_size_changed_token = None
+
             if self._requester:
                 self._requester.close()
                 self._requester = None
@@ -279,6 +288,9 @@ class BleakClientWinRT(BaseBleakClient):
             )
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
+        def max_pdu_size_changed_handler(sender: GattSession, args):
+            logger.debug("max_pdu_size_changed_handler: %d", self._session.max_pdu_size)
+
         # Start a GATT Session to connect
         event = asyncio.Event()
         self._session_active_events.append(event)
@@ -296,6 +308,10 @@ class BleakClientWinRT(BaseBleakClient):
                 )
             )
 
+            self._max_pdu_size_changed_token = self._session.add_max_pdu_size_changed(
+                max_pdu_size_changed_handler
+            )
+
             # Windows does not support explicitly connecting to a device.
             # Instead it has the concept of a GATT session that is owned
             # by the calling program.
@@ -303,7 +319,8 @@ class BleakClientWinRT(BaseBleakClient):
             # This keeps the device connected until we set maintain_connection = False.
 
             # wait for the session to become active
-            await asyncio.wait_for(event.wait(), timeout=timeout)
+            async with async_timeout.timeout(timeout):
+                await event.wait()
         except BaseException:
             handle_disconnect()
             raise
@@ -349,7 +366,8 @@ class BleakClientWinRT(BaseBleakClient):
             self._session_closed_events.append(event)
             try:
                 self._requester.close()
-                await asyncio.wait_for(event.wait(), timeout=10)
+                async with async_timeout.timeout(10):
+                    await event.wait()
             finally:
                 self._session_closed_events.remove(event)
 
@@ -525,7 +543,9 @@ class BleakClientWinRT(BaseBleakClient):
 
                 for characteristic in characteristics:
                     self.services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(characteristic)
+                        BleakGATTCharacteristicWinRT(
+                            characteristic, self._session.max_pdu_size - 3
+                        )
                     )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(

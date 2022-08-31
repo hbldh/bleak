@@ -10,6 +10,8 @@ import warnings
 from typing import Callable, Optional, Union
 from uuid import UUID
 
+import async_timeout
+
 from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType, ErrorType
 from dbus_next.message import Message
@@ -153,22 +155,31 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                reply = await asyncio.wait_for(
-                    self._bus.call(
+                async with async_timeout.timeout(timeout):
+                    reply = await self._bus.call(
                         Message(
                             destination=defs.BLUEZ_SERVICE,
                             interface=defs.DEVICE_INTERFACE,
                             path=self._device_path,
                             member="Connect",
                         )
-                    ),
-                    timeout,
-                )
+                    )
                 assert_reply(reply)
 
                 self._is_connected = True
+
+                # Create a task that runs until the device is disconnected.
+                self._disconnect_monitor_event = asyncio.Event()
+                asyncio.ensure_future(self._disconnect_monitor())
+
+                await self.get_services()
+
+                return True
             except BaseException:
-                # calling Disconnect cancels any pending connect request
+                # Calling Disconnect cancels any pending connect request. Also,
+                # if connection was successful but get_services() raises (e.g.
+                # because task was cancelled), the we still need to disconnect
+                # before passing on the exception.
                 if self._bus:
                     # If disconnected callback already fired, this will be a no-op
                     # since self._bus will be None and the _cleanup_all call will
@@ -196,15 +207,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         )
 
                 raise
-
-            # Create a task that runs until the device is disconnected.
-            self._disconnect_monitor_event = asyncio.Event()
-            asyncio.ensure_future(self._disconnect_monitor())
-
-            # Get all services. This means making the actual connection.
-            await self.get_services()
-
-            return True
         except BaseException:
             self._cleanup_all()
             raise
@@ -294,7 +296,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
             logger.debug(f"already in progress ({self._device_path})")
-            await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+            async with async_timeout.timeout(10):
+                await self._disconnecting_event.wait()
         elif self.is_connected:
             self._disconnecting_event = asyncio.Event()
             try:
@@ -308,7 +311,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 assert_reply(reply)
-                await asyncio.wait_for(self._disconnecting_event.wait(), timeout=10)
+                async with async_timeout.timeout(10):
+                    await self._disconnecting_event.wait()
             finally:
                 self._disconnecting_event = None
 

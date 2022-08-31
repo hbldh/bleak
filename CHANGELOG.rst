@@ -10,6 +10,30 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.16.0`_ (2022-08-31)
+======================
+
+Added
+-----
+* Added ``BleakGattCharacteristic.max_write_without_response_size`` property. Fixes #738.
+
+Fixed
+-----
+* Fixed regression in v0.15 where devices removed from BlueZ while scanning
+  were still listed in ``BleakScanner.discovered_devices``. Fixes #942.
+* Fixed possible bad connection state in BlueZ backend. Fixes #951.
+
+Changed
+-------
+* Made BlueZ D-Bus signal callback logging lazy to improve performance. Merged #912.
+* Switch to using async_timeout instead of asyncio.wait_for for performance. Merged #916.
+* Improved performance of ``BlueZManager.get_services()``. Fixes #927.
+
+Removed
+-------
+* Removed explicit inheritance from object in class declarations. Merged #922.
+* Removed first seen filter in ``BleakScanner`` detection callbacks on BlueZ backend. Merged #964.
+
 `0.15.1`_ (2022-08-03)
 ======================
 
@@ -19,6 +43,7 @@ Fixed
 * Handle the race in the BlueZ D-Bus backend where the device disconnects during
   the connection process which presented as ``Failed to cancel connection``. Merged #919.
 * Ensure the BlueZ D-Bus scanner can reconnect after DBus disconnection. Merged #920.
+* Adjust default timeout for ``read_gatt_char()`` with CoreBluetooth to 20s. Fixes #926.
 
 
 `0.15.0`_ (2022-07-29)
@@ -722,7 +747,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.15.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.16.0...develop
+.. _0.16.0: https://github.com/hbldh/bleak/compare/v0.15.1...v0.16.0
 .. _0.15.1: https://github.com/hbldh/bleak/compare/v0.15.0...v0.15.1
 .. _0.15.0: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.0
 .. _0.14.3: https://github.com/hbldh/bleak/compare/v0.14.2...v0.14.3

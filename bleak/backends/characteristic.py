@@ -30,8 +30,17 @@ class GattCharacteristicsFlags(enum.Enum):
 class BleakGATTCharacteristic(abc.ABC):
     """Interface for the Bleak representation of a GATT Characteristic"""
 
-    def __init__(self, obj: Any):
+    def __init__(self, obj: Any, max_write_without_response_size: int):
+        """
+        Args:
+            obj:
+                A platform-specific object for this characteristic.
+            max_write_without_response_size:
+                The maximum size in bytes that can be written to the
+                characteristic in a single write without response command.
+        """
         self.obj = obj
+        self._max_write_without_response_size = max_write_without_response_size
 
     def __str__(self):
         return f"{self.uuid} (Handle: {self.handle}): {self.description}"
@@ -70,6 +79,14 @@ class BleakGATTCharacteristic(abc.ABC):
     def properties(self) -> List[str]:
         """Properties of this characteristic"""
         raise NotImplementedError()
+
+    @property
+    def max_write_without_response_size(self) -> int:
+        """
+        Gets the maximum size in bytes that can be used for the *data* argument
+        of :meth:`BleakClient.write_gatt_char()` when ``response=False``.
+        """
+        return self._max_write_without_response_size
 
     @property
     @abc.abstractmethod
