@@ -542,11 +542,16 @@ class BleakClientWinRT(BaseBleakClient):
                 )
 
                 for characteristic in characteristics:
-                    self.services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(
-                            characteristic, self._session.max_pdu_size - 3
+                    if self._session is None:
+                        self.services.add_characteristic(
+                            BleakGATTCharacteristicWinRT(characteristic, 20)
                         )
-                    )
+                    else:
+                        self.services.add_characteristic(
+                            BleakGATTCharacteristicWinRT(
+                                characteristic, self._session.max_pdu_size - 3
+                            )
+                        )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
                         await characteristic.get_descriptors_async(*args),
