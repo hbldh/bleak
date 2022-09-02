@@ -526,6 +526,9 @@ class BleakClientWinRT(BaseBleakClient):
                 "Could not get GATT services",
             )
 
+            if not self.is_connected:
+                raise BleakError("Not connected")
+
             for service in services:
                 # Windows returns an ACCESS_DENIED error when trying to enumerate
                 # characteristics of services used by the OS, like the HID service
@@ -542,16 +545,11 @@ class BleakClientWinRT(BaseBleakClient):
                 )
 
                 for characteristic in characteristics:
-                    if self._session is None:
-                        self.services.add_characteristic(
-                            BleakGATTCharacteristicWinRT(characteristic, 20)
+                    self.services.add_characteristic(
+                        BleakGATTCharacteristicWinRT(
+                            characteristic, self._session.max_pdu_size - 3
                         )
-                    else:
-                        self.services.add_characteristic(
-                            BleakGATTCharacteristicWinRT(
-                                characteristic, self._session.max_pdu_size - 3
-                            )
-                        )
+                    )
 
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
                         await characteristic.get_descriptors_async(*args),
