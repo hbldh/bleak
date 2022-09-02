@@ -366,7 +366,9 @@ class BleakClientWinRT(BaseBleakClient):
             self._session_closed_events.append(event)
             try:
                 self._requester.close()
-                async with async_timeout.timeout(10):
+                # sometimes it can take over one minute before Windows decides
+                # to end the GATT session/disconnect the device
+                async with async_timeout.timeout(120):
                     await event.wait()
             finally:
                 self._session_closed_events.remove(event)
