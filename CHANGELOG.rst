@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Fixed wrong error message for BlueZ "Operation failed with ATT error".
+
+
 `0.16.0`_ (2022-08-31)
 ======================
 
