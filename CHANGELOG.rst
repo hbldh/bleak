@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Changed version check for BlueZ battery workaround to exclude versions >= 5.55.
+
 Fixed
 -----
 * Fixed possible ``AttributeError`` when enabling notifications for battery service in BlueZ backend.
