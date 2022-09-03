@@ -23,8 +23,8 @@ from bleak.backends.bluezdbus.version import BlueZFeatures
         (b"bluetoothctl: 5.46", True, False, False, False),
         (b"bluetoothctl: 5.48", True, False, True, True),
         (b"bluetoothctl: 5.51", True, True, True, True),
-        (b"bluetoothctl: 5.63", True, True, True, True),
-        (b"", True, True, True, True),
+        (b"bluetoothctl: 5.63", True, True, False, True),
+        (b"", True, True, False, True),
     ],
 )
 async def test_bluez_version(
