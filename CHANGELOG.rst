@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Fixed `get_services()` fails because no GattSession on WinRT backend.
+
 `0.16.0`_ (2022-08-31)
 ======================
 

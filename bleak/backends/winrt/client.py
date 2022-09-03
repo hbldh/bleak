@@ -500,7 +500,9 @@ class BleakClientWinRT(BaseBleakClient):
 
         """
         # Return the Service Collection.
-        if self._services_resolved:
+        if not self.is_connected:
+            raise BleakError("Not connected")
+        elif self._services_resolved:
             return self.services
         else:
             logger.debug("Get Services...")
@@ -525,9 +527,6 @@ class BleakClientWinRT(BaseBleakClient):
                 "services",
                 "Could not get GATT services",
             )
-
-            if not self.is_connected:
-                raise BleakError("Not connected")
 
             for service in services:
                 # Windows returns an ACCESS_DENIED error when trying to enumerate
