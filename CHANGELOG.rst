@@ -21,6 +21,10 @@ Fixed
 * Fixed wrong error message for BlueZ "Operation failed with ATT error". Merged #975.
 * Fixed possible ``AttributeError`` when enabling notifications for battery service in BlueZ backend. Merged #976.
 
+Removed
+-------
+- Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
+
 `0.16.0`_ (2022-08-31)
 ======================
 

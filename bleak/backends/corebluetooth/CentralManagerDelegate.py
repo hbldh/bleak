@@ -37,8 +37,7 @@ from Foundation import (
 )
 from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
 
-from bleak.backends.corebluetooth.device import BLEDeviceCoreBluetooth
-from bleak.exc import BleakError
+from ...exc import BleakError
 
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
@@ -62,7 +61,7 @@ class CentralManagerDelegate(NSObject):
         self.event_loop = asyncio.get_running_loop()
         self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
 
-        self.devices: Dict[str, BLEDeviceCoreBluetooth] = {}
+        self.last_rssi: Dict[str, int] = {}
 
         self.callbacks: Dict[
             int, Callable[[CBPeripheral, Dict[str, Any], int], None]
@@ -107,7 +106,7 @@ class CentralManagerDelegate(NSObject):
     @objc.python_method
     async def start_scan(self, service_uuids) -> None:
         # remove old
-        self.devices = {}
+        self.last_rssi.clear()
 
         service_uuids = (
             NSArray.alloc().initWithArray_(
@@ -252,29 +251,19 @@ class CentralManagerDelegate(NSObject):
 
         uuid_string = peripheral.identifier().UUIDString()
 
-        if uuid_string in self.devices:
-            device = self.devices[uuid_string]
-            # It could be the device did not have a name previously but now it does.
-            if peripheral.name():
-                device.name = peripheral.name()
-        else:
-            address = uuid_string
-            name = peripheral.name() or None
-            details = peripheral
-            device = BLEDeviceCoreBluetooth(address, name, details, delegate=self)
-            self.devices[uuid_string] = device
-
-        device._update(advertisementData)
-        device._update_rssi(RSSI)
+        self.last_rssi[uuid_string] = RSSI
 
         for callback in self.callbacks.values():
             if callback:
                 callback(peripheral, advertisementData, RSSI)
 
         logger.debug(
-            "Discovered device {}: {} @ RSSI: {} (kCBAdvData {}) and Central: {}".format(
-                uuid_string, device.name, RSSI, advertisementData.keys(), central
-            )
+            "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
+            uuid_string,
+            peripheral.name(),
+            RSSI,
+            advertisementData.keys(),
+            central,
         )
 
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
