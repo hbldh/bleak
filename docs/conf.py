@@ -13,25 +13,6 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-
-windows_autodoc_mock_import = ["bleak_winrt"]
-linux_autodoc_mock_import = ["dbus_next"]
-macos_autodoc_mock_import = [
-    "objc",
-    "Foundation",
-    "CoreBluetooth",
-    "libdispatch",
-]
-android_autodoc_mock_import = ["android", "jnius"]
-autodoc_mock_imports = list(
-    set(
-        windows_autodoc_mock_import
-        + macos_autodoc_mock_import
-        + linux_autodoc_mock_import
-        + android_autodoc_mock_import
-    )
-)
-
 import sys
 import os
 
@@ -124,6 +105,20 @@ pygments_style = "sphinx"
 # documents.
 # keep_warnings = False
 
+# -- Options for autodoc extension -------------------------------------------
+
+autodoc_mock_imports = [
+    "android",
+    "async_timeout",
+    "bleak_winrt",
+    "CoreBluetooth",
+    "dbus_next",
+    "Foundation",
+    "jnius",
+    "libdispatch",
+    "objc",
+    "typing_extensions",
+]
 
 # -- Options for HTML output -------------------------------------------
 
