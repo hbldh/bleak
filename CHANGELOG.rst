@@ -44,7 +44,6 @@ Fixed
 
 Changed
 -------
-* Switch to using async_timeout instead of asyncio.wait_for for performance.
 * Made BlueZ D-Bus signal callback logging lazy to improve performance. Merged #912.
 * Switch to using async_timeout instead of asyncio.wait_for for performance. Merged #916.
 * Improved performance of ``BlueZManager.get_services()``. Fixes #927.
