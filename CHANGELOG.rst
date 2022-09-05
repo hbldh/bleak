@@ -10,10 +10,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend.
+* Extended disconnect timeout to 120 seconds in WinRT backend. Fixes #807.
+
 Fixed
 -----
-* Fixed wrong error message for BlueZ "Operation failed with ATT error".
-
+* Fixed wrong error message for BlueZ "Operation failed with ATT error". Merged #975.
 
 `0.16.0`_ (2022-08-31)
 ======================
