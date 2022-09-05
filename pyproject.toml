@@ -32,15 +32,12 @@ pyobjc-framework-libdispatch = { version = "^8.5", markers = "platform_system=='
 bleak-winrt = { version = "^1.1.1", markers = "platform_system=='Windows'" }
 
 [tool.poetry.group.docs.dependencies]
-Sphinx = "<2"
-sphinx-rtd-theme = "<0.5"
-# TODO: remove these when updating sphinx
-python = ">=3.8,<3.10"
-jinja2 = "<3.1.0"
+Sphinx = { version = "^5.1.1", python = ">=3.8" }
+sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.group.lint.dependencies]
 black = "^22.1.0"
-flake8 = "^5.0.0"
+flake8 = { version = "^5.0.0", python = ">=3.8" }
 
 [tool.poetry.group.test.dependencies]
 asynctest = { version = "^0.13.0",  python = "<3.8" }
