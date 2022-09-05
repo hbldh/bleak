@@ -15,6 +15,11 @@ Changed
 * Relax ``async-timeout`` version to support different installations. Merged #1009.
 * ``unpair`` function of ``BleakClient`` in WinRT backend can be called without being connected to remove stored device information
 * Use relative imports internally. Merged #1007.
+* ``BleakScanner`` and ``BleakClient`` are now concrete classes. Fixes #582.
+* Deprecated ``BleakScanner.register_detection_callback()``.
+* Deprecated ``BleakScanner.set_scanning_filter()``.
+* Deprecated ``BleakClient.set_disconnected_callback()``.
+* Deprecated ``BleakClient.get_services()``.
 
 Fixed
 -----

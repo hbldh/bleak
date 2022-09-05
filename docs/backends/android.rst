@@ -57,3 +57,19 @@ succeed if the user does not accept permissions.
 
 For an example of building an android bluetooth app, see `the example <../../examples/kivy>`_
 and its accompanying `README <../../examples/kivy/README>`_.
+
+API
+---
+
+Scanner
+~~~~~~~
+
+.. automodule:: bleak.backends.p4android.scanner
+    :members:
+
+
+Client
+~~~~~~
+
+.. automodule:: bleak.backends.p4android.client
+    :members:

@@ -75,11 +75,11 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[List[str]] = None,
-        scanning_mode: Literal["active", "passive"] = "active",
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+        scanning_mode: Literal["active", "passive"],
         *,
-        bluez: BlueZScannerArgs = {},
+        bluez: BlueZScannerArgs,
         **kwargs,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)

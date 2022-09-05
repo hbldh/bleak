@@ -21,4 +21,4 @@ jobs:
             -   name: Lint with flake8
                 run: pipx run poetry run flake8 . --count --show-source --statistics
             -   name: Build docs
-                run: READTHEDOCS=True pipx run poetry run make -C docs html
+                run: pipx run poetry run make -C docs html

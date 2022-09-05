@@ -162,7 +162,7 @@ class BleakClientWinRT(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         *,
-        winrt: WinRTClientArgs = {},
+        winrt: WinRTClientArgs,
         **kwargs,
     ):
         super(BleakClientWinRT, self).__init__(address_or_ble_device, **kwargs)

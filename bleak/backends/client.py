@@ -7,10 +7,13 @@ Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import asyncio
+import os
+import platform
 import uuid
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Type, Union
 from warnings import warn
 
+from ..exc import BleakError
 from .service import BleakGATTServiceCollection
 from .characteristic import BleakGATTCharacteristic
 from .device import BLEDevice
@@ -44,25 +47,6 @@ class BaseBleakClient(abc.ABC):
 
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
-
-    def __str__(self):
-        return "{0}, {1}".format(self.__class__.__name__, self.address)
-
-    def __repr__(self):
-        return "<{0}, {1}, {2}>".format(
-            self.__class__.__name__,
-            self.address,
-            super(BaseBleakClient, self).__repr__(),
-        )
-
-    # Async Context managers
-
-    async def __aenter__(self):
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.disconnect()
 
     # Connectivity methods
 
@@ -171,7 +155,7 @@ class BaseBleakClient(abc.ABC):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs
+        **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -236,7 +220,7 @@ class BaseBleakClient(abc.ABC):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         callback: Callable[[int, bytearray], None],
-        **kwargs
+        **kwargs,
     ) -> None:
         """Activate notifications/indications on a characteristic.
 
@@ -271,3 +255,30 @@ class BaseBleakClient(abc.ABC):
 
         """
         raise NotImplementedError()
+
+
+def get_platform_client_backend_type() -> Type[BaseBleakClient]:
+    """
+    Gets the platform-specific :class:`BaseBleakClient` type.
+    """
+    if os.environ.get("P4A_BOOTSTRAP") is not None:
+        from bleak.backends.p4android.client import BleakClientP4Android
+
+        return BleakClientP4Android
+
+    if platform.system() == "Linux":
+        from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
+
+        return BleakClientBlueZDBus
+
+    if platform.system() == "Darwin":
+        from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
+
+        return BleakClientCoreBluetooth
+
+    if platform.system() == "Windows":
+        from bleak.backends.winrt.client import BleakClientWinRT
+
+        return BleakClientWinRT
+
+    raise BleakError(f"Unsupported platform: {platform.system()}")
