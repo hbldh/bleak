@@ -14,10 +14,12 @@ Changed
 -------
 * ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend.
 * Extended disconnect timeout to 120 seconds in WinRT backend. Fixes #807.
+* Changed version check for BlueZ battery workaround to exclude versions >= 5.55. Merged #976.
 
 Fixed
 -----
 * Fixed wrong error message for BlueZ "Operation failed with ATT error". Merged #975.
+* Fixed possible ``AttributeError`` when enabling notifications for battery service in BlueZ backend. Merged #976.
 
 `0.16.0`_ (2022-08-31)
 ======================
