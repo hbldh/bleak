@@ -31,7 +31,7 @@ class BleakDBusError(BleakError):
             details = self.args[1]
             # Some error descriptions can be further parsed to be even more helpful
             if "ATT error: 0x" in details:
-                more_detail = CONTROLLER_ERROR_CODES.get(
+                more_detail = PROTOCOL_ERROR_CODES.get(
                     int(details.rsplit("x")[1], 16), "Unknown code"
                 )
                 details += f" ({more_detail})"
