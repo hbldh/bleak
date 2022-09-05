@@ -1,10 +1,15 @@
 import logging
+import sys
 from typing import Any, Dict, List, Optional
 
 import objc
 from Foundation import NSArray, NSUUID, NSBundle
 from CoreBluetooth import CBPeripheral
-from typing_extensions import Literal
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str

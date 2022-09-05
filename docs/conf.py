@@ -117,7 +117,6 @@ autodoc_mock_imports = [
     "jnius",
     "libdispatch",
     "objc",
-    "typing_extensions",
 ]
 
 # -- Options for HTML output -------------------------------------------

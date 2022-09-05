@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
@@ -9,7 +10,11 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
 )
-from typing_extensions import Literal
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from ..device import BLEDevice
 from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
