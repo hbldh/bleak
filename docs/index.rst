@@ -49,7 +49,6 @@ Contents:
    :maxdepth: 2
 
    installation
-   scanning
    usage
    api/index
    backends/index
