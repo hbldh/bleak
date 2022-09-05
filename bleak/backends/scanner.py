@@ -1,11 +1,11 @@
 import abc
 import asyncio
 import inspect
-from typing import Awaitable, Callable, Dict, List, Optional, Tuple
-from warnings import warn
+import os
+import platform
+from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Type
 
-import async_timeout
-
+from ..exc import BleakError
 from .device import BLEDevice
 
 
@@ -93,32 +93,6 @@ class BaseBleakScanner(abc.ABC):
             [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
 
-    async def __aenter__(self):
-        await self.start()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.stop()
-
-    @classmethod
-    async def discover(cls, timeout=5.0, **kwargs) -> List[BLEDevice]:
-        """Scan continuously for ``timeout`` seconds and return discovered devices.
-
-        Args:
-            timeout: Time to scan for.
-
-        Keyword Args:
-            **kwargs: Implementations might offer additional keyword arguments sent to the constructor of the
-                      BleakScanner class.
-
-        Returns:
-
-        """
-        async with cls(**kwargs) as scanner:
-            await asyncio.sleep(timeout)
-            devices = scanner.discovered_devices
-        return devices
-
     def register_detection_callback(
         self, callback: Optional[AdvertisementDataCallback]
     ) -> None:
@@ -183,74 +157,29 @@ class BaseBleakScanner(abc.ABC):
         """
         raise NotImplementedError()
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
-        """Gets the devices registered by the BleakScanner.
 
-        .. deprecated:: 0.11.0
-            This method will be removed in a future version of Bleak. Use the
-            :attr:`.discovered_devices` property instead.
+def get_platform_scanner_backend_type() -> Type[BaseBleakScanner]:
+    """
+    Gets the platform-specific :class:`BaseBleakScanner` type.
+    """
+    if os.environ.get("P4A_BOOTSTRAP") is not None:
+        from bleak.backends.p4android.scanner import BleakScannerP4Android
 
-        Returns:
-            A list of the devices that the scanner has discovered during the scanning.
+        return BleakScannerP4Android
 
-        """
-        warn(
-            "This method will be removed in a future version of Bleak. Use the `discovered_devices` property instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.discovered_devices
+    if platform.system() == "Linux":
+        from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 
-    @classmethod
-    async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
-    ) -> Optional[BLEDevice]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
+        return BleakScannerBlueZDBus
 
-        Args:
-            device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+    if platform.system() == "Darwin":
+        from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 
-        Keyword Args:
-            adapter (str): Bluetooth adapter to use for discovery.
+        return BleakScannerCoreBluetooth
 
-        Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
+    if platform.system() == "Windows":
+        from bleak.backends.winrt.scanner import BleakScannerWinRT
 
-        """
-        device_identifier = device_identifier.lower()
-        return await cls.find_device_by_filter(
-            lambda d, ad: d.address.lower() == device_identifier,
-            timeout=timeout,
-            **kwargs,
-        )
+        return BleakScannerWinRT
 
-    @classmethod
-    async def find_device_by_filter(
-        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
-    ) -> Optional[BLEDevice]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
-
-        Args:
-            filterfunc (AdvertisementDataFilter): A function that is called for every BLEDevice found. It should return True only for the wanted device.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-
-        Keyword Args:
-            adapter (str): Bluetooth adapter to use for discovery.
-
-        Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
-
-        """
-        found_device_queue = asyncio.Queue()
-
-        def apply_filter(d: BLEDevice, ad: AdvertisementData):
-            if filterfunc(d, ad):
-                found_device_queue.put_nowait(d)
-
-        async with cls(detection_callback=apply_filter, **kwargs):
-            try:
-                async with async_timeout.timeout(timeout):
-                    return await found_device_queue.get()
-            except asyncio.TimeoutError:
-                return None
+    raise BleakError(f"Unsupported platform: {platform.system()}")

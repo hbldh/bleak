@@ -103,7 +103,7 @@ Python::
         devices: Sequence[BLEDevice] = scanner.discover(timeout=5.0)
         for d in devices:
             async with BleakClient(d) as client:
-                print(await client.get_services())
+                print(client.services)
 
 
     asyncio.run(find_all_devices_services())

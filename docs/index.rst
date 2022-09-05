@@ -51,8 +51,8 @@ Contents:
    installation
    scanning
    usage
+   api/index
    backends/index
-   api
    troubleshooting
    contributing
    authors

@@ -44,9 +44,9 @@ class BleakScannerP4Android(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[List[str]] = None,
-        scanning_mode: Literal["active", "passive"] = "active",
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+        scanning_mode: Literal["active", "passive"],
         **kwargs,
     ):
         super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)

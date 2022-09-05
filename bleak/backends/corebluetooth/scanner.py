@@ -50,9 +50,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[List[str]] = None,
-        scanning_mode: Literal["active", "passive"] = "active",
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+        scanning_mode: Literal["active", "passive"],
         **kwargs
     ):
         super(BleakScannerCoreBluetooth, self).__init__(
