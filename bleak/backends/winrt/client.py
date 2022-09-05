@@ -8,13 +8,18 @@ Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 import inspect
 import logging
 import asyncio
-from typing_extensions import Literal, TypedDict
 import uuid
 import warnings
 from functools import wraps
+import sys
 from typing import Callable, Any, List, Optional, Sequence, Union
 
 import async_timeout
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal, TypedDict
+else:
+    from typing import Literal, TypedDict
 
 from bleak_winrt.windows.devices.bluetooth import (
     BluetoothError,
