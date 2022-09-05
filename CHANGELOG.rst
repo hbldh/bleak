@@ -16,6 +16,9 @@ Changed
 * Extended disconnect timeout to 120 seconds in WinRT backend. Fixes #807.
 * Changed version check for BlueZ battery workaround to exclude versions >= 5.55. Merged #976.
 * Use Poetry for build system and dependencies.
+* The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
+  To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
+  argument to avoid services being resolved again.
 
 Fixed
 -----
