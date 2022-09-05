@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend.
+
 `0.16.0`_ (2022-08-31)
 ======================
 

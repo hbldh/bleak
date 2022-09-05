@@ -499,73 +499,76 @@ class BleakClientWinRT(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         # Return the Service Collection.
         if self._services_resolved:
             return self.services
-        else:
-            logger.debug("Get Services...")
 
-            # Each of the get_serv/char/desc_async() methods has two forms, one
-            # with no args and one with a cache_mode argument
-            args = []
+        logger.debug("Get Services...")
 
-            # If the os-specific use_cached_services arg was given when BleakClient
-            # was created, the we use the second form with explicit cache mode.
-            # Otherwise we use the first form with no explicit cache mode which
-            # allows the OS Bluetooth stack to decide what is best.
-            if self._use_cached_services is not None:
-                args.append(
-                    BluetoothCacheMode.CACHED
-                    if self._use_cached_services
-                    else BluetoothCacheMode.UNCACHED
-                )
+        # Each of the get_serv/char/desc_async() methods has two forms, one
+        # with no args and one with a cache_mode argument
+        args = []
 
-            services: Sequence[GattDeviceService] = _ensure_success(
-                await self._requester.get_gatt_services_async(*args),
-                "services",
-                "Could not get GATT services",
+        # If the os-specific use_cached_services arg was given when BleakClient
+        # was created, the we use the second form with explicit cache mode.
+        # Otherwise we use the first form with no explicit cache mode which
+        # allows the OS Bluetooth stack to decide what is best.
+        if self._use_cached_services is not None:
+            args.append(
+                BluetoothCacheMode.CACHED
+                if self._use_cached_services
+                else BluetoothCacheMode.UNCACHED
             )
 
-            for service in services:
-                # Windows returns an ACCESS_DENIED error when trying to enumerate
-                # characteristics of services used by the OS, like the HID service
-                # so we have to exclude those services.
-                if service.uuid in _ACCESS_DENIED_SERVICES:
-                    continue
+        services: Sequence[GattDeviceService] = _ensure_success(
+            await self._requester.get_gatt_services_async(*args),
+            "services",
+            "Could not get GATT services",
+        )
 
-                self.services.add_service(BleakGATTServiceWinRT(service))
+        for service in services:
+            # Windows returns an ACCESS_DENIED error when trying to enumerate
+            # characteristics of services used by the OS, like the HID service
+            # so we have to exclude those services.
+            if service.uuid in _ACCESS_DENIED_SERVICES:
+                continue
 
-                characteristics: Sequence[GattCharacteristic] = _ensure_success(
-                    await service.get_characteristics_async(*args),
-                    "characteristics",
-                    f"Could not get GATT characteristics for {service}",
+            self.services.add_service(BleakGATTServiceWinRT(service))
+
+            characteristics: Sequence[GattCharacteristic] = _ensure_success(
+                await service.get_characteristics_async(*args),
+                "characteristics",
+                f"Could not get GATT characteristics for {service}",
+            )
+
+            for characteristic in characteristics:
+                self.services.add_characteristic(
+                    BleakGATTCharacteristicWinRT(
+                        characteristic, self._session.max_pdu_size - 3
+                    )
                 )
 
-                for characteristic in characteristics:
-                    self.services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(
-                            characteristic, self._session.max_pdu_size - 3
+                descriptors: Sequence[GattDescriptor] = _ensure_success(
+                    await characteristic.get_descriptors_async(*args),
+                    "descriptors",
+                    f"Could not get GATT descriptors for {service}",
+                )
+
+                for descriptor in descriptors:
+                    self.services.add_descriptor(
+                        BleakGATTDescriptorWinRT(
+                            descriptor,
+                            str(characteristic.uuid),
+                            characteristic.attribute_handle,
                         )
                     )
 
-                    descriptors: Sequence[GattDescriptor] = _ensure_success(
-                        await characteristic.get_descriptors_async(*args),
-                        "descriptors",
-                        f"Could not get GATT descriptors for {service}",
-                    )
-
-                    for descriptor in descriptors:
-                        self.services.add_descriptor(
-                            BleakGATTDescriptorWinRT(
-                                descriptor,
-                                str(characteristic.uuid),
-                                characteristic.attribute_handle,
-                            )
-                        )
-
-            logger.info("Services resolved for %s", str(self))
-            self._services_resolved = True
-            return self.services
+        logger.info("Services resolved for %s", str(self))
+        self._services_resolved = True
+        return self.services
 
     # I/O methods
 
@@ -589,6 +592,9 @@ class BleakClientWinRT(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         use_cached = kwargs.get("use_cached", False)
 
         if not isinstance(char_specifier, BleakGATTCharacteristic):
@@ -628,6 +634,9 @@ class BleakClientWinRT(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         use_cached = kwargs.get("use_cached", False)
 
         descriptor = self.services.get_descriptor(handle)
@@ -666,6 +675,9 @@ class BleakClientWinRT(BaseBleakClient):
             response (bool): If write-with-response operation should be done. Defaults to `False`.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -698,6 +710,9 @@ class BleakClientWinRT(BaseBleakClient):
             data (bytes or bytearray): The data to send.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
@@ -742,6 +757,9 @@ class BleakClientWinRT(BaseBleakClient):
                 notification request, given that the characteristic supports notifications as well as indications.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if inspect.iscoroutinefunction(callback):
 
             def bleak_callback(s, d):
@@ -813,6 +831,9 @@ class BleakClientWinRT(BaseBleakClient):
                 directly by the BleakGATTCharacteristic object representing it.
 
         """
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
