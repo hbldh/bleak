@@ -22,7 +22,7 @@ To discover Bluetooth devices that can be connected to:
 
     asyncio.run(main())
 
-.. warning:: Do not name your script `bleak.py`! It will cause a circular import error.
+.. warning:: Do not name your script ``bleak.py``! It will cause a circular import error.
 
 .. warning:: On macOS you may need to give your terminal permission to access Bluetooth.
     See `this troubleshooting message <https://bleak.readthedocs.io/en/latest/troubleshooting.html#bleak-crashes-with-sigabrt-on-macos>`_

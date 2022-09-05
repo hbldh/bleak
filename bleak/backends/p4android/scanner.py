@@ -2,11 +2,16 @@
 
 import asyncio
 import logging
+import sys
 from typing import List, Optional
 import warnings
 
 import async_timeout
-from typing_extensions import Literal
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from bleak.backends.scanner import (
     AdvertisementDataCallback,

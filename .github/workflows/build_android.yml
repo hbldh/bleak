@@ -8,8 +8,6 @@ jobs:
         runs-on: ubuntu-20.04
         steps:
             -   uses: actions/checkout@v2
-            -   name: Upgrade pip. setuptools and wheel
-                run: python -m pip install --upgrade pip setuptools wheel
             -   name: Install dependencies
                 run: pip install buildozer cython
             -   name: Cache buildozer files

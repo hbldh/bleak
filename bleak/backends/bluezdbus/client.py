@@ -815,7 +815,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # provide this functionality...
             # See https://kernel.googlesource.com/pub/scm/bluetooth/bluez/+/refs/tags/5.48/doc/battery-api.txt
             if str(char_specifier) == "00002a19-0000-1000-8000-00805f9b34fb" and (
-                self._hides_battery_characteristic
+                BlueZFeatures.hides_battery_characteristic
             ):
                 raise BleakError(
                     "Notifications on Battery Level Char ({0}) is not "

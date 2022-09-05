@@ -52,7 +52,7 @@ or one can do it without the context manager like this:
 
     asyncio.run(main(address))
 
-.. warning:: Do not name your script `bleak.py`! It will cause a circular import error.
+.. warning:: Do not name your script ``bleak.py``! It will cause a circular import error.
 
 Make sure you always get to call the disconnect method for a client before discarding it;
 the Bluetooth stack on the OS might need to be cleared of residual data which is cached in the

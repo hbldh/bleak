@@ -48,7 +48,7 @@ class BlueZFeatures:
             cls.write_without_response_workaround_needed = not (
                 major == 5 and minor >= 51
             )
-            cls.hides_battery_characteristic = major == 5 and minor >= 48
+            cls.hides_battery_characteristic = major == 5 and minor >= 48 and minor < 55
             cls.hides_device_name_characteristic = major == 5 and minor >= 48
         else:
             # Its possible they may be running inside a container where
