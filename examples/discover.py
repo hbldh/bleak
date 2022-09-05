@@ -9,11 +9,12 @@ Updated on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
-from bleak import discover
+
+from bleak import BleakScanner
 
 
 async def main():
-    devices = await discover()
+    devices = await BleakScanner.discover()
     for d in devices:
         print(d)
 
