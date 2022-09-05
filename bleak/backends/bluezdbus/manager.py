@@ -518,7 +518,12 @@ class BlueZManager:
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
 
         Args:
-            device_path: The D-Bus object path of the Bluetooth device.
+            device_path:
+                The D-Bus object path of the Bluetooth device.
+            use_cached:
+                When ``True`` if there is a cached :class:`BleakGATTServiceCollection`,
+                the method will not wait for ``"ServicesResolved"`` to become true
+                and instead return the cached service collection immediately.
 
         Returns:
             A new :class:`BleakGATTServiceCollection`.
