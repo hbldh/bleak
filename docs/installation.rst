@@ -23,33 +23,14 @@ you through the process.
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
 
-From sources
-------------
+Develop branch
+--------------
 
-The sources for bleak can be downloaded from the `Github repo`_.
-
-You can either clone the public repository:
-
-.. code-block:: console
-
-    $ git clone git://github.com/hbldh/bleak
-
-Or download the `tarball`_:
+The develop branch can also be installed using ``pip``. This is useful for
+testing the latest changes before they reach the stable release.
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/hbldh/bleak/tarball/master
+    $ pip install https://github.com/hbldh/bleak/archive/refs/heads/develop.zip
 
-Once you have a copy of the source, you can install it with:
-
-.. code-block:: console
-
-    $ python setup.py install
-
-Building `BleakUWPBridge`
--------------------------
-
-TBW.
-
-.. _Github repo: https://github.com/hbldh/bleak
-.. _tarball: https://github.com/hbldh/bleak/tarball/master
+For checking out a copy of Bleak for developing Bleak itself, see the :doc:`contributing` page.
