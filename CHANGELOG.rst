@@ -676,7 +676,7 @@ Fixed
 * Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
 * Implemented ``write_gatt_descriptor`` for Bluez backend.
 * Large change in Bluez backend handling of Twisted reactors. Fixes #143
-* Modified ``set_disconnect_callback`` to actually call the callback as a callback. Fixes #108.
+* Modified ``set_disconnected_callback`` to actually call the callback as a callback. Fixes #108.
 * Added another required parameter to disconnect callbacks.
 * Added Discovery filter option in BlueZ backend (Merged #124)
 * Merge #138: comments about Bluez version check.
