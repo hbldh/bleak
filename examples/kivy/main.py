@@ -1,3 +1,6 @@
+import asyncio
+import bleak
+
 from kivy.app import App
 
 # from kivy.core.window import Window
@@ -9,9 +12,6 @@ from kivy.logger import Logger
 import logging
 
 logging.Logger.manager.root = Logger
-
-import asyncio
-import bleak
 
 
 class ExampleApp(App):
