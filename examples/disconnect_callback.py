@@ -10,11 +10,11 @@ Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 
 import asyncio
 
-from bleak import BleakClient, discover
+from bleak import BleakScanner, BleakClient
 
 
 async def main():
-    devs = await discover()
+    devs = await BleakScanner.discover()
     if not devs:
         print("No devices found, try again later.")
         return

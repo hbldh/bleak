@@ -10,6 +10,7 @@ import sys
 import logging
 import platform
 import asyncio
+from warnings import warn
 
 from bleak.__version__ import __version__  # noqa: F401
 from bleak.exc import BleakError
@@ -80,9 +81,20 @@ elif platform.system() == "Windows":
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
+
 # for backward compatibility
-if not _on_rtd:
-    discover = BleakScanner.discover
+def discover():
+    """
+    .. deprecated:: 0.17.0
+        This method will be removed in a future version of Bleak.
+        Use :meth:`BleakScanner.discover` instead.
+    """
+    warn(
+        "The discover function will removed in a future version, use BleakScanner.discover instead.",
+        FutureWarning,
+        stacklevel=2,
+    )
+    return BleakScanner.discover()
 
 
 def cli():
