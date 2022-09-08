@@ -482,8 +482,8 @@ class BleakClientWinRT(BaseBleakClient):
             unpairing_result = await device_information.pairing.unpair_async()
 
             if unpairing_result.status not in (
-                DevicePairingResultStatus.PAIRED,
-                DevicePairingResultStatus.ALREADY_PAIRED,
+                DeviceUnpairingResultStatus.UNPAIRED,
+                DeviceUnpairingResultStatus.ALREADY_UNPAIRED,
             ):
                 raise BleakError(
                     "Could not unpair with device: {0}: {1}".format(
