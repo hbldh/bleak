@@ -231,6 +231,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         _service_data = {k: bytes(v) for k, v in props.get("ServiceData", {}).items()}
         _service_uuids = props.get("UUIDs", [])
 
+        # Get tx power data
+        tx_power = props.get("TxPower",None)
+
         # Pack the advertisement data
         advertisement_data = AdvertisementData(
             local_name=_local_name,
@@ -238,6 +241,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             service_data=_service_data,
             service_uuids=_service_uuids,
             platform_data=props,
+            tx_power=tx_power,
         )
 
         device = BLEDevice(
