@@ -46,7 +46,7 @@ class AdvertisementData:
         self.platform_data: Tuple = kwargs.get("platform_data", ())
 
         # Tx Power data
-        self.tx_power: Optional[int] = kwargs.get("tx_power",None) # tx_power can't be 0. so 0 may be better default value?
+        self.tx_power: Optional[int] = kwargs.get("tx_power")
 
     def __repr__(self) -> str:
         kwargs = []
