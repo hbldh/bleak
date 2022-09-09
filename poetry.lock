@@ -136,7 +136,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "dbus-fast"
-version = "1.1.9"
+version = "1.2.0"
 description = "A faster version of dbus-next"
 category = "main"
 optional = false
@@ -634,7 +634,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "236b615fa8b086f5fabf3640e12de440ed681559e7ba61d4a3b9ae4d848f4697"
+content-hash = "e0f405e08de801d630564445bf73e3ded41fb4240f305ef35268d5248ea47ffb"
 
 [metadata.files]
 alabaster = [
@@ -762,8 +762,8 @@ coverage = [
     {file = "coverage-6.4.4.tar.gz", hash = "sha256:e16c45b726acb780e1e6f88b286d3c10b3914ab03438f32117c4aa52d7f30d58"},
 ]
 dbus-fast = [
-    {file = "dbus-fast-1.1.9.tar.gz", hash = "sha256:482a7e8e2b89b0831fd0c3b805d06adcbc454ccabed0bc684a02486b00707330"},
-    {file = "dbus_fast-1.1.9-py3-none-any.whl", hash = "sha256:c4b8c351ffedc8ba4bdb4ba3cb2336662cf8ab5975bea35f030988fd2008beb7"},
+    {file = "dbus-fast-1.2.0.tar.gz", hash = "sha256:2b4bf6b10a42f391eacfe714ea44e9d92b75381a7313848e6b230d0cdee4e130"},
+    {file = "dbus_fast-1.2.0-py3-none-any.whl", hash = "sha256:d0e470c25a6ea22e9f6a9d6636025ed461db2d31d9e96def74a7d58f245aefdd"},
 ]
 docutils = [
     {file = "docutils-0.17.1-py2.py3-none-any.whl", hash = "sha256:cf316c8370a737a022b72b56874f6602acf974a37a9fba42ec2876387549fc61"},
