@@ -9,10 +9,6 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 `Unreleased`_
 =============
-Changed
--------
-*  ``AdvertisementData`` class now has an attribute ``tx_power``
-*
 
 Changed
 -------
@@ -23,8 +19,8 @@ Changed
 * The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
   To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
   argument to avoid services being resolved again.
-* ``AdvertisementData`` class now has an attribute ``tx_power``. scanner.py in backends of winrt, corebluetooth and
-  bluezdbus were changed to set tx_power if available.
+* ``AdvertisementData`` class now has an attribute ``tx_power``. scanner.py in backends were changed to set tx_power
+  if available.
 
 Fixed
 -----
