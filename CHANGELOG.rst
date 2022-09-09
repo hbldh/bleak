@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added support for Python 3.11.
+
 `0.18.1`_ (2022-09-25)
 ======================
 
