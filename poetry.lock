@@ -135,12 +135,15 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli"]
 
 [[package]]
-name = "dbus-next"
-version = "0.2.3"
-description = "A zero-dependency DBus library for Python with asyncio support"
+name = "dbus-fast"
+version = "1.1.7"
+description = "A faster version of dbus-next"
 category = "main"
 optional = false
-python-versions = ">=3.6.0"
+python-versions = ">=3.7,<4.0"
+
+[package.extras]
+docs = ["Sphinx[docs] (>=5.1.1,<6.0.0)", "myst-parser[docs] (>=0.18.0,<0.19.0)", "sphinx-rtd-theme[docs] (>=1.0.0,<2.0.0)", "sphinxcontrib-asyncio[docs] (>=0.3.0,<0.4.0)", "sphinxcontrib-fulltoc[docs] (>=1.2.0,<2.0.0)"]
 
 [[package]]
 name = "docutils"
@@ -631,7 +634,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "2472b729df55efa6f17ebc22ee78d6ea2a65118e072d8d5d8b82ec8f13f27127"
+content-hash = "1780977ec34a25bcda3f680fd4b67d65c918eb59ed1f1a649808f2034aadc223"
 
 [metadata.files]
 alabaster = [
@@ -758,9 +761,9 @@ coverage = [
     {file = "coverage-6.4.4-pp36.pp37.pp38-none-any.whl", hash = "sha256:f67cf9f406cf0d2f08a3515ce2db5b82625a7257f88aad87904674def6ddaec1"},
     {file = "coverage-6.4.4.tar.gz", hash = "sha256:e16c45b726acb780e1e6f88b286d3c10b3914ab03438f32117c4aa52d7f30d58"},
 ]
-dbus-next = [
-    {file = "dbus_next-0.2.3-py3-none-any.whl", hash = "sha256:58948f9aff9db08316734c0be2a120f6dc502124d9642f55e90ac82ffb16a18b"},
-    {file = "dbus_next-0.2.3.tar.gz", hash = "sha256:f4eae26909332ada528c0a3549dda8d4f088f9b365153952a408e28023a626a5"},
+dbus-fast = [
+    {file = "dbus-fast-1.1.7.tar.gz", hash = "sha256:3668f3ff07b964a38f2c2acbe265e9f22063f155e3df9444cd44ffa654cb9964"},
+    {file = "dbus_fast-1.1.7-py3-none-any.whl", hash = "sha256:7684d3df480dd193e84be28f5567fb6dd67f78a2a968d241afb64fb78b48995a"},
 ]
 docutils = [
     {file = "docutils-0.17.1-py2.py3-none-any.whl", hash = "sha256:cf316c8370a737a022b72b56874f6602acf974a37a9fba42ec2876387549fc61"},
