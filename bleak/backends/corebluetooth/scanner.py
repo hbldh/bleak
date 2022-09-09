@@ -111,7 +111,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             ]
 
             # set tx_power data if available
-            tx_power = a.get("kCBAdvDataTxPowerLevel",None)
+            tx_power = a.get("kCBAdvDataTxPowerLevel")
 
             advertisement_data = AdvertisementData(
                 local_name=p.name(),
