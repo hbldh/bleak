@@ -108,13 +108,13 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         return self.__props
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptorWinRT]:
-        """List of descriptors for this service"""
+    def descriptors(self) -> List[BleakGATTDescriptor]:
+        """List of descriptors for this characteristic"""
         return self.__descriptors
 
     def get_descriptor(
         self, specifier: Union[int, str, UUID]
-    ) -> Union[BleakGATTDescriptorWinRT, None]:
+    ) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):
