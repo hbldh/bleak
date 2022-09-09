@@ -27,6 +27,7 @@ Fixed
 * Fixed wrong error message for BlueZ "Operation failed with ATT error". Merged #975.
 * Fixed possible ``AttributeError`` when enabling notifications for battery service in BlueZ backend. Merged #976.
 * Fixed use of wrong enum in unpair function of WinRT backend.
+* Fixed inconsistent return types for ``properties`` and ``descriptors`` properties of ``BleakGATTCharacteristic``.
 
 Removed
 -------
