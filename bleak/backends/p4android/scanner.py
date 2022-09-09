@@ -276,13 +276,14 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
             entry.getKey().toString(): bytes(entry.getValue())
             for entry in record.getServiceData().entrySet()
         }
-
+        tx_power = result.getTxPower() # get Tx Power
         advertisement = AdvertisementData(
             local_name=record.getDeviceName(),
             manufacturer_data=manufacturer_data,
             service_data=service_data,
             service_uuids=service_uuids,
             platform_data=(result,),
+            tx_power=tx_power,
         )
         device = BLEDevice(
             device.getAddress(),
