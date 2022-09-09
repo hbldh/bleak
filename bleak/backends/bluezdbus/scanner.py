@@ -232,7 +232,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         _service_uuids = props.get("UUIDs", [])
 
         # Get tx power data
-        tx_power = props.get("TxPower",None)
+        tx_power = props.get("TxPower")
 
         # Pack the advertisement data
         advertisement_data = AdvertisementData(
