@@ -607,11 +607,10 @@ class BlueZManager:
         Returns:
             The current property value.
         """
-        return bool(
-            device_path in self._properties
-            and defs.DEVICE_INTERFACE in self._properties[device_path]
-            and self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
-        )
+        try:
+            return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
+        except KeyError:
+            return False
 
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
