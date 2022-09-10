@@ -634,7 +634,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "c97c4c7e1f77323261c5b5a9aadea27ada06f777dc35c64ae953152ce36b1cab"
+content-hash = "32a71adb406735bf106873faf0cae924210e005efac5a5b5f6244584e264a6e4"
 
 [metadata.files]
 alabaster = [
