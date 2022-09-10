@@ -2,9 +2,9 @@
 import re
 from typing import Any, Dict
 
-from dbus_next.constants import MessageType
-from dbus_next.message import Message
-from dbus_next.signature import Variant
+from dbus_fast.constants import MessageType
+from dbus_fast.message import Message
+from dbus_fast.signature import Variant
 
 from ...exc import BleakError, BleakDBusError
 

@@ -22,8 +22,8 @@ from typing import (
     cast,
 )
 
-from dbus_next import BusType, Message, MessageType, Variant
-from dbus_next.aio.message_bus import MessageBus
+from dbus_fast import BusType, Message, MessageType, Variant
+from dbus_fast.aio.message_bus import MessageBus
 
 from ...exc import BleakError
 from ..service import BleakGATTServiceCollection
@@ -633,7 +633,7 @@ class BlueZManager:
 
     def _parse_msg(self, message: Message):
         """
-        Handles callbacks from dbus_next.
+        Handles callbacks from dbus_fast.
         """
 
         if message.message_type != MessageType.SIGNAL:

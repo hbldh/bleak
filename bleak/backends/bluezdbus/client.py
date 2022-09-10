@@ -12,10 +12,10 @@ from uuid import UUID
 
 import async_timeout
 
-from dbus_next.aio import MessageBus
-from dbus_next.constants import BusType, ErrorType
-from dbus_next.message import Message
-from dbus_next.signature import Variant
+from dbus_fast.aio import MessageBus
+from dbus_fast.constants import BusType, ErrorType
+from dbus_fast.message import Message
+from dbus_fast.signature import Variant
 
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
@@ -263,9 +263,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
-
-            # work around https://github.com/altdesktop/python-dbus-next/issues/112
-            self._bus._sock.close()
         except Exception as e:
             logger.error(
                 f"Attempt to disconnect system bus failed ({self._device_path}): {e}"

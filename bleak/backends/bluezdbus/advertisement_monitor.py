@@ -9,7 +9,7 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/advertisement-monito
 import logging
 from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
 
-from dbus_next.service import ServiceInterface, dbus_property, method, PropertyAccess
+from dbus_fast.service import ServiceInterface, dbus_property, method, PropertyAccess
 
 from . import defs
 from ...assigned_numbers import AdvertisementDataType
@@ -58,7 +58,7 @@ class AdvertisementMonitor(ServiceInterface):
                 List of or patterns that will be returned by the ``Patterns`` property.
         """
         super().__init__(defs.ADVERTISEMENT_MONITOR_INTERFACE)
-        # dbus_next marshaling requires list instead of tuple
+        # dbus_fast marshaling requires list instead of tuple
         self._or_patterns = [list(p) for p in or_patterns]
 
     @method()

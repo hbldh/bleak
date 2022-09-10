@@ -19,6 +19,7 @@ Changed
 * The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
   To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
   argument to avoid services being resolved again.
+* The BlueZ D-Bus backend now uses ``dbus-fast`` instead of ``dbus-next`` which significantly improves performance.
 
 Fixed
 -----
