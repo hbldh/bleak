@@ -276,10 +276,11 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
             entry.getKey().toString(): bytes(entry.getValue())
             for entry in record.getServiceData().entrySet()
         }
-        if result.TX_POWER_NOT_PRESENT:
+        tx_power = result.getTxPower()
+
+        # change "not present" value to None to match other backends
+        if tx_power == defs.ScanResult.TX_POWER_NOT_PRESENT:
             tx_power = None
-        else:
-            tx_power = result.getTxPower() # get Tx Power
 
         advertisement = AdvertisementData(
             local_name=record.getDeviceName(),
