@@ -155,16 +155,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                async with async_timeout.timeout(timeout):
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Connect",
+                if not manager.is_connected(self._device_path):
+                    async with async_timeout.timeout(timeout):
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Connect",
+                            )
                         )
-                    )
-                assert_reply(reply)
+                    assert_reply(reply)
 
                 self._is_connected = True
 
