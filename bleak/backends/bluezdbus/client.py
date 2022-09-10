@@ -155,16 +155,25 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                async with async_timeout.timeout(timeout):
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Connect",
+                #
+                # The BlueZ backend does not disconnect devices when the
+                # application closes or crashes. This can cause problems
+                # when trying to reconnect to the same device. To work
+                # around this, we check if the device is already connected.
+                #
+                # For additional details see https://github.com/bluez/bluez/issues/89
+                #
+                if not manager.is_connected(self._device_path):
+                    async with async_timeout.timeout(timeout):
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Connect",
+                            )
                         )
-                    )
-                assert_reply(reply)
+                    assert_reply(reply)
 
                 self._is_connected = True
 

@@ -597,6 +597,21 @@ class BlueZManager:
         """
         return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
 
+    def is_connected(self, device_path: str) -> bool:
+        """
+        Gets the value of the "Connected" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value.
+        """
+        try:
+            return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
+        except KeyError:
+            return False
+
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
     ) -> None:
