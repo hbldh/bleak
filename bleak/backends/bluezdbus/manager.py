@@ -706,7 +706,10 @@ class BlueZManager:
             obj_path, interfaces = message.body
 
             for interface in interfaces:
-                del self._properties[obj_path][interface]
+                try:
+                    del self._properties[obj_path][interface]
+                except KeyError:
+                    pass
 
                 if interface == defs.DEVICE_INTERFACE:
                     self._services_cache.pop(obj_path, None)
