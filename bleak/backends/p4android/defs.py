@@ -23,6 +23,7 @@ PythonActivity = autoclass("org.kivy.android.PythonActivity")
 ParcelUuid = autoclass("android.os.ParcelUuid")
 activity = cast("android.app.Activity", PythonActivity.mActivity)
 context = cast("android.content.Context", activity.getApplicationContext())
+ScanResult = autoclass("android.bluetooth.le.ScanResult")
 
 BLEAK_JNI_NAMESPACE = "com.github.hbldh.bleak"
 PythonScanCallback = autoclass(BLEAK_JNI_NAMESPACE + ".PythonScanCallback")
