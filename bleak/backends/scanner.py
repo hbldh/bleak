@@ -28,6 +28,7 @@ class AdvertisementData:
             service_data (dict): Service data from the device
             service_uuids (list): UUIDs associated with the device
             platform_data (tuple): Tuple of platform specific advertisement data
+            tx_power (int): Transmit power level of the device
         """
         # The local name of the device
         self.local_name: Optional[str] = kwargs.get("local_name", None)
@@ -44,6 +45,9 @@ class AdvertisementData:
         # Tuple of platform specific data
         self.platform_data: Tuple = kwargs.get("platform_data", ())
 
+        # Tx Power data
+        self.tx_power: Optional[int] = kwargs.get("tx_power")
+
     def __repr__(self) -> str:
         kwargs = []
         if self.local_name:
@@ -54,6 +58,8 @@ class AdvertisementData:
             kwargs.append(f"service_data={repr(self.service_data)}")
         if self.service_uuids:
             kwargs.append(f"service_uuids={repr(self.service_uuids)}")
+        if self.tx_power:
+            kwargs.append(f"tx_power={repr(self.tx_power)}")
         return f"AdvertisementData({', '.join(kwargs)})"
 
 

@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* ``AdvertisementData`` class now has an attribute ``tx_power``. Merged #987.
+
 Changed
 -------
 * ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend.

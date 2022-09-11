@@ -110,12 +110,16 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
             ]
 
+            # set tx_power data if available
+            tx_power = a.get("kCBAdvDataTxPowerLevel")
+
             advertisement_data = AdvertisementData(
                 local_name=p.name(),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
                 service_uuids=service_uuids,
                 platform_data=(p, a, r),
+                tx_power=tx_power,
             )
 
             device = BLEDevice(
