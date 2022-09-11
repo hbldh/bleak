@@ -112,7 +112,7 @@ autodoc_mock_imports = [
     "async_timeout",
     "bleak_winrt",
     "CoreBluetooth",
-    "dbus_next",
+    "dbus_fast",
     "Foundation",
     "jnius",
     "libdispatch",

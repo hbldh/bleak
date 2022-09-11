@@ -22,8 +22,8 @@ from typing import (
     cast,
 )
 
-from dbus_next import BusType, Message, MessageType, Variant
-from dbus_next.aio.message_bus import MessageBus
+from dbus_fast import BusType, Message, MessageType, Variant
+from dbus_fast.aio.message_bus import MessageBus
 
 from ...exc import BleakError
 from ..service import BleakGATTServiceCollection
@@ -597,6 +597,21 @@ class BlueZManager:
         """
         return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
 
+    def is_connected(self, device_path: str) -> bool:
+        """
+        Gets the value of the "Connected" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value.
+        """
+        try:
+            return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
+        except KeyError:
+            return False
+
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
     ) -> None:
@@ -633,7 +648,7 @@ class BlueZManager:
 
     def _parse_msg(self, message: Message):
         """
-        Handles callbacks from dbus_next.
+        Handles callbacks from dbus_fast.
         """
 
         if message.message_type != MessageType.SIGNAL:
@@ -691,7 +706,10 @@ class BlueZManager:
             obj_path, interfaces = message.body
 
             for interface in interfaces:
-                del self._properties[obj_path][interface]
+                try:
+                    del self._properties[obj_path][interface]
+                except KeyError:
+                    pass
 
                 if interface == defs.DEVICE_INTERFACE:
                     self._services_cache.pop(obj_path, None)

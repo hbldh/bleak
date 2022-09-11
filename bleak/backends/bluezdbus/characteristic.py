@@ -68,7 +68,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.obj.get("UUID")
 
     @property
-    def properties(self) -> List:
+    def properties(self) -> List[str]:
         """Properties of this characteristic
 
         Returns the characteristics `Flags` present in the DBus API.
@@ -76,7 +76,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.obj["Flags"]
 
     @property
-    def descriptors(self) -> List:
+    def descriptors(self) -> List[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 

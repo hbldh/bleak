@@ -17,9 +17,12 @@ jobs:
         steps:
             -   uses: actions/checkout@v2
             -   name: Set up Python ${{ matrix.python-version }}
-                uses: actions/setup-python@v2
+                uses: actions/setup-python@v4
+                id: py
                 with:
                     python-version: ${{ matrix.python-version }}
+            -   name: Create virtual environment
+                run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
             -   name: Install dependencies
                 run: pipx run poetry install --only main,test
             -   name: Test with pytest

@@ -3,7 +3,7 @@ import sys
 from typing import Callable, Coroutine, Dict, List, Optional
 from warnings import warn
 
-from dbus_next import Variant
+from dbus_fast import Variant
 
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal, TypedDict

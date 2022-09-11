@@ -12,10 +12,10 @@ from uuid import UUID
 
 import async_timeout
 
-from dbus_next.aio import MessageBus
-from dbus_next.constants import BusType, ErrorType
-from dbus_next.message import Message
-from dbus_next.signature import Variant
+from dbus_fast.aio import MessageBus
+from dbus_fast.constants import BusType, ErrorType
+from dbus_fast.message import Message
+from dbus_fast.signature import Variant
 
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
@@ -155,16 +155,25 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                async with async_timeout.timeout(timeout):
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Connect",
+                #
+                # The BlueZ backend does not disconnect devices when the
+                # application closes or crashes. This can cause problems
+                # when trying to reconnect to the same device. To work
+                # around this, we check if the device is already connected.
+                #
+                # For additional details see https://github.com/bluez/bluez/issues/89
+                #
+                if not manager.is_connected(self._device_path):
+                    async with async_timeout.timeout(timeout):
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Connect",
+                            )
                         )
-                    )
-                assert_reply(reply)
+                    assert_reply(reply)
 
                 self._is_connected = True
 
@@ -263,9 +272,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
-
-            # work around https://github.com/altdesktop/python-dbus-next/issues/112
-            self._bus._sock.close()
         except Exception as e:
             logger.error(
                 f"Attempt to disconnect system bus failed ({self._device_path}): {e}"

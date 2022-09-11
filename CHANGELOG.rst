@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* ``AdvertisementData`` class now has an attribute ``tx_power``. Merged #987.
+
 Changed
 -------
 * ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend.
@@ -19,13 +23,16 @@ Changed
 * The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
   To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
   argument to avoid services being resolved again.
-* ``AdvertisementData`` class now has an attribute ``tx_power``. scanner.py in backends were changed to set tx_power
-  if available.
+* The BlueZ D-Bus backend now uses ``dbus-fast`` instead of ``dbus-next`` which significantly improves performance.
+* The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
 
 Fixed
 -----
 * Fixed wrong error message for BlueZ "Operation failed with ATT error". Merged #975.
 * Fixed possible ``AttributeError`` when enabling notifications for battery service in BlueZ backend. Merged #976.
+* Fixed use of wrong enum in unpair function of WinRT backend.
+* Fixed inconsistent return types for ``properties`` and ``descriptors`` properties of ``BleakGATTCharacteristic``.
+* Handle device being removed before GetManagedObjects returns in BlueZ backend. Fixes #996.
 
 Removed
 -------

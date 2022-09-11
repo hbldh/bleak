@@ -56,12 +56,12 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
         return self.__uuid
 
     @property
-    def properties(self) -> List:
+    def properties(self) -> List[str]:
         """Properties of this characteristic"""
         return self.__properties
 
     @property
-    def descriptors(self) -> List:
+    def descriptors(self) -> List[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 
