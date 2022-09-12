@@ -53,7 +53,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
-        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
+        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
         # Backend specific, D-Bus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -93,7 +93,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError: If the connection timed out
         """
-        logger.debug(f"Connecting to device @ {self.address} with {self._adapter}")
+        logger.debug("Connecting to device @ %s", self.address)
 
         if self.is_connected:
             raise BleakError("Client is already connected")
@@ -364,9 +364,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
         if reply.body[0].value:
-            logger.debug(
-                f"BLE device @ {self.address} already paired with {self._adapter}"
-            )
+            logger.debug("BLE device @ %s is already paired", self.address)
             return True
 
         # Set device as trusted.
@@ -382,9 +380,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
 
-        logger.debug(
-            "Pairing to BLE device @ {0} with {1}".format(self.address, self._adapter)
-        )
+        logger.debug("Pairing to BLE device @ %s", self.address)
 
         reply = await self._bus.call(
             Message(

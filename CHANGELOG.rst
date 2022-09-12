@@ -27,6 +27,7 @@ Changed
 * The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
 * Updated logging to lazy version and replaced format by f-string for BleakClientWinRT
 * Added deprecation warning to ``discover()`` method.
+* BlueZ adapter is chosen dynamically if not provided, instead of using hardcoded "hci0". Fixes #513.
 
 Fixed
 -----

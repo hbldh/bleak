@@ -150,6 +150,9 @@ class BlueZManager:
         # dict of object path: dict of interface name: dict of property name: property value
         self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
+        # set of available adapters for quick lookup
+        self._adapters: Set[str] = set()
+
         # The BlueZ APIs only maps children to parents, so we need to keep maps
         # to quickly find the children of a parent D-Bus object.
 
@@ -238,6 +241,9 @@ class BlueZManager:
                     props = unpack_variants(interfaces)
                     self._properties[path] = props
 
+                    if defs.ADAPTER_INTERFACE in props:
+                        self._adapters.add(path)
+
                     service_props = cast(
                         GattService1, props.get(defs.GATT_SERVICE_INTERFACE)
                     )
@@ -275,6 +281,28 @@ class BlueZManager:
 
             # Everything is setup, so save the bus
             self._bus = bus
+
+    def get_default_adapter(self) -> str:
+        """
+        Gets the D-Bus object path of of the first powered Bluetooth adapter.
+
+        Returns:
+            Name of the first found powered adapter on the system, i.e. "/org/bluez/hciX".
+
+        Raises:
+            BleakError:
+                if there are no Bluetooth adapters or if none of the adapters are powered
+        """
+        if not any(self._adapters):
+            raise BleakError("No Bluetooth adapters found.")
+
+        for adapter_path in self._adapters:
+            if cast(
+                defs.Adapter1, self._properties[adapter_path][defs.ADAPTER_INTERFACE]
+            )["Powered"]:
+                return adapter_path
+
+        raise BleakError("No powered Bluetooth adapters found.")
 
     async def active_scan(
         self,
@@ -693,12 +721,15 @@ class BlueZManager:
                         desc_props["Characteristic"], set()
                     ).add(obj_path)
 
+                elif interface == defs.ADAPTER_INTERFACE:
+                    self._adapters.add(obj_path)
+
                 # If this is a device and it has advertising data properties,
                 # then it should mean that this device just started advertising.
                 # Previously, we just relied on RSSI updates to determine if
                 # a device was actually advertising, but we were missing "slow"
                 # devices that only advertise once and then go to sleep for a while.
-                if interface == defs.DEVICE_INTERFACE:
+                elif interface == defs.DEVICE_INTERFACE:
                     self._run_advertisement_callbacks(
                         obj_path, cast(Device1, unpacked_props), unpacked_props.keys()
                     )
@@ -711,7 +742,12 @@ class BlueZManager:
                 except KeyError:
                     pass
 
-                if interface == defs.DEVICE_INTERFACE:
+                if interface == defs.ADAPTER_INTERFACE:
+                    try:
+                        self._adapters.remove(obj_path)
+                    except KeyError:
+                        pass
+                elif interface == defs.DEVICE_INTERFACE:
                     self._services_cache.pop(obj_path, None)
                     try:
                         del self._service_map[obj_path]

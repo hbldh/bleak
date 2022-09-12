@@ -87,8 +87,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._scanning_mode = scanning_mode
 
         # kwarg "device" is for backwards compatibility
-        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
-        self._adapter_path: str = f"/org/bluez/{self._adapter}"
+        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
         # map of d-bus object path to d-bus object properties
         self._devices: Dict[str, Device1] = {}
@@ -133,18 +132,23 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     async def start(self):
         manager = await get_global_bluez_manager()
 
+        if self._adapter:
+            adapter_path = f"/org/bluez/{self._adapter}"
+        else:
+            adapter_path = manager.get_default_adapter()
+
         self._devices.clear()
 
         if self._scanning_mode == "passive":
             self._stop = await manager.passive_scan(
-                self._adapter_path,
+                adapter_path,
                 self._or_patterns,
                 self._handle_advertising_data,
                 self._handle_device_removed,
             )
         else:
             self._stop = await manager.active_scan(
-                self._adapter_path,
+                adapter_path,
                 self._filters,
                 self._handle_advertising_data,
                 self._handle_device_removed,

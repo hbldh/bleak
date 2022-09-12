@@ -103,7 +103,7 @@ def cli():
     parser = argparse.ArgumentParser(
         description="Perform Bluetooth Low Energy device scan"
     )
-    parser.add_argument("-i", dest="adapter", default="hci0", help="HCI device")
+    parser.add_argument("-i", dest="adapter", default=None, help="HCI device")
     parser.add_argument(
         "-t", dest="timeout", type=int, default=5, help="Duration to scan for"
     )
