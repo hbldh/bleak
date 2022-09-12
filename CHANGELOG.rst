@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * ``AdvertisementData`` class now has an attribute ``tx_power``. Merged #987.
+* Added static ``remove_device`` function to ``BleakClient`` interface and implemented it for WinRT
 
 Changed
 -------

@@ -16,6 +16,8 @@ from typing import Callable, Any, List, Optional, Sequence, Union
 
 import async_timeout
 
+from bleak.utils import address_to_int
+
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal, TypedDict
 else:
@@ -194,6 +196,43 @@ class BleakClientWinRT(BaseBleakClient):
         return "BleakClientWinRT ({0})".format(self.address)
 
     # Connectivity methods
+
+    @staticmethod
+    async def remove_device(
+        address_or_ble_device: Union[BLEDevice, str], **kwargs
+    ) -> bool:
+        """Remove the remote device object and its pairing information
+        Args:
+            address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to remove or the `BLEDevice` object representing it.
+
+        Returns:
+            Boolean representing if device was present and removed.
+        """
+        address: str
+        if isinstance(address_or_ble_device, BLEDevice):
+            address = address_or_ble_device.address
+        else:
+            address = address_or_ble_device
+
+        result: DeviceUnpairingResultStatus = (
+            DeviceUnpairingResultStatus.ALREADY_UNPAIRED
+        )
+        device = await BluetoothLEDevice.from_bluetooth_address_async(
+            address_to_int(address)
+        )
+        if device.device_information.pairing.is_paired:
+            result = (await device.device_information.pairing.unpair_async()).status
+
+        device.close()
+
+        if result is DeviceUnpairingResultStatus.UNPAIRED:
+            return True
+        elif result is DeviceUnpairingResultStatus.ALREADY_UNPAIRED:
+            return False
+        else:
+            raise BleakError(
+                f"Could not remove device: {result}: {DeviceUnpairingResultStatus(result)}"
+            )
 
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.

@@ -66,6 +66,20 @@ class BaseBleakClient(abc.ABC):
 
     # Connectivity methods
 
+    @staticmethod
+    @abc.abstractmethod
+    async def remove_device(
+        address_or_ble_device: Union[BLEDevice, str], **kwargs
+    ) -> bool:
+        """Remove the remote device object and its pairing information
+        Args:
+            address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to remove or the `BLEDevice` object representing it.
+
+        Returns:
+            Boolean representing if device was present and removed.
+        """
+        raise NotImplementedError()
+
     def set_disconnected_callback(
         self, callback: Optional[Callable[["BaseBleakClient"], None]], **kwargs
     ) -> None:
