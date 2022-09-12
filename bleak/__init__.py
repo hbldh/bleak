@@ -5,15 +5,15 @@
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
-import os
-import sys
-import logging
-import platform
 import asyncio
+import logging
+import os
+import platform
+import sys
 from warnings import warn
 
-from bleak.__version__ import __version__  # noqa: F401
-from bleak.exc import BleakError
+from .__version__ import __version__  # noqa: F401
+from .exc import BleakError
 
 _on_rtd = os.environ.get("READTHEDOCS") == "True"
 
@@ -30,18 +30,18 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 if _on_rtd:
     pass
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
-    from bleak.backends.p4android.scanner import (  # noqa: F401
-        BleakScannerP4Android as BleakScanner,
-    )
-    from bleak.backends.p4android.client import (  # noqa: F401
+    from .backends.p4android.client import (  # noqa: F401
         BleakClientP4Android as BleakClient,
     )
-elif platform.system() == "Linux":
-    from bleak.backends.bluezdbus.scanner import (  # noqa: F401
-        BleakScannerBlueZDBus as BleakScanner,
+    from .backends.p4android.scanner import (  # noqa: F401
+        BleakScannerP4Android as BleakScanner,
     )
-    from bleak.backends.bluezdbus.client import (  # noqa: F401
+elif platform.system() == "Linux":
+    from .backends.bluezdbus.client import (  # noqa: F401
         BleakClientBlueZDBus as BleakClient,
+    )
+    from .backends.bluezdbus.scanner import (  # noqa: F401
+        BleakScannerBlueZDBus as BleakScanner,
     )
 elif platform.system() == "Darwin":
     try:
@@ -49,11 +49,11 @@ elif platform.system() == "Darwin":
     except Exception as ex:
         raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
-    from bleak.backends.corebluetooth.scanner import (  # noqa: F401
-        BleakScannerCoreBluetooth as BleakScanner,
-    )
-    from bleak.backends.corebluetooth.client import (  # noqa: F401
+    from .backends.corebluetooth.client import (  # noqa: F401
         BleakClientCoreBluetooth as BleakClient,
+    )
+    from .backends.corebluetooth.scanner import (  # noqa: F401
+        BleakScannerCoreBluetooth as BleakScanner,
     )
 
 elif platform.system() == "Windows":
@@ -71,12 +71,8 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    from bleak.backends.winrt.scanner import (  # noqa: F401
-        BleakScannerWinRT as BleakScanner,
-    )
-    from bleak.backends.winrt.client import (  # noqa: F401
-        BleakClientWinRT as BleakClient,
-    )
+    from .backends.winrt.client import BleakClientWinRT as BleakClient  # noqa: F401
+    from .backends.winrt.scanner import BleakScannerWinRT as BleakScanner  # noqa: F401
 
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")

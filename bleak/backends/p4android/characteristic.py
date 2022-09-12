@@ -1,11 +1,9 @@
+from typing import List, Union
 from uuid import UUID
-from typing import Union, List
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.exc import BleakError
-
-
+from ...exc import BleakError
+from ..characteristic import BleakGATTCharacteristic
+from ..descriptor import BleakGATTDescriptor
 from . import defs
 
 

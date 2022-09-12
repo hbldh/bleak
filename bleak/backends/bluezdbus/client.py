@@ -2,33 +2,29 @@
 """
 BLE Client for BlueZ on Linux
 """
+import asyncio
 import inspect
 import logging
-import asyncio
 import os
 import warnings
 from typing import Callable, Optional, Union
 from uuid import UUID
 
 import async_timeout
-
 from dbus_fast.aio import MessageBus
 from dbus_fast.constants import BusType, ErrorType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
-from bleak.backends.bluezdbus import defs
-from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
-from bleak.backends.bluezdbus.manager import get_global_bluez_manager
-from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
-from bleak.backends.bluezdbus.utils import (
-    assert_reply,
-    extract_service_handle_from_path,
-)
-from bleak.backends.client import BaseBleakClient
-from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import BleakDBusError, BleakError
+from ...exc import BleakDBusError, BleakError
+from ..client import BaseBleakClient
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from . import defs
+from .characteristic import BleakGATTCharacteristicBlueZDBus
+from .manager import get_global_bluez_manager
+from .scanner import BleakScannerBlueZDBus
+from .utils import assert_reply, extract_service_handle_from_path
 from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)

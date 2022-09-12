@@ -9,29 +9,26 @@ import logging
 import uuid
 from typing import Callable, Optional, Union
 
-from Foundation import NSArray, NSData
 from CoreBluetooth import (
-    CBCharacteristicWriteWithResponse,
     CBCharacteristicWriteWithoutResponse,
+    CBCharacteristicWriteWithResponse,
     CBPeripheral,
     CBPeripheralStateConnected,
 )
+from Foundation import NSArray, NSData
 
-from bleak.backends.client import BaseBleakClient
-from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
-from bleak.backends.corebluetooth.characteristic import (
-    BleakGATTCharacteristicCoreBluetooth,
-)
-from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
-from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
-from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
-from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
-from bleak.backends.corebluetooth.utils import cb_uuid_to_str
-from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.characteristic import BleakGATTCharacteristic
-
-from bleak.exc import BleakError
+from ...exc import BleakError
+from ..characteristic import BleakGATTCharacteristic
+from ..client import BaseBleakClient
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from .CentralManagerDelegate import CentralManagerDelegate
+from .characteristic import BleakGATTCharacteristicCoreBluetooth
+from .descriptor import BleakGATTDescriptorCoreBluetooth
+from .PeripheralDelegate import PeripheralDelegate
+from .scanner import BleakScannerCoreBluetooth
+from .service import BleakGATTServiceCoreBluetooth
+from .utils import cb_uuid_to_str
 
 logger = logging.getLogger(__name__)
 

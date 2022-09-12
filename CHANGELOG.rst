@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Use relative imports internally.
+
+
 `0.17.0`_ (2022-09-12)
 ======================
 
