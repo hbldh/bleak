@@ -25,6 +25,7 @@ Changed
   argument to avoid services being resolved again.
 * The BlueZ D-Bus backend now uses ``dbus-fast`` instead of ``dbus-next`` which significantly improves performance.
 * The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
+* Updated logging to lazy version and replaced format by f-string for BleakClientWinRT
 
 Fixed
 -----
