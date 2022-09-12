@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
@@ -9,7 +10,11 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
 )
-from typing_extensions import Literal
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from ..device import BLEDevice
 from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
@@ -158,6 +163,9 @@ class BleakScannerWinRT(BaseBleakScanner):
                 data = bytes(section.data)
                 service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 
+        # get transmit power level data
+        tx_power = raw_data.adv.transmit_power_level_in_d_bm
+
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
             local_name=device.name,
@@ -165,6 +173,7 @@ class BleakScannerWinRT(BaseBleakScanner):
             service_data=service_data,
             service_uuids=device.metadata["uuids"],
             platform_data=(sender, raw_data),
+            tx_power=tx_power,
         )
 
         self._callback(device, advertisement_data)

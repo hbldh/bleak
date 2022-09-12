@@ -2,11 +2,16 @@
 
 import asyncio
 import logging
+import sys
 from typing import List, Optional
 import warnings
 
 import async_timeout
-from typing_extensions import Literal
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from bleak.backends.scanner import (
     AdvertisementDataCallback,
@@ -271,6 +276,11 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
             entry.getKey().toString(): bytes(entry.getValue())
             for entry in record.getServiceData().entrySet()
         }
+        tx_power = result.getTxPower()
+
+        # change "not present" value to None to match other backends
+        if tx_power == defs.ScanResult.TX_POWER_NOT_PRESENT:
+            tx_power = None
 
         advertisement = AdvertisementData(
             local_name=record.getDeviceName(),
@@ -278,6 +288,7 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
             service_data=service_data,
             service_uuids=service_uuids,
             platform_data=(result,),
+            tx_power=tx_power,
         )
         device = BLEDevice(
             device.getAddress(),

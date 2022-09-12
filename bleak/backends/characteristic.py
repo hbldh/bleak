@@ -90,7 +90,7 @@ class BleakGATTCharacteristic(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def descriptors(self) -> List:
+    def descriptors(self) -> List[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         raise NotImplementedError()
 

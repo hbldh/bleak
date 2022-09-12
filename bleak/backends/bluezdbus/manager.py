@@ -22,8 +22,8 @@ from typing import (
     cast,
 )
 
-from dbus_next import BusType, Message, MessageType, Variant
-from dbus_next.aio.message_bus import MessageBus
+from dbus_fast import BusType, Message, MessageType, Variant
+from dbus_fast.aio.message_bus import MessageBus
 
 from ...exc import BleakError
 from ..service import BleakGATTServiceCollection
@@ -150,6 +150,9 @@ class BlueZManager:
         # dict of object path: dict of interface name: dict of property name: property value
         self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
+        # set of available adapters for quick lookup
+        self._adapters: Set[str] = set()
+
         # The BlueZ APIs only maps children to parents, so we need to keep maps
         # to quickly find the children of a parent D-Bus object.
 
@@ -164,6 +167,7 @@ class BlueZManager:
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
         self._condition_callbacks: Set[Callable] = set()
+        self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     async def async_init(self):
         """
@@ -175,6 +179,8 @@ class BlueZManager:
         async with self._bus_lock:
             if self._bus and self._bus.connected:
                 return
+
+            self._services_cache = {}
 
             # We need to create a new MessageBus each time as
             # dbus-next will destory the underlying file descriptors
@@ -235,6 +241,9 @@ class BlueZManager:
                     props = unpack_variants(interfaces)
                     self._properties[path] = props
 
+                    if defs.ADAPTER_INTERFACE in props:
+                        self._adapters.add(path)
+
                     service_props = cast(
                         GattService1, props.get(defs.GATT_SERVICE_INTERFACE)
                     )
@@ -272,6 +281,28 @@ class BlueZManager:
 
             # Everything is setup, so save the bus
             self._bus = bus
+
+    def get_default_adapter(self) -> str:
+        """
+        Gets the D-Bus object path of of the first powered Bluetooth adapter.
+
+        Returns:
+            Name of the first found powered adapter on the system, i.e. "/org/bluez/hciX".
+
+        Raises:
+            BleakError:
+                if there are no Bluetooth adapters or if none of the adapters are powered
+        """
+        if not any(self._adapters):
+            raise BleakError("No Bluetooth adapters found.")
+
+        for adapter_path in self._adapters:
+            if cast(
+                defs.Adapter1, self._properties[adapter_path][defs.ADAPTER_INTERFACE]
+            )["Powered"]:
+                return adapter_path
+
+        raise BleakError("No powered Bluetooth adapters found.")
 
     async def active_scan(
         self,
@@ -508,16 +539,29 @@ class BlueZManager:
         """
         self._device_watchers.remove(watcher)
 
-    async def get_services(self, device_path: str) -> BleakGATTServiceCollection:
+    async def get_services(
+        self, device_path: str, use_cached: bool
+    ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
 
         Args:
-            device_path: The D-Bus object path of the Bluetooth device.
+            device_path:
+                The D-Bus object path of the Bluetooth device.
+            use_cached:
+                When ``True`` if there is a cached :class:`BleakGATTServiceCollection`,
+                the method will not wait for ``"ServicesResolved"`` to become true
+                and instead return the cached service collection immediately.
 
         Returns:
             A new :class:`BleakGATTServiceCollection`.
         """
+        if use_cached:
+            services = self._services_cache.get(device_path)
+            if services is not None:
+                logger.debug("Using cached services for %s", device_path)
+                return services
+
         await self._wait_condition(device_path, "ServicesResolved", True)
 
         services = BleakGATTServiceCollection()
@@ -565,6 +609,8 @@ class BlueZManager:
 
                     services.add_descriptor(desc)
 
+        self._services_cache[device_path] = services
+
         return services
 
     def get_device_name(self, device_path: str) -> str:
@@ -578,6 +624,21 @@ class BlueZManager:
             The current property value.
         """
         return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
+
+    def is_connected(self, device_path: str) -> bool:
+        """
+        Gets the value of the "Connected" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value.
+        """
+        try:
+            return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
+        except KeyError:
+            return False
 
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
@@ -615,7 +676,7 @@ class BlueZManager:
 
     def _parse_msg(self, message: Message):
         """
-        Handles callbacks from dbus_next.
+        Handles callbacks from dbus_fast.
         """
 
         if message.message_type != MessageType.SIGNAL:
@@ -660,12 +721,15 @@ class BlueZManager:
                         desc_props["Characteristic"], set()
                     ).add(obj_path)
 
+                elif interface == defs.ADAPTER_INTERFACE:
+                    self._adapters.add(obj_path)
+
                 # If this is a device and it has advertising data properties,
                 # then it should mean that this device just started advertising.
                 # Previously, we just relied on RSSI updates to determine if
                 # a device was actually advertising, but we were missing "slow"
                 # devices that only advertise once and then go to sleep for a while.
-                if interface == defs.DEVICE_INTERFACE:
+                elif interface == defs.DEVICE_INTERFACE:
                     self._run_advertisement_callbacks(
                         obj_path, cast(Device1, unpacked_props), unpacked_props.keys()
                     )
@@ -673,9 +737,18 @@ class BlueZManager:
             obj_path, interfaces = message.body
 
             for interface in interfaces:
-                del self._properties[obj_path][interface]
+                try:
+                    del self._properties[obj_path][interface]
+                except KeyError:
+                    pass
 
-                if interface == defs.DEVICE_INTERFACE:
+                if interface == defs.ADAPTER_INTERFACE:
+                    try:
+                        self._adapters.remove(obj_path)
+                    except KeyError:
+                        pass
+                elif interface == defs.DEVICE_INTERFACE:
+                    self._services_cache.pop(obj_path, None)
                     try:
                         del self._service_map[obj_path]
                     except KeyError:

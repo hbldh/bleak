@@ -12,6 +12,7 @@ from CoreBluetooth import CBCharacteristic
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
 class CBCharacteristicProperties(Enum):
@@ -93,13 +94,11 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         return self.__props
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptorCoreBluetooth]:
+    def descriptors(self) -> List[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 
-    def get_descriptor(
-        self, specifier
-    ) -> Union[BleakGATTDescriptorCoreBluetooth, None]:
+    def get_descriptor(self, specifier) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):
@@ -111,7 +110,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         except StopIteration:
             return None
 
-    def add_descriptor(self, descriptor: BleakGATTDescriptorCoreBluetooth):
+    def add_descriptor(self, descriptor: BleakGATTDescriptor):
         """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
 
         Should not be used by end user, but rather by `bleak` itself.

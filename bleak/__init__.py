@@ -10,6 +10,7 @@ import sys
 import logging
 import platform
 import asyncio
+from warnings import warn
 
 from bleak.__version__ import __version__  # noqa: F401
 from bleak.exc import BleakError
@@ -29,31 +30,31 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 if _on_rtd:
     pass
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
-    from bleak.backends.p4android.scanner import (
+    from bleak.backends.p4android.scanner import (  # noqa: F401
         BleakScannerP4Android as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.p4android.client import (
+    )
+    from bleak.backends.p4android.client import (  # noqa: F401
         BleakClientP4Android as BleakClient,
-    )  # noqa: F401
+    )
 elif platform.system() == "Linux":
-    from bleak.backends.bluezdbus.scanner import (
+    from bleak.backends.bluezdbus.scanner import (  # noqa: F401
         BleakScannerBlueZDBus as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.bluezdbus.client import (
+    )
+    from bleak.backends.bluezdbus.client import (  # noqa: F401
         BleakClientBlueZDBus as BleakClient,
-    )  # noqa: F401
+    )
 elif platform.system() == "Darwin":
     try:
         from CoreBluetooth import CBPeripheral  # noqa: F401
     except Exception as ex:
         raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
-    from bleak.backends.corebluetooth.scanner import (
+    from bleak.backends.corebluetooth.scanner import (  # noqa: F401
         BleakScannerCoreBluetooth as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.corebluetooth.client import (
+    )
+    from bleak.backends.corebluetooth.client import (  # noqa: F401
         BleakClientCoreBluetooth as BleakClient,
-    )  # noqa: F401
+    )
 
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
@@ -70,19 +71,30 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    from bleak.backends.winrt.scanner import (
+    from bleak.backends.winrt.scanner import (  # noqa: F401
         BleakScannerWinRT as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.winrt.client import (
+    )
+    from bleak.backends.winrt.client import (  # noqa: F401
         BleakClientWinRT as BleakClient,
-    )  # noqa: F401
+    )
 
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
 
+
 # for backward compatibility
-if not _on_rtd:
-    discover = BleakScanner.discover
+def discover():
+    """
+    .. deprecated:: 0.17.0
+        This method will be removed in a future version of Bleak.
+        Use :meth:`BleakScanner.discover` instead.
+    """
+    warn(
+        "The discover function will removed in a future version, use BleakScanner.discover instead.",
+        FutureWarning,
+        stacklevel=2,
+    )
+    return BleakScanner.discover()
 
 
 def cli():
@@ -91,7 +103,7 @@ def cli():
     parser = argparse.ArgumentParser(
         description="Perform Bluetooth Low Energy device scan"
     )
-    parser.add_argument("-i", dest="adapter", default="hci0", help="HCI device")
+    parser.add_argument("-i", dest="adapter", default=None, help="HCI device")
     parser.add_argument(
         "-t", dest="timeout", type=int, default=5, help="Duration to scan for"
     )

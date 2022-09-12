@@ -12,10 +12,10 @@ from uuid import UUID
 
 import async_timeout
 
-from dbus_next.aio import MessageBus
-from dbus_next.constants import BusType, ErrorType
-from dbus_next.message import Message
-from dbus_next.signature import Variant
+from dbus_fast.aio import MessageBus
+from dbus_fast.constants import BusType, ErrorType
+from dbus_fast.message import Message
+from dbus_fast.signature import Variant
 
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
@@ -53,7 +53,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
-        self._adapter = kwargs.get("adapter", kwargs.get("device", "hci0"))
+        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
         # Backend specific, D-Bus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -79,7 +79,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self, **kwargs) -> bool:
+    async def connect(self, dangerous_use_bleak_cache: bool = False, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
         Keyword Args:
@@ -93,7 +93,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError: If the connection timed out
         """
-        logger.debug(f"Connecting to device @ {self.address} with {self._adapter}")
+        logger.debug("Connecting to device @ %s", self.address)
 
         if self.is_connected:
             raise BleakError("Client is already connected")
@@ -155,24 +155,43 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         try:
             try:
-                async with async_timeout.timeout(timeout):
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            interface=defs.DEVICE_INTERFACE,
-                            path=self._device_path,
-                            member="Connect",
+                #
+                # The BlueZ backend does not disconnect devices when the
+                # application closes or crashes. This can cause problems
+                # when trying to reconnect to the same device. To work
+                # around this, we check if the device is already connected.
+                #
+                # For additional details see https://github.com/bluez/bluez/issues/89
+                #
+                if not manager.is_connected(self._device_path):
+                    async with async_timeout.timeout(timeout):
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                interface=defs.DEVICE_INTERFACE,
+                                path=self._device_path,
+                                member="Connect",
+                            )
                         )
-                    )
-                assert_reply(reply)
+                    assert_reply(reply)
 
                 self._is_connected = True
 
                 # Create a task that runs until the device is disconnected.
                 self._disconnect_monitor_event = asyncio.Event()
-                asyncio.ensure_future(self._disconnect_monitor())
+                asyncio.ensure_future(
+                    self._disconnect_monitor(
+                        self._bus, self._device_path, self._disconnect_monitor_event
+                    )
+                )
 
-                await self.get_services()
+                #
+                # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
+                # is True.
+                #
+                await self.get_services(
+                    dangerous_use_bleak_cache=dangerous_use_bleak_cache
+                )
 
                 return True
             except BaseException:
@@ -211,7 +230,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._cleanup_all()
             raise
 
-    async def _disconnect_monitor(self) -> None:
+    @staticmethod
+    async def _disconnect_monitor(
+        bus: MessageBus, device_path: str, disconnect_monitor_event: asyncio.Event
+    ) -> None:
         # This task runs until the device is disconnected. If the task is
         # cancelled, it probably means that the event loop crashed so we
         # try to disconnected the device. Otherwise BlueZ will keep the device
@@ -222,16 +244,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # task will still be running and asyncio complains if a loop with running
         # tasks is stopped.
         try:
-            await self._disconnect_monitor_event.wait()
+            await disconnect_monitor_event.wait()
         except asyncio.CancelledError:
             try:
                 # by using send() instead of call(), we ensure that the message
                 # gets sent, but we don't wait for a reply, which could take
                 # over one second while the device disconnects.
-                await self._bus.send(
+                await bus.send(
                     Message(
                         destination=defs.BLUEZ_SERVICE,
-                        path=self._device_path,
+                        path=device_path,
                         interface=defs.DEVICE_INTERFACE,
                         member="Disconnect",
                     )
@@ -257,9 +279,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Try to disconnect the System Bus.
         try:
             self._bus.disconnect()
-
-            # work around https://github.com/altdesktop/python-dbus-next/issues/112
-            self._bus._sock.close()
         except Exception as e:
             logger.error(
                 f"Attempt to disconnect system bus failed ({self._device_path}): {e}"
@@ -345,9 +364,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
         if reply.body[0].value:
-            logger.debug(
-                f"BLE device @ {self.address} already paired with {self._adapter}"
-            )
+            logger.debug("BLE device @ %s is already paired", self.address)
             return True
 
         # Set device as trusted.
@@ -363,9 +380,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
 
-        logger.debug(
-            "Pairing to BLE device @ {0} with {1}".format(self.address, self._adapter)
-        )
+        logger.debug("Pairing to BLE device @ %s", self.address)
 
         reply = await self._bus.call(
             Message(
@@ -471,8 +486,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
+    async def get_services(
+        self, dangerous_use_bleak_cache: bool = False, **kwargs
+    ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
+
+        Args:
+            dangerous_use_bleak_cache (bool): Use cached services if available.
 
         Returns:
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
@@ -486,7 +506,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         manager = await get_global_bluez_manager()
 
-        self.services = await manager.get_services(self._device_path)
+        self.services = await manager.get_services(
+            self._device_path, dangerous_use_bleak_cache
+        )
         self._services_resolved = True
 
         return self.services
@@ -802,7 +824,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # provide this functionality...
             # See https://kernel.googlesource.com/pub/scm/bluetooth/bluez/+/refs/tags/5.48/doc/battery-api.txt
             if str(char_specifier) == "00002a19-0000-1000-8000-00805f9b34fb" and (
-                self._hides_battery_characteristic
+                BlueZFeatures.hides_battery_characteristic
             ):
                 raise BleakError(
                     "Notifications on Battery Level Char ({0}) is not "

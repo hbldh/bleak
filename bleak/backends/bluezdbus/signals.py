@@ -3,10 +3,10 @@
 import re
 from typing import Any, Coroutine, Dict, Optional
 
-from dbus_next.aio.message_bus import MessageBus
-from dbus_next.errors import InvalidObjectPathError
-from dbus_next.message import Message
-from dbus_next.validators import (
+from dbus_fast.aio.message_bus import MessageBus
+from dbus_fast.errors import InvalidObjectPathError
+from dbus_fast.message import Message
+from dbus_fast.validators import (
     assert_interface_name_valid,
     assert_member_name_valid,
     assert_object_path_valid,
