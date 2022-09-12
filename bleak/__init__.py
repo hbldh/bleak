@@ -29,31 +29,31 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 if _on_rtd:
     pass
 elif os.environ.get("P4A_BOOTSTRAP") is not None:
-    from bleak.backends.p4android.scanner import (
+    from bleak.backends.p4android.scanner import (  # noqa: F401
         BleakScannerP4Android as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.p4android.client import (
+    )
+    from bleak.backends.p4android.client import (  # noqa: F401
         BleakClientP4Android as BleakClient,
-    )  # noqa: F401
+    )
 elif platform.system() == "Linux":
-    from bleak.backends.bluezdbus.scanner import (
+    from bleak.backends.bluezdbus.scanner import (  # noqa: F401
         BleakScannerBlueZDBus as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.bluezdbus.client import (
+    )
+    from bleak.backends.bluezdbus.client import (  # noqa: F401
         BleakClientBlueZDBus as BleakClient,
-    )  # noqa: F401
+    )
 elif platform.system() == "Darwin":
     try:
         from CoreBluetooth import CBPeripheral  # noqa: F401
     except Exception as ex:
         raise BleakError("Bleak requires the CoreBluetooth Framework") from ex
 
-    from bleak.backends.corebluetooth.scanner import (
+    from bleak.backends.corebluetooth.scanner import (  # noqa: F401
         BleakScannerCoreBluetooth as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.corebluetooth.client import (
+    )
+    from bleak.backends.corebluetooth.client import (  # noqa: F401
         BleakClientCoreBluetooth as BleakClient,
-    )  # noqa: F401
+    )
 
 elif platform.system() == "Windows":
     # Requires Windows 10 Creators update at least, i.e. Window 10.0.16299
@@ -70,12 +70,12 @@ elif platform.system() == "Windows":
             "Requires at least Windows 10 version 0.16299 (Fall Creators Update)."
         )
 
-    from bleak.backends.winrt.scanner import (
+    from bleak.backends.winrt.scanner import (  # noqa: F401
         BleakScannerWinRT as BleakScanner,
-    )  # noqa: F401
-    from bleak.backends.winrt.client import (
+    )
+    from bleak.backends.winrt.client import (  # noqa: F401
         BleakClientWinRT as BleakClient,
-    )  # noqa: F401
+    )
 
 else:
     raise BleakError(f"Unsupported platform: {platform.system()}")
