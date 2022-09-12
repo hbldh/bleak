@@ -10,34 +10,37 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.17.0`_ (2022-09-12)
+======================
+
 Added
 -----
 * ``AdvertisementData`` class now has an attribute ``tx_power``. Merged #987.
 
 Changed
 -------
-* ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend.
+* ``BleakClient`` methods now raise ``BleakError`` if called when not connected in WinRT backend. Merged #973.
 * Extended disconnect timeout to 120 seconds in WinRT backend. Fixes #807.
 * Changed version check for BlueZ battery workaround to exclude versions >= 5.55. Merged #976.
-* Use Poetry for build system and dependencies.
+* Use Poetry for build system and dependencies. Merged #978.
 * The BlueZ D-Bus backend implements a services cache between connections to significancy improve reconnect performance.
   To use the cache, call ``connect`` and ``get_services`` with the ``dangerous_use_bleak_cache``
-  argument to avoid services being resolved again.
-* The BlueZ D-Bus backend now uses ``dbus-fast`` instead of ``dbus-next`` which significantly improves performance.
+  argument to avoid services being resolved again. Merged #923.
+* The BlueZ D-Bus backend now uses ``dbus-fast`` package instead of ``dbus-next`` which significantly improves performance. Merged #988.
 * The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
-* Updated logging to lazy version and replaced format by f-string for BleakClientWinRT
-* Added deprecation warning to ``discover()`` method.
+* Updated logging to lazy version and replaced format by f-string for BleakClientWinRT. #1000.
+* Added deprecation warning to ``discover()`` method. Merged #1005.
 * BlueZ adapter is chosen dynamically if not provided, instead of using hardcoded "hci0". Fixes #513.
 
 Fixed
 -----
 * Fixed wrong error message for BlueZ "Operation failed with ATT error". Merged #975.
 * Fixed possible ``AttributeError`` when enabling notifications for battery service in BlueZ backend. Merged #976.
-* Fixed use of wrong enum in unpair function of WinRT backend.
-* Fixed inconsistent return types for ``properties`` and ``descriptors`` properties of ``BleakGATTCharacteristic``.
-* Handle device being removed before GetManagedObjects returns in BlueZ backend. Fixes #996.
+* Fixed use of wrong enum in unpair function of WinRT backend. Merged #986.
+* Fixed inconsistent return types for ``properties`` and ``descriptors`` properties of ``BleakGATTCharacteristic``. Merged #989.
+* Handle device being removed before ``GetManagedObjects`` returns in BlueZ backend. Fixes #996.
 * Fixed crash in ``max_pdu_size_changed_handler`` in WinRT backend. Fixes #998.
-* Fixes a race in the BlueZ D-Bus backend where the disconnect monitor would be removed before it could be awaited.
+* Fixes a race in the BlueZ D-Bus backend where the disconnect monitor would be removed before it could be awaited. Merged #999.
 
 Removed
 -------
@@ -780,7 +783,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.16.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.17.0...develop
+.. _0.17.0: https://github.com/hbldh/bleak/compare/v0.16.0...v0.17.0
 .. _0.16.0: https://github.com/hbldh/bleak/compare/v0.15.1...v0.16.0
 .. _0.15.1: https://github.com/hbldh/bleak/compare/v0.15.0...v0.15.1
 .. _0.15.0: https://github.com/hbldh/bleak/compare/v0.14.3...v0.15.0
