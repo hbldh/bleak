@@ -179,7 +179,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 # Create a task that runs until the device is disconnected.
                 self._disconnect_monitor_event = asyncio.Event()
-                asyncio.ensure_future(self._disconnect_monitor())
+                asyncio.ensure_future(
+                    self._disconnect_monitor(self._disconnect_monitor_event)
+                )
 
                 #
                 # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
@@ -226,7 +228,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._cleanup_all()
             raise
 
-    async def _disconnect_monitor(self) -> None:
+    async def _disconnect_monitor(
+        self, disconnect_monitor_event: asyncio.Event
+    ) -> None:
         # This task runs until the device is disconnected. If the task is
         # cancelled, it probably means that the event loop crashed so we
         # try to disconnected the device. Otherwise BlueZ will keep the device
@@ -237,7 +241,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # task will still be running and asyncio complains if a loop with running
         # tasks is stopped.
         try:
-            await self._disconnect_monitor_event.wait()
+            await disconnect_monitor_event.wait()
         except asyncio.CancelledError:
             try:
                 # by using send() instead of call(), we ensure that the message
