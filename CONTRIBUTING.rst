@@ -58,32 +58,32 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `bleak` for local development.
+Ready to contribute? Here's how to set up ``bleak`` for local development.
 
-1. Fork the `bleak` repo on GitHub.
+You will need `Git <https://git-scm.com>`_ and `Poetry <https://python-poetry.org>`_
+and your favorite text editor. And Python of course.
+
+1. Fork the ``bleak`` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/bleak.git
+    $ git clone https://github.com:your_name_here/bleak.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Set up the Python environment::
 
-    $ mkvirtualenv bleak
     $ cd bleak/
-    $ python setup.py develop
+    $ poetry install
 
-4. Create a branch for local development, originating from the `develop` branch::
+4. Create a branch for local development, originating from the ``develop`` branch::
 
     $ git checkout -b name-of-your-bugfix-or-feature develop
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+5. When you're done making changes, check that your changes pass linting and the tests::
 
-    $ flake8 bleak tests
-    $ python setup.py test or py.test
-    $ tox
-
-   To get flake8 and tox, just pip install them into your virtualenv.
+    $ poetry run black .
+    $ poetry run flake8
+    $ poetry run pytest
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -101,7 +101,7 @@ Before you submit a pull request, check that it meets these guidelines:
 1. If the pull request adds functionality, the docs should be updated.
 2. Modify the ``CHANGELOG.rst``, describing your changes as is specified by the
    guidelines in that document.
-3. The pull request should work for Python 3.6+ on the following platforms:
+3. The pull request should work for Python 3.7+ on the following platforms:
     - Windows 10, version 16299 (Fall Creators Update) and greater
     - Linux distributions with BlueZ >= 5.43
     - OS X / macOS >= 10.11

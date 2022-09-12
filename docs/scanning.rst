@@ -15,13 +15,18 @@ To discover Bluetooth devices that can be connected to:
     import asyncio
     from bleak import BleakScanner
 
-    async def run():
+    async def main():
         devices = await BleakScanner.discover()
         for d in devices:
             print(d)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    asyncio.run(main())
+
+.. warning:: Do not name your script ``bleak.py``! It will cause a circular import error.
+
+.. warning:: On macOS you may need to give your terminal permission to access Bluetooth.
+    See `this troubleshooting message <https://bleak.readthedocs.io/en/latest/troubleshooting.html#bleak-crashes-with-sigabrt-on-macos>`_
+
 
 This will scan for 5 seconds and then produce a printed list of detected devices::
 
@@ -42,14 +47,13 @@ It can also be used as an object, either in an asynchronous context manager way:
     import asyncio
     from bleak import BleakScanner
 
-    async def run():
+    async def main():
         async with BleakScanner() as scanner:
             await asyncio.sleep(5.0)
         for d in scanner.discovered_devices:
             print(d)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    asyncio.run(main())
 
 or separately, calling ``start`` and ``stop`` methods on the scanner manually:
 
@@ -61,9 +65,8 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
     def detection_callback(device, advertisement_data):
         print(device.address, "RSSI:", device.rssi, advertisement_data)
 
-    async def run():
-        scanner = BleakScanner()
-        scanner.register_detection_callback(detection_callback)
+    async def main():
+        scanner = BleakScanner(detection_callback)
         await scanner.start()
         await asyncio.sleep(5.0)
         await scanner.stop()
@@ -71,8 +74,7 @@ or separately, calling ``start`` and ``stop`` methods on the scanner manually:
         for d in scanner.discovered_devices:
             print(d)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    asyncio.run(main())
 
 In the manual mode, it is possible to add an own callback that you want to call upon each
 scanner detection, as can be seen above. There are also possibilities of adding scanning filters,
@@ -99,7 +101,7 @@ Scanning filter examples in .NET backend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To be written. In the meantime, check docstrings
-`here <https://github.com/hbldh/bleak/blob/master/bleak/backends/dotnet/scanner.py#L43-L60>`_
+`here <https://github.com/hbldh/bleak/blob/master/bleak/backends/winrt/scanner.py#L43-L60>`_
 and check out issue `#230 <https://github.com/hbldh/bleak/issues/230>`_.
 
 

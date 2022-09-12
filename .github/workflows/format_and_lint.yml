@@ -14,15 +14,11 @@ jobs:
             -   uses: actions/checkout@v2
             -   name: Set up Python
                 uses: actions/setup-python@v2
-            -   name: Upgrade pip. setuptools and wheel
-                run: python -m pip install --upgrade pip setuptools wheel
             -   name: Install development dependencies
-                run: pip install -r requirements_dev.txt
+                run: pipx run poetry install --only docs,lint
             -   name: Check code formatting with black
-                run: black . --check --diff
+                run: pipx run poetry run black . --check --diff
             -   name: Lint with flake8
-                run: |
-                    # stop the build if there are Python syntax errors or undefined names
-                    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-                    # exit-zero treats all errors as warnings. Default line length of black is 88
-                    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+                run: pipx run poetry run flake8 . --count --show-source --statistics
+            -   name: Build docs
+                run: READTHEDOCS=True pipx run poetry run make -C docs html

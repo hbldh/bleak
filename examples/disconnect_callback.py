@@ -10,11 +10,11 @@ Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 
 import asyncio
 
-from bleak import BleakClient, discover
+from bleak import BleakScanner, BleakClient
 
 
-async def show_disconnect_handling():
-    devs = await discover()
+async def main():
+    devs = await BleakScanner.discover()
     if not devs:
         print("No devices found, try again later.")
         return
@@ -33,7 +33,5 @@ async def show_disconnect_handling():
         print("Connected:", client.is_connected)
 
 
-# It is important to use asyncio.run() to get proper cleanup on KeyboardInterrupt.
-# This was introduced in Python 3.7. If you need it in Python 3.6, you can copy
-# it from https://github.com/python/cpython/blob/3.7/Lib/asyncio/runners.py
-asyncio.run(show_disconnect_handling())
+if __name__ == "__main__":
+    asyncio.run(main())

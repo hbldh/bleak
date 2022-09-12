@@ -1,23 +1,27 @@
 import asyncio
 import logging
-import pathlib
-from typing import Callable, List
+import sys
+from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
-
-from winrt.windows.devices.bluetooth.advertisement import (
+from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEScanningMode,
     BluetoothLEAdvertisementWatcher,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
 )
-from winrt.windows.security.cryptography import CryptographicBuffer
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
+
+from ..device import BLEDevice
+from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
+from ...assigned_numbers import AdvertisementDataType
 
 
 logger = logging.getLogger(__name__)
-_here = pathlib.Path(__file__).parent
 
 
 def _format_bdaddr(a):
@@ -33,24 +37,56 @@ def _format_event_args(e):
         return e.bluetooth_address
 
 
+class _RawAdvData(NamedTuple):
+    """
+    Platform-specific advertisement data.
+
+    Windows does not combine advertising data with type SCAN_RSP with other
+    advertising data like other platforms, so se have to do it ourselves.
+    """
+
+    adv: BluetoothLEAdvertisementReceivedEventArgs
+    """
+    The advertisement data received from the BluetoothLEAdvertisementWatcher.Received event.
+    """
+    scan: Optional[BluetoothLEAdvertisementReceivedEventArgs]
+    """
+    The scan response for the same device as *adv*.
+    """
+
+
 class BleakScannerWinRT(BaseBleakScanner):
     """The native Windows Bleak BLE Scanner.
 
     Implemented using `Python/WinRT <https://github.com/Microsoft/xlang/tree/master/src/package/pywinrt/projection/>`_.
 
-    Keyword Args:
-        scanning mode (str): Set to "Passive" to avoid the "Active" scanning mode.
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received.
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
 
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerWinRT, self).__init__(**kwargs)
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
+        **kwargs,
+    ):
+        super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher = None
-        self._devices = {}
-        self._scan_responses = {}
+        self._stopped_event = None
+        self._discovered_devices: Dict[int, _RawAdvData] = {}
 
-        if "scanning_mode" in kwargs and kwargs["scanning_mode"].lower() == "passive":
+        # case insensitivity is for backwards compatibility on Windows only
+        if scanning_mode.lower() == "passive":
             self._scanning_mode = BluetoothLEScanningMode.PASSIVE
         else:
             self._scanning_mode = BluetoothLEScanningMode.ACTIVE
@@ -69,45 +105,75 @@ class BleakScannerWinRT(BaseBleakScanner):
         """Callback for AdvertisementWatcher.Received"""
         # TODO: Cannot check for if sender == self.watcher in winrt?
         logger.debug("Received {0}.".format(_format_event_args(event_args)))
+
+        # get the previous advertising data or start a new one
+        raw_data = self._discovered_devices.get(
+            event_args.bluetooth_address, _RawAdvData(event_args, None)
+        )
+
+        # update the advertsing data depending on the advertising data type
         if event_args.advertisement_type == BluetoothLEAdvertisementType.SCAN_RESPONSE:
-            if event_args.bluetooth_address not in self._scan_responses:
-                self._scan_responses[event_args.bluetooth_address] = event_args
+            raw_data = _RawAdvData(raw_data.adv, event_args)
         else:
-            if event_args.bluetooth_address not in self._devices:
-                self._devices[event_args.bluetooth_address] = event_args
+            raw_data = _RawAdvData(event_args, raw_data.scan)
+
+        self._discovered_devices[event_args.bluetooth_address] = raw_data
 
         if self._callback is None:
             return
 
         # Get a "BLEDevice" from parse_event args
-        device = self._parse_event_args(event_args)
+        device = self._parse_adv_data(raw_data)
+
+        # On Windows, we have to fake service UUID filtering. If we were to pass
+        # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
+        # with the service UUIDs appropriately set, we would no longer receive
+        # scan response data (which commonly contains the local device name).
+        # So we have to do it like this instead.
+
+        if self._service_uuids:
+            for uuid in device.metadata["uuids"]:
+                if uuid in self._service_uuids:
+                    break
+            else:
+                # if there were no matching service uuids, the don't call the callback
+                return
+
+        service_data = {}
 
         # Decode service data
-        service_data = {}
-        # 0x16 is service data with 16-bit UUID
-        for section in event_args.advertisement.get_sections_by_type(0x16):
-            data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
-            service_data[
-                f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
-            ] = data[2:]
-        # 0x20 is service data with 32-bit UUID
-        for section in event_args.advertisement.get_sections_by_type(0x20):
-            data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
-            service_data[
-                f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
-            ] = data[4:]
-        # 0x21 is service data with 128-bit UUID
-        for section in event_args.advertisement.get_sections_by_type(0x21):
-            data = bytearray(CryptographicBuffer.copy_to_byte_array(section.data))
-            service_data[str(UUID(bytes=data[15::-1]))] = data[16:]
+        for args in filter(lambda d: d is not None, raw_data):
+            for section in args.advertisement.get_sections_by_type(
+                AdvertisementDataType.SERVICE_DATA_UUID16
+            ):
+                data = bytes(section.data)
+                service_data[
+                    f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                ] = data[2:]
+            for section in args.advertisement.get_sections_by_type(
+                AdvertisementDataType.SERVICE_DATA_UUID32
+            ):
+                data = bytes(section.data)
+                service_data[
+                    f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                ] = data[4:]
+            for section in args.advertisement.get_sections_by_type(
+                AdvertisementDataType.SERVICE_DATA_UUID128
+            ):
+                data = bytes(section.data)
+                service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
+
+        # get transmit power level data
+        tx_power = raw_data.adv.transmit_power_level_in_d_bm
 
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
-            local_name=event_args.advertisement.local_name,
+            local_name=device.name,
             manufacturer_data=device.metadata["manufacturer_data"],
             service_data=service_data,
             service_uuids=device.metadata["uuids"],
-            platform_data=(sender, event_args),
+            platform_data=(sender, raw_data),
+            tx_power=tx_power,
         )
 
         self._callback(device, advertisement_data)
@@ -115,15 +181,20 @@ class BleakScannerWinRT(BaseBleakScanner):
     def _stopped_handler(self, sender, e):
         logger.debug(
             "{0} devices found. Watcher status: {1}.".format(
-                len(self._devices), self.watcher.status
+                len(self._discovered_devices), self.watcher.status
             )
         )
+        self._stopped_event.set()
 
     async def start(self):
+        # start with fresh list of discovered devices
+        self._discovered_devices.clear()
+
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
 
-        event_loop = asyncio.get_event_loop()
+        event_loop = asyncio.get_running_loop()
+        self._stopped_event = asyncio.Event()
 
         self._received_token = self.watcher.add_received(
             lambda s, e: event_loop.call_soon_threadsafe(self._received_handler, s, e)
@@ -135,12 +206,13 @@ class BleakScannerWinRT(BaseBleakScanner):
         if self._signal_strength_filter is not None:
             self.watcher.signal_strength_filter = self._signal_strength_filter
         if self._advertisement_filter is not None:
-            self.watcher._advertisement_filter = self._advertisement_filter
+            self.watcher.advertisement_filter = self._advertisement_filter
 
         self.watcher.start()
 
     async def stop(self):
         self.watcher.stop()
+        await self._stopped_event.wait()
 
         try:
             self.watcher.remove_received(self._received_token)
@@ -172,35 +244,30 @@ class BleakScannerWinRT(BaseBleakScanner):
             # TODO: Handle AdvertisementFilter parameters
             self._advertisement_filter = kwargs["AdvertisementFilter"]
 
-    async def get_discovered_devices(self) -> List[BLEDevice]:
-        found = []
-        for event_args in list(self._devices.values()):
-            new_device = self._parse_event_args(event_args)
-            if (
-                not new_device.name
-                and event_args.bluetooth_address in self._scan_responses
-            ):
-                new_device.name = self._scan_responses[
-                    event_args.bluetooth_address
-                ].advertisement.local_name
-            found.append(new_device)
-
-        return found
+    @property
+    def discovered_devices(self) -> List[BLEDevice]:
+        return [self._parse_adv_data(d) for d in self._discovered_devices.values()]
 
     @staticmethod
-    def _parse_event_args(event_args):
-        bdaddr = _format_bdaddr(event_args.bluetooth_address)
+    def _parse_adv_data(raw_data: _RawAdvData) -> BLEDevice:
+        """
+        Combines advertising data from regular advertisement data and scan response.
+        """
+        bdaddr = _format_bdaddr(raw_data.adv.bluetooth_address)
         uuids = []
-        try:
-            for u in event_args.advertisement.service_uuids:
-                uuids.append(str(u))
-        except NotImplementedError as e:
-            # Cannot get service uuids for this device...
-            pass
         data = {}
-        for m in event_args.advertisement.manufacturer_data:
-            data[m.company_id] = bytes(CryptographicBuffer.copy_to_byte_array(m.data))
-        local_name = event_args.advertisement.local_name
+        local_name = None
+
+        for args in filter(lambda d: d is not None, raw_data):
+            for u in args.advertisement.service_uuids:
+                uuids.append(str(u))
+            for m in args.advertisement.manufacturer_data:
+                data[m.company_id] = bytes(m.data)
+            # local name is empty string rather than None if not present
+            if args.advertisement.local_name:
+                local_name = args.advertisement.local_name
+            rssi = args.raw_signal_strength_in_d_bm
+
         return BLEDevice(
-            bdaddr, local_name, event_args, uuids=uuids, manufacturer_data=data
+            bdaddr, local_name, raw_data, rssi, uuids=uuids, manufacturer_data=data
         )

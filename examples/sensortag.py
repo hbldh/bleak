@@ -10,11 +10,16 @@ Created on 2018-01-10 by hbldh <henrik.blidh@nedomkull.com>
 """
 import asyncio
 import platform
+import sys
 
 from bleak import BleakClient
-from bleak import _logger as logger
 from bleak.uuids import uuid16_dict
 
+ADDRESS = (
+    "24:71:89:cc:09:05"
+    if platform.system() != "Darwin"
+    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
+)
 
 ALL_SENSORTAG_CHARACTERISTIC_UUIDS = """
 00002a00-0000-1000-8000-00805f9b34fb
@@ -92,18 +97,9 @@ IO_DATA_CHAR_UUID = "f000aa65-0451-4000-b000-000000000000"
 IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 
 
-async def run(address, debug=False):
-    # if debug:
-    #     import sys
-
-    #     l = logging.getLogger("asyncio")
-    #     l.setLevel(logging.DEBUG)
-    #     h = logging.StreamHandler(sys.stdout)
-    #     h.setLevel(logging.DEBUG)
-    #     l.addHandler(h)
-
-    async with BleakClient(address) as client:
-        logger.info(f"Connected: {client.is_connected}")
+async def main(address):
+    async with BleakClient(address, winrt=dict(use_cached_services=True)) as client:
+        print(f"Connected: {client.is_connected}")
 
         system_id = await client.read_gatt_char(SYSTEM_ID_UUID)
         print(
@@ -136,10 +132,11 @@ async def run(address, debug=False):
         battery_level = await client.read_gatt_char(BATTERY_LEVEL_UUID)
         print("Battery Level: {0}%".format(int(battery_level[0])))
 
-        async def keypress_handler(sender, data):
+        async def notification_handler(sender, data):
             print("{0}: {1}".format(sender, data))
 
-        write_value = bytearray([0xA0])
+        # Turn on the red light on the Sensor Tag by writing to I/O Data and I/O Config.
+        write_value = bytearray([0x01])
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
         print("I/O Data Pre-Write Value: {0}".format(value))
 
@@ -149,20 +146,22 @@ async def run(address, debug=False):
         print("I/O Data Post-Write Value: {0}".format(value))
         assert value == write_value
 
-        await client.start_notify(KEY_PRESS_UUID, keypress_handler)
+        write_value = bytearray([0x01])
+        value = await client.read_gatt_char(IO_CONFIG_CHAR_UUID)
+        print("I/O Config Pre-Write Value: {0}".format(value))
+
+        await client.write_gatt_char(IO_CONFIG_CHAR_UUID, write_value)
+
+        value = await client.read_gatt_char(IO_CONFIG_CHAR_UUID)
+        print("I/O Config Post-Write Value: {0}".format(value))
+        assert value == write_value
+
+        # Try notifications with key presses.
+
+        await client.start_notify(KEY_PRESS_UUID, notification_handler)
         await asyncio.sleep(5.0)
         await client.stop_notify(KEY_PRESS_UUID)
 
 
 if __name__ == "__main__":
-    import os
-
-    os.environ["PYTHONASYNCIODEBUG"] = str(1)
-    address = (
-        "24:71:89:cc:09:05"
-        if platform.system() != "Darwin"
-        else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
-    )
-    loop = asyncio.get_event_loop()
-    # loop.set_debug(True)
-    loop.run_until_complete(run(address, True))
+    asyncio.run(main(sys.argv[1] if len(sys.argv) == 2 else ADDRESS))

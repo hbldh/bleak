@@ -1,10 +1,11 @@
-from uuid import UUID
-from typing import List, Union
+from typing import List
+
+from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
+    GattDeviceService,
+)
 
 from bleak.backends.service import BleakGATTService
 from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
-
-from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 
 
 class BleakGATTServiceWinRT(BleakGATTService):
@@ -26,15 +27,6 @@ class BleakGATTServiceWinRT(BleakGATTService):
     def characteristics(self) -> List[BleakGATTCharacteristicWinRT]:
         """List of characteristics for this service"""
         return self.__characteristics
-
-    def get_characteristic(
-        self, _uuid: Union[str, UUID]
-    ) -> Union[BleakGATTCharacteristicWinRT, None]:
-        """Get a characteristic by UUID"""
-        try:
-            return next(filter(lambda x: x.uuid == str(_uuid), self.characteristics))
-        except StopIteration:
-            return None
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristicWinRT):
         """Add a :py:class:`~BleakGATTCharacteristicWinRT` to the service.

@@ -1,0 +1,27 @@
+name: Build and Test
+
+on: workflow_dispatch
+
+jobs:
+    build_android:
+        name: "Build Android"
+        runs-on: ubuntu-20.04
+        steps:
+            -   uses: actions/checkout@v2
+            -   name: Install dependencies
+                run: pip install buildozer cython
+            -   name: Cache buildozer files
+                uses: actions/cache@v2
+                id: buildozer-cache
+                with:
+                    path: |
+                        ~/.buildozer
+                        examples/kivy/.buildozer
+                    key: build-cache-buildozer
+            -   name: Clean bleak recipe for cache
+                if: steps.buildozer-cache.outputs.cache-hit == 'true'
+                working-directory: examples/kivy
+                run: buildozer android p4a -- clean-recipe-build --local-recipes $(pwd)/../../bleak/backends/p4android/recipes bleak
+            -   name: Build Kivy example
+                working-directory: examples/kivy
+                run: buildozer android debug

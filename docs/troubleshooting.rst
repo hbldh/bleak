@@ -4,6 +4,61 @@ Troubleshooting
 
 When things don't seem to be working right, here are some things to try.
 
+---------------
+Common Mistakes
+---------------
+
+Many people name their first script ``bleak.py``. This causes the script to
+crash with an ``ImportError`` similar to::
+
+    ImportError: cannot import name 'BleakClient' from partially initialized module 'bleak' (most likely due to a circular import) (bleak.py)`
+
+To fix the error, change the name of the script to something other than ``bleak.py``.
+
+----------
+macOS Bugs
+----------
+
+Bleak crashes with SIGABRT on macOS
+===================================
+
+If you see a crash similar to this::
+
+    Crashed Thread:        1  Dispatch queue: com.apple.root.default-qos
+
+    Exception Type:        EXC_CRASH (SIGABRT)
+    Exception Codes:       0x0000000000000000, 0x0000000000000000
+    Exception Note:        EXC_CORPSE_NOTIFY
+
+    Termination Reason:    Namespace TCC, Code 0
+    This app has crashed because it attempted to access privacy-sensitive data without a usage description. The app's Info.plist must contain an NSBluetoothAlwaysUsageDescription key with a string value explaining to the user how the app uses this data.
+
+It is not a problem with Bleak. It is a problem with your terminal application.
+
+Ideally, the terminal application should be fixed by adding ``NSBluetoothAlwaysUsageDescription``
+to the ``Info.plist`` file (`example <https://github.com/gnachman/iTerm2/pull/457/commits/626068e026ffb958242034129a1974ff87b21a32>`_).
+
+It is also possible to manually add the app to the list of Bluetooth apps in
+the *Privacy* settings in the macOS *System Preferences*.
+
+.. image:: images/macos-privacy-bluetooth.png
+
+
+No devices found when scanning on macOS 12
+==========================================
+
+A bug was introduced in macOS 12.0 that causes scanning to not work unless a
+list of service UUIDs is provided to ``BleakScanner``. This bug was fixed in
+macOS 12.3. On the affected version, users of bleak will see the following
+error logged:
+
+.. code-block:: none
+
+    macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received
+
+See `#635 <https://github.com/hbldh/bleak/issues/635>`_ and
+`#720 <https://github.com/hbldh/bleak/issues/720>`_ for more information
+including some partial workarounds if you need to support these macOS versions.
 
 --------------
 Enable Logging
@@ -27,6 +82,63 @@ Windows Command Prompt::
 Then run your Python script in the same terminal.
 
 
+-----------------------------------------------
+Connecting to multiple devices at the same time
+-----------------------------------------------
+
+If you're having difficulty connecting to multiple devices, try to do a scan first and
+pass the returned ``BLEDevice`` objects to ``BleakClient`` calls.
+
+Python::
+
+    import asyncio
+    from typing import Sequence
+
+    from bleak import BleakClient, BleakScanner
+    from bleak.backends.device import BLEDevice
+
+
+    async def find_all_devices_services()
+        scanner = BleakScanner()
+        devices: Sequence[BLEDevice] = scanner.discover(timeout=5.0)
+        for d in devices:
+            async with BleakClient(d) as client:
+                print(await client.get_services())
+
+
+    asyncio.run(find_all_devices_services())
+
+
+-----------------------------------------
+Pass more parameters to a notify callback
+-----------------------------------------
+
+If you need a way to pass more parameters to the notify callback, please use
+``functools.partial`` to pass in more arguments.
+
+Issue #759 might fix this in the future.
+
+Python::
+
+    from functools import partial
+
+    from bleak import BleakClient
+
+
+    def my_notification_callback_with_client_input(
+        client: BleakClient, sender: int, data: bytearray
+    ):
+        """Notification callback with client awareness"""
+        print(
+            f"Notification from device with address {client.address} and characteristic with handle {client.services.get_characteristic(sender)}. Data: {data}"
+        )
+
+    # [...]
+
+    await client.start_notify(
+        char_specifier, partial(my_notification_callback_with_client_input, client)
+    )
+
 -------------------------
 Capture Bluetooth Traffic
 -------------------------
@@ -38,17 +150,23 @@ and decode them.
 Windows 10
 ==========
 
-No special software is required on Windows to capture Bluetooth traffic, however
-special software is required to convert it to a useful format.
+There is a Windows hardware developer package that includes a tool that supports
+capturing Bluetooth traffic directly in Wireshark.
+
+Install
+-------
+
+1. Download and install `Wireshark`_.
+2. Download and install `the BTP software package`_.
 
 Capture
 -------
 
 To capture Bluetooth traffic:
 
-1.  Open a Command Prompt as Administrator.
+1.  Open a terminal as Administrator.
 
-    * Search start menu for ``cmd``.
+    * Search start menu for ``cmd``. (Powershell and Windows Terminal are fine too.)
     * Right-click *Command Prompt* and select *Run as Administrator*.
 
       .. image:: images/win-10-start-cmd-as-admin.png
@@ -56,48 +174,21 @@ To capture Bluetooth traffic:
         :alt: Screenshot of Windows Start Menu showing Command Prompt selected
               and context menu with Run as Administrator selected.
 
-2.  Run the following command in the Administrator Command Prompt::
+2.  Run ``C:\BTP\v1.9.0\x86\btvs.exe``. This should automatically start Wireshark
+    in capture mode.
 
-        logman create trace "bth_hci" -ow -o C:\bth_hci.etl -p {8a1f9517-3a8c-4a9e-a018-4f17a200f277} 0xffffffffffffffff 0xff -nb 16 16 -bs 1024 -mode Circular -f bincirc -max 4096 -ets
-
-    .. tip:: ``C:\bth_hci.etl`` can be replaced with any file path you like.
+    .. tip:: The version needs to match the installed version. ``v1.9.0`` was
+             the current version at the time this was written. Additionally,
+             ``C:`` may not be the root drive on some systems.
 
 3.  Run your Python script in a different terminal (not as Administrator) to reproduce
     the problem.
 
-4.  In the Administrator Command Prompt run::
-
-        logman stop "bth_hci" -ets
-
-
-Decode
-------
-
-Microsoft no longer has tools to directly view ``.etl`` files so in order to
-make use of the information, we need to convert it to a different file format.
-The `Windows Driver Kit <wdk_>`_ contains a tool to do this.
-
-.. _wdk: https://docs.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk
-
-1.  Download and install the  `Windows Driver Kit <wdk_>`_.
-
-    .. tip:: The install may give warnings about additional software not being
-             installed. These warnings can be ignored since we just need a standalone
-             executable file from the installation.
-
-2.  Run the following command::
-
-        "%ProgramFiles(x86)%\Windows Kits\10\Tools\x86\Bluetooth\BETLParse\btetlparse.exe" c:\bth_hci.etl
-
-    This will create a file with the same file name and a ``.cfa`` file extension
-    (and an empty ``.txt`` file for some reason).
-
-3.  Download and install `Wireshark`_.
-
-4.  Open the ``.cfa`` file in Wireshark to view the captured Bluetooth traffic.
+4.  Click the stop button in Wireshark to stop the capture.
 
 
 .. _Wireshark:  https://www.wireshark.org/
+.. _the BTP software package: https://docs.microsoft.com/windows-hardware/drivers/bluetooth/testing-btp-setup-package
 
 
 macOS
@@ -158,28 +249,6 @@ systems and thus also in Bleak.
 There are ways to avoid this on different backends though, and if you experience these kinds of problems, the steps
 below might help you to circumvent the caches.
 
-Windows 10
-==========
-
-The Windows .NET backend has the most straightforward means of handling the os caches. When creating a BleakClient, one
-can use the keyword argument `use_cached`:
-
-.. code-block:: python
-
-    async with BleakClient(address, use_cached=False) as client:
-        print(f"Connected: {client.is_connected}")
-        // Do whatever it is you want to do.
-
-The keyword argument is also present in the :py:meth:`bleak.backends.client.BleakClient.connect` method to use if you
-don't want to use the async context manager:
-
-.. code-block:: python
-
-    client = BleakClient(address)
-    await client.connect(use_cached=True)
-    print(f"Connected: {client.is_connected}")
-    // Do whatever it is you want to do.
-    await client.disconnect()
 
 macOS
 =====
@@ -196,5 +265,10 @@ the device was connected. You can use the ``bluetoothctl`` command line tool to 
 
 .. code-block:: shell
 
-    bluetoothctl -- remove [mac_address]
+    bluetoothctl -- remove XX:XX:XX:XX:XX:XX
+    # prior to BlueZ 5.62 you also need to manually delete the GATT cache
+    sudo rm "/var/lib/bluetooth/YY:YY:YY:YY:YY:YY/cache/XX:XX:XX:XX:XX:XX"
 
+...where ``XX:XX:XX:XX:XX:XX`` is the Bluetooth address of your device and
+``YY:YY:YY:YY:YY:YY`` is the Bluetooth address of the Bluetooth adapter on
+your computer.

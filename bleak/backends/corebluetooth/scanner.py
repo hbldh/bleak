@@ -1,17 +1,27 @@
 import logging
-import pathlib
-from typing import Any, Dict, List
+import sys
+from typing import Any, Dict, List, Optional
 
-from Foundation import NSArray
+import objc
+from Foundation import NSArray, NSUUID, NSBundle
 from CoreBluetooth import CBPeripheral
+
+if sys.version_info[:2] < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import BaseBleakScanner, AdvertisementData
+from bleak.backends.scanner import (
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+    AdvertisementData,
+)
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
-_here = pathlib.Path(__file__).parent
 
 
 class BleakScannerCoreBluetooth(BaseBleakScanner):
@@ -25,22 +35,55 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     with this, CoreBluetooth utilizes UUIDs for each peripheral. Bleak uses
     this for the BLEDevice address on macOS.
 
-    Keyword Args:
-        timeout (double): The scanning timeout to be used, in case of missing
-          ``stopScan_`` method.
-
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received. Required on
+            macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
+        scanning_mode:
+            Set to ``"passive"`` to avoid the ``"active"`` scanning mode. Not
+            supported on macOS! Will raise :class:`BleakError` if set to
+            ``"passive"``
+        **timeout (float):
+             The scanning timeout to be used, in case of missing
+            ``stopScan_`` method.
     """
 
-    def __init__(self, **kwargs):
-        super(BleakScannerCoreBluetooth, self).__init__(**kwargs)
-        self._identifiers = None
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback] = None,
+        service_uuids: Optional[List[str]] = None,
+        scanning_mode: Literal["active", "passive"] = "active",
+        **kwargs
+    ):
+        super(BleakScannerCoreBluetooth, self).__init__(
+            detection_callback, service_uuids
+        )
+
+        if scanning_mode == "passive":
+            raise BleakError("macOS does not support passive scanning")
+
+        self._identifiers: Optional[Dict[NSUUID, Dict[str, Any]]] = None
         self._manager = CentralManagerDelegate.alloc().init()
-        self._timeout = kwargs.get("timeout", 5.0)
+        self._timeout: float = kwargs.get("timeout", 5.0)
+        if (
+            objc.macos_available(12, 0)
+            and not objc.macos_available(12, 3)
+            and not self._service_uuids
+        ):
+            # See https://github.com/hbldh/bleak/issues/720
+            if NSBundle.mainBundle().bundleIdentifier() == "org.python.python":
+                logger.error(
+                    "macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received"
+                )
 
     async def start(self):
         self._identifiers = {}
 
-        def callback(p: CBPeripheral, a: Dict[str, Any], r: int):
+        def callback(p: CBPeripheral, a: Dict[str, Any], r: int) -> None:
             # update identifiers for scanned device
             self._identifiers.setdefault(p.identifier(), {}).update(a)
 
@@ -63,29 +106,41 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_value = bytes(manufacturer_binary_data[2:])
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
+            service_uuids = [
+                cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
+            ]
+
+            # set tx_power data if available
+            tx_power = a.get("kCBAdvDataTxPowerLevel")
+
             advertisement_data = AdvertisementData(
                 local_name=p.name(),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
-                service_uuids=[
-                    cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
-                ],
+                service_uuids=service_uuids,
                 platform_data=(p, a, r),
+                tx_power=tx_power,
             )
 
-            device = BLEDevice(p.identifier().UUIDString(), p.name(), p, r)
+            device = BLEDevice(
+                p.identifier().UUIDString(),
+                p.name(),
+                p,
+                r,
+                uuids=service_uuids,
+                manufacturer_data=manufacturer_data,
+                service_data=service_data,
+                delegate=self._manager.central_manager.delegate(),
+            )
 
             self._callback(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
-        self._manager.start_scan({})
+        await self._manager.start_scan(self._service_uuids)
 
     async def stop(self):
-        del self._manager.callbacks[id(self)]
-        try:
-            await self._manager.stop_scan()
-        except Exception as e:
-            logger.warning("stopScan method could not be called: {0}".format(e))
+        await self._manager.stop_scan()
+        self._manager.callbacks.pop(id(self), None)
 
     def set_scanning_filter(self, **kwargs):
         """Set scanning filter for the scanner.
@@ -110,11 +165,11 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             NSArray(self._identifiers.keys()),
         )
 
-        for i, peripheral in enumerate(peripherals):
+        for peripheral in peripherals:
             address = peripheral.identifier().UUIDString()
             name = peripheral.name() or "Unknown"
             details = peripheral
-            rssi = self._manager.devices[address].rssi
+            rssi = self._manager.last_rssi[address]
 
             advertisementData = self._identifiers[peripheral.identifier()]
             manufacturer_binary_data = advertisementData.get(

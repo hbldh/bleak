@@ -8,11 +8,14 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 from uuid import UUID
 from typing import Dict, List, Optional, Union, Iterator
+import logging
 
 from bleak import BleakError
 from bleak.uuids import uuidstr_to_str
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
+
+logger = logging.getLogger(__name__)
 
 
 class BleakGATTService(abc.ABC):
@@ -67,6 +70,9 @@ class BleakGATTService(abc.ABC):
             The first characteristic matching ``uuid`` or ``None`` if no
             matching characteristic was found.
         """
+        if type(uuid) == str and len(uuid) == 4:
+            # Convert 16-bit uuid to 128-bit uuid
+            uuid = f"0000{uuid}-0000-1000-8000-00805f9b34fb"
         try:
             return next(
                 filter(lambda x: x.uuid == str(uuid).lower(), self.characteristics)
@@ -75,7 +81,7 @@ class BleakGATTService(abc.ABC):
             return None
 
 
-class BleakGATTServiceCollection(object):
+class BleakGATTServiceCollection:
     """Simple data container for storing the peripheral's service complement."""
 
     def __init__(self):
@@ -122,29 +128,38 @@ class BleakGATTServiceCollection(object):
         if service.handle not in self.__services:
             self.__services[service.handle] = service
         else:
-            raise BleakError(
-                "This service is already present in this BleakGATTServiceCollection!"
+            logger.error(
+                "The service '%s' is already present in this BleakGATTServiceCollection!",
+                service.handle,
             )
 
-    def get_service(self, specifier: Union[int, str, UUID]) -> BleakGATTService:
+    def get_service(
+        self, specifier: Union[int, str, UUID]
+    ) -> Optional[BleakGATTService]:
         """Get a service by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
-            return self.services.get(specifier, None)
-        else:
-            _specifier = str(specifier).lower()
-            # Assume uuid usage.
-            x = list(
-                filter(
-                    lambda x: x.uuid.lower() == _specifier,
-                    self.services.values(),
-                )
+            return self.services.get(specifier)
+
+        _specifier = str(specifier).lower()
+
+        # Assume uuid usage.
+        # Convert 16-bit uuid to 128-bit uuid
+        if len(_specifier) == 4:
+            _specifier = f"0000{_specifier}-0000-1000-8000-00805f9b34fb"
+
+        x = list(
+            filter(
+                lambda x: x.uuid.lower() == _specifier,
+                self.services.values(),
             )
-            if len(x) > 1:
-                raise BleakError(
-                    "Multiple Services with this UUID, refer to your desired service by the `handle` attribute instead."
-                )
-            else:
-                return x[0] if x else None
+        )
+
+        if len(x) > 1:
+            raise BleakError(
+                "Multiple Services with this UUID, refer to your desired service by the `handle` attribute instead."
+            )
+
+        return x[0] if x else None
 
     def add_characteristic(self, characteristic: BleakGATTCharacteristic):
         """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
@@ -157,30 +172,32 @@ class BleakGATTServiceCollection(object):
                 characteristic
             )
         else:
-            raise BleakError(
-                "This characteristic is already present in this BleakGATTServiceCollection!"
+            logger.error(
+                "The characteristic '%s' is already present in this BleakGATTServiceCollection!",
+                characteristic.handle,
             )
 
     def get_characteristic(
         self, specifier: Union[int, str, UUID]
-    ) -> BleakGATTCharacteristic:
+    ) -> Optional[BleakGATTCharacteristic]:
         """Get a characteristic by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
-            return self.characteristics.get(specifier, None)
-        else:
-            # Assume uuid usage.
-            x = list(
-                filter(
-                    lambda x: x.uuid == str(specifier).lower(),
-                    self.characteristics.values(),
-                )
+            return self.characteristics.get(specifier)
+
+        # Assume uuid usage.
+        x = list(
+            filter(
+                lambda x: x.uuid == str(specifier).lower(),
+                self.characteristics.values(),
             )
-            if len(x) > 1:
-                raise BleakError(
-                    "Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead."
-                )
-            else:
-                return x[0] if x else None
+        )
+
+        if len(x) > 1:
+            raise BleakError(
+                "Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead."
+            )
+
+        return x[0] if x else None
 
     def add_descriptor(self, descriptor: BleakGATTDescriptor):
         """Add a :py:class:`~BleakGATTDescriptor` to the service collection.
@@ -193,10 +210,11 @@ class BleakGATTServiceCollection(object):
                 descriptor
             )
         else:
-            raise BleakError(
-                "This descriptor is already present in this BleakGATTServiceCollection!"
+            logger.error(
+                "The descriptor '%s' is already present in this BleakGATTServiceCollection!",
+                descriptor.handle,
             )
 
-    def get_descriptor(self, handle: int) -> BleakGATTDescriptor:
+    def get_descriptor(self, handle: int) -> Optional[BleakGATTDescriptor]:
         """Get a descriptor by integer handle"""
-        return self.descriptors.get(handle, None)
+        return self.descriptors.get(handle)

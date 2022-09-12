@@ -10,6 +10,7 @@ from typing import (
     Tuple,
 )
 from warnings import warn
+import async_timeout
 
 from bleak.backends.device import BLEDevice
 
@@ -27,6 +28,7 @@ class AdvertisementData:
             service_data (dict): Service data from the device
             service_uuids (list): UUIDs associated with the device
             platform_data (tuple): Tuple of platform specific advertisement data
+            tx_power (int): Transmit power level of the device
         """
         # The local name of the device
         self.local_name: Optional[str] = kwargs.get("local_name", None)
@@ -43,6 +45,9 @@ class AdvertisementData:
         # Tuple of platform specific data
         self.platform_data: Tuple = kwargs.get("platform_data", ())
 
+        # Tx Power data
+        self.tx_power: Optional[int] = kwargs.get("tx_power")
+
     def __repr__(self) -> str:
         kwargs = []
         if self.local_name:
@@ -53,6 +58,8 @@ class AdvertisementData:
             kwargs.append(f"service_data={repr(self.service_data)}")
         if self.service_uuids:
             kwargs.append(f"service_uuids={repr(self.service_uuids)}")
+        if self.tx_power:
+            kwargs.append(f"tx_power={repr(self.tx_power)}")
         return f"AdvertisementData({', '.join(kwargs)})"
 
 
@@ -61,14 +68,36 @@ AdvertisementDataCallback = Callable[
     Optional[Awaitable[None]],
 ]
 
+AdvertisementDataFilter = Callable[
+    [BLEDevice, AdvertisementData],
+    bool,
+]
+
 
 class BaseBleakScanner(abc.ABC):
-    """Interface for Bleak Bluetooth LE Scanners"""
+    """
+    Interface for Bleak Bluetooth LE Scanners
 
-    def __init__(self, *args, **kwargs):
+    Args:
+        detection_callback:
+            Optional function that will be called each time a device is
+            discovered or advertising data has changed.
+        service_uuids:
+            Optional list of service UUIDs to filter on. Only advertisements
+            containing this advertising data will be received.
+    """
+
+    def __init__(
+        self,
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+    ):
         super(BaseBleakScanner, self).__init__()
         self._callback: Optional[AdvertisementDataCallback] = None
-        self.register_detection_callback(kwargs.get("detection_callback"))
+        self.register_detection_callback(detection_callback)
+        self._service_uuids: Optional[List[str]] = (
+            [u.lower() for u in service_uuids] if service_uuids is not None else None
+        )
 
     async def __aenter__(self):
         await self.start()
@@ -150,7 +179,8 @@ class BaseBleakScanner(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.
 
@@ -195,21 +225,38 @@ class BaseBleakScanner(abc.ABC):
 
         """
         device_identifier = device_identifier.lower()
-        stop_scanning_event = asyncio.Event()
+        return await cls.find_device_by_filter(
+            lambda d, ad: d.address.lower() == device_identifier,
+            timeout=timeout,
+            **kwargs,
+        )
 
-        def stop_if_detected(d: BLEDevice, ad: AdvertisementData):
-            if d.address.lower() == device_identifier:
-                stop_scanning_event.set()
+    @classmethod
+    async def find_device_by_filter(
+        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
+    ) -> Optional[BLEDevice]:
+        """A convenience method for obtaining a ``BLEDevice`` object specified by a filter function.
 
-        async with cls(
-            timeout=timeout, detection_callback=stop_if_detected, **kwargs
-        ) as scanner:
+        Args:
+            filterfunc (AdvertisementDataFilter): A function that is called for every BLEDevice found. It should return True only for the wanted device.
+            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+
+        Keyword Args:
+            adapter (str): Bluetooth adapter to use for discovery.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        found_device_queue = asyncio.Queue()
+
+        def apply_filter(d: BLEDevice, ad: AdvertisementData):
+            if filterfunc(d, ad):
+                found_device_queue.put_nowait(d)
+
+        async with cls(detection_callback=apply_filter, **kwargs):
             try:
-                await asyncio.wait_for(stop_scanning_event.wait(), timeout=timeout)
+                async with async_timeout.timeout(timeout):
+                    return await found_device_queue.get()
             except asyncio.TimeoutError:
                 return None
-            return next(
-                d
-                for d in scanner.discovered_devices
-                if d.address.lower() == device_identifier
-            )

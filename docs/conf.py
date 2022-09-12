@@ -13,23 +13,6 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-
-windows_autodoc_mock_import = ["clr", "Windows", "System", "BleakBridge"]
-linux_autodoc_mock_import = ["dbus_next"]
-macos_autodoc_mock_import = [
-    "objc",
-    "Foundation",
-    "CoreBluetooth",
-    "libdispatch",
-]
-autodoc_mock_imports = list(
-    set(
-        windows_autodoc_mock_import
-        + macos_autodoc_mock_import
-        + linux_autodoc_mock_import
-    )
-)
-
 import sys
 import os
 
@@ -71,8 +54,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"bleak"
-copyright = u"2020, Henrik Blidh"
+project = "bleak"
+copyright = "2020, Henrik Blidh"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -122,6 +105,19 @@ pygments_style = "sphinx"
 # documents.
 # keep_warnings = False
 
+# -- Options for autodoc extension -------------------------------------------
+
+autodoc_mock_imports = [
+    "android",
+    "async_timeout",
+    "bleak_winrt",
+    "CoreBluetooth",
+    "dbus_fast",
+    "Foundation",
+    "jnius",
+    "libdispatch",
+    "objc",
+]
 
 # -- Options for HTML output -------------------------------------------
 
@@ -159,7 +155,7 @@ html_theme = "sphinx_rtd_theme"
 # here, relative to this directory. They are copied after the builtin
 # static files, so a file named "default.css" will overwrite the builtin
 # "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
@@ -223,7 +219,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [
-    ("index", "bleak.tex", u"bleak Documentation", u"Henrik Blidh", "manual")
+    ("index", "bleak.tex", "bleak Documentation", "Henrik Blidh", "manual")
 ]
 
 # The name of an image file (relative to this directory) to place at
@@ -251,7 +247,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [("index", "bleak", u"bleak Documentation", [u"Henrik Blidh"], 1)]
+man_pages = [("index", "bleak", "bleak Documentation", ["Henrik Blidh"], 1)]
 
 # If true, show URL addresses after external links.
 # man_show_urls = False
@@ -266,8 +262,8 @@ texinfo_documents = [
     (
         "index",
         "bleak",
-        u"bleak Documentation",
-        u"Henrik Blidh",
+        "bleak Documentation",
+        "Henrik Blidh",
         "bleak",
         "One line description of project.",
         "Miscellaneous",

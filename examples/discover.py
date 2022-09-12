@@ -9,14 +9,15 @@ Updated on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
-from bleak import discover
+
+from bleak import BleakScanner
 
 
-async def run():
-    devices = await discover()
+async def main():
+    devices = await BleakScanner.discover()
     for d in devices:
         print(d)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run())
+if __name__ == "__main__":
+    asyncio.run(main())

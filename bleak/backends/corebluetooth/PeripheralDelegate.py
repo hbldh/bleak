@@ -7,20 +7,20 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import asyncio
+import itertools
 import logging
-from typing import Callable, Any
+from typing import Callable, Any, Dict, Iterable, NewType, Optional
 
+import async_timeout
 import objc
-from Foundation import (
-    NSObject,
+from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
+from CoreBluetooth import (
     CBPeripheral,
     CBService,
     CBCharacteristic,
     CBDescriptor,
-    NSData,
-    NSError,
+    CBCharacteristicWriteWithResponse,
 )
-from CoreBluetooth import CBCharacteristicWriteWithResponse
 
 from bleak.exc import BleakError
 
@@ -29,18 +29,7 @@ logger = logging.getLogger(__name__)
 
 CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
-
-class _EventDict(dict):
-    def get_cleared(self, xUUID) -> asyncio.Event:
-        """Convenience method.
-        Returns a cleared (False) event. Creates it if doesn't exits.
-        """
-        if xUUID not in self:
-            # init as cleared (False)
-            self[xUUID] = asyncio.Event()
-        else:
-            self[xUUID].clear()
-        return self[xUUID]
+CBCharacteristicWriteType = NewType("CBCharacteristicWriteType", int)
 
 
 class PeripheralDelegate(NSObject):
@@ -58,218 +47,299 @@ class PeripheralDelegate(NSObject):
         self.peripheral = peripheral
         self.peripheral.setDelegate_(self)
 
-        self._event_loop = asyncio.get_event_loop()
-        self._services_discovered_event = asyncio.Event()
+        self._event_loop = asyncio.get_running_loop()
+        self._services_discovered_future = self._event_loop.create_future()
 
-        self._service_characteristic_discovered_events = _EventDict()
-        self._characteristic_descriptor_discover_events = _EventDict()
+        self._service_characteristic_discovered_futures: Dict[int, asyncio.Future] = {}
+        self._characteristic_descriptor_discover_futures: Dict[int, asyncio.Future] = {}
 
-        self._characteristic_read_events = _EventDict()
-        self._characteristic_write_events = _EventDict()
+        self._characteristic_read_futures: Dict[int, asyncio.Future] = {}
+        self._characteristic_write_futures: Dict[int, asyncio.Future] = {}
 
-        self._descriptor_read_events = _EventDict()
-        self._descriptor_write_events = _EventDict()
+        self._descriptor_read_futures: Dict[int, asyncio.Future] = {}
+        self._descriptor_write_futures: Dict[int, asyncio.Future] = {}
 
-        self._characteristic_notify_change_events = _EventDict()
-        self._characteristic_notify_callbacks = {}
+        self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
+        self._characteristic_notify_callbacks: Dict[int, Callable[[str, Any], Any]] = {}
+
+        self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
 
         return self
 
-    async def discoverServices(self, use_cached=True) -> [CBService]:
-        event = self._services_discovered_event
-        if event.is_set() and (use_cached is True):
-            return self.peripheral.services()
+    @objc.python_method
+    def futures(self) -> Iterable[asyncio.Future]:
+        """
+        Gets all futures for this delegate.
 
-        event.clear()
-        self.peripheral.discoverServices_(None)
-        # wait for peripheral_didDiscoverServices_ to set
-        await event.wait()
+        These can be used to handle any pending futures when a peripheral is disconnected.
+        """
+        services_discovered_future = (
+            (self._services_discovered_future,)
+            if hasattr(self, "_services_discovered_future")
+            else ()
+        )
 
-        return self.peripheral.services()
+        return itertools.chain(
+            services_discovered_future,
+            self._service_characteristic_discovered_futures.values(),
+            self._characteristic_descriptor_discover_futures.values(),
+            self._characteristic_read_futures.values(),
+            self._characteristic_write_futures.values(),
+            self._descriptor_read_futures.values(),
+            self._descriptor_write_futures.values(),
+            self._characteristic_notify_change_futures.values(),
+            self._read_rssi_futures.values(),
+        )
 
-    async def discoverCharacteristics_(
-        self, service: CBService, use_cached=True
-    ) -> [CBCharacteristic]:
-        if service.characteristics() is not None and use_cached is True:
-            return service.characteristics()
+    @objc.python_method
+    async def discover_services(self) -> NSArray:
+        future = self._event_loop.create_future()
 
-        sUUID = service.UUID().UUIDString()
-        event = self._service_characteristic_discovered_events.get_cleared(sUUID)
-        self.peripheral.discoverCharacteristics_forService_(None, service)
-        await event.wait()
+        self._services_discovered_future = future
+        try:
+            self.peripheral.discoverServices_(None)
+            return await future
+        finally:
+            del self._services_discovered_future
 
-        return service.characteristics()
+    @objc.python_method
+    async def discover_characteristics(self, service: CBService) -> NSArray:
+        future = self._event_loop.create_future()
 
-    async def discoverDescriptors_(
-        self, characteristic: CBCharacteristic, use_cached=True
-    ) -> [CBDescriptor]:
-        if characteristic.descriptors() is not None and use_cached is True:
-            return characteristic.descriptors()
+        self._service_characteristic_discovered_futures[service.startHandle()] = future
+        try:
+            self.peripheral.discoverCharacteristics_forService_(None, service)
+            return await future
+        finally:
+            del self._service_characteristic_discovered_futures[service.startHandle()]
 
-        cUUID = characteristic.UUID().UUIDString()
-        event = self._characteristic_descriptor_discover_events.get_cleared(cUUID)
-        self.peripheral.discoverDescriptorsForCharacteristic_(characteristic)
-        await event.wait()
+    @objc.python_method
+    async def discover_descriptors(self, characteristic: CBCharacteristic) -> NSArray:
+        future = self._event_loop.create_future()
+
+        self._characteristic_descriptor_discover_futures[
+            characteristic.handle()
+        ] = future
+        try:
+            self.peripheral.discoverDescriptorsForCharacteristic_(characteristic)
+            await future
+        finally:
+            del self._characteristic_descriptor_discover_futures[
+                characteristic.handle()
+            ]
 
         return characteristic.descriptors()
 
-    async def readCharacteristic_(
-        self, characteristic: CBCharacteristic, use_cached=True
+    @objc.python_method
+    async def read_characteristic(
+        self,
+        characteristic: CBCharacteristic,
+        use_cached: bool = True,
+        timeout: int = 20,
     ) -> NSData:
-        if characteristic.value() is not None and use_cached is True:
+        if characteristic.value() is not None and use_cached:
             return characteristic.value()
 
-        cUUID = characteristic.UUID().UUIDString()
+        future = self._event_loop.create_future()
 
-        event = self._characteristic_read_events.get_cleared(cUUID)
-        self.peripheral.readValueForCharacteristic_(characteristic)
-        await asyncio.wait_for(event.wait(), timeout=5)
-        if characteristic.value():
-            return characteristic.value()
-        else:
-            return b""
+        self._characteristic_read_futures[characteristic.handle()] = future
+        try:
+            self.peripheral.readValueForCharacteristic_(characteristic)
+            async with async_timeout.timeout(timeout):
+                return await future
+        finally:
+            del self._characteristic_read_futures[characteristic.handle()]
 
-    async def readDescriptor_(
-        self, descriptor: CBDescriptor, use_cached=True
-    ) -> NSData:
-        if descriptor.value() is not None and use_cached is True:
+    @objc.python_method
+    async def read_descriptor(
+        self, descriptor: CBDescriptor, use_cached: bool = True
+    ) -> Any:
+        if descriptor.value() is not None and use_cached:
             return descriptor.value()
 
-        dUUID = descriptor.UUID().UUIDString()
+        future = self._event_loop.create_future()
 
-        event = self._descriptor_read_events.get_cleared(dUUID)
-        self.peripheral.readValueForDescriptor_(descriptor)
-        await event.wait()
+        self._descriptor_read_futures[descriptor.handle()] = future
+        try:
+            self.peripheral.readValueForDescriptor_(descriptor)
+            return await future
+        finally:
+            del self._descriptor_read_futures[descriptor.handle()]
 
-        return descriptor.value()
-
-    async def writeCharacteristic_value_type_(
-        self, characteristic: CBCharacteristic, value: NSData, response: int
-    ) -> bool:
-        # TODO: Is the type hint for response correct? Should it be a NSInteger instead?
-
-        cUUID = characteristic.UUID().UUIDString()
-
-        event = self._characteristic_write_events.get_cleared(cUUID)
-        self.peripheral.writeValue_forCharacteristic_type_(
-            value, characteristic, response
-        )
-
+    @objc.python_method
+    async def write_characteristic(
+        self,
+        characteristic: CBCharacteristic,
+        value: NSData,
+        response: CBCharacteristicWriteType,
+    ) -> None:
+        # in CoreBluetooth there is no indication of success or failure of
+        # CBCharacteristicWriteWithoutResponse
         if response == CBCharacteristicWriteWithResponse:
-            await event.wait()
+            future = self._event_loop.create_future()
 
-        return True
+            self._characteristic_write_futures[characteristic.handle()] = future
+            try:
+                self.peripheral.writeValue_forCharacteristic_type_(
+                    value, characteristic, response
+                )
+                await future
+            finally:
+                del self._characteristic_write_futures[characteristic.handle()]
+        else:
+            self.peripheral.writeValue_forCharacteristic_type_(
+                value, characteristic, response
+            )
 
-    async def writeDescriptor_value_(
-        self, descriptor: CBDescriptor, value: NSData
-    ) -> bool:
-        dUUID = descriptor.UUID().UUIDString()
+    @objc.python_method
+    async def write_descriptor(self, descriptor: CBDescriptor, value: NSData) -> None:
+        future = self._event_loop.create_future()
 
-        event = self._descriptor_write_events.get_cleared(dUUID)
-        self.peripheral.writeValue_forDescriptor_(value, descriptor)
-        await event.wait()
+        self._descriptor_write_futures[descriptor.handle()] = future
+        try:
+            self.peripheral.writeValue_forDescriptor_(value, descriptor)
+            await future
+        finally:
+            del self._descriptor_write_futures[descriptor.handle()]
 
-        return True
-
-    async def startNotify_cb_(
+    @objc.python_method
+    async def start_notifications(
         self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any]
-    ) -> bool:
+    ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notifications already started")
 
         self._characteristic_notify_callbacks[c_handle] = callback
 
-        event = self._characteristic_notify_change_events.get_cleared(c_handle)
-        self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
-        # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
-        # await event.wait()
+        future = self._event_loop.create_future()
 
-        return True
+        self._characteristic_notify_change_futures[c_handle] = future
+        try:
+            self.peripheral.setNotifyValue_forCharacteristic_(True, characteristic)
+            await future
+        finally:
+            del self._characteristic_notify_change_futures[c_handle]
 
-    async def stopNotify_(self, characteristic: CBCharacteristic) -> bool:
+    @objc.python_method
+    async def stop_notifications(self, characteristic: CBCharacteristic) -> None:
         c_handle = characteristic.handle()
         if c_handle not in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notification never started")
 
-        event = self._characteristic_notify_change_events.get_cleared(c_handle)
-        self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
-        # wait for peripheral_didUpdateNotificationStateForCharacteristic_error_ to set event
-        # await event.wait()
+        future = self._event_loop.create_future()
+
+        self._characteristic_notify_change_futures[c_handle] = future
+        try:
+            self.peripheral.setNotifyValue_forCharacteristic_(False, characteristic)
+            await future
+        finally:
+            del self._characteristic_notify_change_futures[c_handle]
 
         self._characteristic_notify_callbacks.pop(c_handle)
 
-        return True
+    @objc.python_method
+    async def read_rssi(self) -> NSNumber:
+        future = self._event_loop.create_future()
+
+        self._read_rssi_futures[self.peripheral.identifier()] = future
+        try:
+            self.peripheral.readRSSI()
+            return await future
+        finally:
+            del self._read_rssi_futures[self.peripheral.identifier()]
 
     # Protocol Functions
 
     @objc.python_method
-    def did_discover_services(self, peripheral: CBPeripheral, error: NSError) -> None:
+    def did_discover_services(
+        self, peripheral: CBPeripheral, services: NSArray, error: Optional[NSError]
+    ) -> None:
+        future = self._services_discovered_future
         if error is not None:
-            raise BleakError("Failed to discover services {}".format(error))
-
-        logger.debug("Services discovered")
-        self._services_discovered_event.set()
+            exception = BleakError(f"Failed to discover services {error}")
+            future.set_exception(exception)
+        else:
+            logger.debug("Services discovered")
+            future.set_result(services)
 
     def peripheral_didDiscoverServices_(
-        self, peripheral: CBPeripheral, error: NSError
+        self, peripheral: CBPeripheral, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverServices_")
         self._event_loop.call_soon_threadsafe(
             self.did_discover_services,
             peripheral,
+            peripheral.services(),
             error,
         )
 
     @objc.python_method
     def did_discover_characteristics_for_service(
-        self, peripheral: CBPeripheral, service: CBService, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        service: CBService,
+        characteristics: NSArray,
+        error: Optional[NSError],
     ):
-        sUUID = service.UUID().UUIDString()
-        if error is not None:
-            raise BleakError(
-                "Failed to discover services for service {}: {}".format(sUUID, error)
+        future = self._service_characteristic_discovered_futures.get(
+            service.startHandle()
+        )
+        if not future:
+            logger.debug(
+                f"Unexpected event didDiscoverCharacteristicsForService for {service.startHandle()}"
             )
-
-        logger.debug("Characteristics discovered")
-        event = self._service_characteristic_discovered_events.get(sUUID)
-        if event:
-            event.set()
+            return
+        if error is not None:
+            exception = BleakError(
+                f"Failed to discover characteristics for service {service.startHandle()}: {error}"
+            )
+            future.set_exception(exception)
         else:
-            logger.debug("Unexpected event didDiscoverCharacteristicsForService")
+            logger.debug("Characteristics discovered")
+            future.set_result(characteristics)
 
     def peripheral_didDiscoverCharacteristicsForService_error_(
-        self, peripheral: CBPeripheral, service: CBService, error: NSError
+        self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ):
         logger.debug("peripheral_didDiscoverCharacteristicsForService_error_")
         self._event_loop.call_soon_threadsafe(
             self.did_discover_characteristics_for_service,
             peripheral,
             service,
+            service.characteristics(),
             error,
         )
 
     @objc.python_method
     def did_discover_descriptors_for_characteristic(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
-        cUUID = characteristic.UUID().UUIDString()
-        if error is not None:
-            raise BleakError(
-                "Failed to discover descriptors for characteristic {}: {}".format(
-                    cUUID, error
-                )
+        future = self._characteristic_descriptor_discover_futures.get(
+            characteristic.handle()
+        )
+        if not future:
+            logger.warning(
+                f"Unexpected event didDiscoverDescriptorsForCharacteristic for {characteristic.handle()}"
             )
-
-        logger.debug("Descriptor discovered {}".format(cUUID))
-        event = self._characteristic_descriptor_discover_events.get(cUUID)
-        if event:
-            event.set()
+            return
+        if error is not None:
+            exception = BleakError(
+                f"Failed to discover descriptors for characteristic {characteristic.handle()}: {error}"
+            )
+            future.set_exception(exception)
         else:
-            logger.warning("Unexpected event didDiscoverDescriptorsForCharacteristic")
+            logger.debug(f"Descriptor discovered {characteristic.handle()}")
+            future.set_result(None)
 
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
         logger.debug("peripheral_didDiscoverDescriptorsForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -284,30 +354,34 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        value: bytes,
-        error: NSError,
+        value: NSData,
+        error: Optional[NSError],
     ):
-        cUUID = characteristic.UUID().UUIDString()
         c_handle = characteristic.handle()
+
+        future = self._characteristic_read_futures.get(c_handle)
+
+        # If there is no pending read request, then this must be a notification
+        # (the same delagate callback is used by both).
+        if not future:
+            if error is None:
+                notify_callback = self._characteristic_notify_callbacks.get(c_handle)
+                if notify_callback:
+                    notify_callback(c_handle, bytearray(value))
+            return
+
         if error is not None:
-            raise BleakError(
-                "Failed to read characteristic {}: {}".format(cUUID, error)
-            )
-
-        notify_callback = self._characteristic_notify_callbacks.get(c_handle)
-        if notify_callback:
-            notify_callback(c_handle, value)
-
-        logger.debug("Read characteristic value")
-        event = self._characteristic_read_events.get(cUUID)
-        if event:
-            event.set()
+            exception = BleakError(f"Failed to read characteristic {c_handle}: {error}")
+            future.set_exception(exception)
         else:
-            # only expected on read
-            pass
+            logger.debug("Read characteristic value")
+            future.set_result(value)
 
     def peripheral_didUpdateValueForCharacteristic_error_(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
         logger.debug("peripheral_didUpdateValueForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -320,50 +394,64 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     def did_update_value_for_descriptor(
-        self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        descriptor: CBDescriptor,
+        value: NSObject,
+        error: Optional[NSError],
     ):
-        dUUID = descriptor.UUID().UUIDString()
-        if error is not None:
-            raise BleakError("Failed to read descriptor {}: {}".format(dUUID, error))
-
-        logger.debug("Read descriptor value")
-        event = self._descriptor_read_events.get(dUUID)
-        if event:
-            event.set()
-        else:
+        future = self._descriptor_read_futures.get(descriptor.handle())
+        if not future:
             logger.warning("Unexpected event didUpdateValueForDescriptor")
+            return
+        if error is not None:
+            exception = BleakError(
+                f"Failed to read descriptor {descriptor.handle()}: {error}"
+            )
+            future.set_exception(exception)
+        else:
+            logger.debug("Read descriptor value")
+            future.set_result(value)
 
     def peripheral_didUpdateValueForDescriptor_error_(
-        self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        descriptor: CBDescriptor,
+        error: Optional[NSError],
     ):
         logger.debug("peripheral_didUpdateValueForDescriptor_error_")
         self._event_loop.call_soon_threadsafe(
             self.did_update_value_for_descriptor,
             peripheral,
             descriptor,
+            descriptor.value(),
             error,
         )
 
     @objc.python_method
     def did_write_value_for_characteristic(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
-        cUUID = characteristic.UUID().UUIDString()
+        future = self._characteristic_write_futures.get(characteristic.handle(), None)
+        if not future:
+            return  # event only expected on write with response
         if error is not None:
-            raise BleakError(
-                "Failed to write characteristic {}: {}".format(cUUID, error)
+            exception = BleakError(
+                f"Failed to write characteristic {characteristic.handle()}: {error}"
             )
-
-        logger.debug("Write Characteristic Value")
-        event = self._characteristic_write_events.get(cUUID)
-        if event:
-            event.set()
+            future.set_exception(exception)
         else:
-            # event only expected on write with response
-            pass
+            logger.debug("Write Characteristic Value")
+            future.set_result(None)
 
     def peripheral_didWriteValueForCharacteristic_error_(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
         logger.debug("peripheral_didWriteValueForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -375,21 +463,29 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     def did_write_value_for_descriptor(
-        self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        descriptor: CBDescriptor,
+        error: Optional[NSError],
     ):
-        dUUID = descriptor.UUID().UUIDString()
-        if error is not None:
-            raise BleakError("Failed to write descriptor {}: {}".format(dUUID, error))
-
-        logger.debug("Write Descriptor Value")
-        event = self._descriptor_write_events.get(dUUID)
-        if event:
-            event.set()
-        else:
+        future = self._descriptor_write_futures.get(descriptor.handle())
+        if not future:
             logger.warning("Unexpected event didWriteValueForDescriptor")
+            return
+        if error is not None:
+            exception = BleakError(
+                f"Failed to write descriptor {descriptor.handle()}: {error}"
+            )
+            future.set_exception(exception)
+        else:
+            logger.debug("Write Descriptor Value")
+            future.set_result(None)
 
     def peripheral_didWriteValueForDescriptor_error_(
-        self, peripheral: CBPeripheral, descriptor: CBDescriptor, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        descriptor: CBDescriptor,
+        error: Optional[NSError],
     ):
         logger.debug("peripheral_didWriteValueForDescriptor_error_")
         self._event_loop.call_soon_threadsafe(
@@ -401,28 +497,32 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     def did_update_notification_for_characteristic(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
-        cUUID = characteristic.UUID().UUIDString()
         c_handle = characteristic.handle()
-        if error is not None:
-            raise BleakError(
-                "Failed to update the notification status for characteristic {}: {}".format(
-                    cUUID, error
-                )
-            )
-        logger.debug("Character Notify Update")
-
-        event = self._characteristic_notify_change_events.get(c_handle)
-        if event:
-            event.set()
-        else:
+        future = self._characteristic_notify_change_futures.get(c_handle)
+        if not future:
             logger.warning(
                 "Unexpected event didUpdateNotificationStateForCharacteristic"
             )
+            return
+        if error is not None:
+            exception = BleakError(
+                f"Failed to update the notification status for characteristic {c_handle}: {error}"
+            )
+            future.set_exception(exception)
+        else:
+            logger.debug("Character Notify Update")
+            future.set_result(None)
 
     def peripheral_didUpdateNotificationStateForCharacteristic_error_(
-        self, peripheral: CBPeripheral, characteristic: CBCharacteristic, error: NSError
+        self,
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic,
+        error: Optional[NSError],
     ):
         logger.debug("peripheral_didUpdateNotificationStateForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -431,3 +531,88 @@ class PeripheralDelegate(NSObject):
             characteristic,
             error,
         )
+
+    @objc.python_method
+    def did_read_rssi(
+        self, peripheral: CBPeripheral, rssi: NSNumber, error: Optional[NSError]
+    ) -> None:
+        future = self._read_rssi_futures.get(peripheral.identifier(), None)
+
+        if not future:
+            logger.warning("Unexpected event did_read_rssi")
+            return
+
+        if error is not None:
+            exception = BleakError(f"Failed to read RSSI: {error}")
+            future.set_exception(exception)
+        else:
+            future.set_result(rssi)
+
+    # peripheral_didReadRSSI_error_ method is added dynamically later
+
+    # Bleak currently doesn't use the callbacks below other than for debug logging
+
+    @objc.python_method
+    def did_update_name(self, peripheral: CBPeripheral, name: NSString) -> None:
+        logger.debug(f"name of {peripheral.identifier()} changed to {name}")
+
+    def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
+        logger.debug("peripheralDidUpdateName_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_update_name, peripheral, peripheral.name()
+        )
+
+    @objc.python_method
+    def did_modify_services(
+        self, peripheral: CBPeripheral, invalidated_services: NSArray
+    ) -> None:
+        logger.debug(
+            f"{peripheral.identifier()} invalidated services: {invalidated_services}"
+        )
+
+    def peripheral_didModifyServices_(
+        self, peripheral: CBPeripheral, invalidatedServices: NSArray
+    ) -> None:
+        logger.debug("peripheral_didModifyServices_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_modify_services, peripheral, invalidatedServices
+        )
+
+
+# peripheralDidUpdateRSSI:error: was deprecated and replaced with
+# peripheral:didReadRSSI:error: in macOS 10.13
+if objc.macos_available(10, 13):
+
+    def peripheral_didReadRSSI_error_(
+        self: PeripheralDelegate,
+        peripheral: CBPeripheral,
+        rssi: NSNumber,
+        error: Optional[NSError],
+    ) -> None:
+        logger.debug("peripheral_didReadRSSI_error_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_read_rssi, peripheral, rssi, error
+        )
+
+    objc.classAddMethod(
+        PeripheralDelegate,
+        b"peripheral:didReadRSSI:error:",
+        peripheral_didReadRSSI_error_,
+    )
+
+
+else:
+
+    def peripheralDidUpdateRSSI_error_(
+        self: PeripheralDelegate, peripheral: CBPeripheral, error: Optional[NSError]
+    ) -> None:
+        logger.debug("peripheralDidUpdateRSSI_error_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_read_rssi, peripheral, peripheral.RSSI(), error
+        )
+
+    objc.classAddMethod(
+        PeripheralDelegate,
+        b"peripheralDidUpdateRSSI:error:",
+        peripheralDidUpdateRSSI_error_,
+    )

@@ -5,17 +5,17 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
 from enum import Enum
-from typing import List, Union
+from typing import Dict, List, Optional, Tuple, Union
 
-from Foundation import CBCharacteristic
+from CoreBluetooth import CBCharacteristic
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
-from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
-class CBChacteristicProperties(Enum):
+class CBCharacteristicProperties(Enum):
     BROADCAST = 0x1
     READ = 0x2
     WRITE_WITHOUT_RESPONSE = 0x4
@@ -28,7 +28,7 @@ class CBChacteristicProperties(Enum):
     INDICATE_ENCRYPTION_REQUIRED = 0x200
 
 
-_GattCharacteristicsPropertiesEnum = {
+_GattCharacteristicsPropertiesEnum: Dict[Optional[int], Tuple[str, str]] = {
     None: ("None", "The characteristic doesn’t have any properties that apply"),
     1: ("Broadcast".lower(), "The characteristic supports broadcasting"),
     2: ("Read".lower(), "The characteristic is readable"),
@@ -58,16 +58,16 @@ _GattCharacteristicsPropertiesEnum = {
 class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the CoreBluetooth backend"""
 
-    def __init__(self, obj: CBCharacteristic):
-        super().__init__(obj)
-        self.__descriptors = []
+    def __init__(self, obj: CBCharacteristic, max_write_without_response_size: int):
+        super().__init__(obj, max_write_without_response_size)
+        self.__descriptors: List[BleakGATTDescriptorCoreBluetooth] = []
         # self.__props = obj.properties()
-        self.__props = [
+        self.__props: List[str] = [
             _GattCharacteristicsPropertiesEnum[v][0]
-            for v in [2 ** n for n in range(10)]
+            for v in [2**n for n in range(10)]
             if (self.obj.properties() & v)
         ]
-        self._uuid = cb_uuid_to_str(self.obj.UUID())
+        self._uuid: str = cb_uuid_to_str(self.obj.UUID())
 
     @property
     def service_uuid(self) -> str:
@@ -89,18 +89,16 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         return self._uuid
 
     @property
-    def properties(self) -> List:
+    def properties(self) -> List[str]:
         """Properties of this characteristic"""
         return self.__props
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptorCoreBluetooth]:
+    def descriptors(self) -> List[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 
-    def get_descriptor(
-        self, specifier
-    ) -> Union[BleakGATTDescriptorCoreBluetooth, None]:
+    def get_descriptor(self, specifier) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):

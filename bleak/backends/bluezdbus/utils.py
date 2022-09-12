@@ -2,16 +2,13 @@
 import re
 from typing import Any, Dict, Union
 
-from bleak.backends.bluezdbus import defs
-from dbus_next.aio import MessageBus
-from dbus_next.constants import MessageType, BusType
-from dbus_next.message import Message
-from dbus_next.signature import Variant
+from dbus_fast.constants import MessageType
+from dbus_fast.message import Message
+from dbus_fast.signature import Variant
 
-from bleak import BleakError
-from bleak.exc import BleakDBusError
+from ...exc import BleakError, BleakDBusError
 
-_mac_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 
 
 def assert_reply(reply: Message):
@@ -19,15 +16,15 @@ def assert_reply(reply: Message):
 
     Raises:
         BleakDBusError: if the message type is ``MessageType.ERROR``
-        AssentationError: if the message type is not ``MessageType.METHOD_RETURN``
+        AssertionError: if the message type is not ``MessageType.METHOD_RETURN``
     """
     if reply.message_type == MessageType.ERROR:
         raise BleakDBusError(reply.error_name, reply.body)
     assert reply.message_type == MessageType.METHOD_RETURN
 
 
-def validate_mac_address(address):
-    return _mac_address_regex.match(address) is not None
+def validate_address(address):
+    return _address_regex.match(address) is not None
 
 
 def unpack_variants(dictionary: Dict[str, Variant]) -> Dict[str, Any]:

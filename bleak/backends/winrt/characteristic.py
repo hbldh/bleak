@@ -2,13 +2,12 @@
 from uuid import UUID
 from typing import List, Union
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
-
-from winrt.windows.devices.bluetooth.genericattributeprofile import (
+from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattCharacteristicProperties,
 )
+
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
 _GattCharacteristicsPropertiesMap = {
@@ -62,12 +61,14 @@ _GattCharacteristicsPropertiesMap = {
 class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
-    def __init__(self, obj: GattCharacteristicProperties):
-        super().__init__(obj)
+    def __init__(
+        self, obj: GattCharacteristicProperties, max_write_without_response_size: int
+    ):
+        super().__init__(obj, max_write_without_response_size)
         self.__descriptors = []
         self.__props = [
             _GattCharacteristicsPropertiesMap[v][0]
-            for v in [2 ** n for n in range(10)]
+            for v in [2**n for n in range(10)]
             if (self.obj.characteristic_properties & v)
         ]
 
@@ -94,7 +95,11 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     @property
     def description(self) -> str:
         """Description for this characteristic"""
-        return self.obj.user_description
+        return (
+            self.obj.user_description
+            if self.obj.user_description
+            else super().description
+        )
 
     @property
     def properties(self) -> List[str]:
@@ -102,13 +107,13 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         return self.__props
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptorWinRT]:
-        """List of descriptors for this service"""
+    def descriptors(self) -> List[BleakGATTDescriptor]:
+        """List of descriptors for this characteristic"""
         return self.__descriptors
 
     def get_descriptor(
         self, specifier: Union[int, str, UUID]
-    ) -> Union[BleakGATTDescriptorWinRT, None]:
+    ) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         try:
             if isinstance(specifier, int):

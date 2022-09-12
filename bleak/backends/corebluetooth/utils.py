@@ -1,4 +1,5 @@
-from Foundation import NSData, CBUUID
+from Foundation import NSData
+from CoreBluetooth import CBUUID
 
 
 def cb_uuid_to_str(_uuid: CBUUID) -> str:
