@@ -279,7 +279,7 @@ class BleakClientWinRT(BaseBleakClient):
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
         def max_pdu_size_changed_handler(sender: GattSession, args):
-            logger.debug("max_pdu_size_changed_handler: %d", self._session.max_pdu_size)
+            logger.debug("max_pdu_size_changed_handler: %d", sender.max_pdu_size)
 
         # Start a GATT Session to connect
         event = asyncio.Event()
