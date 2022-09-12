@@ -12,7 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Changed
 -------
-* Use relative imports internally.
+* Use relative imports internally. Merged #1007.
 
 
 `0.17.0`_ (2022-09-12)
@@ -49,7 +49,7 @@ Fixed
 
 Removed
 -------
-- Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
+* Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
 
 `0.16.0`_ (2022-08-31)
 ======================
