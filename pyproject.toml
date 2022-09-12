@@ -8,12 +8,12 @@ readme = "README.rst"
 homepage = "https://github.com/hbldh/bleak"
 documentation = "https://bleak.readthedocs.io"
 classifiers = [
-    "Classifier: Development Status :: 4 - Beta",
-    "Classifier: Framework :: AsyncIO",
-    "Classifier: Operating System :: Microsoft :: Windows :: Windows 10",
-    "Classifier: Operating System :: POSIX :: Linux",
-    "Classifier: Operating System :: MacOS :: MacOS X",
-    "Classifier: Operating System :: Android",
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Android",
 ]
 
 [tool.poetry.urls]
