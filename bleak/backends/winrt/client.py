@@ -67,19 +67,6 @@ _ACCESS_DENIED_SERVICES = list(
     for u in ("00001812-0000-1000-8000-00805f9b34fb",)  # Human Interface Device Service
 )
 
-_pairing_statuses = {
-    getattr(DevicePairingResultStatus, v): v
-    for v in dir(DevicePairingResultStatus)
-    if "_" not in v and isinstance(getattr(DevicePairingResultStatus, v), int)
-}
-
-
-_unpairing_statuses = {
-    getattr(DeviceUnpairingResultStatus, v): v
-    for v in dir(DeviceUnpairingResultStatus)
-    if "_" not in v and isinstance(getattr(DeviceUnpairingResultStatus, v), int)
-}
-
 # TODO: we can use this when minimum Python is 3.8
 # class _Result(typing.Protocol):
 #     status: GattCommunicationStatus
@@ -191,7 +178,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
     def __str__(self):
-        return "BleakClientWinRT ({0})".format(self.address)
+        return f"{type(self).__name__} ({self.address})"
 
     # Connectivity methods
 
@@ -215,11 +202,9 @@ class BleakClientWinRT(BaseBleakClient):
             if device:
                 self._device_info = device.details.adv.bluetooth_address
             else:
-                raise BleakError(
-                    "Device with address {0} was not found.".format(self.address)
-                )
+                raise BleakError(f"Device with address {self.address} was not found.")
 
-        logger.debug("Connecting to BLE device @ {0}".format(self.address))
+        logger.debug("Connecting to BLE device @ %s", self.address)
 
         args = [
             self._device_info,
@@ -294,7 +279,7 @@ class BleakClientWinRT(BaseBleakClient):
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
         def max_pdu_size_changed_handler(sender: GattSession, args):
-            logger.debug("max_pdu_size_changed_handler: %d", self._session.max_pdu_size)
+            logger.debug("max_pdu_size_changed_handler: %d", sender.max_pdu_size)
 
         # Start a GATT Session to connect
         event = asyncio.Event()
@@ -448,17 +433,11 @@ class BleakClientWinRT(BaseBleakClient):
                 DevicePairingResultStatus.PAIRED,
                 DevicePairingResultStatus.ALREADY_PAIRED,
             ):
-                raise BleakError(
-                    "Could not pair with device: {0}: {1}".format(
-                        pairing_result.status,
-                        _pairing_statuses.get(pairing_result.status),
-                    )
-                )
+                raise BleakError(f"Could not pair with device: {pairing_result.status}")
             else:
                 logger.info(
-                    "Paired to device with protection level {0}.".format(
-                        pairing_result.protection_level_used
-                    )
+                    "Paired to device with protection level %d.",
+                    pairing_result.protection_level_used,
                 )
                 return True
         else:
@@ -486,11 +465,9 @@ class BleakClientWinRT(BaseBleakClient):
                 DeviceUnpairingResultStatus.ALREADY_UNPAIRED,
             ):
                 raise BleakError(
-                    "Could not unpair with device: {0}: {1}".format(
-                        unpairing_result.status,
-                        _unpairing_statuses.get(unpairing_result.status),
-                    )
+                    f"Could not unpair with device: {unpairing_result.status}"
                 )
+
             else:
                 logger.info("Unpaired with device.")
                 return True
@@ -609,7 +586,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {0} was not found!".format(char_specifier))
+            raise BleakError(f"Characteristic {char_specifier} was not found!")
 
         value = bytearray(
             _ensure_success(
@@ -623,7 +600,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
         )
 
-        logger.debug(f"Read Characteristic {characteristic.handle:04X} : {value}")
+        logger.debug("Read Characteristic %04X : %s", characteristic.handle, value)
 
         return value
 
@@ -648,7 +625,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
-            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
+            raise BleakError(f"Descriptor with handle {handle} was not found!")
 
         value = bytearray(
             _ensure_success(
@@ -662,7 +639,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
         )
 
-        logger.debug(f"Read Descriptor {handle:04X} : {value}")
+        logger.debug("Read Descriptor %04X : %s", handle, value)
 
         return value
 
@@ -690,7 +667,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} was not found!".format(char_specifier))
+            raise BleakError(f"Characteristic {char_specifier} was not found!")
 
         response = (
             GattWriteOption.WRITE_WITH_RESPONSE
@@ -722,7 +699,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
-            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
+            raise BleakError(f"Descriptor with handle {handle} was not found!")
 
         buf = Buffer(len(data))
         buf.length = buf.capacity
@@ -734,7 +711,7 @@ class BleakClientWinRT(BaseBleakClient):
             f"Could not write value {data} to descriptor {handle:04X}",
         )
 
-        logger.debug(f"Write Descriptor {handle:04X} : {data}")
+        logger.debug("Write Descriptor %04X : %s", handle, data)
 
     async def start_notify(
         self,
@@ -780,7 +757,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {0} not found!".format(char_specifier))
+            raise BleakError(f"Characteristic {char_specifier} not found!")
 
         if self._notification_callbacks.get(characteristic.handle):
             await self.stop_notify(characteristic)
@@ -846,7 +823,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} not found!".format(char_specifier))
+            raise BleakError(f"Characteristic {char_specifier} not found!")
 
         _ensure_success(
             await characteristic.obj.write_client_characteristic_configuration_descriptor_async(

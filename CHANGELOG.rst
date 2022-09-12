@@ -25,6 +25,7 @@ Changed
   argument to avoid services being resolved again.
 * The BlueZ D-Bus backend now uses ``dbus-fast`` instead of ``dbus-next`` which significantly improves performance.
 * The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
+* Updated logging to lazy version and replaced format by f-string for BleakClientWinRT
 
 Fixed
 -----
@@ -33,6 +34,7 @@ Fixed
 * Fixed use of wrong enum in unpair function of WinRT backend.
 * Fixed inconsistent return types for ``properties`` and ``descriptors`` properties of ``BleakGATTCharacteristic``.
 * Handle device being removed before GetManagedObjects returns in BlueZ backend. Fixes #996.
+* Fixed crash in ``max_pdu_size_changed_handler`` in WinRT backend. Fixes #998.
 * Fixes a race in the BlueZ D-Bus backend where the disconnect monitor would be removed before it could be awaited.
 
 Removed
