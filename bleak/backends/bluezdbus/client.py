@@ -180,7 +180,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # Create a task that runs until the device is disconnected.
                 self._disconnect_monitor_event = asyncio.Event()
                 asyncio.ensure_future(
-                    self._disconnect_monitor(self._disconnect_monitor_event)
+                    self._disconnect_monitor(
+                        self._bus, self._device_path, self._disconnect_monitor_event
+                    )
                 )
 
                 #
@@ -228,8 +230,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._cleanup_all()
             raise
 
+    @staticmethod
     async def _disconnect_monitor(
-        self, disconnect_monitor_event: asyncio.Event
+        bus: MessageBus, device_path: str, disconnect_monitor_event: asyncio.Event
     ) -> None:
         # This task runs until the device is disconnected. If the task is
         # cancelled, it probably means that the event loop crashed so we
@@ -247,10 +250,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # by using send() instead of call(), we ensure that the message
                 # gets sent, but we don't wait for a reply, which could take
                 # over one second while the device disconnects.
-                await self._bus.send(
+                await bus.send(
                     Message(
                         destination=defs.BLUEZ_SERVICE,
-                        path=self._device_path,
+                        path=device_path,
                         interface=defs.DEVICE_INTERFACE,
                         member="Disconnect",
                     )
