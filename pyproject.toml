@@ -23,7 +23,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-async-timeout = "^4.0.1"
+async-timeout = ">= 3.0.0, < 5"
 typing-extensions = { version = "^4.2.0", python = "<3.8" }
 pyobjc-core = { version = "^8.5", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = "^8.5", markers = "platform_system=='Darwin'" }
