@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Relax ``async-timeout`` version to support different installations. Merged #1009.
+
 `0.17.0`_ (2022-09-12)
 ======================
 
