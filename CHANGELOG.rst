@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Fixed ``tx_power`` not included in ``AdvertisementData.__repr__`` when 0.
+
 `0.17.0`_ (2022-09-12)
 ======================
 

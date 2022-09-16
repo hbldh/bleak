@@ -58,7 +58,7 @@ class AdvertisementData:
             kwargs.append(f"service_data={repr(self.service_data)}")
         if self.service_uuids:
             kwargs.append(f"service_uuids={repr(self.service_uuids)}")
-        if self.tx_power:
+        if self.tx_power is not None:
             kwargs.append(f"tx_power={repr(self.tx_power)}")
         return f"AdvertisementData({', '.join(kwargs)})"
 
