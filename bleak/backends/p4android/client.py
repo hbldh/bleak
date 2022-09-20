@@ -8,19 +8,17 @@ import uuid
 import warnings
 from typing import Callable, Optional, Union
 
-from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import BleakError
-from bleak.backends.client import BaseBleakClient
-from bleak.backends.p4android.service import BleakGATTServiceP4Android
-from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
-from bleak.backends.p4android.descriptor import BleakGATTDescriptorP4Android
-
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
-from . import defs
-from . import utils
+from ...exc import BleakError
+from ..client import BaseBleakClient
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from . import defs, utils
+from .characteristic import BleakGATTCharacteristicP4Android
+from .descriptor import BleakGATTDescriptorP4Android
+from .service import BleakGATTServiceP4Android
 
 logger = logging.getLogger(__name__)
 

@@ -5,14 +5,14 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 
+import asyncio
 import inspect
 import logging
-import asyncio
+import sys
 import uuid
 import warnings
 from functools import wraps
-import sys
-from typing import Callable, Any, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 import async_timeout
 
@@ -22,22 +22,22 @@ else:
     from typing import Literal, TypedDict
 
 from bleak_winrt.windows.devices.bluetooth import (
+    BluetoothAddressType,
+    BluetoothCacheMode,
     BluetoothError,
     BluetoothLEDevice,
-    BluetoothCacheMode,
-    BluetoothAddressType,
 )
 from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattCharacteristic,
+    GattCharacteristicProperties,
+    GattClientCharacteristicConfigurationDescriptorValue,
     GattCommunicationStatus,
     GattDescriptor,
     GattDeviceService,
+    GattSession,
     GattSessionStatus,
     GattSessionStatusChangedEventArgs,
     GattWriteOption,
-    GattCharacteristicProperties,
-    GattClientCharacteristicConfigurationDescriptorValue,
-    GattSession,
 )
 from bleak_winrt.windows.devices.enumeration import (
     DeviceInformation,
@@ -48,17 +48,15 @@ from bleak_winrt.windows.devices.enumeration import (
 from bleak_winrt.windows.foundation import EventRegistrationToken
 from bleak_winrt.windows.storage.streams import Buffer
 
-from bleak.backends.device import BLEDevice
-from bleak.backends.winrt.scanner import BleakScannerWinRT
-from bleak.exc import BleakError, PROTOCOL_ERROR_CODES
-from bleak.backends.client import BaseBleakClient
-
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.winrt.service import BleakGATTServiceWinRT
-from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
-from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
-
+from ...exc import PROTOCOL_ERROR_CODES, BleakError
+from ..characteristic import BleakGATTCharacteristic
+from ..client import BaseBleakClient
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from .characteristic import BleakGATTCharacteristicWinRT
+from .descriptor import BleakGATTDescriptorWinRT
+from .scanner import BleakScannerWinRT
+from .service import BleakGATTServiceWinRT
 
 logger = logging.getLogger(__name__)
 

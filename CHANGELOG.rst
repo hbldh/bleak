@@ -14,6 +14,7 @@ Changed
 -------
 * Relax ``async-timeout`` version to support different installations. Merged #1009.
 * ``unpair`` function of ``BleakClient`` in WinRT backend can be called without being connected to remove stored device information
+* Use relative imports internally. Merged #1007.
 
 `0.17.0`_ (2022-09-12)
 ======================
@@ -49,7 +50,7 @@ Fixed
 
 Removed
 -------
-- Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
+* Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
 
 `0.16.0`_ (2022-08-31)
 ======================

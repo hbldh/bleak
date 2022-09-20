@@ -1,7 +1,7 @@
 from typing import List
 
-from bleak.backends.service import BleakGATTService
-from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
+from ..service import BleakGATTService
+from .characteristic import BleakGATTCharacteristicP4Android
 
 
 class BleakGATTServiceP4Android(BleakGATTService):
