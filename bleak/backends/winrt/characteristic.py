@@ -6,8 +6,8 @@ from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattCharacteristicProperties,
 )
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
+from ..characteristic import BleakGATTCharacteristic
+from ..descriptor import BleakGATTDescriptor
 
 
 _GattCharacteristicsPropertiesMap = {

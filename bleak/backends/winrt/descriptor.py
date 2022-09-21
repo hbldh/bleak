@@ -2,7 +2,7 @@
 
 from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import GattDescriptor
 
-from bleak.backends.descriptor import BleakGATTDescriptor
+from ..descriptor import BleakGATTDescriptor
 
 
 class BleakGATTDescriptorWinRT(BleakGATTDescriptor):

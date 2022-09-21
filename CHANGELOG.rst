@@ -10,9 +10,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Relax ``async-timeout`` version to support different installations. Merged #1009.
+* ``unpair`` function of ``BleakClient`` in WinRT backend can be called without being connected to remove stored device information
+* Use relative imports internally. Merged #1007.
+
 Fixed
 -----
-* Fixed ``tx_power`` not included in ``AdvertisementData.__repr__`` when 0.
+* Fixed ``tx_power`` not included in ``AdvertisementData.__repr__`` when 0. Merged #1017.
 
 `0.17.0`_ (2022-09-12)
 ======================
@@ -48,7 +54,7 @@ Fixed
 
 Removed
 -------
-- Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
+* Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
 
 `0.16.0`_ (2022-08-31)
 ======================

@@ -5,14 +5,14 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 
+import asyncio
 import inspect
 import logging
-import asyncio
+import sys
 import uuid
 import warnings
 from functools import wraps
-import sys
-from typing import Callable, Any, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 import async_timeout
 
@@ -22,22 +22,22 @@ else:
     from typing import Literal, TypedDict
 
 from bleak_winrt.windows.devices.bluetooth import (
+    BluetoothAddressType,
+    BluetoothCacheMode,
     BluetoothError,
     BluetoothLEDevice,
-    BluetoothCacheMode,
-    BluetoothAddressType,
 )
 from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattCharacteristic,
+    GattCharacteristicProperties,
+    GattClientCharacteristicConfigurationDescriptorValue,
     GattCommunicationStatus,
     GattDescriptor,
     GattDeviceService,
+    GattSession,
     GattSessionStatus,
     GattSessionStatusChangedEventArgs,
     GattWriteOption,
-    GattCharacteristicProperties,
-    GattClientCharacteristicConfigurationDescriptorValue,
-    GattSession,
 )
 from bleak_winrt.windows.devices.enumeration import (
     DeviceInformation,
@@ -48,17 +48,15 @@ from bleak_winrt.windows.devices.enumeration import (
 from bleak_winrt.windows.foundation import EventRegistrationToken
 from bleak_winrt.windows.storage.streams import Buffer
 
-from bleak.backends.device import BLEDevice
-from bleak.backends.winrt.scanner import BleakScannerWinRT
-from bleak.exc import BleakError, PROTOCOL_ERROR_CODES
-from bleak.backends.client import BaseBleakClient
-
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.winrt.service import BleakGATTServiceWinRT
-from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
-from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
-
+from ...exc import PROTOCOL_ERROR_CODES, BleakError
+from ..characteristic import BleakGATTCharacteristic
+from ..client import BaseBleakClient
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from .characteristic import BleakGATTCharacteristicWinRT
+from .descriptor import BleakGATTDescriptorWinRT
+from .scanner import BleakScannerWinRT
+from .service import BleakGATTServiceWinRT
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +69,22 @@ _ACCESS_DENIED_SERVICES = list(
 # class _Result(typing.Protocol):
 #     status: GattCommunicationStatus
 #     protocol_error: typing.Optional[int]
+
+
+def _address_to_int(address: str) -> int:
+    """Converts the Bluetooth device address string to its representing integer
+
+    Args:
+        address (str): Bluetooth device address to convert
+
+    Returns:
+        int: integer representation of the given Bluetooth device address
+    """
+    _address_separators = [":", "-"]
+    for char in _address_separators:
+        address = address.replace(char, "")
+
+    return int(address, base=16)
 
 
 def _ensure_success(result: Any, attr: Optional[str], fail_msg: str) -> Any:
@@ -182,6 +196,18 @@ class BleakClientWinRT(BaseBleakClient):
 
     # Connectivity methods
 
+    def _create_requester(self, bluetooth_address: int):
+        args = [
+            bluetooth_address,
+        ]
+        if self._address_type is not None:
+            args.append(
+                BluetoothAddressType.PUBLIC
+                if self._address_type == "public"
+                else BluetoothAddressType.RANDOM
+            )
+        return BluetoothLEDevice.from_bluetooth_address_async(*args)
+
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
@@ -206,16 +232,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         logger.debug("Connecting to BLE device @ %s", self.address)
 
-        args = [
-            self._device_info,
-        ]
-        if self._address_type is not None:
-            args.append(
-                BluetoothAddressType.PUBLIC
-                if self._address_type == "public"
-                else BluetoothAddressType.RANDOM
-            )
-        self._requester = await BluetoothLEDevice.from_bluetooth_address_async(*args)
+        self._requester = await self._create_requester(self._device_info)
 
         if self._requester is None:
             # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
@@ -452,14 +469,17 @@ class BleakClientWinRT(BaseBleakClient):
             Boolean on whether the unparing was successful.
 
         """
-
-        # New local device information object created since the object from the requester isn't updated
-        device_information = await DeviceInformation.create_from_id_async(
-            self._requester.device_information.id
+        device = await self._create_requester(
+            self._device_info
+            if self._device_info is not None
+            else _address_to_int(self.address)
         )
-        if device_information.pairing.is_paired:
-            unpairing_result = await device_information.pairing.unpair_async()
 
+        if device is None:
+            raise BleakError(f"Device with address {self.address} was not found.")
+
+        try:
+            unpairing_result = await device.device_information.pairing.unpair_async()
             if unpairing_result.status not in (
                 DeviceUnpairingResultStatus.UNPAIRED,
                 DeviceUnpairingResultStatus.ALREADY_UNPAIRED,
@@ -467,12 +487,11 @@ class BleakClientWinRT(BaseBleakClient):
                 raise BleakError(
                     f"Could not unpair with device: {unpairing_result.status}"
                 )
+            logger.info("Unpaired with device.")
+        finally:
+            device.close()
 
-            else:
-                logger.info("Unpaired with device.")
-                return True
-
-        return not device_information.pairing.is_paired
+        return True
 
     # GATT services methods
 

@@ -1,18 +1,12 @@
 import abc
 import asyncio
 import inspect
-from typing import (
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Awaitable, Callable, Dict, List, Optional, Tuple
 from warnings import warn
+
 import async_timeout
 
-from bleak.backends.device import BLEDevice
+from .device import BLEDevice
 
 
 class AdvertisementData:
