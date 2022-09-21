@@ -86,13 +86,13 @@ class BleakScanner:
         backend: Optional[BaseBleakScanner] = None,
         **kwargs,
     ):
-        if backend is None:
-            PlatformBleakScanner = get_platform_scanner_backend_type()
-            self._backend = PlatformBleakScanner(
-                detection_callback, service_uuids, scanning_mode, bluez=bluez, **kwargs
-            )
-        else:
-            self._backend = backend
+        PlatformBleakScanner = (
+            get_platform_scanner_backend_type() if backend is None else backend
+        )
+
+        self._backend = PlatformBleakScanner(
+            detection_callback, service_uuids, scanning_mode, bluez=bluez, **kwargs
+        )
 
     async def __aenter__(self):
         await self._backend.start()
@@ -305,17 +305,17 @@ class BleakClient:
         backend: Optional[BaseBleakClient] = None,
         **kwargs,
     ):
-        if backend is None:
-            PlatformBleakClient = get_platform_client_backend_type()
-            self._backend = PlatformBleakClient(
-                device_or_address,
-                disconnected_callback=disconnected_callback,
-                timeout=timeout,
-                winrt=winrt,
-                **kwargs,
-            )
-        else:
-            self._backend = backend
+        PlatformBleakClient = (
+            get_platform_client_backend_type() if backend is None else backend
+        )
+
+        self._backend = PlatformBleakClient(
+            device_or_address,
+            disconnected_callback=disconnected_callback,
+            timeout=timeout,
+            winrt=winrt,
+            **kwargs,
+        )
 
     # device info
 

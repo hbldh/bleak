@@ -17,6 +17,7 @@ from CoreBluetooth import (
 )
 from Foundation import NSArray, NSData
 
+from ... import BleakScanner
 from ...exc import BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient
@@ -72,8 +73,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         timeout = kwargs.get("timeout", self._timeout)
         if self._peripheral is None:
-            device = await BleakScannerCoreBluetooth.find_device_by_address(
-                self.address, timeout=timeout
+            device = await BleakScanner.find_device_by_address(
+                self.address, timeout=timeout, backend=BleakScannerCoreBluetooth
             )
 
             if device:

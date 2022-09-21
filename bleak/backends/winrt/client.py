@@ -48,6 +48,7 @@ from bleak_winrt.windows.devices.enumeration import (
 from bleak_winrt.windows.foundation import EventRegistrationToken
 from bleak_winrt.windows.storage.streams import Buffer
 
+from ... import BleakScanner
 from ...exc import PROTOCOL_ERROR_CODES, BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient
@@ -221,8 +222,8 @@ class BleakClientWinRT(BaseBleakClient):
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_info is None:
-            device = await BleakScannerWinRT.find_device_by_address(
-                self.address, timeout=timeout
+            device = await BleakScanner.find_device_by_address(
+                self.address, timeout=timeout, backend=BleakScannerWinRT
             )
 
             if device:
