@@ -16,6 +16,10 @@ Changed
 * ``unpair`` function of ``BleakClient`` in WinRT backend can be called without being connected to remove stored device information
 * Use relative imports internally. Merged #1007.
 
+Fixed
+-----
+* Fixed ``tx_power`` not included in ``AdvertisementData.__repr__`` when 0. Merged #1017.
+
 `0.17.0`_ (2022-09-12)
 ======================
 
