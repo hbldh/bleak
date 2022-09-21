@@ -16,6 +16,7 @@ from dbus_fast.constants import BusType, ErrorType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
+from ... import BleakScanner
 from ...exc import BleakDBusError, BleakError
 from ..client import BaseBleakClient
 from ..device import BLEDevice
@@ -102,8 +103,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
-            device = await BleakScannerBlueZDBus.find_device_by_address(
-                self.address, timeout=timeout, adapter=self._adapter
+            device = await BleakScanner.find_device_by_address(
+                self.address,
+                timeout=timeout,
+                adapter=self._adapter,
+                backend=BleakScannerBlueZDBus,
             )
 
             if device:
