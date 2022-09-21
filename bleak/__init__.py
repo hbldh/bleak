@@ -24,12 +24,13 @@ else:
 
 from .__version__ import __version__  # noqa: F401
 from .backends.characteristic import BleakGATTCharacteristic
-from .backends.client import get_platform_client_backend_type
+from .backends.client import BaseBleakClient, get_platform_client_backend_type
 from .backends.device import BLEDevice
 from .backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
     AdvertisementDataFilter,
+    BaseBleakScanner,
     get_platform_scanner_backend_type,
 )
 from .backends.service import BleakGATTServiceCollection
@@ -68,6 +69,9 @@ class BleakScanner:
             :class:`BleakError` if set to ``"passive"`` on macOS.
         bluez:
             Dictionary of arguments specific to the BlueZ backend.
+        backend:
+            Used to override the automatically selected backend (i.e. for a
+            custom backend).
         **kwargs:
             Additional args for backwards compatibility.
     """
@@ -79,12 +83,16 @@ class BleakScanner:
         scanning_mode: Literal["active", "passive"] = "active",
         *,
         bluez: BlueZScannerArgs = {},
+        backend: Optional[BaseBleakScanner] = None,
         **kwargs,
     ):
-        PlatformBleakScanner = get_platform_scanner_backend_type()
-        self._backend = PlatformBleakScanner(
-            detection_callback, service_uuids, scanning_mode, bluez=bluez, **kwargs
-        )
+        if backend is None:
+            PlatformBleakScanner = get_platform_scanner_backend_type()
+            self._backend = PlatformBleakScanner(
+                detection_callback, service_uuids, scanning_mode, bluez=bluez, **kwargs
+            )
+        else:
+            self._backend = backend
 
     async def __aenter__(self):
         await self._backend.start()
@@ -267,6 +275,9 @@ class BleakClient:
             ``device_or_address`` is not a :class:`BLEDevice`. Defaults to 10.0.
         winrt:
             Dictionary of WinRT/Windows platform-specific options.
+        backend:
+            Used to override the automatically selected backend (i.e. for a
+            custom backend).
         **kwargs:
             Additional keyword arguments for backwards compatibility.
 
@@ -291,16 +302,20 @@ class BleakClient:
         *,
         timeout: float = 10.0,
         winrt: WinRTClientArgs = {},
+        backend: Optional[BaseBleakClient] = None,
         **kwargs,
     ):
-        PlatformBleakClient = get_platform_client_backend_type()
-        self._backend = PlatformBleakClient(
-            device_or_address,
-            disconnected_callback=disconnected_callback,
-            timeout=timeout,
-            winrt=winrt,
-            **kwargs,
-        )
+        if backend is None:
+            PlatformBleakClient = get_platform_client_backend_type()
+            self._backend = PlatformBleakClient(
+                device_or_address,
+                disconnected_callback=disconnected_callback,
+                timeout=timeout,
+                winrt=winrt,
+                **kwargs,
+            )
+        else:
+            self._backend = backend
 
     # device info
 
