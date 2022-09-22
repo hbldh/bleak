@@ -8,11 +8,12 @@ __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
 import asyncio
+import inspect
 import logging
 import os
 import sys
 import uuid
-from typing import TYPE_CHECKING, Callable, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional, Type, Union
 from warnings import warn
 
 import async_timeout
@@ -34,6 +35,7 @@ from .backends.scanner import (
     get_platform_scanner_backend_type,
 )
 from .backends.service import BleakGATTServiceCollection
+from .exc import BleakError
 
 if TYPE_CHECKING:
     from .backends.bluezdbus.scanner import BlueZScannerArgs
@@ -490,7 +492,7 @@ class BleakClient:
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[int, bytearray], None],
+        callback: Callable[[int, bytearray], Union[None, Awaitable[None]]],
         **kwargs,
     ) -> None:
         """
@@ -503,6 +505,7 @@ class BleakClient:
 
             def callback(sender: int, data: bytearray):
                 print(f"{sender}: {data}")
+
             client.start_notify(char_uuid, callback)
 
         Args:
@@ -511,10 +514,30 @@ class BleakClient:
                 characteristic, specified by either integer handle,
                 UUID or directly by the BleakGATTCharacteristic object representing it.
             callback:
-                The function to be called on notification.
+                The function to be called on notification. Can be regular
+                function or async function.
 
         """
-        await self._backend.start_notify(char_specifier, callback, **kwargs)
+        if not self.is_connected:
+            raise BleakError("Not connected")
+
+        if inspect.iscoroutinefunction(callback):
+
+            def wrapped_callback(s, d):
+                asyncio.ensure_future(callback(s, d))
+
+        else:
+            wrapped_callback = callback
+
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
+            characteristic = self.services.get_characteristic(char_specifier)
+        else:
+            characteristic = char_specifier
+
+        if not characteristic:
+            raise BleakError(f"Characteristic {char_specifier} not found!")
+
+        await self._backend.start_notify(characteristic, wrapped_callback, **kwargs)
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]

@@ -4,10 +4,9 @@ BLE Client for CoreBluetooth on macOS
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 import asyncio
-import inspect
 import logging
 import uuid
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 from CoreBluetooth import (
     CBCharacteristicWriteWithoutResponse,
@@ -20,7 +19,7 @@ from Foundation import NSArray, NSData
 from ... import BleakScanner
 from ...exc import BleakError
 from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient
+from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
 from ..service import BleakGATTServiceCollection
 from .CentralManagerDelegate import CentralManagerDelegate
@@ -348,44 +347,16 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     async def start_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[int, bytearray], None],
+        characteristic: BleakGATTCharacteristic,
+        callback: NotifyCallback,
         **kwargs,
     ) -> None:
-        """Activate notifications/indications on a characteristic.
-
-        Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
-        data and the second will be a ``bytearray`` containing the data sent from the connected server.
-
-        .. code-block:: python
-
-            def callback(sender: int, data: bytearray):
-                print(f"{sender}: {data}")
-            client.start_notify(char_uuid, callback)
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to activate
-                notifications/indications on a characteristic, specified by either integer handle,
-                UUID or directly by the BleakGATTCharacteristic object representing it.
-            callback (function): The function to be called on notification.
-
         """
-        if inspect.iscoroutinefunction(callback):
+        Activate notifications/indications on a characteristic.
+        """
+        assert self._delegate is not None
 
-            def bleak_callback(s, d):
-                asyncio.ensure_future(callback(s, d))
-
-        else:
-            bleak_callback = callback
-
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-        if not characteristic:
-            raise BleakError("Characteristic {0} not found!".format(char_specifier))
-
-        await self._delegate.start_notifications(characteristic.obj, bleak_callback)
+        await self._delegate.start_notifications(characteristic.obj, callback)
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]

@@ -18,6 +18,8 @@ from .service import BleakGATTServiceCollection
 from .characteristic import BleakGATTCharacteristic
 from .device import BLEDevice
 
+NotifyCallback = Callable[[int, bytearray], None]
+
 
 class BaseBleakClient(abc.ABC):
     """The Client Interface for Bleak Backend implementations to implement.
@@ -43,7 +45,6 @@ class BaseBleakClient(abc.ABC):
         self.services = BleakGATTServiceCollection()
 
         self._services_resolved = False
-        self._notification_callbacks = {}
 
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
@@ -218,27 +219,18 @@ class BaseBleakClient(abc.ABC):
     @abc.abstractmethod
     async def start_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[int, bytearray], None],
+        characteristic: BleakGATTCharacteristic,
+        callback: NotifyCallback,
         **kwargs,
     ) -> None:
-        """Activate notifications/indications on a characteristic.
+        """
+        Activate notifications/indications on a characteristic.
 
-        Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
-        data and the second will be a ``bytearray``.
+        Implementers should call the OS function to enable notifications or
+        indications on the characteristic.
 
-        .. code-block:: python
-
-            def callback(sender: int, data: bytearray):
-                print(f"{sender}: {data}")
-            client.start_notify(char_uuid, callback)
-
-        Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to activate
-                notifications/indications on a characteristic, specified by either integer handle,
-                UUID or directly by the BleakGATTCharacteristic object representing it.
-            callback (function): The function to be called on notification.
-
+        To keep things the same cross-platform, notifications should be preferred
+        over indications if possible when a characteristic supports both.
         """
         raise NotImplementedError()
 
