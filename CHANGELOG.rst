@@ -20,6 +20,7 @@ Changed
 * Deprecated ``BleakScanner.set_scanning_filter()``.
 * Deprecated ``BleakClient.set_disconnected_callback()``.
 * Deprecated ``BleakClient.get_services()``.
+* Refactored common code in ``BleakClient.start_notify()``.
 
 Fixed
 -----
