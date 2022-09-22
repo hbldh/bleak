@@ -13,6 +13,7 @@ from itertools import count, takewhile
 from typing import Iterator
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
@@ -57,7 +58,7 @@ async def uart_terminal():
         for task in asyncio.all_tasks():
             task.cancel()
 
-    def handle_rx(_: int, data: bytearray):
+    def handle_rx(_: BleakGATTCharacteristic, data: bytearray):
         print("received:", data)
 
     async with BleakClient(device, disconnected_callback=handle_disconnect) as client:

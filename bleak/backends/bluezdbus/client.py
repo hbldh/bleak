@@ -25,7 +25,7 @@ from . import defs
 from .characteristic import BleakGATTCharacteristicBlueZDBus
 from .manager import get_global_bluez_manager
 from .scanner import BleakScannerBlueZDBus
-from .utils import assert_reply, extract_service_handle_from_path
+from .utils import assert_reply
 from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to ensure device gets disconnected if event loop crashes
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
-        self._notification_callbacks: Dict[str, Callable] = {}
+        self._notification_callbacks: Dict[str, NotifyCallback] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -146,9 +146,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     disconnecting_event.set()
 
         def on_value_changed(char_path: str, value: bytes) -> None:
-            if char_path in self._notification_callbacks:
-                handle = extract_service_handle_from_path(char_path)
-                self._notification_callbacks[char_path](handle, bytearray(value))
+            callback = self._notification_callbacks.get(char_path)
+
+            if callback:
+                callback(bytearray(value))
 
         watcher = manager.add_device_watcher(
             self._device_path, on_connected_changed, on_value_changed

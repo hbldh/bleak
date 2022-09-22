@@ -18,7 +18,7 @@ from .service import BleakGATTServiceCollection
 from .characteristic import BleakGATTCharacteristic
 from .device import BLEDevice
 
-NotifyCallback = Callable[[int, bytearray], None]
+NotifyCallback = Callable[[bytearray], None]
 
 
 class BaseBleakClient(abc.ABC):

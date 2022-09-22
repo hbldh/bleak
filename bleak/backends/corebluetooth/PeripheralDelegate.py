@@ -9,7 +9,7 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import itertools
 import logging
-from typing import Callable, Any, Dict, Iterable, NewType, Optional
+from typing import Any, Dict, Iterable, NewType, Optional
 
 import async_timeout
 import objc
@@ -23,6 +23,7 @@ from CoreBluetooth import (
 )
 
 from ...exc import BleakError
+from ..client import NotifyCallback
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ class PeripheralDelegate(NSObject):
         self._descriptor_write_futures: Dict[int, asyncio.Future] = {}
 
         self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
-        self._characteristic_notify_callbacks: Dict[int, Callable[[str, Any], Any]] = {}
+        self._characteristic_notify_callbacks: Dict[int, NotifyCallback] = {}
 
         self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
 
@@ -204,7 +205,7 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     async def start_notifications(
-        self, characteristic: CBCharacteristic, callback: Callable[[str, Any], Any]
+        self, characteristic: CBCharacteristic, callback: NotifyCallback
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
@@ -366,8 +367,9 @@ class PeripheralDelegate(NSObject):
         if not future:
             if error is None:
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
+
                 if notify_callback:
-                    notify_callback(c_handle, bytearray(value))
+                    notify_callback(bytearray(value))
             return
 
         if error is not None:

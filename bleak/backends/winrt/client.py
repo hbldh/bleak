@@ -10,8 +10,7 @@ import logging
 import sys
 import uuid
 import warnings
-from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 import async_timeout
 
@@ -36,6 +35,7 @@ from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
     GattSession,
     GattSessionStatus,
     GattSessionStatusChangedEventArgs,
+    GattValueChangedEventArgs,
     GattWriteOption,
 )
 from bleak_winrt.windows.devices.enumeration import (
@@ -763,8 +763,15 @@ class BleakClientWinRT(BaseBleakClient):
                 "characteristic does not support notifications or indications"
             )
 
-        fcn = _notification_wrapper(callback, asyncio.get_running_loop())
-        event_handler_token = winrt_char.add_value_changed(fcn)
+        loop = asyncio.get_running_loop()
+
+        def handle_value_changed(
+            sender: GattCharacteristic, args: GattValueChangedEventArgs
+        ):
+            value = bytearray(args.characteristic_value)
+            return loop.call_soon_threadsafe(callback, value)
+
+        event_handler_token = winrt_char.add_value_changed(handle_value_changed)
         self._notification_callbacks[characteristic.handle] = event_handler_token
 
         try:
@@ -817,15 +824,3 @@ class BleakClientWinRT(BaseBleakClient):
 
         event_handler_token = self._notification_callbacks.pop(characteristic.handle)
         characteristic.obj.remove_value_changed(event_handler_token)
-
-
-def _notification_wrapper(func: Callable, loop: asyncio.AbstractEventLoop):
-    @wraps(func)
-    def notification_parser(sender: Any, args: Any):
-        # Return only the UUID string representation as sender.
-        # Also do a conversion from System.Bytes[] to bytearray.
-        value = bytearray(args.characteristic_value)
-
-        return loop.call_soon_threadsafe(func, sender.attribute_handle, value)
-
-    return notification_parser
