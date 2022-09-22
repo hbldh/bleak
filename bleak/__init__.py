@@ -12,7 +12,7 @@ import logging
 import os
 import sys
 import uuid
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Type, Union
 from warnings import warn
 
 import async_timeout
@@ -83,7 +83,7 @@ class BleakScanner:
         scanning_mode: Literal["active", "passive"] = "active",
         *,
         bluez: BlueZScannerArgs = {},
-        backend: Optional[BaseBleakScanner] = None,
+        backend: Optional[Type[BaseBleakScanner]] = None,
         **kwargs,
     ):
         PlatformBleakScanner = (
@@ -302,7 +302,7 @@ class BleakClient:
         *,
         timeout: float = 10.0,
         winrt: WinRTClientArgs = {},
-        backend: Optional[BaseBleakClient] = None,
+        backend: Optional[Type[BaseBleakClient]] = None,
         **kwargs,
     ):
         PlatformBleakClient = (
