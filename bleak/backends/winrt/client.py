@@ -48,7 +48,7 @@ from bleak_winrt.windows.foundation import EventRegistrationToken
 from bleak_winrt.windows.storage.streams import Buffer
 
 from ... import BleakScanner
-from ...exc import PROTOCOL_ERROR_CODES, BleakError
+from ...exc import PROTOCOL_ERROR_CODES, BleakError, BleakDeviceNotFoundError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -197,7 +197,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     # Connectivity methods
 
-    def _create_requester(self, bluetooth_address: int):
+    def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
         args = [
             bluetooth_address,
         ]
@@ -207,7 +207,12 @@ class BleakClientWinRT(BaseBleakClient):
                 if self._address_type == "public"
                 else BluetoothAddressType.RANDOM
             )
-        return BluetoothLEDevice.from_bluetooth_address_async(*args)
+        requester = BluetoothLEDevice.from_bluetooth_address_async(*args)
+        if requester is None:
+            raise BleakDeviceNotFoundError(
+                self.address, f"Device with address {self.address} was not found."
+            )
+        return requester
 
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
@@ -226,10 +231,12 @@ class BleakClientWinRT(BaseBleakClient):
                 self.address, timeout=timeout, backend=BleakScannerWinRT
             )
 
-            if device:
-                self._device_info = device.details.adv.bluetooth_address
-            else:
-                raise BleakError(f"Device with address {self.address} was not found.")
+            if device is None:
+                raise BleakDeviceNotFoundError(
+                    self.address, f"Device with address {self.address} was not found."
+                )
+
+            self._device_info = device.details.adv.bluetooth_address
 
         logger.debug("Connecting to BLE device @ %s", self.address)
 
@@ -475,9 +482,6 @@ class BleakClientWinRT(BaseBleakClient):
             if self._device_info is not None
             else _address_to_int(self.address)
         )
-
-        if device is None:
-            raise BleakError(f"Device with address {self.address} was not found.")
 
         try:
             unpairing_result = await device.device_information.pairing.unpair_async()

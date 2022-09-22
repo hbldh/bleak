@@ -23,7 +23,7 @@ class BLEDevice:
     - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
     """
 
-    def __init__(self, address, name, details=None, rssi=0, **kwargs):
+    def __init__(self, address, name=None, details=None, rssi=0, **kwargs):
         #: The Bluetooth address of the device on this machine.
         self.address = address
         #: The advertised name of the device.

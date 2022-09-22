@@ -11,12 +11,12 @@ from uuid import UUID
 
 import async_timeout
 from dbus_fast.aio import MessageBus
-from dbus_fast.constants import BusType, ErrorType
+from dbus_fast.constants import BusType, ErrorType, MessageType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from ... import BleakScanner
-from ...exc import BleakDBusError, BleakError
+from ...exc import BleakDBusError, BleakError, BleakDeviceNotFoundError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -116,8 +116,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self._device_info = device.details.get("props")
                 self._device_path = device.details["path"]
             else:
-                raise BleakError(
-                    "Device with address {0} was not found.".format(self.address)
+                raise BleakDeviceNotFoundError(
+                    self.address, f"Device with address {self.address} was not found."
                 )
 
         manager = await get_global_bluez_manager()
@@ -175,6 +175,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                 path=self._device_path,
                                 member="Connect",
                             )
+                        )
+                    if (
+                        reply is not None
+                        and reply.message_type == MessageType.ERROR
+                        and reply.error_name == ErrorType.UNKNOWN_OBJECT
+                    ):
+                        raise BleakDeviceNotFoundError(
+                            self.address,
+                            f"Device with address {self.address} was not found.",
                         )
                     assert_reply(reply)
 
