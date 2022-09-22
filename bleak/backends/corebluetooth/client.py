@@ -17,7 +17,7 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from ... import BleakScanner
-from ...exc import BleakError
+from ...exc import BleakError, BleakDeviceNotFoundError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -80,8 +80,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 self._peripheral = device.details
                 self._central_manager_delegate = device.metadata["delegate"]
             else:
-                raise BleakError(
-                    "Device with address {} was not found".format(self.address)
+                raise BleakDeviceNotFoundError(
+                    self.address, f"Device with address {self.address} was not found"
                 )
 
         if self._delegate is None:

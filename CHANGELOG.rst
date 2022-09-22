@@ -14,6 +14,7 @@ Added
 -----
 * Added support for Python 3.11.
 * Added better error message for Bluetooth not authorized on macOS.
+* ``BleakDeviceNotFoundError`` which should be raised if a device can not be found by ``connect``, ``pair`` and ``unpair``
 
 Fixed
 -----
