@@ -552,7 +552,7 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
     @java_method("(I[B)V")
     def onCharacteristicChanged(self, handle, value):
         self._loop.call_soon_threadsafe(
-            self._client._subscriptions[handle], handle, bytearray(value.tolist())
+            self._client._subscriptions[handle], bytearray(value.tolist())
         )
 
     @java_method("(II[B)V")

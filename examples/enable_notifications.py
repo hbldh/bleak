@@ -14,6 +14,7 @@ import asyncio
 import platform
 
 from bleak import BleakClient
+from bleak.backends.characteristic import BleakGATTCharacteristic
 
 
 # you can change these to match your device or override them from the command line
@@ -25,9 +26,9 @@ ADDRESS = (
 )
 
 
-def notification_handler(sender, data):
+def notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray):
     """Simple notification handler which prints the data received."""
-    print("{0}: {1}".format(sender, data))
+    print(f"{characteristic.description}: {data}")
 
 
 async def main(address, char_uuid):

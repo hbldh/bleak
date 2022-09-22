@@ -8,8 +8,8 @@ ecgUUID = "46366e80-cf3a-11e1-9ab4-0002a5d5c51b"
 notify_uuid = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(0xFFE1)
 
 
-def callback(sender, data):
-    print(sender, data)
+def callback(characteristic, data):
+    print(characteristic, data)
 
 
 async def connect_to_device(address):

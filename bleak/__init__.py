@@ -8,6 +8,7 @@ __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
 import asyncio
+import functools
 import inspect
 import logging
 import os
@@ -492,14 +493,16 @@ class BleakClient:
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        callback: Callable[[int, bytearray], Union[None, Awaitable[None]]],
+        callback: Callable[
+            [BleakGATTCharacteristic, bytearray], Union[None, Awaitable[None]]
+        ],
         **kwargs,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
 
-        Callbacks must accept two inputs. The first will be a integer handle of
-        the characteristic generating the data and the second will be a ``bytearray``.
+        Callbacks must accept two inputs. The first will be the characteristic
+        and the second will be a ``bytearray`` containing the data received.
 
         .. code-block:: python
 
@@ -521,14 +524,6 @@ class BleakClient:
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if inspect.iscoroutinefunction(callback):
-
-            def wrapped_callback(s, d):
-                asyncio.ensure_future(callback(s, d))
-
-        else:
-            wrapped_callback = callback
-
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -536,6 +531,14 @@ class BleakClient:
 
         if not characteristic:
             raise BleakError(f"Characteristic {char_specifier} not found!")
+
+        if inspect.iscoroutinefunction(callback):
+
+            def wrapped_callback(data):
+                asyncio.ensure_future(callback(characteristic, data))
+
+        else:
+            wrapped_callback = functools.partial(callback, characteristic)
 
         await self._backend.start_notify(characteristic, wrapped_callback, **kwargs)
 

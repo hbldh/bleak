@@ -21,6 +21,7 @@ Changed
 * Deprecated ``BleakClient.set_disconnected_callback()``.
 * Deprecated ``BleakClient.get_services()``.
 * Refactored common code in ``BleakClient.start_notify()``.
+* (BREAKING) Changed notification callback argument from ``int`` to ``BleakGattCharacteristic``. Fixes #759.
 
 Fixed
 -----
