@@ -10,10 +10,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.18.0`_ (2022-09-23)
+======================
+
 Changed
 -------
-* Relax ``async-timeout`` version to support different installations. Merged #1009.
-* ``unpair`` function of ``BleakClient`` in WinRT backend can be called without being connected to remove stored device information
+* Relaxed ``async-timeout`` dependency version to support different installations. Merged #1009.
+* ``BleakClient.unpair()`` in WinRT backend can be called without being connected first. Merged #1012.
 * Use relative imports internally. Merged #1007.
 * ``BleakScanner`` and ``BleakClient`` are now concrete classes. Fixes #582.
 * Deprecated ``BleakScanner.register_detection_callback()``.
@@ -800,7 +803,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.17.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.18.0...develop
+.. _0.18.0: https://github.com/hbldh/bleak/compare/v0.17.0...v0.18.0
 .. _0.17.0: https://github.com/hbldh/bleak/compare/v0.16.0...v0.17.0
 .. _0.16.0: https://github.com/hbldh/bleak/compare/v0.15.1...v0.16.0
 .. _0.15.1: https://github.com/hbldh/bleak/compare/v0.15.0...v0.15.1
