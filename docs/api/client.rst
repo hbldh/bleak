@@ -49,6 +49,8 @@ Device information
 
 .. autoproperty:: bleak.BleakClient.address
 
+.. autoproperty:: bleak.BleakClient.mtu_size
+
 
 ----------------------
 GATT Client Operations

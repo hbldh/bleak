@@ -49,6 +49,12 @@ class BaseBleakClient(abc.ABC):
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
 
+    @property
+    @abc.abstractmethod
+    def mtu_size(self) -> int:
+        """Gets the negotiated MTU."""
+        raise NotImplementedError
+
     # Connectivity methods
 
     def set_disconnected_callback(
