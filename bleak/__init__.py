@@ -329,6 +329,19 @@ class BleakClient:
         """
         return self._backend.address
 
+    @property
+    def mtu_size(self) -> int:
+        """
+        Gets the negotiated MTU size in bytes for the active connection.
+
+        Consider using :attr:`bleak.backends.characteristic.BleakGATTCharacteristic.max_write_without_response_size` instead.
+
+        .. warning:: The BlueZ backend will always return 23 (the minimum MTU size).
+            See the ``mtu_size.py`` example for a way to hack around this.
+
+        """
+        return self._backend.mtu_size
+
     def __str__(self):
         return f"{self.__class__.__name__}, {self.address}"
 
