@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-from uuid import UUID
 from typing import List, Union
+from uuid import UUID
 
 from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
+    GattCharacteristic,
     GattCharacteristicProperties,
 )
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
-
+from ..characteristic import BleakGATTCharacteristic
+from ..descriptor import BleakGATTDescriptor
 
 _GattCharacteristicsPropertiesMap = {
     GattCharacteristicProperties.NONE: (
@@ -61,9 +61,7 @@ _GattCharacteristicsPropertiesMap = {
 class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
-    def __init__(
-        self, obj: GattCharacteristicProperties, max_write_without_response_size: int
-    ):
+    def __init__(self, obj: GattCharacteristic, max_write_without_response_size: int):
         super().__init__(obj, max_write_without_response_size)
         self.__descriptors = []
         self.__props = [

@@ -3,30 +3,23 @@
 import asyncio
 import logging
 import sys
-from typing import List, Optional
 import warnings
-
-import async_timeout
+from typing import List, Optional
 
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal
 else:
     from typing import Literal
 
-from bleak.backends.scanner import (
-    AdvertisementDataCallback,
-    BaseBleakScanner,
-    AdvertisementData,
-)
-from bleak.backends.device import BLEDevice
-from bleak.exc import BleakError
-
+import async_timeout
 from android.broadcast import BroadcastReceiver
-from android.permissions import request_permissions, Permission
+from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
-from . import defs
-from . import utils
+from ...exc import BleakError
+from ..device import BLEDevice
+from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
+from . import defs, utils
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +44,9 @@ class BleakScannerP4Android(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[List[str]] = None,
-        scanning_mode: Literal["active", "passive"] = "active",
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+        scanning_mode: Literal["active", "passive"],
         **kwargs,
     ):
         super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)

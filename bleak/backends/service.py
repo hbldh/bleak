@@ -6,14 +6,14 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 import abc
-from uuid import UUID
-from typing import Dict, List, Optional, Union, Iterator
 import logging
+from typing import Dict, Iterator, List, Optional, Union
+from uuid import UUID
 
-from bleak import BleakError
-from bleak.uuids import uuidstr_to_str
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.descriptor import BleakGATTDescriptor
+from ..exc import BleakError
+from ..uuids import uuidstr_to_str
+from .characteristic import BleakGATTCharacteristic
+from .descriptor import BleakGATTDescriptor
 
 logger = logging.getLogger(__name__)
 

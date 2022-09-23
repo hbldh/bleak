@@ -28,7 +28,7 @@ CHARACTERISTIC_UUID = f"0000{0xFFE1:x}-0000-1000-8000-00805f9b34fb"
 
 
 async def run_ble_client(address: str, char_uuid: str, queue: asyncio.Queue):
-    async def callback_handler(sender, data):
+    async def callback_handler(_, data):
         await queue.put((time.time(), data))
 
     async with BleakClient(address) as client:

@@ -10,6 +10,26 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.18.0`_ (2022-09-23)
+======================
+
+Changed
+-------
+* Relaxed ``async-timeout`` dependency version to support different installations. Merged #1009.
+* ``BleakClient.unpair()`` in WinRT backend can be called without being connected first. Merged #1012.
+* Use relative imports internally. Merged #1007.
+* ``BleakScanner`` and ``BleakClient`` are now concrete classes. Fixes #582.
+* Deprecated ``BleakScanner.register_detection_callback()``.
+* Deprecated ``BleakScanner.set_scanning_filter()``.
+* Deprecated ``BleakClient.set_disconnected_callback()``.
+* Deprecated ``BleakClient.get_services()``.
+* Refactored common code in ``BleakClient.start_notify()``.
+* (BREAKING) Changed notification callback argument from ``int`` to ``BleakGattCharacteristic``. Fixes #759.
+
+Fixed
+-----
+* Fixed ``tx_power`` not included in ``AdvertisementData.__repr__`` when 0. Merged #1017.
+
 `0.17.0`_ (2022-09-12)
 ======================
 
@@ -44,7 +64,7 @@ Fixed
 
 Removed
 -------
-- Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
+* Removed ``BLEDeviceCoreBluetooth`` type from CoreBluetooth backend. Merged #977.
 
 `0.16.0`_ (2022-08-31)
 ======================
@@ -666,7 +686,7 @@ Fixed
 * Updated ``txdbus`` requirement to version 1.1.1 (Merged #122)
 * Implemented ``write_gatt_descriptor`` for Bluez backend.
 * Large change in Bluez backend handling of Twisted reactors. Fixes #143
-* Modified ``set_disconnect_callback`` to actually call the callback as a callback. Fixes #108.
+* Modified ``set_disconnected_callback`` to actually call the callback as a callback. Fixes #108.
 * Added another required parameter to disconnect callbacks.
 * Added Discovery filter option in BlueZ backend (Merged #124)
 * Merge #138: comments about Bluez version check.
@@ -783,7 +803,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.17.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.18.0...develop
+.. _0.18.0: https://github.com/hbldh/bleak/compare/v0.17.0...v0.18.0
 .. _0.17.0: https://github.com/hbldh/bleak/compare/v0.16.0...v0.17.0
 .. _0.16.0: https://github.com/hbldh/bleak/compare/v0.15.1...v0.16.0
 .. _0.15.1: https://github.com/hbldh/bleak/compare/v0.15.0...v0.15.1

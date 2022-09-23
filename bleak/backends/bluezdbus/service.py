@@ -1,8 +1,8 @@
 from typing import List
 
-from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
-from bleak.backends.service import BleakGATTService
-from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
+from ..service import BleakGATTService
+from .characteristic import BleakGATTCharacteristicBlueZDBus
+from .utils import extract_service_handle_from_path
 
 
 class BleakGATTServiceBlueZDBus(BleakGATTService):

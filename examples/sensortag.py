@@ -132,8 +132,8 @@ async def main(address):
         battery_level = await client.read_gatt_char(BATTERY_LEVEL_UUID)
         print("Battery Level: {0}%".format(int(battery_level[0])))
 
-        async def notification_handler(sender, data):
-            print("{0}: {1}".format(sender, data))
+        async def notification_handler(characteristic, data):
+            print(f"{characteristic.description}: {data}")
 
         # Turn on the red light on the Sensor Tag by writing to I/O Data and I/O Config.
         write_value = bytearray([0x01])

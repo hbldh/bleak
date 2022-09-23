@@ -16,3 +16,17 @@ Client
  - The constructor keyword ``address_type`` which can have the values ``"public"`` or ``"random"``. This value
    makes sure that the connection is made in a fashion that suits the peripheral.
 
+API
+---
+
+Scanner
+~~~~~~~
+
+.. automodule:: bleak.backends.winrt.scanner
+    :members:
+
+Client
+~~~~~~
+
+.. automodule:: bleak.backends.winrt.client
+    :members:

@@ -23,9 +23,8 @@ ADDRESS = (
 
 async def main(address: str):
     async with BleakClient(address) as client:
-        svcs = await client.get_services()
         print("Services:")
-        for service in svcs:
+        for service in client.services:
             print(service)
 
 

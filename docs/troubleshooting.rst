@@ -103,41 +103,11 @@ Python::
         devices: Sequence[BLEDevice] = scanner.discover(timeout=5.0)
         for d in devices:
             async with BleakClient(d) as client:
-                print(await client.get_services())
+                print(client.services)
 
 
     asyncio.run(find_all_devices_services())
 
-
------------------------------------------
-Pass more parameters to a notify callback
------------------------------------------
-
-If you need a way to pass more parameters to the notify callback, please use
-``functools.partial`` to pass in more arguments.
-
-Issue #759 might fix this in the future.
-
-Python::
-
-    from functools import partial
-
-    from bleak import BleakClient
-
-
-    def my_notification_callback_with_client_input(
-        client: BleakClient, sender: int, data: bytearray
-    ):
-        """Notification callback with client awareness"""
-        print(
-            f"Notification from device with address {client.address} and characteristic with handle {client.services.get_characteristic(sender)}. Data: {data}"
-        )
-
-    # [...]
-
-    await client.start_notify(
-        char_specifier, partial(my_notification_callback_with_client_input, client)
-    )
 
 -------------------------
 Capture Bluetooth Traffic

@@ -22,9 +22,8 @@ async def main(ble_address: str):
     if not device:
         raise BleakError(f"A device with address {ble_address} could not be found.")
     async with BleakClient(device) as client:
-        svcs = await client.get_services()
         print("Services:")
-        for service in svcs:
+        for service in client.services:
             print(service)
 
 

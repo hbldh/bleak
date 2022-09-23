@@ -6,21 +6,20 @@ import asyncio
 import logging
 import uuid
 import warnings
-from typing import Callable, Optional, Union
-
-from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import BleakError
-from bleak.backends.client import BaseBleakClient
-from bleak.backends.p4android.service import BleakGATTServiceP4Android
-from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
-from bleak.backends.p4android.descriptor import BleakGATTDescriptorP4Android
+from typing import Optional, Union
 
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
-from . import defs
-from . import utils
+from ...exc import BleakError
+from ..characteristic import BleakGATTCharacteristic
+from ..client import BaseBleakClient, NotifyCallback
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from . import defs, utils
+from .characteristic import BleakGATTCharacteristicP4Android
+from .descriptor import BleakGATTDescriptorP4Android
+from .service import BleakGATTServiceP4Android
 
 logger = logging.getLogger(__name__)
 
@@ -459,38 +458,16 @@ class BleakClientP4Android(BaseBleakClient):
 
     async def start_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
-        callback: Callable[[int, bytearray], None],
+        characteristic: BleakGATTCharacteristic,
+        callback: NotifyCallback,
         **kwargs,
     ) -> None:
-        """Activate notifications/indications on a characteristic.
-
-        Callbacks must accept two inputs. The first will be an integer handle of the characteristic generating the
-        data and the second will be a ``bytearray`` containing the data sent from the connected server.
-
-        .. code-block:: python
-
-            def callback(sender: int, data: bytearray):
-                print(f"{sender}: {data}")
-            client.start_notify(char_uuid, callback)
-
-        Args:
-            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to activate
-                notifications/indications on a characteristic, specified by either integer handle,
-                UUID or directly by the BleakGATTCharacteristicP4Android object representing it.
-            callback (function): The function to be called on notification.
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakError(
-                f"Characteristic with UUID {char_specifier} could not be found!"
-            )
-
+        Activate notifications/indications on a characteristic.
+        """
         self._subscriptions[characteristic.handle] = callback
+
+        assert self.__gatt is not None
 
         if not self.__gatt.setCharacteristicNotification(characteristic.obj, True):
             raise BleakError(
@@ -575,7 +552,7 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
     @java_method("(I[B)V")
     def onCharacteristicChanged(self, handle, value):
         self._loop.call_soon_threadsafe(
-            self._client._subscriptions[handle], handle, bytearray(value.tolist())
+            self._client._subscriptions[handle], bytearray(value.tolist())
         )
 
     @java_method("(II[B)V")

@@ -1,5 +1,5 @@
-Bleak backends
-==============
+Backend implementations
+=======================
 
 Bleak supports the following operating systems:
 
@@ -19,3 +19,21 @@ Contents:
    linux
    macos
    android
+
+Shared Backend API
+------------------
+
+.. warning:: The backend APIs are not considered part of the stable API and
+    may change without notice.
+
+Scanner
+~~~~~~~
+
+.. automodule:: bleak.backends.scanner
+    :members:
+
+Client
+~~~~~~
+
+.. automodule:: bleak.backends.client
+    :members:

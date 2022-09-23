@@ -2,24 +2,20 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-import objc
-from Foundation import NSArray, NSUUID, NSBundle
-from CoreBluetooth import CBPeripheral
-
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal
 else:
     from typing import Literal
 
-from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
-from bleak.backends.corebluetooth.utils import cb_uuid_to_str
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import (
-    AdvertisementDataCallback,
-    BaseBleakScanner,
-    AdvertisementData,
-)
-from bleak.exc import BleakError
+import objc
+from CoreBluetooth import CBPeripheral
+from Foundation import NSUUID, NSArray, NSBundle
+
+from ...exc import BleakError
+from ..device import BLEDevice
+from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
+from .CentralManagerDelegate import CentralManagerDelegate
+from .utils import cb_uuid_to_str
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +50,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[List[str]] = None,
-        scanning_mode: Literal["active", "passive"] = "active",
+        detection_callback: Optional[AdvertisementDataCallback],
+        service_uuids: Optional[List[str]],
+        scanning_mode: Literal["active", "passive"],
         **kwargs
     ):
         super(BleakScannerCoreBluetooth, self).__init__(

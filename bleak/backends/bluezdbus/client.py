@@ -2,33 +2,30 @@
 """
 BLE Client for BlueZ on Linux
 """
-import inspect
-import logging
 import asyncio
+import logging
 import os
 import warnings
-from typing import Callable, Optional, Union
+from typing import Callable, Dict, Optional, Union, cast
 from uuid import UUID
 
 import async_timeout
-
 from dbus_fast.aio import MessageBus
 from dbus_fast.constants import BusType, ErrorType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
-from bleak.backends.bluezdbus import defs
-from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
-from bleak.backends.bluezdbus.manager import get_global_bluez_manager
-from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
-from bleak.backends.bluezdbus.utils import (
-    assert_reply,
-    extract_service_handle_from_path,
-)
-from bleak.backends.client import BaseBleakClient
-from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import BleakDBusError, BleakError
+from ... import BleakScanner
+from ...exc import BleakDBusError, BleakError
+from ..characteristic import BleakGATTCharacteristic
+from ..client import BaseBleakClient, NotifyCallback
+from ..device import BLEDevice
+from ..service import BleakGATTServiceCollection
+from . import defs
+from .characteristic import BleakGATTCharacteristicBlueZDBus
+from .manager import get_global_bluez_manager
+from .scanner import BleakScannerBlueZDBus
+from .utils import assert_reply
 from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)
@@ -73,6 +70,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnecting_event: Optional[asyncio.Event] = None
         # used to ensure device gets disconnected if event loop crashes
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
+        # map of characteristic D-Bus object path to notification callback
+        self._notification_callbacks: Dict[str, NotifyCallback] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -106,8 +105,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
         if self._device_path is None:
-            device = await BleakScannerBlueZDBus.find_device_by_address(
-                self.address, timeout=timeout, adapter=self._adapter
+            device = await BleakScanner.find_device_by_address(
+                self.address,
+                timeout=timeout,
+                adapter=self._adapter,
+                backend=BleakScannerBlueZDBus,
             )
 
             if device:
@@ -144,9 +146,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     disconnecting_event.set()
 
         def on_value_changed(char_path: str, value: bytes) -> None:
-            if char_path in self._notification_callbacks:
-                handle = extract_service_handle_from_path(char_path)
-                self._notification_callbacks[char_path](handle, bytearray(value))
+            callback = self._notification_callbacks.get(char_path)
+
+            if callback:
+                callback(bytearray(value))
 
         watcher = manager.add_device_watcher(
             self._device_path, on_connected_changed, on_value_changed
@@ -780,65 +783,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     async def start_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
-        callback: Callable[[int, bytearray], None],
+        characteristic: BleakGATTCharacteristic,
+        callback: NotifyCallback,
         **kwargs,
     ) -> None:
-        """Activate notifications/indications on a characteristic.
-
-        Callbacks must accept two inputs. The first will be a integer handle of the characteristic generating the
-        data and the second will be a ``bytearray`` containing the data sent from the connected server.
-
-        .. code-block:: python
-
-            def callback(sender: int, data: bytearray):
-                print(f"{sender}: {data}")
-            client.start_notify(char_uuid, callback)
-
-        Args:
-            char_specifier (BleakGATTCharacteristicBlueZDBus, int, str or UUID): The characteristic to activate
-                notifications/indications on a characteristic, specified by either integer handle,
-                UUID or directly by the BleakGATTCharacteristicBlueZDBus object representing it.
-            callback (function): The function to be called on notification.
         """
-        if not self.is_connected:
-            raise BleakError("Not connected")
+        Activate notifications/indications on a characteristic.
+        """
+        characteristic = cast(BleakGATTCharacteristicBlueZDBus, characteristic)
 
-        if inspect.iscoroutinefunction(callback):
+        self._notification_callbacks[characteristic.path] = callback
 
-            def bleak_callback(s, d):
-                asyncio.ensure_future(callback(s, d))
-
-        else:
-            bleak_callback = callback
-
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            # Special handling for BlueZ >= 5.48, where Battery Service (0000180f-0000-1000-8000-00805f9b34fb:)
-            # has been moved to interface org.bluez.Battery1 instead of as a regular service.
-            # The org.bluez.Battery1 on the other hand does not provide a notification method, so here we cannot
-            # provide this functionality...
-            # See https://kernel.googlesource.com/pub/scm/bluetooth/bluez/+/refs/tags/5.48/doc/battery-api.txt
-            if str(char_specifier) == "00002a19-0000-1000-8000-00805f9b34fb" and (
-                BlueZFeatures.hides_battery_characteristic
-            ):
-                raise BleakError(
-                    "Notifications on Battery Level Char ({0}) is not "
-                    "possible in BlueZ >= 5.48. Use regular read instead.".format(
-                        char_specifier
-                    )
-                )
-            raise BleakError(
-                "Characteristic with UUID {0} could not be found!".format(
-                    char_specifier
-                )
-            )
-
-        self._notification_callbacks[characteristic.path] = bleak_callback
+        assert self._bus is not None
 
         reply = await self._bus.call(
             Message(

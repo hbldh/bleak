@@ -7,11 +7,11 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import enum
+from typing import Any, List, Union
 from uuid import UUID
-from typing import List, Union, Any
 
-from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.uuids import uuidstr_to_str
+from ..uuids import uuidstr_to_str
+from .descriptor import BleakGATTDescriptor
 
 
 class GattCharacteristicsFlags(enum.Enum):

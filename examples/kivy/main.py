@@ -58,8 +58,7 @@ class ExampleApp(App):
                     self.line(f"Connecting to {device.name} ...")
                     try:
                         async with bleak.BleakClient(device) as client:
-                            services = await client.get_services()
-                            for service in services.services.values():
+                            for service in client.services:
                                 self.line(f"  service {service.uuid}")
                                 for characteristic in service.characteristics:
                                     self.line(
