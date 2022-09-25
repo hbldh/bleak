@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Reverted unintentional breaking parameter name changes. Fixes #1028.
+
+
 `0.18.0`_ (2022-09-23)
 ======================
 

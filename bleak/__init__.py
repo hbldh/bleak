@@ -226,14 +226,14 @@ class BleakScanner:
 
     @classmethod
     async def find_device_by_filter(
-        cls, filter_func: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
+        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
     ) -> Optional[BLEDevice]:
         """
         A convenience method for obtaining a ``BLEDevice`` object specified by
         a filter function.
 
         Args:
-            filter_func:
+            filterfunc:
                 A function that is called for every BLEDevice found. It should
                 return ``True`` only for the wanted device.
             timeout:
@@ -251,7 +251,7 @@ class BleakScanner:
         found_device_queue: asyncio.Queue[BLEDevice] = asyncio.Queue()
 
         def apply_filter(d: BLEDevice, ad: AdvertisementData):
-            if filter_func(d, ad):
+            if filterfunc(d, ad):
                 found_device_queue.put_nowait(d)
 
         async with cls(detection_callback=apply_filter, **kwargs):
@@ -266,7 +266,7 @@ class BleakClient:
     """The Client Interface for Bleak Backend implementations to implement.
 
     Args:
-        device_or_address:
+        address_or_ble_device:
             A :class:`BLEDevice` received from a :class:`BleakScanner` or a
             Bluetooth address (device UUID on macOS).
         disconnected_callback:
@@ -275,7 +275,7 @@ class BleakClient:
             this client object.
         timeout:
             Timeout in seconds passed to the implicit ``discover`` call when
-            ``device_or_address`` is not a :class:`BLEDevice`. Defaults to 10.0.
+            ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 10.0.
         winrt:
             Dictionary of WinRT/Windows platform-specific options.
         backend:
@@ -287,7 +287,7 @@ class BleakClient:
     .. warning:: Although example code frequently initializes :class:`BleakClient`
         with a Bluetooth address for simplicity, it is not recommended to do so
         for more complex use cases. There are several known issues with providing
-        a Bluetooth address as the ``device_or_address`` argument.
+        a Bluetooth address as the ``address_or_ble_device`` argument.
 
         1.  macOS does not provide access to the Bluetooth address for privacy/
             security reasons. Instead it creates a UUID for each Bluetooth
@@ -300,7 +300,7 @@ class BleakClient:
 
     def __init__(
         self,
-        device_or_address: Union[BLEDevice, str],
+        address_or_ble_device: Union[BLEDevice, str],
         disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
         *,
         timeout: float = 10.0,
@@ -313,7 +313,7 @@ class BleakClient:
         )
 
         self._backend = PlatformBleakClient(
-            device_or_address,
+            address_or_ble_device,
             disconnected_callback=disconnected_callback,
             timeout=timeout,
             winrt=winrt,
