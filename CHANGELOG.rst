@@ -10,6 +10,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.18.1`_ (2022-09-25)
+======================
+
+Fixed
+-----
+* Reverted unintentional breaking parameter name changes. Fixes #1028.
+
+
 `0.18.0`_ (2022-09-23)
 ======================
 
@@ -803,7 +811,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.18.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.18.1...develop
+.. _0.18.1: https://github.com/hbldh/bleak/compare/v0.18.0...v0.18.1
 .. _0.18.0: https://github.com/hbldh/bleak/compare/v0.17.0...v0.18.0
 .. _0.17.0: https://github.com/hbldh/bleak/compare/v0.16.0...v0.17.0
 .. _0.16.0: https://github.com/hbldh/bleak/compare/v0.15.1...v0.16.0
