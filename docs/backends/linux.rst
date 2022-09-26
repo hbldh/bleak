@@ -3,12 +3,10 @@
 Linux backend
 =============
 
-The Linux backend of Bleak is written using the
-`TxDBus <https://github.com/cocagne/txdbus>`_
-package. It is written for
-`Twisted <https://twistedmatrix.com/trac/>`_, but by using the
-`twisted.internet.asyncioreactor <https://twistedmatrix.com/documents/current/api/twisted.internet.asyncioreactor.html>`_
-one can use it with `asyncio`.
+The Linux backend of Bleak communicates with `BlueZ <http://www.bluez.org/>`_
+over DBus. Communication uses the `dbus-fast
+<https://github.com/Bluetooth-Devices/dbus-fast>`_ package for async access to
+DBus messaging.
 
 
 Special handling for ``write_gatt_char``
@@ -33,6 +31,15 @@ return the cached services without waiting for them to be resolved again. This
 is useful when you know services have not changed, and you want to use the
 services immediately, but don't want to wait for them to be resolved again.
 
+Parallel Access
+---------------
+
+Each Bleak object should be created and used from a single `asyncio event
+loop`_. Simple asyncio programs will only have a single event loop. It's also
+possible to use Bleak with multiple event loops, even at the same time, but
+individual Bleak objects should not be shared between event loops. Otherwise,
+RuntimeErrors similar to ``[...] got Future <Future pending> attached to a
+different loop`` will be thrown.
 
 API
 ---
@@ -48,3 +55,5 @@ Client
 
 .. automodule:: bleak.backends.bluezdbus.client
     :members:
+
+.. _`asyncio event loop`: https://docs.python.org/3/library/asyncio-eventloop.html

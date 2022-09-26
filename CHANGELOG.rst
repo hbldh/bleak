@@ -14,6 +14,11 @@ Added
 -----
 * Added support for Python 3.11.
 
+Fixed
+-----
+* On BlueZ, support creating additional instances running on a different event
+  loops (i.e. multiple pytest-asyncio cases)
+
 `0.18.1`_ (2022-09-25)
 ======================
 
