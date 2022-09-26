@@ -84,6 +84,9 @@ class CentralManagerDelegate(NSObject):
         if self.central_manager.state() == CBManagerStateUnsupported:
             raise BleakError("BLE is unsupported")
 
+        if self.central_manager.state() == CBManagerStateUnauthorized:
+            raise BleakError("BLE is not authorized - check macOS privacy settings")
+
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
 
