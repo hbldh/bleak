@@ -21,6 +21,7 @@ from typing import (
     Set,
     cast,
 )
+from weakref import WeakKeyDictionary
 
 from dbus_fast import BusType, Message, MessageType, Variant
 from dbus_fast.aio.message_bus import MessageBus
@@ -843,15 +844,20 @@ class BlueZManager:
             callback(device_path, device.copy())
 
 
+_global_instances: Dict[Any, BlueZManager] = WeakKeyDictionary()
+
+
 async def get_global_bluez_manager() -> BlueZManager:
     """
-    Gets the initialized global BlueZ manager instance.
+    Gets an existing initialized global BlueZ manager instance associated with the current event loop,
+    or initializes a new instance.
     """
 
-    if not hasattr(get_global_bluez_manager, "instance"):
-        setattr(get_global_bluez_manager, "instance", BlueZManager())
-
-    instance: BlueZManager = getattr(get_global_bluez_manager, "instance")
+    loop = asyncio.get_running_loop()
+    try:
+        instance = _global_instances[loop]
+    except KeyError:
+        instance = _global_instances[loop] = BlueZManager()
 
     await instance.async_init()
 
