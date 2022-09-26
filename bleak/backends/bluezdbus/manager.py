@@ -20,6 +20,7 @@ from typing import (
     Optional,
     Set,
     cast,
+    Union,
 )
 
 from dbus_fast import BusType, Message, MessageType, Variant
@@ -846,12 +847,30 @@ class BlueZManager:
 async def get_global_bluez_manager() -> BlueZManager:
     """
     Gets the initialized global BlueZ manager instance.
+
+    If a BlueZ manager was previously initialized and associated with an event loop which is now closed,
+    then a new instance will be created to replace it.
     """
 
-    if not hasattr(get_global_bluez_manager, "instance"):
-        setattr(get_global_bluez_manager, "instance", BlueZManager())
+    loop = asyncio.get_event_loop()
 
-    instance: BlueZManager = getattr(get_global_bluez_manager, "instance")
+    if not hasattr(get_global_bluez_manager, "instance"):
+        get_global_bluez_manager.instance = BlueZManager()
+        get_global_bluez_manager.loop = loop
+
+    instance: BlueZManager = get_global_bluez_manager.instance
+    stored_loop: Union(
+        asyncio.SelectorEventLoop, asyncio.ProactorEventLoop
+    ) = get_global_bluez_manager.loop
+
+    if loop != stored_loop:
+        if stored_loop.is_closed():
+            logger.debug("Replacing BlueZManager for new event loop")
+            instance = BlueZManager()
+            get_global_bluez_manager.instance = instance
+            get_global_bluez_manager.loop = loop
+        else:
+            logger.warning("Accessing BlueZ from two open event loops is not supported")
 
     await instance.async_init()
 
