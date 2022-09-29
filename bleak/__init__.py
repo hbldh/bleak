@@ -603,7 +603,7 @@ class BleakClient:
 
 
 # for backward compatibility
-def discover():
+def discover(*args, **kwargs):
     """
     .. deprecated:: 0.17.0
         This method will be removed in a future version of Bleak.
@@ -614,7 +614,7 @@ def discover():
         FutureWarning,
         stacklevel=2,
     )
-    return BleakScanner.discover()
+    return BleakScanner.discover(*args, **kwargs)
 
 
 def cli():
