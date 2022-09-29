@@ -20,6 +20,7 @@ Fixed
 -----
 * On BlueZ, support creating additional instances running on a different event
   loops (i.e. multiple pytest-asyncio cases)
+* Fixed unhandled exception in ``max_pdu_size_changed_handler`` in WinRT backend. Fixes #1039.
 
 `0.18.1`_ (2022-09-25)
 ======================

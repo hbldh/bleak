@@ -304,7 +304,15 @@ class BleakClientWinRT(BaseBleakClient):
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
         def max_pdu_size_changed_handler(sender: GattSession, args):
-            logger.debug("max_pdu_size_changed_handler: %d", sender.max_pdu_size)
+            try:
+                max_pdu_size = sender.max_pdu_size
+            except OSError:
+                # There is a race condition where this event was already
+                # queued when the GattSession object was closed. In that
+                # case, we get a Windows error which we can just ignore.
+                return
+
+            logger.debug("max_pdu_size_changed_handler: %d", max_pdu_size)
 
         # Start a GATT Session to connect
         event = asyncio.Event()
