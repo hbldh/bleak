@@ -3,7 +3,17 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import Awaitable, Callable, Dict, List, NamedTuple, Optional, Tuple, Type
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from ..exc import BleakError
 from .device import BLEDevice
@@ -149,6 +159,45 @@ class BaseBleakScanner(abc.ABC):
             detection_callback = callback
 
         self._callback = detection_callback
+
+    def create_or_update_device(
+        self, address: str, name: str, details: Any, adv: AdvertisementData
+    ) -> BLEDevice:
+        """
+        Creates or updates a device in :attr:`seen_devices`.
+
+        Args:
+            address: The Bluetooth address of the device (UUID on macOS).
+            name: The OS display name for the device.
+            details: The platform-specific handle for the device.
+            adv: The most recent advertisement data received.
+
+        Returns:
+            The updated device.
+        """
+
+        # for backwards compatibility, see https://github.com/hbldh/bleak/issues/1025
+        metadata = dict(
+            uuids=adv.service_uuids,
+            manufacturer_data=adv.manufacturer_data,
+        )
+
+        try:
+            device, _ = self.seen_devices[address]
+
+            device.metadata = metadata
+        except KeyError:
+            device = BLEDevice(
+                address,
+                name,
+                details,
+                adv.rssi,
+                **metadata,
+            )
+
+        self.seen_devices[address] = (device, adv)
+
+        return device
 
     @abc.abstractmethod
     async def start(self):

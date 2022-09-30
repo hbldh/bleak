@@ -12,7 +12,6 @@ from CoreBluetooth import CBPeripheral
 from Foundation import NSBundle
 
 from ...exc import BleakError
-from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .CentralManagerDelegate import CentralManagerDelegate
 from .utils import cb_uuid_to_str
@@ -113,24 +112,12 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 platform_data=(p, a, r),
             )
 
-            metadata = dict(
-                uuids=service_uuids,
-                manufacturer_data=manufacturer_data,
+            device = self.create_or_update_device(
+                p.identifier().UUIDString(),
+                p.name(),
+                (p, self._manager.central_manager.delegate()),
+                advertisement_data,
             )
-
-            try:
-                device, _ = self.seen_devices[p.identifier().UUIDString()]
-                device.metadata = metadata
-            except KeyError:
-                device = BLEDevice(
-                    p.identifier().UUIDString(),
-                    p.name(),
-                    (p, self._manager.central_manager.delegate()),
-                    r,
-                    **metadata
-                )
-
-            self.seen_devices[device.address] = (device, advertisement_data)
 
             if not self._callback:
                 return
