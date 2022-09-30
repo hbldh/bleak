@@ -2,6 +2,8 @@
 BleakScanner class
 ==================
 
+.. py:currentmodule:: bleak
+
 .. autoclass:: bleak.BleakScanner
 
 
@@ -14,7 +16,6 @@ more advanced use cases like long running programs, GUIs or connecting to
 multiple devices.
 
 .. automethod:: bleak.BleakScanner.discover
-.. autoproperty:: bleak.BleakScanner.discovered_devices
 .. automethod:: bleak.BleakScanner.find_device_by_address
 .. automethod:: bleak.BleakScanner.find_device_by_filter
 
@@ -56,6 +57,21 @@ following methods:
 .. automethod:: bleak.BleakScanner.start
 .. automethod:: bleak.BleakScanner.stop
 
+-------------------------------------------------
+Getting discovered devices and advertisement data
+-------------------------------------------------
+
+If you aren't using the "easy" class methods, there are two ways to get the
+discovered devices and advertisement data.
+
+For event-driven programming, you can provide a ``detection_callback`` callback
+to the :class:`BleakScanner` constructor. This will be called back each time
+and advertisement is received.
+
+Otherwise, you can use one of the properties below after scanning has stopped.
+
+.. autoproperty:: bleak.BleakScanner.discovered_devices
+.. autoproperty:: bleak.BleakScanner.discovered_devices_and_advertisement_data
 
 ----------
 Deprecated
