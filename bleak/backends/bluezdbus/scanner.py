@@ -16,6 +16,7 @@ from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakSca
 from .advertisement_monitor import OrPatternLike
 from .defs import Device1
 from .manager import get_global_bluez_manager
+from .utils import bdaddr_from_device_path
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +90,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
-        # map of d-bus object path to d-bus object properties
-        self._devices: Dict[str, Device1] = {}
-
         # callback from manager for stopping scanning if it has been started
         self._stop: Optional[Callable[[], Coroutine]] = None
 
@@ -137,7 +135,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         else:
             adapter_path = manager.get_default_adapter()
 
-        self._devices.clear()
+        self.seen_devices = {}
 
         if self._scanning_mode == "passive":
             self._stop = await manager.passive_scan(
@@ -192,25 +190,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             else:
                 logger.warning("Filter '%s' is not currently supported." % k)
 
-    @property
-    def discovered_devices(self) -> List[BLEDevice]:
-        discovered_devices = []
-
-        for path, props in self._devices.items():
-            uuids = props.get("UUIDs", [])
-            manufacturer_data = props.get("ManufacturerData", {})
-            discovered_devices.append(
-                BLEDevice(
-                    props["Address"],
-                    props["Alias"],
-                    {"path": path, "props": props},
-                    props.get("RSSI", 0),
-                    uuids=uuids,
-                    manufacturer_data=manufacturer_data,
-                )
-            )
-        return discovered_devices
-
     # Helper methods
 
     def _handle_advertising_data(self, path: str, props: Device1) -> None:
@@ -221,11 +200,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             path: The D-Bus object path of the device.
             props: The D-Bus object properties of the device.
         """
-
-        self._devices[path] = props
-
-        if self._callback is None:
-            return
 
         # Get all the information wanted to pack in the advertisement data
         _local_name = props.get("Name")
@@ -244,18 +218,32 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             manufacturer_data=_manufacturer_data,
             service_data=_service_data,
             service_uuids=_service_uuids,
-            platform_data=props,
+            platform_data=(path, props),
             tx_power=tx_power,
         )
 
-        device = BLEDevice(
-            props["Address"],
-            props["Alias"],
-            {"path": path, "props": props},
-            props.get("RSSI", 0),
+        metadata = dict(
             uuids=_service_uuids,
             manufacturer_data=_manufacturer_data,
         )
+
+        try:
+            device, _ = self.seen_devices[props["Address"]]
+
+            device.metadata = metadata
+        except KeyError:
+            device = BLEDevice(
+                props["Address"],
+                props["Alias"],
+                {"path": path, "props": props},
+                props.get("RSSI", 0),
+                **metadata,
+            )
+
+        self.seen_devices[props["Address"]] = (device, advertisement_data)
+
+        if self._callback is None:
+            return
 
         self._callback(device, advertisement_data)
 
@@ -264,9 +252,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         Handles a device being removed from BlueZ.
         """
         try:
-            del self._devices[device_path]
+            bdaddr = bdaddr_from_device_path(device_path)
+            del self.seen_devices[bdaddr]
         except KeyError:
-            # The device will not have been added to self._devices if no
+            # The device will not have been added to self.seen_devices if no
             # advertising data was received, so this is expected to happen
             # occasionally.
             pass

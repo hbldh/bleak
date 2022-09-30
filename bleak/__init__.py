@@ -180,7 +180,7 @@ class BleakScanner:
         Returns:
             A list of the devices that the scanner has discovered during the scanning.
         """
-        return self._backend.discovered_devices
+        return [d for d, _ in self._backend.seen_devices.values()]
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.

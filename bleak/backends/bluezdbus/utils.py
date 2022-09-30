@@ -50,3 +50,16 @@ def extract_service_handle_from_path(path):
         return int(path[-4:], 16)
     except Exception as e:
         raise BleakError(f"Could not parse service handle from path: {path}") from e
+
+
+def bdaddr_from_device_path(device_path: str) -> str:
+    """
+    Scrape the Bluetooth address from a D-Bus device path.
+
+    Args:
+        device_path: The D-Bus object path of the device.
+
+    Returns:
+        A Bluetooth address as a string.
+    """
+    return ":".join(device_path[-17:].split("_"))

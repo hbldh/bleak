@@ -61,8 +61,6 @@ class CentralManagerDelegate(NSObject):
         self.event_loop = asyncio.get_running_loop()
         self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
 
-        self.last_rssi: Dict[str, int] = {}
-
         self.callbacks: Dict[
             int, Callable[[CBPeripheral, Dict[str, Any], int], None]
         ] = {}
@@ -108,9 +106,6 @@ class CentralManagerDelegate(NSObject):
 
     @objc.python_method
     async def start_scan(self, service_uuids) -> None:
-        # remove old
-        self.last_rssi.clear()
-
         service_uuids = (
             NSArray.alloc().initWithArray_(
                 list(map(CBUUID.UUIDWithString_, service_uuids))
@@ -253,8 +248,6 @@ class CentralManagerDelegate(NSObject):
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
         uuid_string = peripheral.identifier().UUIDString()
-
-        self.last_rssi[uuid_string] = RSSI
 
         for callback in self.callbacks.values():
             if callback:
