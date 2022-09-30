@@ -81,6 +81,13 @@ class BaseBleakScanner(abc.ABC):
             containing this advertising data will be received.
     """
 
+    seen_devices: Dict[str, Tuple[BLEDevice, AdvertisementData]]
+    """
+    Map of device identifier to BLEDevice and most recent advertisement data.
+
+    This map must be cleared when scanning starts.
+    """
+
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
@@ -92,6 +99,8 @@ class BaseBleakScanner(abc.ABC):
         self._service_uuids: Optional[List[str]] = (
             [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
+
+        self.seen_devices = {}
 
     def register_detection_callback(
         self, callback: Optional[AdvertisementDataCallback]
@@ -144,16 +153,6 @@ class BaseBleakScanner(abc.ABC):
         Args:
             **kwargs: The filter details. This will differ a lot between backend implementations.
 
-        """
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def discovered_devices(self) -> List[BLEDevice]:
-        """Gets the devices registered by the BleakScanner.
-
-        Returns:
-            A list of the devices that the scanner has discovered during the scanning.
         """
         raise NotImplementedError()
 

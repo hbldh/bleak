@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import sys
-from typing import Dict, List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, cast
 from uuid import UUID
 
 from bleak_winrt.windows.devices.bluetooth.advertisement import (
@@ -83,7 +83,6 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher = None
         self._stopped_event = None
-        self._discovered_devices: Dict[int, _RawAdvData] = {}
 
         # case insensitivity is for backwards compatibility on Windows only
         if scanning_mode.lower() == "passive":
@@ -106,43 +105,51 @@ class BleakScannerWinRT(BaseBleakScanner):
         # TODO: Cannot check for if sender == self.watcher in winrt?
         logger.debug("Received {0}.".format(_format_event_args(event_args)))
 
-        # get the previous advertising data or start a new one
-        raw_data = self._discovered_devices.get(
-            event_args.bluetooth_address, _RawAdvData(event_args, None)
+        # REVISIT: if scanning filters with BluetoothSignalStrengthFilter.OutOfRangeTimeout
+        # are in place, an RSSI of -127 means that the device has gone out of range and should
+        # be removed from the list of seen devices instead of processing the advertisement data.
+        # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothsignalstrengthfilter.outofrangetimeout
+
+        bdaddr = _format_bdaddr(event_args.bluetooth_address)
+
+        # Unlike other platforms, Windows does not combine advertising data for
+        # us (regular advertisement + scan response) so we have to do it manually.
+
+        # get the previous advertising data/scan response pair or start a new one
+        _, old_adv_data = self.seen_devices.get(bdaddr, (None, None))
+        raw_data = (
+            _RawAdvData(event_args, None)
+            if old_adv_data is None
+            else cast(_RawAdvData, old_adv_data.platform_data[1])
         )
 
-        # update the advertsing data depending on the advertising data type
+        # update the advertising data depending on the advertising data type
         if event_args.advertisement_type == BluetoothLEAdvertisementType.SCAN_RESPONSE:
             raw_data = _RawAdvData(raw_data.adv, event_args)
         else:
             raw_data = _RawAdvData(event_args, raw_data.scan)
 
-        self._discovered_devices[event_args.bluetooth_address] = raw_data
-
-        if self._callback is None:
-            return
-
-        # Get a "BLEDevice" from parse_event args
-        device = self._parse_adv_data(raw_data)
-
-        # On Windows, we have to fake service UUID filtering. If we were to pass
-        # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
-        # with the service UUIDs appropriately set, we would no longer receive
-        # scan response data (which commonly contains the local device name).
-        # So we have to do it like this instead.
-
-        if self._service_uuids:
-            for uuid in device.metadata["uuids"]:
-                if uuid in self._service_uuids:
-                    break
-            else:
-                # if there were no matching service uuids, the don't call the callback
-                return
-
+        uuids = []
+        mfg_data = {}
         service_data = {}
+        local_name = None
+        tx_power = None
 
-        # Decode service data
         for args in filter(lambda d: d is not None, raw_data):
+            for u in args.advertisement.service_uuids:
+                uuids.append(str(u))
+
+            for m in args.advertisement.manufacturer_data:
+                mfg_data[m.company_id] = bytes(m.data)
+
+            # local name is empty string rather than None if not present
+            if args.advertisement.local_name:
+                local_name = args.advertisement.local_name
+
+            if args.transmit_power_level_in_d_bm is not None:
+                tx_power = raw_data.adv.transmit_power_level_in_d_bm
+
+            # Decode service data
             for section in args.advertisement.get_sections_by_type(
                 AdvertisementDataType.SERVICE_DATA_UUID16
             ):
@@ -163,32 +170,66 @@ class BleakScannerWinRT(BaseBleakScanner):
                 data = bytes(section.data)
                 service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 
-        # get transmit power level data
-        tx_power = raw_data.adv.transmit_power_level_in_d_bm
-
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
-            local_name=device.name,
-            manufacturer_data=device.metadata["manufacturer_data"],
+            local_name=local_name,
+            manufacturer_data=mfg_data,
             service_data=service_data,
-            service_uuids=device.metadata["uuids"],
+            service_uuids=uuids,
             platform_data=(sender, raw_data),
             tx_power=tx_power,
         )
+
+        metadata = dict(
+            uuids=uuids,
+            manufacturer_data=mfg_data,
+        )
+
+        try:
+            device, _ = self.seen_devices[bdaddr]
+
+            device.metadata = metadata
+        except KeyError:
+            device = BLEDevice(
+                bdaddr,
+                local_name,
+                sender,
+                event_args.raw_signal_strength_in_d_bm,
+                **metadata,
+            )
+
+        self.seen_devices[device.address] = (device, advertisement_data)
+
+        if self._callback is None:
+            return
+
+        # On Windows, we have to fake service UUID filtering. If we were to pass
+        # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
+        # with the service UUIDs appropriately set, we would no longer receive
+        # scan response data (which commonly contains the local device name).
+        # So we have to do it like this instead.
+
+        if self._service_uuids:
+            for uuid in uuids:
+                if uuid in self._service_uuids:
+                    break
+            else:
+                # if there were no matching service uuids, the don't call the callback
+                return
 
         self._callback(device, advertisement_data)
 
     def _stopped_handler(self, sender, e):
         logger.debug(
             "{0} devices found. Watcher status: {1}.".format(
-                len(self._discovered_devices), self.watcher.status
+                len(self.seen_devices), self.watcher.status
             )
         )
         self._stopped_event.set()
 
     async def start(self):
         # start with fresh list of discovered devices
-        self._discovered_devices.clear()
+        self.seen_devices = {}
 
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
@@ -243,31 +284,3 @@ class BleakScannerWinRT(BaseBleakScanner):
         if "AdvertisementFilter" in kwargs:
             # TODO: Handle AdvertisementFilter parameters
             self._advertisement_filter = kwargs["AdvertisementFilter"]
-
-    @property
-    def discovered_devices(self) -> List[BLEDevice]:
-        return [self._parse_adv_data(d) for d in self._discovered_devices.values()]
-
-    @staticmethod
-    def _parse_adv_data(raw_data: _RawAdvData) -> BLEDevice:
-        """
-        Combines advertising data from regular advertisement data and scan response.
-        """
-        bdaddr = _format_bdaddr(raw_data.adv.bluetooth_address)
-        uuids = []
-        data = {}
-        local_name = None
-
-        for args in filter(lambda d: d is not None, raw_data):
-            for u in args.advertisement.service_uuids:
-                uuids.append(str(u))
-            for m in args.advertisement.manufacturer_data:
-                data[m.company_id] = bytes(m.data)
-            # local name is empty string rather than None if not present
-            if args.advertisement.local_name:
-                local_name = args.advertisement.local_name
-            rssi = args.raw_signal_strength_in_d_bm
-
-        return BLEDevice(
-            bdaddr, local_name, raw_data, rssi, uuids=uuids, manufacturer_data=data
-        )

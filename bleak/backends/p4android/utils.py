@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 import logging
 import warnings
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class AsyncJavaCallbacks(PythonJavaClass):
     __javacontext__ = "app"
 
-    def __init__(self, loop):
+    def __init__(self, loop: asyncio.AbstractEventLoop):
         self._loop = loop
         self.states = {}
         self.futures = {}

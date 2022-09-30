@@ -36,17 +36,7 @@ class BLEDevice:
         self.metadata = kwargs
 
     def __str__(self):
-        if not self.name:
-            if "manufacturer_data" in self.metadata:
-                ks = list(self.metadata["manufacturer_data"].keys())
-                if len(ks):
-                    mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF))
-                    value = self.metadata["manufacturer_data"].get(
-                        ks[0], MANUFACTURERS.get(0xFFFF)
-                    )
-                    # TODO: Evaluate how to interpret the value of the company identifier...
-                    return "{0}: {1} ({2})".format(self.address, mf, value)
-        return "{0}: {1}".format(self.address, self.name or "Unknown")
+        return f"{self.address}: {self.name}"
 
     def __repr__(self):
-        return str(self)
+        return f"BLEDevice({self.address}, {self.name})"
