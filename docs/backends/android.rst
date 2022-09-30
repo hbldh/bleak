@@ -1,8 +1,9 @@
 Android backend
 ===============
 
-Quick-start: see the `example README <../../examples/kivy/README>`_.  Buildozer
-will compile an app and upload it to a device.
+For an example of building an android bluetooth app, see 
+`the example folder<https://github.com/hbldh/bleak/tree/develop/examples/kivy>`_
+and its accompanying README file.
 
 There are a handful of ways to run Python on Android.  Presently some code has
 been written for the `Python-for-Android <https://python-for-android.readthedocs.io/>`_
@@ -54,9 +55,6 @@ On Android, Bluetooth needs permissions for access.  These permissions need to
 be added to the android application in the buildozer.spec file, and are also
 requested from the user at runtime.  This means that enabling bluetooth may not
 succeed if the user does not accept permissions.
-
-For an example of building an android bluetooth app, see `the example <../../examples/kivy>`_
-and its accompanying `README <../../examples/kivy/README>`_.
 
 API
 ---
