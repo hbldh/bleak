@@ -256,8 +256,9 @@ class BleakScannerP4Android(BaseBleakScanner):
             manufacturer_data=manufacturer_data,
             service_data=service_data,
             service_uuids=service_uuids,
-            platform_data=(result,),
             tx_power=tx_power,
+            rssi=native_device.getRssi(),
+            platform_data=(result,),
         )
 
         metadata = dict(

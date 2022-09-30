@@ -3,44 +3,57 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Type
+from typing import Awaitable, Callable, Dict, List, NamedTuple, Optional, Tuple, Type
 
 from ..exc import BleakError
 from .device import BLEDevice
 
 
-class AdvertisementData:
+class AdvertisementData(NamedTuple):
     """
     Wrapper around the advertisement data that each platform returns upon discovery
     """
 
-    def __init__(self, **kwargs):
-        """
-        Keyword Args:
-            local_name (str): The name of the ble device advertising
-            manufacturer_data (dict): Manufacturer data from the device
-            service_data (dict): Service data from the device
-            service_uuids (list): UUIDs associated with the device
-            platform_data (tuple): Tuple of platform specific advertisement data
-            tx_power (int): Transmit power level of the device
-        """
-        # The local name of the device
-        self.local_name: Optional[str] = kwargs.get("local_name", None)
+    local_name: Optional[str]
+    """
+    The local name of the device or ``None`` if not included in advertising data.
+    """
 
-        # Dictionary of manufacturer data in bytes
-        self.manufacturer_data: Dict[int, bytes] = kwargs.get("manufacturer_data", {})
+    manufacturer_data: Dict[int, bytes]
+    """
+    Dictionary of manufacturer data in bytes from the received advertisement data or empty dict if not present.
 
-        # Dictionary of service data
-        self.service_data: Dict[str, bytes] = kwargs.get("service_data", {})
+    The keys are Bluetooth SIG assigned Company Identifiers and the values are bytes.
 
-        # List of UUIDs
-        self.service_uuids: List[str] = kwargs.get("service_uuids", [])
+    https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers/
+    """
 
-        # Tuple of platform specific data
-        self.platform_data: Tuple = kwargs.get("platform_data", ())
+    service_data: Dict[str, bytes]
+    """
+    Dictionary of service data from the received advertisement data or empty dict if not present.
+    """
 
-        # Tx Power data
-        self.tx_power: Optional[int] = kwargs.get("tx_power")
+    service_uuids: List[str]
+    """
+    List of service UUIDs from the received advertisement data or empty list if not present.
+    """
+
+    tx_power: Optional[int]
+    """
+    Tx Power data from the received advertising data or ``None`` if not present.
+    """
+
+    rssi: int
+    """
+    The Radio Receive Signal Strength (RSSI) in dBm.
+    """
+
+    platform_data: Tuple
+    """
+    Tuple of platform specific data.
+
+    This is not a stable API. The actual values may change between releases.
+    """
 
     def __repr__(self) -> str:
         kwargs = []
@@ -54,6 +67,7 @@ class AdvertisementData:
             kwargs.append(f"service_uuids={repr(self.service_uuids)}")
         if self.tx_power is not None:
             kwargs.append(f"tx_power={repr(self.tx_power)}")
+        kwargs.append(f"rssi={repr(self.rssi)}")
         return f"AdvertisementData({', '.join(kwargs)})"
 
 

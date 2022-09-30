@@ -218,8 +218,9 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             manufacturer_data=_manufacturer_data,
             service_data=_service_data,
             service_uuids=_service_uuids,
-            platform_data=(path, props),
             tx_power=tx_power,
+            rssi=props.get("RSSI", -127),
+            platform_data=(path, props),
         )
 
         metadata = dict(

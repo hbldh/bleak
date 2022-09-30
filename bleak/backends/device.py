@@ -6,7 +6,6 @@ Wrapper class for Bluetooth LE servers returned from calling
 Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-from ._manufacturers import MANUFACTURERS
 
 
 class BLEDevice:
