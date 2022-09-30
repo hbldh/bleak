@@ -14,7 +14,18 @@ import logging
 import os
 import sys
 import uuid
-from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 from warnings import warn
 
 import async_timeout
@@ -153,34 +164,69 @@ class BleakScanner:
         )
         self._backend.set_scanning_filter(**kwargs)
 
+    @overload
     @classmethod
-    async def discover(cls, timeout=5.0, **kwargs) -> List[BLEDevice]:
+    async def discover(
+        cls, timeout: float = 5.0, *, return_adv: Literal[False], **kwargs
+    ) -> List[BLEDevice]:
+        ...
+
+    @overload
+    @classmethod
+    async def discover(
+        cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
+    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
+        ...
+
+    @classmethod
+    async def discover(cls, timeout=5.0, *, return_adv=False, **kwargs):
         """
         Scan continuously for ``timeout`` seconds and return discovered devices.
 
         Args:
             timeout:
                 Time, in seconds, to scan for.
+            return_adv:
+                If ``True``, the return value will include advertising data.
             **kwargs:
                 Additional arguments will be passed to the :class:`BleakScanner`
                 constructor.
 
         Returns:
-
+            The value of :attr:`discovered_devices_and_advertisement_data` if
+            ``return_adv`` is ``True``, otherwise the value of :attr:`discovered_devices`.
         """
         async with cls(**kwargs) as scanner:
             await asyncio.sleep(timeout)
-            devices = scanner.discovered_devices
-        return devices
+
+        if return_adv:
+            return scanner.discovered_devices_and_advertisement_data
+
+        return scanner.discovered_devices
 
     @property
     def discovered_devices(self) -> List[BLEDevice]:
-        """Gets the devices registered by the BleakScanner.
+        """
+        Gets list of the devices that the scanner has discovered during the scanning.
 
-        Returns:
-            A list of the devices that the scanner has discovered during the scanning.
+        If you also need advertisement data, use :attr:`discovered_devices_and_advertisement_data` instead.
         """
         return [d for d, _ in self._backend.seen_devices.values()]
+
+    @property
+    def discovered_devices_and_advertisement_data(
+        self,
+    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
+        """
+        Gets a map of device address to tuples of devices and the most recently
+        received advertisement data for that device.
+
+        The address keys are useful to compare the discovered devices to a set
+        of known devices. If you don't need to do that, consider using
+        ``discovered_devices_and_advertisement_data.values()`` to just get the
+        values instead.
+        """
+        return self._backend.seen_devices
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.

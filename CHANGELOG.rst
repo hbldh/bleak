@@ -16,6 +16,8 @@ Added
 * Added better error message for Bluetooth not authorized on macOS.
 * ``BleakDeviceNotFoundError`` which should be raised if a device can not be found by ``connect``, ``pair`` and ``unpair``
 * Added ``rssi`` attribute to ``AdvertisementData``.
+* Added ``BleakScanner.discovered_devices_and_advertisement_data`` property.
+* Added ``return_adv`` argument to ``BleakScanner.discover`` method.
 
 Changed
 -------
