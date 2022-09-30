@@ -176,8 +176,9 @@ class BleakScannerWinRT(BaseBleakScanner):
             manufacturer_data=mfg_data,
             service_data=service_data,
             service_uuids=uuids,
-            platform_data=(sender, raw_data),
             tx_power=tx_power,
+            rssi=event_args.raw_signal_strength_in_d_bm,
+            platform_data=(sender, raw_data),
         )
 
         metadata = dict(

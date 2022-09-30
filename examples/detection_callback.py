@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
-    logger.info(f"{device.address} RSSI: {device.rssi}, {advertisement_data}")
+    logger.info(f"{device.address}: {advertisement_data}")
 
 
 async def main(service_uuids):

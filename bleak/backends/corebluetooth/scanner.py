@@ -104,12 +104,13 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             tx_power = a.get("kCBAdvDataTxPowerLevel")
 
             advertisement_data = AdvertisementData(
-                local_name=p.name(),
+                local_name=a.get("kCBAdvDataLocalName"),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
                 service_uuids=service_uuids,
-                platform_data=(p, a, r),
                 tx_power=tx_power,
+                rssi=r,
+                platform_data=(p, a, r),
             )
 
             metadata = dict(

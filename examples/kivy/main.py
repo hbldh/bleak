@@ -52,7 +52,7 @@ class ExampleApp(App):
                 scanned_devices.sort(key=lambda device: -device.rssi)
 
                 for device in scanned_devices:
-                    self.line(f"{device.name} {device.rssi}dB")
+                    self.line(f"{device.name} ({device.address})")
 
                 for device in scanned_devices:
                     self.line(f"Connecting to {device.name} ...")
