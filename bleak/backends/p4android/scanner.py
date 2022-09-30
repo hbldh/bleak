@@ -17,7 +17,6 @@ from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
 from ...exc import BleakError
-from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from . import defs, utils
 
@@ -261,23 +260,12 @@ class BleakScannerP4Android(BaseBleakScanner):
             platform_data=(result,),
         )
 
-        metadata = dict(
-            uuids=service_uuids,
-            manufacturer_data=manufacturer_data,
+        device = self.create_or_update_device(
+            native_device.getAddress(),
+            native_device.getName(),
+            native_device,
+            advertisement,
         )
-
-        try:
-            device, _ = self.seen_devices[native_device.getAddress()]
-            device.metadata = metadata
-        except KeyError:
-            device = BLEDevice(
-                native_device.getAddress(),
-                native_device.getName(),
-                native_device.getRssi(),
-                **metadata,
-            )
-
-        self.seen_devices[device.address] = (device, advertisement)
 
         if not self._callback:
             return

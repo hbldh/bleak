@@ -16,7 +16,6 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
-from ..device import BLEDevice
 from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
 from ...assigned_numbers import AdvertisementDataType
 
@@ -181,25 +180,9 @@ class BleakScannerWinRT(BaseBleakScanner):
             platform_data=(sender, raw_data),
         )
 
-        metadata = dict(
-            uuids=uuids,
-            manufacturer_data=mfg_data,
+        device = self.create_or_update_device(
+            bdaddr, local_name, sender, advertisement_data
         )
-
-        try:
-            device, _ = self.seen_devices[bdaddr]
-
-            device.metadata = metadata
-        except KeyError:
-            device = BLEDevice(
-                bdaddr,
-                local_name,
-                sender,
-                event_args.raw_signal_strength_in_d_bm,
-                **metadata,
-            )
-
-        self.seen_devices[device.address] = (device, advertisement_data)
 
         if self._callback is None:
             return

@@ -11,7 +11,6 @@ else:
     from typing import Literal, TypedDict
 
 from ...exc import BleakError
-from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .advertisement_monitor import OrPatternLike
 from .defs import Device1
@@ -223,25 +222,12 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             platform_data=(path, props),
         )
 
-        metadata = dict(
-            uuids=_service_uuids,
-            manufacturer_data=_manufacturer_data,
+        device = self.create_or_update_device(
+            props["Address"],
+            props["Alias"],
+            {"path": path, "props": props},
+            advertisement_data,
         )
-
-        try:
-            device, _ = self.seen_devices[props["Address"]]
-
-            device.metadata = metadata
-        except KeyError:
-            device = BLEDevice(
-                props["Address"],
-                props["Alias"],
-                {"path": path, "props": props},
-                props.get("RSSI", 0),
-                **metadata,
-            )
-
-        self.seen_devices[props["Address"]] = (device, advertisement_data)
 
         if self._callback is None:
             return
