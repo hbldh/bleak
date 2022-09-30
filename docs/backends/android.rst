@@ -2,7 +2,7 @@ Android backend
 ===============
 
 For an example of building an android bluetooth app, see 
-`the example folder<https://github.com/hbldh/bleak/tree/develop/examples/kivy>`_
+`the example folder <https://github.com/hbldh/bleak/tree/develop/examples/kivy>`_
 and its accompanying README file.
 
 There are a handful of ways to run Python on Android.  Presently some code has
