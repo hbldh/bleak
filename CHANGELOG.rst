@@ -21,7 +21,8 @@ Added
 
 Changed
 -------
-Changed ``AdvertisementData`` to a named tuple.
+* Changed ``AdvertisementData`` to a named tuple.
+* A faster ``unpack_variants`` is now provided by dbus-fast
 
 Fixed
 -----

@@ -29,7 +29,7 @@ pyobjc-core = { version = "^8.5.1", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = "^8.5.1", markers = "platform_system=='Darwin'" }
 pyobjc-framework-libdispatch = { version = "^8.5.1", markers = "platform_system=='Darwin'" }
 bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'" }
-dbus-fast = { version = "^1.4.0", markers = "platform_system == 'Linux'" }
+dbus-fast = { version = "^1.22.0", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = { version = "^5.1.1", python = ">=3.8" }
