@@ -29,7 +29,7 @@ and stop scanning is to use it in an ``async with`` statement::
     import asyncio
     from bleak import BleakScanner
 
-    def main():
+    async def main():
         stop_event = asyncio.Event()
 
         # TODO: add something that calls stop_event.set()
