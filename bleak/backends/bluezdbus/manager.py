@@ -24,7 +24,7 @@ from typing import (
 )
 from weakref import WeakKeyDictionary
 
-from dbus_fast import BusType, Message, MessageType, Variant
+from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
 from ...exc import BleakError
@@ -36,7 +36,7 @@ from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
-from .utils import assert_reply, unpack_variants
+from .utils import assert_reply
 
 logger = logging.getLogger(__name__)
 
