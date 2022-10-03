@@ -16,6 +16,8 @@ class AdvertisementDataType(IntEnum):
     Generic Access Profile advertisement data types.
 
     `Source <https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%20Number%20Types/Generic%20Access%20Profile.pdf>`.
+
+    .. versionadded:: 0.15.0
     """
 
     FLAGS = 0x01

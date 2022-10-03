@@ -51,11 +51,15 @@ class AdvertisementData(NamedTuple):
     tx_power: Optional[int]
     """
     Tx Power data from the received advertising data or ``None`` if not present.
+
+    .. versionadded:: 0.17.0
     """
 
     rssi: int
     """
     The Radio Receive Signal Strength (RSSI) in dBm.
+
+    .. versionadded:: 0.19.0
     """
 
     platform_data: Tuple

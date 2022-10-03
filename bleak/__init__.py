@@ -88,6 +88,14 @@ class BleakScanner:
             custom backend).
         **kwargs:
             Additional args for backwards compatibility.
+
+    .. versionchanged:: 0.15.0
+        ``detection_callback``, ``service_uuids`` and ``scanning_mode`` are no longer keyword-only.
+        Added ``bluez`` parameter.
+
+    .. versionchanged:: 0.18.0
+        No longer is alias for backend type and no longer inherits from :class:`BaseBleakScanner`.
+        Added ``backend`` parameter.
     """
 
     def __init__(
@@ -195,6 +203,9 @@ class BleakScanner:
         Returns:
             The value of :attr:`discovered_devices_and_advertisement_data` if
             ``return_adv`` is ``True``, otherwise the value of :attr:`discovered_devices`.
+
+        .. versionchanged:: 0.19.0
+            Added ``return_adv`` parameter.
         """
         async with cls(**kwargs) as scanner:
             await asyncio.sleep(timeout)
@@ -225,6 +236,8 @@ class BleakScanner:
         of known devices. If you don't need to do that, consider using
         ``discovered_devices_and_advertisement_data.values()`` to just get the
         values instead.
+
+        .. versionadded:: 0.19.0
         """
         return self._backend.seen_devices
 
@@ -342,6 +355,13 @@ class BleakClient:
             the :meth:`connect` method to implicitly call :meth:`BleakScanner.discover`.
             This is known to cause problems when trying to connect to multiple
             devices at the same time.
+
+    .. versionchanged:: 0.15.0
+        ``disconnected_callback`` is no longer keyword-only. Added ``winrt`` parameter.
+
+    .. versionchanged:: 0.18.0
+        No longer is alias for backend type and no longer inherits from :class:`BaseBleakClient`.
+        Added ``backend`` parameter.
     """
 
     def __init__(
@@ -579,6 +599,10 @@ class BleakClient:
                 The function to be called on notification. Can be regular
                 function or async function.
 
+
+        .. versionchanged:: 0.18.0
+            The first argument of the callback is now a :class:`BleakGATTCharacteristic`
+            instead of an ``int``.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
