@@ -89,11 +89,19 @@ AdvertisementDataCallback = Callable[
     [BLEDevice, AdvertisementData],
     Optional[Awaitable[None]],
 ]
+"""
+Type alias for callback called when advertisement data is received.
+"""
 
 AdvertisementDataFilter = Callable[
     [BLEDevice, AdvertisementData],
     bool,
 ]
+"""
+Type alias for an advertisement data filter function.
+
+Implementations should return ``True`` for matches, otherwise ``False``.
+"""
 
 
 class BaseBleakScanner(abc.ABC):
