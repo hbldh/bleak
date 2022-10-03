@@ -175,7 +175,7 @@ class BleakScanner:
     @overload
     @classmethod
     async def discover(
-        cls, timeout: float = 5.0, *, return_adv: Literal[False], **kwargs
+        cls, timeout: float = 5.0, *, return_adv: Literal[False] = False, **kwargs
     ) -> List[BLEDevice]:
         ...
 
