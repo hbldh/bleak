@@ -23,6 +23,7 @@ Changed
 -------
 * Changed ``AdvertisementData`` to a named tuple.
 * A faster ``unpack_variants`` is now provided by dbus-fast
+* Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
 
 Fixed
 -----
