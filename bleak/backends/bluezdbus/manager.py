@@ -838,10 +838,9 @@ class BlueZManager:
         """
         for (callback, adapter_path) in self._advertisement_callbacks:
             # filter messages from other adapters
-            if not device_path.startswith(adapter_path):
+            if adapter_path != device["Adapter"]:
                 continue
 
-            # TODO: this should be deep copy, not shallow
             callback(device_path, device.copy())
 
 
