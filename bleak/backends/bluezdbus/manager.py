@@ -16,6 +16,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    MutableMapping,
     NamedTuple,
     Optional,
     Set,
@@ -844,7 +845,7 @@ class BlueZManager:
             callback(device_path, device.copy())
 
 
-_global_instances: Dict[Any, BlueZManager] = WeakKeyDictionary()
+_global_instances: MutableMapping[Any, BlueZManager] = WeakKeyDictionary()
 
 
 async def get_global_bluez_manager() -> BlueZManager:
