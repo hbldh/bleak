@@ -76,7 +76,7 @@ Changed
   argument to avoid services being resolved again. Merged #923.
 * The BlueZ D-Bus backend now uses ``dbus-fast`` package instead of ``dbus-next`` which significantly improves performance. Merged #988.
 * The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
-* Updated logging to lazy version and replaced format by f-string for BleakClientWinRT. #1000.
+* Updated logging to lazy version and replaced format by f-string for ``BleakClientWinRT``. #1000.
 * Added deprecation warning to ``discover()`` method. Merged #1005.
 * BlueZ adapter is chosen dynamically if not provided, instead of using hardcoded "hci0". Fixes #513.
 
@@ -110,7 +110,7 @@ Fixed
 Changed
 -------
 * Made BlueZ D-Bus signal callback logging lazy to improve performance. Merged #912.
-* Switch to using async_timeout instead of asyncio.wait_for for performance. Merged #916.
+* Switch to using ``async_timeout`` instead of ``asyncio.wait_for for performance``. Merged #916.
 * Improved performance of ``BlueZManager.get_services()``. Fixes #927.
 
 Removed
