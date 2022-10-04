@@ -172,7 +172,7 @@ class BleakClientWinRT(BaseBleakClient):
             self._device_info = address_or_ble_device.details.adv.bluetooth_address
         else:
             self._device_info = None
-        self._requester = None
+        self._requester: Optional[BluetoothLEDevice] = None
         self._session_active_events: List[asyncio.Event] = []
         self._session_closed_events: List[asyncio.Event] = []
         self._session: GattSession = None
@@ -197,7 +197,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     # Connectivity methods
 
-    def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
+    async def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
         args = [
             bluetooth_address,
         ]
@@ -207,7 +207,9 @@ class BleakClientWinRT(BaseBleakClient):
                 if self._address_type == "public"
                 else BluetoothAddressType.RANDOM
             )
-        requester = BluetoothLEDevice.from_bluetooth_address_async(*args)
+        requester = await BluetoothLEDevice.from_bluetooth_address_async(*args)
+
+        # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
         if requester is None:
             raise BleakDeviceNotFoundError(
                 self.address, f"Device with address {self.address} was not found."
@@ -241,12 +243,6 @@ class BleakClientWinRT(BaseBleakClient):
         logger.debug("Connecting to BLE device @ %s", self.address)
 
         self._requester = await self._create_requester(self._device_info)
-
-        if self._requester is None:
-            # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
-            raise BleakError(
-                f"Failed to connect to {self._device_info}. If the device requires pairing, then pair first. If the device uses a random address, it may have changed."
-            )
 
         # Called on disconnect event or on failure to connect.
         def handle_disconnect():
