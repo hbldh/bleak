@@ -173,6 +173,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             self._device_info = None
         self._requester: Optional[BluetoothLEDevice] = None
+        self._services_changed_events: List[asyncio.Event] = []
         self._session_active_events: List[asyncio.Event] = []
         self._session_closed_events: List[asyncio.Event] = []
         self._session: GattSession = None
@@ -189,6 +190,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._use_cached_services = winrt.get("use_cached_services")
         self._address_type = winrt.get("address_type", kwargs.get("address_type"))
 
+        self._session_services_changed_token: Optional[EventRegistrationToken] = None
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
         self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
@@ -242,27 +244,50 @@ class BleakClientWinRT(BaseBleakClient):
 
         logger.debug("Connecting to BLE device @ %s", self.address)
 
+        loop = asyncio.get_running_loop()
+
         self._requester = await self._create_requester(self._device_info)
+
+        def handle_services_changed():
+            if not self._services_changed_events:
+                logger.warn("%s: unhandled services changed event", self.address)
+            else:
+                for event in self._services_changed_events:
+                    event.set()
+
+        def services_changed_handler(sender, args):
+            logger.debug("%s: services changed", self.address)
+            loop.call_soon_threadsafe(handle_services_changed)
+
+        self._services_changed_token = self._requester.add_gatt_services_changed(
+            services_changed_handler
+        )
 
         # Called on disconnect event or on failure to connect.
         def handle_disconnect():
-            if self._session_status_changed_token:
-                self._session.remove_session_status_changed(
-                    self._session_status_changed_token
-                )
-                self._session_status_changed_token = None
-
-            if self._max_pdu_size_changed_token:
-                self._session.remove_max_pdu_size_changed(
-                    self._max_pdu_size_changed_token
-                )
-                self._max_pdu_size_changed_token = None
-
             if self._requester:
+                if self._services_changed_token:
+                    self._requester.remove_gatt_services_changed(
+                        self._services_changed_token
+                    )
+                    self._services_changed_token = None
+
                 self._requester.close()
                 self._requester = None
 
             if self._session:
+                if self._session_status_changed_token:
+                    self._session.remove_session_status_changed(
+                        self._session_status_changed_token
+                    )
+                    self._session_status_changed_token = None
+
+                if self._max_pdu_size_changed_token:
+                    self._session.remove_max_pdu_size_changed(
+                        self._max_pdu_size_changed_token
+                    )
+                    self._max_pdu_size_changed_token = None
+
                 self._session.close()
                 self._session = None
 
@@ -284,8 +309,6 @@ class BleakClientWinRT(BaseBleakClient):
                     e.set()
 
                 handle_disconnect()
-
-        loop = asyncio.get_running_loop()
 
         # this is the WinRT event handler will be called on another thread
         def session_status_changed_event_handler(
@@ -535,8 +558,39 @@ class BleakClientWinRT(BaseBleakClient):
                 else BluetoothCacheMode.UNCACHED
             )
 
+        # if we receive a services changed event before get_gatt_services_async()
+        # finishes, we need to call it again with BluetoothCacheMode.UNCACHED
+        # to ensure we have the correct services as described in
+        # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothledevice.gattserviceschanged
+        while True:
+            services_changed_event = asyncio.Event()
+            services_changed_event_task = asyncio.create_task(
+                services_changed_event.wait()
+            )
+            self._services_changed_events.append(services_changed_event)
+            get_services_task = self._requester.get_gatt_services_async(*args)
+
+            try:
+                await asyncio.wait(
+                    [services_changed_event_task, get_services_task],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            finally:
+                services_changed_event_task.cancel()
+                self._services_changed_events.remove(services_changed_event)
+                get_services_task.cancel()
+
+            if not services_changed_event.is_set():
+                break
+
+            logger.debug(
+                "%s: restarting get services due to services changed event",
+                self.address,
+            )
+            args = [BluetoothCacheMode.UNCACHED]
+
         services: Sequence[GattDeviceService] = _ensure_success(
-            await self._requester.get_gatt_services_async(*args),
+            get_services_task.get_results(),
             "services",
             "Could not get GATT services",
         )
@@ -578,7 +632,6 @@ class BleakClientWinRT(BaseBleakClient):
                         )
                     )
 
-        logger.info("Services resolved for %s", str(self))
         self._services_resolved = True
         return self.services
 
