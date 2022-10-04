@@ -181,7 +181,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         )
 
         device = self.create_or_update_device(
-            bdaddr, local_name, sender, advertisement_data
+            bdaddr, local_name, raw_data, advertisement_data
         )
 
         if self._callback is None:
