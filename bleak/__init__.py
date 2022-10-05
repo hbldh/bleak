@@ -62,7 +62,7 @@ class BleakScanner:
     other conditions, and collect a list of :class:`BLEDevice` objects. These can subsequently be used to
     connect to the corresponding BLE server.
 
-    A BleakScanner can be used as an asynchronous context manager in which case it automatically
+    A :class:`BleakScanner` can be used as an asynchronous context manager in which case it automatically
     starts and stops scanning.
 
     Args:
