@@ -213,9 +213,6 @@ class BleakScanner:
     ) -> Optional[BLEDevice]:
         """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
-        This method uses the BLE scanner, and depending on the backend it may not work while a connection to a
-        BLE server is active, or it may cause that connection to be forcibly closed.
-
         Args:
             device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
             timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
@@ -242,9 +239,6 @@ class BleakScanner:
 
         This can be used to find a BLE server by other identifying information than its address,
         for example its name.
-
-        This method uses the BLE scanner, and depending on the backend it may not work while a connection to a
-        BLE server is active, or it may cause that connection to be forcibly closed.
 
         Args:
             filterfunc:
@@ -283,7 +277,7 @@ class BleakClient:
     connects and disconnects.
 
     How many BLE connections can be active simultaneously, and whether connections can be active while
-    scanning depends on the backend.
+    scanning depends on the Bluetooth adapter hardware.
 
     Args:
         address_or_ble_device:
