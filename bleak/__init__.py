@@ -59,7 +59,7 @@ class BleakScanner:
     Interface for Bleak Bluetooth LE Scanners.
 
     The scanner will listen for BLE advertisements, optionally filtering on advertised services or
-    other conditions, and collect a list of `BLEDevice` objects. These can subsequently be used to
+    other conditions, and collect a list of :class:`BLEDevice` objects. These can subsequently be used to
     connect to the corresponding BLE server.
 
     A BleakScanner can be used as an asynchronous context manager in which case it automatically
