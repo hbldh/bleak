@@ -167,6 +167,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # For additional details see https://github.com/bluez/bluez/issues/89
                 #
                 if not manager.is_connected(self._device_path):
+                    logger.debug("Connecting to BlueZ path %s", self._device_path)
                     async with async_timeout.timeout(timeout):
                         reply = await self._bus.call(
                             Message(
@@ -425,10 +426,46 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean regarding success of unpairing.
 
         """
-        warnings.warn(
-            "Unpairing is seemingly unavailable in the BlueZ DBus API at the moment."
+        adapter_path = await self._get_adapter_path()
+        device_path = await self._get_device_path()
+        manager = await get_global_bluez_manager()
+
+        logger.debug(
+            "Removing BlueZ device path %s from adapter path %s",
+            device_path,
+            adapter_path,
         )
-        return False
+
+        # If this client object wants to connect again, BlueZ needs the device
+        # to follow Discovery process again - so reset the local connection
+        # state.
+        #
+        # (This is true even if the request to RemoveDevice fails,
+        # so clear it before.)
+        self._device_path = None
+        self._device_info = None
+        self._is_connected = False
+
+        try:
+            reply = await manager._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=adapter_path,
+                    interface=defs.ADAPTER_INTERFACE,
+                    member="RemoveDevice",
+                    signature="o",
+                    body=[device_path],
+                )
+            )
+            assert_reply(reply)
+        except BleakDBusError as e:
+            if e.dbus_error == "org.bluez.Error.DoesNotExist":
+                raise BleakDeviceNotFoundError(
+                    self.address, f"Device with address {self.address} was not found."
+                ) from e
+            raise
+
+        return True
 
     @property
     def is_connected(self) -> bool:
@@ -484,6 +521,37 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # we aren't actually using the write or notify, we just want the MTU
         os.close(reply.unix_fds[0])
         self._mtu_size = reply.body[1]
+
+    async def _get_adapter_path(self) -> str:
+        """Private coroutine to return the BlueZ path to the adapter this client is assigned to.
+
+        Can be called even if no connection has been established yet.
+        """
+        if self._device_info:
+            # If we have a BlueZ DBus object with _device_info, use what it tell us
+            return self._device_info["Adapter"]
+        if self._adapter:
+            # If the adapter name was set in the constructor, convert to a BlueZ path
+            return f"/org/bluez/{self._adapter}"
+
+        # Fall back to the system's default Bluetooth adapter
+        manager = await get_global_bluez_manager()
+        return manager.get_default_adapter()
+
+    async def _get_device_path(self) -> str:
+        """Private coroutine to return the BlueZ path to the device address this client is assigned to.
+
+        Unlike the _device_path property, this function can be called even if discovery process has not
+        started and/or connection has not been established yet.
+        """
+        if self._device_path:
+            # If we have a BlueZ DBus object, return its device path
+            return self._device_path
+
+        # Otherwise, build a new path using the adapter path and the BLE address
+        adapter_path = await self._get_adapter_path()
+        bluez_address = self.address.upper().replace(":", "_")
+        return f"{adapter_path}/dev_{bluez_address}"
 
     @property
     def mtu_size(self) -> int:

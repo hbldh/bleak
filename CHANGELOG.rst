@@ -18,6 +18,7 @@ Added
 * Added ``rssi`` attribute to ``AdvertisementData``.
 * Added ``BleakScanner.discovered_devices_and_advertisement_data`` property.
 * Added ``return_adv`` argument to ``BleakScanner.discover`` method.
+* Added ``BleakClient.unpair()`` implementation for BlueZ backend.
 
 Changed
 -------
