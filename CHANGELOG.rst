@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added optional hack to use Bluetooth address instead of UUID on macOS.
+
 Changed
 -------
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
