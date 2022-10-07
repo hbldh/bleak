@@ -53,6 +53,7 @@ from .exc import BleakError
 
 if TYPE_CHECKING:
     from .backends.bluezdbus.scanner import BlueZScannerArgs
+    from .backends.corebluetooth.scanner import CBScannerArgs
     from .backends.winrt.client import WinRTClientArgs
 
 
@@ -92,6 +93,8 @@ class BleakScanner:
             :class:`BleakError` if set to ``"passive"`` on macOS.
         bluez:
             Dictionary of arguments specific to the BlueZ backend.
+        cb:
+            Dictionary of arguments specific to the CoreBluetooth backend.
         backend:
             Used to override the automatically selected backend (i.e. for a
             custom backend).
@@ -114,6 +117,7 @@ class BleakScanner:
         scanning_mode: Literal["active", "passive"] = "active",
         *,
         bluez: BlueZScannerArgs = {},
+        cb: CBScannerArgs = {},
         backend: Optional[Type[BaseBleakScanner]] = None,
         **kwargs,
     ):
@@ -122,7 +126,12 @@ class BleakScanner:
         )
 
         self._backend = PlatformBleakScanner(
-            detection_callback, service_uuids, scanning_mode, bluez=bluez, **kwargs
+            detection_callback,
+            service_uuids,
+            scanning_mode,
+            bluez=bluez,
+            cb=cb,
+            **kwargs,
         )
 
     async def __aenter__(self):
