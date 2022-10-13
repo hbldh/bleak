@@ -368,6 +368,14 @@ class BlueZManager:
                 assert_reply(reply)
 
                 async def stop() -> None:
+                    # need to remove callbacks first, otherwise we get TxPower
+                    # and RSSI properties removed during stop which causes
+                    # incorrect advertisement data callbacks
+                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._device_removed_callbacks.remove(
+                        device_removed_callback_and_state
+                    )
+
                     async with self._bus_lock:
                         reply = await self._bus.call(
                             Message(
@@ -391,11 +399,6 @@ class BlueZManager:
                             )
                         )
                         assert_reply(reply)
-
-                        self._advertisement_callbacks.remove(callback_and_state)
-                        self._device_removed_callbacks.remove(
-                            device_removed_callback_and_state
-                        )
 
                 return stop
             except BaseException:
@@ -473,6 +476,14 @@ class BlueZManager:
                 self._bus.export(monitor_path, monitor)
 
                 async def stop():
+                    # need to remove callbacks first, otherwise we get TxPower
+                    # and RSSI properties removed during stop which causes
+                    # incorrect advertisement data callbacks
+                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._device_removed_callbacks.remove(
+                        device_removed_callback_and_state
+                    )
+
                     async with self._bus_lock:
                         self._bus.unexport(monitor_path, monitor)
 
@@ -487,11 +498,6 @@ class BlueZManager:
                             )
                         )
                         assert_reply(reply)
-
-                        self._advertisement_callbacks.remove(callback_and_state)
-                        self._device_removed_callbacks.remove(
-                            device_removed_callback_and_state
-                        )
 
                 return stop
 
