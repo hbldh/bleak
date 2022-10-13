@@ -10,25 +10,29 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.19.0`_ (2022-10-13)
+======================
+
 Added
 -----
-* Added support for Python 3.11.
-* Added better error message for Bluetooth not authorized on macOS.
-* ``BleakDeviceNotFoundError`` which should be raised if a device can not be found by ``connect``, ``pair`` and ``unpair``
-* Added ``rssi`` attribute to ``AdvertisementData``.
-* Added ``BleakScanner.discovered_devices_and_advertisement_data`` property.
-* Added ``return_adv`` argument to ``BleakScanner.discover`` method.
-* Added ``BleakClient.unpair()`` implementation for BlueZ backend.
+* Added support for Python 3.11. Merged #990.
+* Added better error message for Bluetooth not authorized on macOS. Merged #1033.
+* Added ``BleakDeviceNotFoundError`` which should is raised if a device can not
+  be found by ``connect``, ``pair`` and ``unpair``. Merged #1022.
+* Added ``rssi`` attribute to ``AdvertisementData``. Merged #1047.
+* Added ``BleakScanner.discovered_devices_and_advertisement_data`` property. Merged #1047.
+* Added ``return_adv`` argument to ``BleakScanner.discover`` method. Merged #1047.
+* Added ``BleakClient.unpair()`` implementation for BlueZ backend. Merged #1067.
 
 Changed
 -------
-* Changed ``AdvertisementData`` to a named tuple.
-* A faster ``unpack_variants`` is now provided by dbus-fast
+* Changed ``AdvertisementData`` to a named tuple. Merged #1047.
+* A faster ``unpack_variants`` is now provided by dbus-fast. Merged #1055.
 
 Fixed
 -----
 * On BlueZ, support creating additional instances running on a different event
-  loops (i.e. multiple pytest-asyncio cases)
+  loops (i.e. multiple pytest-asyncio cases). Merged #1034.
 * Fixed unhandled exception in ``max_pdu_size_changed_handler`` in WinRT backend. Fixes #1039.
 * Fixed stale services in WinRT backend causing ``WinError -2147483629``. Fixes #1061.
 
@@ -837,7 +841,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.18.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.0...develop
+.. _0.19.0: https://github.com/hbldh/bleak/compare/v0.18.1...v0.19.0
 .. _0.18.1: https://github.com/hbldh/bleak/compare/v0.18.0...v0.18.1
 .. _0.18.0: https://github.com/hbldh/bleak/compare/v0.17.0...v0.18.0
 .. _0.17.0: https://github.com/hbldh/bleak/compare/v0.16.0...v0.17.0
