@@ -32,6 +32,10 @@ Fixed
 * Fixed unhandled exception in ``max_pdu_size_changed_handler`` in WinRT backend. Fixes #1039.
 * Fixed stale services in WinRT backend causing ``WinError -2147483629``. Fixes #1061.
 
+Removed
+-------
+Removed ``bleak.__version__``. Use ``importlib.metadata.version('bleak')`` instead.
+
 `0.18.1`_ (2022-09-25)
 ======================
 

@@ -35,7 +35,6 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
-from .__version__ import __version__  # noqa: F401
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type
 from .backends.device import BLEDevice
