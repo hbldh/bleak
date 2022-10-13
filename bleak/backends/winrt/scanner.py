@@ -23,17 +23,15 @@ from ...assigned_numbers import AdvertisementDataType
 logger = logging.getLogger(__name__)
 
 
-def _format_bdaddr(a):
+def _format_bdaddr(a: int) -> str:
     return ":".join("{:02X}".format(x) for x in a.to_bytes(6, byteorder="big"))
 
 
-def _format_event_args(e):
+def _format_event_args(e: BluetoothLEAdvertisementReceivedEventArgs) -> str:
     try:
-        return "{0}: {1}".format(
-            _format_bdaddr(e.bluetooth_address), e.advertisement.local_name or "Unknown"
-        )
+        return f"{_format_bdaddr(e.bluetooth_address)}: {e.advertisement.local_name}"
     except Exception:
-        return e.bluetooth_address
+        return _format_bdaddr(e.bluetooth_address)
 
 
 class _RawAdvData(NamedTuple):
