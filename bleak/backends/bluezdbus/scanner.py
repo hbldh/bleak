@@ -21,13 +21,57 @@ logger = logging.getLogger(__name__)
 
 
 class BlueZDiscoveryFilters(TypedDict, total=False):
+    """
+    Dictionary of arguments for the ``org.bluez.Adapter1.SetDiscoveryFilter``
+    D-Bus method.
+
+    https://github.com/bluez/bluez/blob/master/doc/adapter-api.txt
+    """
+
     UUIDs: List[str]
+    """
+    Filter by service UUIDs, empty means match _any_ UUID.
+
+    Normally, the ``service_uuids`` argument of :class:`bleak.BleakScanner`
+    is used instead.
+    """
     RSSI: int
+    """
+    RSSI threshold value.
+    """
     Pathloss: int
+    """
+    Pathloss threshold value.
+    """
     Transport: str
+    """
+    Transport parameter determines the type of scan.
+
+    This should not be used since it is required to be set to ``"le"``.
+    """
     DuplicateData: bool
+    """
+    Disables duplicate detection of advertisement data.
+
+    This does not affect the ``Filter Duplicates`` parameter of the ``LE Set Scan Enable``
+    HCI command to the Bluetooth adapter!
+
+    Although the default value for BlueZ is ``True``, Bleak sets this to ``False`` by default.
+    """
     Discoverable: bool
+    """
+    Make adapter discoverable while discovering,
+    if the adapter is already discoverable setting
+    this filter won't do anything.
+    """
     Pattern: str
+    """
+    Discover devices where the pattern matches
+    either the prefix of the address or
+    device name which is convenient way to limited
+    the number of device objects created during a
+    discovery.
+    """
 
 
 class BlueZScannerArgs(TypedDict, total=False):
