@@ -177,15 +177,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                 member="Connect",
                             )
                         )
+
                     if (
-                        reply is not None
-                        and reply.message_type == MessageType.ERROR
-                        and reply.error_name == ErrorType.UNKNOWN_OBJECT
+                        reply.message_type == MessageType.ERROR
+                        and reply.error_name == ErrorType.UNKNOWN_OBJECT.value
                     ):
                         raise BleakDeviceNotFoundError(
                             self.address,
-                            f"Device with address {self.address} was not found.",
+                            f"Device with address {self.address} was not found. It may have been removed from BlueZ when scanning stopped.",
                         )
+
                     assert_reply(reply)
 
                 self._is_connected = True
