@@ -287,7 +287,6 @@ class BleakClient:
             Callback that will be scheduled in the event loop when the client is
             disconnected. The callable must take one argument, which will be
             this client object.
-            The callback will only be called on unsolicited disconnect event.
         timeout:
             Timeout in seconds passed to the implicit ``discover`` call when
             ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 10.0.
@@ -419,7 +418,9 @@ class BleakClient:
         """
         Pair with the specified GATT server.
 
-        This method may not be available (or needed) for some backends.
+        This method is not available on macOS. Instead of manually initiating
+        paring, the user will be prompted to pair the device the first time
+        that a characteristic that requires authentication is read or written.
         This method may have backend-specific additional keyword arguments.
 
         Returns:
@@ -431,6 +432,11 @@ class BleakClient:
     async def unpair(self) -> bool:
         """
         Unpair from the specified GATT server.
+
+        Unpairing will also disconnect the device.
+
+        This method is only available on Windows and Linux and will raise an
+        exception on other platforms.
 
         Returns:
             Always returns ``True`` for backwards compatibility.
