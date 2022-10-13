@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import sys
-from typing import List, NamedTuple, Optional, cast
+from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
 from bleak_winrt.windows.devices.bluetooth.advertisement import (
@@ -79,6 +79,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher = None
+        self._advertisement_pairs: Dict[int, _RawAdvData] = {}
         self._stopped_event = None
 
         # case insensitivity is for backwards compatibility on Windows only
@@ -113,18 +114,30 @@ class BleakScannerWinRT(BaseBleakScanner):
         # us (regular advertisement + scan response) so we have to do it manually.
 
         # get the previous advertising data/scan response pair or start a new one
-        _, old_adv_data = self.seen_devices.get(bdaddr, (None, None))
-        raw_data = (
-            _RawAdvData(event_args, None)
-            if old_adv_data is None
-            else cast(_RawAdvData, old_adv_data.platform_data[1])
-        )
+        raw_data = self._advertisement_pairs.get(bdaddr, _RawAdvData(None, None))
 
         # update the advertising data depending on the advertising data type
         if event_args.advertisement_type == BluetoothLEAdvertisementType.SCAN_RESPONSE:
             raw_data = _RawAdvData(raw_data.adv, event_args)
         else:
             raw_data = _RawAdvData(event_args, raw_data.scan)
+
+        self._advertisement_pairs[bdaddr] = raw_data
+
+        # if we are expecting scan response and we haven't received both a
+        # regular advertisement and a scan response, don't do callbacks yet,
+        # wait until we have both instead so we get a callback with partial data
+
+        if (raw_data.adv is None or raw_data.scan is None) and (
+            event_args.advertisement_type
+            in [
+                BluetoothLEAdvertisementType.CONNECTABLE_UNDIRECTED,
+                BluetoothLEAdvertisementType.SCANNABLE_UNDIRECTED,
+                BluetoothLEAdvertisementType.SCAN_RESPONSE,
+            ]
+        ):
+            logger.debug("skipping callback, waiting for scan response")
+            return
 
         uuids = []
         mfg_data = {}
@@ -212,6 +225,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     async def start(self):
         # start with fresh list of discovered devices
         self.seen_devices = {}
+        self._advertisement_pairs.clear()
 
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
