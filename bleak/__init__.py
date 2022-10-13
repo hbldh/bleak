@@ -69,6 +69,13 @@ class BleakScanner:
     """
     Interface for Bleak Bluetooth LE Scanners.
 
+    The scanner will listen for BLE advertisements, optionally filtering on advertised services or
+    other conditions, and collect a list of :class:`BLEDevice` objects. These can subsequently be used to
+    connect to the corresponding BLE server.
+
+    A :class:`BleakScanner` can be used as an asynchronous context manager in which case it automatically
+    starts and stops scanning.
+
     Args:
         detection_callback:
             Optional function that will be called each time a device is
@@ -263,7 +270,7 @@ class BleakScanner:
     async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Optional[BLEDevice]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
+        """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
         Args:
             device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
@@ -287,9 +294,10 @@ class BleakScanner:
     async def find_device_by_filter(
         cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
     ) -> Optional[BLEDevice]:
-        """
-        A convenience method for obtaining a ``BLEDevice`` object specified by
-        a filter function.
+        """Obtain a ``BLEDevice`` for a BLE server that matches a given filter function.
+
+        This can be used to find a BLE server by other identifying information than its address,
+        for example its name.
 
         Args:
             filterfunc:
@@ -322,7 +330,13 @@ class BleakScanner:
 
 
 class BleakClient:
-    """The Client Interface for Bleak Backend implementations to implement.
+    """The Client interface for connecting to a specific BLE GATT server and communicating with it.
+
+    A BleakClient can be used as an asynchronous context manager in which case it automatically
+    connects and disconnects.
+
+    How many BLE connections can be active simultaneously, and whether connections can be active while
+    scanning depends on the Bluetooth adapter hardware.
 
     Args:
         address_or_ble_device:
@@ -468,7 +482,12 @@ class BleakClient:
 
     async def pair(self, *args, **kwargs) -> bool:
         """
-        Pair with the peripheral.
+        Pair with the specified GATT server.
+
+        This method is not available on macOS. Instead of manually initiating
+        paring, the user will be prompted to pair the device the first time
+        that a characteristic that requires authentication is read or written.
+        This method may have backend-specific additional keyword arguments.
 
         Returns:
             Always returns ``True`` for backwards compatibility.
@@ -478,7 +497,12 @@ class BleakClient:
 
     async def unpair(self) -> bool:
         """
-        Unpair with the peripheral.
+        Unpair from the specified GATT server.
+
+        Unpairing will also disconnect the device.
+
+        This method is only available on Windows and Linux and will raise an
+        exception on other platforms.
 
         Returns:
             Always returns ``True`` for backwards compatibility.
@@ -488,7 +512,7 @@ class BleakClient:
     @property
     def is_connected(self) -> bool:
         """
-        Check connection status between this client and the server.
+        Check connection status between this client and the GATT server.
 
         Returns:
             Boolean representing connection status.
