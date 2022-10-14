@@ -16,13 +16,15 @@ from typing import (
     Dict,
     Iterable,
     List,
+    MutableMapping,
     NamedTuple,
     Optional,
     Set,
     cast,
 )
+from weakref import WeakKeyDictionary
 
-from dbus_fast import BusType, Message, MessageType, Variant
+from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
 from ...exc import BleakError
@@ -34,7 +36,7 @@ from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
-from .utils import assert_reply, unpack_variants
+from .utils import assert_reply
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +368,14 @@ class BlueZManager:
                 assert_reply(reply)
 
                 async def stop() -> None:
+                    # need to remove callbacks first, otherwise we get TxPower
+                    # and RSSI properties removed during stop which causes
+                    # incorrect advertisement data callbacks
+                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._device_removed_callbacks.remove(
+                        device_removed_callback_and_state
+                    )
+
                     async with self._bus_lock:
                         reply = await self._bus.call(
                             Message(
@@ -389,11 +399,6 @@ class BlueZManager:
                             )
                         )
                         assert_reply(reply)
-
-                        self._advertisement_callbacks.remove(callback_and_state)
-                        self._device_removed_callbacks.remove(
-                            device_removed_callback_and_state
-                        )
 
                 return stop
             except BaseException:
@@ -471,6 +476,14 @@ class BlueZManager:
                 self._bus.export(monitor_path, monitor)
 
                 async def stop():
+                    # need to remove callbacks first, otherwise we get TxPower
+                    # and RSSI properties removed during stop which causes
+                    # incorrect advertisement data callbacks
+                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._device_removed_callbacks.remove(
+                        device_removed_callback_and_state
+                    )
+
                     async with self._bus_lock:
                         self._bus.unexport(monitor_path, monitor)
 
@@ -485,11 +498,6 @@ class BlueZManager:
                             )
                         )
                         assert_reply(reply)
-
-                        self._advertisement_callbacks.remove(callback_and_state)
-                        self._device_removed_callbacks.remove(
-                            device_removed_callback_and_state
-                        )
 
                 return stop
 
@@ -836,22 +844,26 @@ class BlueZManager:
         """
         for (callback, adapter_path) in self._advertisement_callbacks:
             # filter messages from other adapters
-            if not device_path.startswith(adapter_path):
+            if adapter_path != device["Adapter"]:
                 continue
 
-            # TODO: this should be deep copy, not shallow
             callback(device_path, device.copy())
+
+
+_global_instances: MutableMapping[Any, BlueZManager] = WeakKeyDictionary()
 
 
 async def get_global_bluez_manager() -> BlueZManager:
     """
-    Gets the initialized global BlueZ manager instance.
+    Gets an existing initialized global BlueZ manager instance associated with the current event loop,
+    or initializes a new instance.
     """
 
-    if not hasattr(get_global_bluez_manager, "instance"):
-        setattr(get_global_bluez_manager, "instance", BlueZManager())
-
-    instance: BlueZManager = getattr(get_global_bluez_manager, "instance")
+    loop = asyncio.get_running_loop()
+    try:
+        instance = _global_instances[loop]
+    except KeyError:
+        instance = _global_instances[loop] = BlueZManager()
 
     await instance.async_init()
 

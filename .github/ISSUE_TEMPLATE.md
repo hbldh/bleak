@@ -20,3 +20,13 @@ reproduced with other BLE peripherals as well.
 Paste the command(s) you ran and the output.
 If there was a crash, please include the traceback here as well.
 ```
+
+### Logs
+
+Include any relevant logs here.
+
+Logs are essential to understand what is going on behind the scenes.
+
+See https://bleak.readthedocs.io/en/latest/troubleshooting.html for information on how to collect debug logs.
+
+If you receive an OS error (`WinError`, `BleakDBusError`, `NSError`, etc.), Wireshark logs of Bluetooth packets are required to understand the issue!

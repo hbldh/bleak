@@ -43,6 +43,11 @@ the *Privacy* settings in the macOS *System Preferences*.
 
 .. image:: images/macos-privacy-bluetooth.png
 
+If the app is already in the list but the checkbox for Bluetooth is disabled,
+you will get the a ``BleakError``: "BLE is not authorized - check macOS privacy settings".
+instead of crashing with ``SIGABRT``, in which case you need to check the box
+to allow Bluetooth for the app that is running Python.
+
 
 No devices found when scanning on macOS 12
 ==========================================

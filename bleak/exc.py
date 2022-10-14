@@ -8,6 +8,25 @@ class BleakError(Exception):
     pass
 
 
+class BleakDeviceNotFoundError(BleakError):
+    """
+    Exception which is raised if a device can not be found by ``connect``, ``pair`` and ``unpair``.
+    This is the case if the OS Bluetooth stack has never seen this device or it was removed and forgotten.
+
+    .. versionadded: 0.19.0
+    """
+
+    identifier: str
+
+    def __init__(self, identifier: str, *args: object) -> None:
+        """
+        Args:
+            identifier (str): device identifier (Bluetooth address or UUID) of the device which was not found
+        """
+        super().__init__(*args)
+        self.identifier = identifier
+
+
 class BleakDBusError(BleakError):
     """Specialized exception type for D-Bus errors."""
 

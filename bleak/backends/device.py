@@ -6,7 +6,6 @@ Wrapper class for Bluetooth LE servers returned from calling
 Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-from ._manufacturers import MANUFACTURERS
 
 
 class BLEDevice:
@@ -23,7 +22,7 @@ class BLEDevice:
     - When using macOS backend, ``details`` attribute will be a CBPeripheral object.
     """
 
-    def __init__(self, address, name, details=None, rssi=0, **kwargs):
+    def __init__(self, address, name=None, details=None, rssi=0, **kwargs):
         #: The Bluetooth address of the device on this machine.
         self.address = address
         #: The advertised name of the device.
@@ -36,17 +35,7 @@ class BLEDevice:
         self.metadata = kwargs
 
     def __str__(self):
-        if not self.name:
-            if "manufacturer_data" in self.metadata:
-                ks = list(self.metadata["manufacturer_data"].keys())
-                if len(ks):
-                    mf = MANUFACTURERS.get(ks[0], MANUFACTURERS.get(0xFFFF))
-                    value = self.metadata["manufacturer_data"].get(
-                        ks[0], MANUFACTURERS.get(0xFFFF)
-                    )
-                    # TODO: Evaluate how to interpret the value of the company identifier...
-                    return "{0}: {1} ({2})".format(self.address, mf, value)
-        return "{0}: {1}".format(self.address, self.name or "Unknown")
+        return f"{self.address}: {self.name}"
 
     def __repr__(self):
-        return str(self)
+        return f"BLEDevice({self.address}, {self.name})"

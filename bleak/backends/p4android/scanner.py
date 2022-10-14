@@ -17,7 +17,6 @@ from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
 from ...exc import BleakError
-from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from . import defs, utils
 
@@ -56,7 +55,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         else:
             self.__scan_mode = defs.ScanSettings.SCAN_MODE_LOW_LATENCY
 
-        self._devices = {}
         self.__adapter = None
         self.__javascanner = None
         self.__callback = None
@@ -228,31 +226,8 @@ class BleakScannerP4Android(BaseBleakScanner):
         # and ScanSettings java objects to pass to startScan().
         raise NotImplementedError("not implemented in Android backend")
 
-    @property
-    def discovered_devices(self) -> List[BLEDevice]:
-        return [*self._devices.values()]
-
-
-class _PythonScanCallback(utils.AsyncJavaCallbacks):
-    __javainterfaces__ = ["com.github.hbldh.bleak.PythonScanCallback$Interface"]
-
-    def __init__(self, scanner, loop):
-        super().__init__(loop)
-        self._scanner = scanner
-        self.java = defs.PythonScanCallback(self)
-
-    def result_state(self, status_str, name, *data):
-        self._loop.call_soon_threadsafe(
-            self._result_state_unthreadsafe, status_str, name, data
-        )
-
-    @java_method("(I)V")
-    def onScanFailed(self, errorCode):
-        self.result_state(defs.ScanFailed(errorCode).name, "onScan")
-
-    @java_method("(Landroid/bluetooth/le/ScanResult;)V")
-    def onScanResult(self, result):
-        device = result.getDevice()
+    def _handle_scan_result(self, result):
+        native_device = result.getDevice()
         record = result.getScanRecord()
 
         service_uuids = record.getServiceUuids()
@@ -280,20 +255,44 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
             manufacturer_data=manufacturer_data,
             service_data=service_data,
             service_uuids=service_uuids,
-            platform_data=(result,),
             tx_power=tx_power,
+            rssi=native_device.getRssi(),
+            platform_data=(result,),
         )
-        device = BLEDevice(
-            device.getAddress(),
-            device.getName(),
-            rssi=result.getRssi(),
-            uuids=service_uuids,
-            manufacturer_data=manufacturer_data,
+
+        device = self.create_or_update_device(
+            native_device.getAddress(),
+            native_device.getName(),
+            native_device,
+            advertisement,
         )
-        self._scanner._devices[device.address] = device
+
+        if not self._callback:
+            return
+
+        self._callback(device, advertisement)
+
+
+class _PythonScanCallback(utils.AsyncJavaCallbacks):
+    __javainterfaces__ = ["com.github.hbldh.bleak.PythonScanCallback$Interface"]
+
+    def __init__(self, scanner: BleakScannerP4Android, loop: asyncio.AbstractEventLoop):
+        super().__init__(loop)
+        self._scanner = scanner
+        self.java = defs.PythonScanCallback(self)
+
+    def result_state(self, status_str, name, *data):
+        self._loop.call_soon_threadsafe(
+            self._result_state_unthreadsafe, status_str, name, data
+        )
+
+    @java_method("(I)V")
+    def onScanFailed(self, errorCode):
+        self.result_state(defs.ScanFailed(errorCode).name, "onScan")
+
+    @java_method("(Landroid/bluetooth/le/ScanResult;)V")
+    def onScanResult(self, result):
+        self._loop.call_soon_threadsafe(self._scanner._handle_scan_result, result)
+
         if "onScan" not in self.states:
-            self.result_state(None, "onScan", device)
-        if self._scanner._callback:
-            self._loop.call_soon_threadsafe(
-                self._scanner._callback, device, advertisement
-            )
+            self.result_state(None, "onScan", result)

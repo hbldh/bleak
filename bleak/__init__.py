@@ -14,7 +14,18 @@ import logging
 import os
 import sys
 import uuid
-from typing import TYPE_CHECKING, Awaitable, Callable, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 from warnings import warn
 
 import async_timeout
@@ -24,7 +35,6 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
-from .__version__ import __version__  # noqa: F401
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type
 from .backends.device import BLEDevice
@@ -58,6 +68,13 @@ class BleakScanner:
     """
     Interface for Bleak Bluetooth LE Scanners.
 
+    The scanner will listen for BLE advertisements, optionally filtering on advertised services or
+    other conditions, and collect a list of :class:`BLEDevice` objects. These can subsequently be used to
+    connect to the corresponding BLE server.
+
+    A :class:`BleakScanner` can be used as an asynchronous context manager in which case it automatically
+    starts and stops scanning.
+
     Args:
         detection_callback:
             Optional function that will be called each time a device is
@@ -77,6 +94,14 @@ class BleakScanner:
             custom backend).
         **kwargs:
             Additional args for backwards compatibility.
+
+    .. versionchanged:: 0.15.0
+        ``detection_callback``, ``service_uuids`` and ``scanning_mode`` are no longer keyword-only.
+        Added ``bluez`` parameter.
+
+    .. versionchanged:: 0.18.0
+        No longer is alias for backend type and no longer inherits from :class:`BaseBleakScanner`.
+        Added ``backend`` parameter.
     """
 
     def __init__(
@@ -153,34 +178,74 @@ class BleakScanner:
         )
         self._backend.set_scanning_filter(**kwargs)
 
+    @overload
     @classmethod
-    async def discover(cls, timeout=5.0, **kwargs) -> List[BLEDevice]:
+    async def discover(
+        cls, timeout: float = 5.0, *, return_adv: Literal[False] = False, **kwargs
+    ) -> List[BLEDevice]:
+        ...
+
+    @overload
+    @classmethod
+    async def discover(
+        cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
+    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
+        ...
+
+    @classmethod
+    async def discover(cls, timeout=5.0, *, return_adv=False, **kwargs):
         """
         Scan continuously for ``timeout`` seconds and return discovered devices.
 
         Args:
             timeout:
                 Time, in seconds, to scan for.
+            return_adv:
+                If ``True``, the return value will include advertising data.
             **kwargs:
                 Additional arguments will be passed to the :class:`BleakScanner`
                 constructor.
 
         Returns:
+            The value of :attr:`discovered_devices_and_advertisement_data` if
+            ``return_adv`` is ``True``, otherwise the value of :attr:`discovered_devices`.
 
+        .. versionchanged:: 0.19.0
+            Added ``return_adv`` parameter.
         """
         async with cls(**kwargs) as scanner:
             await asyncio.sleep(timeout)
-            devices = scanner.discovered_devices
-        return devices
+
+        if return_adv:
+            return scanner.discovered_devices_and_advertisement_data
+
+        return scanner.discovered_devices
 
     @property
     def discovered_devices(self) -> List[BLEDevice]:
-        """Gets the devices registered by the BleakScanner.
-
-        Returns:
-            A list of the devices that the scanner has discovered during the scanning.
         """
-        return self._backend.discovered_devices
+        Gets list of the devices that the scanner has discovered during the scanning.
+
+        If you also need advertisement data, use :attr:`discovered_devices_and_advertisement_data` instead.
+        """
+        return [d for d, _ in self._backend.seen_devices.values()]
+
+    @property
+    def discovered_devices_and_advertisement_data(
+        self,
+    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
+        """
+        Gets a map of device address to tuples of devices and the most recently
+        received advertisement data for that device.
+
+        The address keys are useful to compare the discovered devices to a set
+        of known devices. If you don't need to do that, consider using
+        ``discovered_devices_and_advertisement_data.values()`` to just get the
+        values instead.
+
+        .. versionadded:: 0.19.0
+        """
+        return self._backend.seen_devices
 
     async def get_discovered_devices(self) -> List[BLEDevice]:
         """Gets the devices registered by the BleakScanner.
@@ -204,7 +269,7 @@ class BleakScanner:
     async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs
     ) -> Optional[BLEDevice]:
-        """A convenience method for obtaining a ``BLEDevice`` object specified by Bluetooth address or (macOS) UUID address.
+        """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
         Args:
             device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
@@ -228,9 +293,10 @@ class BleakScanner:
     async def find_device_by_filter(
         cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
     ) -> Optional[BLEDevice]:
-        """
-        A convenience method for obtaining a ``BLEDevice`` object specified by
-        a filter function.
+        """Obtain a ``BLEDevice`` for a BLE server that matches a given filter function.
+
+        This can be used to find a BLE server by other identifying information than its address,
+        for example its name.
 
         Args:
             filterfunc:
@@ -263,7 +329,13 @@ class BleakScanner:
 
 
 class BleakClient:
-    """The Client Interface for Bleak Backend implementations to implement.
+    """The Client interface for connecting to a specific BLE GATT server and communicating with it.
+
+    A BleakClient can be used as an asynchronous context manager in which case it automatically
+    connects and disconnects.
+
+    How many BLE connections can be active simultaneously, and whether connections can be active while
+    scanning depends on the Bluetooth adapter hardware.
 
     Args:
         address_or_ble_device:
@@ -296,6 +368,13 @@ class BleakClient:
             the :meth:`connect` method to implicitly call :meth:`BleakScanner.discover`.
             This is known to cause problems when trying to connect to multiple
             devices at the same time.
+
+    .. versionchanged:: 0.15.0
+        ``disconnected_callback`` is no longer keyword-only. Added ``winrt`` parameter.
+
+    .. versionchanged:: 0.18.0
+        No longer is alias for backend type and no longer inherits from :class:`BaseBleakClient`.
+        Added ``backend`` parameter.
     """
 
     def __init__(
@@ -402,7 +481,12 @@ class BleakClient:
 
     async def pair(self, *args, **kwargs) -> bool:
         """
-        Pair with the peripheral.
+        Pair with the specified GATT server.
+
+        This method is not available on macOS. Instead of manually initiating
+        paring, the user will be prompted to pair the device the first time
+        that a characteristic that requires authentication is read or written.
+        This method may have backend-specific additional keyword arguments.
 
         Returns:
             Always returns ``True`` for backwards compatibility.
@@ -412,7 +496,12 @@ class BleakClient:
 
     async def unpair(self) -> bool:
         """
-        Unpair with the peripheral.
+        Unpair from the specified GATT server.
+
+        Unpairing will also disconnect the device.
+
+        This method is only available on Windows and Linux and will raise an
+        exception on other platforms.
 
         Returns:
             Always returns ``True`` for backwards compatibility.
@@ -422,7 +511,7 @@ class BleakClient:
     @property
     def is_connected(self) -> bool:
         """
-        Check connection status between this client and the server.
+        Check connection status between this client and the GATT server.
 
         Returns:
             Boolean representing connection status.
@@ -533,6 +622,10 @@ class BleakClient:
                 The function to be called on notification. Can be regular
                 function or async function.
 
+
+        .. versionchanged:: 0.18.0
+            The first argument of the callback is now a :class:`BleakGATTCharacteristic`
+            instead of an ``int``.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
@@ -603,7 +696,7 @@ class BleakClient:
 
 
 # for backward compatibility
-def discover():
+def discover(*args, **kwargs):
     """
     .. deprecated:: 0.17.0
         This method will be removed in a future version of Bleak.
@@ -614,7 +707,7 @@ def discover():
         FutureWarning,
         stacklevel=2,
     )
-    return BleakScanner.discover()
+    return BleakScanner.discover(*args, **kwargs)
 
 
 def cli():

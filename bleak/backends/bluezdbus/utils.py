@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
-from typing import Any, Dict
 
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
-from dbus_fast.signature import Variant
 
 from ...exc import BleakError, BleakDBusError
 
@@ -27,26 +25,21 @@ def validate_address(address):
     return _address_regex.match(address) is not None
 
 
-def unpack_variants(dictionary: Dict[str, Variant]) -> Dict[str, Any]:
-    """Recursively unpacks all ``Variant`` types in a dictionary to their
-    corresponding Python types.
-
-    ``dbus-next`` doesn't automatically do this, so this needs to be called on
-    all dictionaries ("a{sv}") returned from D-Bus messages.
-    """
-    unpacked = {}
-    for k, v in dictionary.items():
-        v = v.value if isinstance(v, Variant) else v
-        if isinstance(v, dict):
-            v = unpack_variants(v)
-        elif isinstance(v, list):
-            v = [x.value if isinstance(x, Variant) else x for x in v]
-        unpacked[k] = v
-    return unpacked
-
-
 def extract_service_handle_from_path(path):
     try:
         return int(path[-4:], 16)
     except Exception as e:
         raise BleakError(f"Could not parse service handle from path: {path}") from e
+
+
+def bdaddr_from_device_path(device_path: str) -> str:
+    """
+    Scrape the Bluetooth address from a D-Bus device path.
+
+    Args:
+        device_path: The D-Bus object path of the device.
+
+    Returns:
+        A Bluetooth address as a string.
+    """
+    return ":".join(device_path[-17:].split("_"))

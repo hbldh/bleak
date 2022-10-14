@@ -9,10 +9,9 @@ else:
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSUUID, NSArray, NSBundle
+from Foundation import NSBundle
 
 from ...exc import BleakError
-from ..device import BLEDevice
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .CentralManagerDelegate import CentralManagerDelegate
 from .utils import cb_uuid_to_str
@@ -62,7 +61,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         if scanning_mode == "passive":
             raise BleakError("macOS does not support passive scanning")
 
-        self._identifiers: Optional[Dict[NSUUID, Dict[str, Any]]] = None
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)
         if (
@@ -77,14 +75,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 )
 
     async def start(self):
-        self._identifiers = {}
+        self.seen_devices = {}
 
         def callback(p: CBPeripheral, a: Dict[str, Any], r: int) -> None:
-            # update identifiers for scanned device
-            self._identifiers.setdefault(p.identifier(), {}).update(a)
-
-            if not self._callback:
-                return
 
             # Process service data
             service_data_dict_raw = a.get("kCBAdvDataServiceData", {})
@@ -110,24 +103,24 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             tx_power = a.get("kCBAdvDataTxPowerLevel")
 
             advertisement_data = AdvertisementData(
-                local_name=p.name(),
+                local_name=a.get("kCBAdvDataLocalName"),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
                 service_uuids=service_uuids,
-                platform_data=(p, a, r),
                 tx_power=tx_power,
+                rssi=r,
+                platform_data=(p, a, r),
             )
 
-            device = BLEDevice(
+            device = self.create_or_update_device(
                 p.identifier().UUIDString(),
                 p.name(),
-                p,
-                r,
-                uuids=service_uuids,
-                manufacturer_data=manufacturer_data,
-                service_data=service_data,
-                delegate=self._manager.central_manager.delegate(),
+                (p, self._manager.central_manager.delegate()),
+                advertisement_data,
             )
+
+            if not self._callback:
+                return
 
             self._callback(device, advertisement_data)
 
@@ -153,56 +146,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         raise NotImplementedError(
             "Need to evaluate which macOS versions to support first..."
         )
-
-    @property
-    def discovered_devices(self) -> List[BLEDevice]:
-        found = []
-        peripherals = self._manager.central_manager.retrievePeripheralsWithIdentifiers_(
-            NSArray(self._identifiers.keys()),
-        )
-
-        for peripheral in peripherals:
-            address = peripheral.identifier().UUIDString()
-            name = peripheral.name() or "Unknown"
-            details = peripheral
-            rssi = self._manager.last_rssi[address]
-
-            advertisementData = self._identifiers[peripheral.identifier()]
-            manufacturer_binary_data = advertisementData.get(
-                "kCBAdvDataManufacturerData"
-            )
-            manufacturer_data = {}
-            if manufacturer_binary_data:
-                manufacturer_id = int.from_bytes(
-                    manufacturer_binary_data[0:2], byteorder="little"
-                )
-                manufacturer_value = bytes(manufacturer_binary_data[2:])
-                manufacturer_data = {manufacturer_id: manufacturer_value}
-
-            uuids = [
-                cb_uuid_to_str(u)
-                for u in advertisementData.get("kCBAdvDataServiceUUIDs", [])
-            ]
-
-            service_data = {}
-            adv_service_data = advertisementData.get("kCBAdvDataServiceData", [])
-            for u in adv_service_data:
-                service_data[cb_uuid_to_str(u)] = bytes(adv_service_data[u])
-
-            found.append(
-                BLEDevice(
-                    address,
-                    name,
-                    details,
-                    rssi=rssi,
-                    uuids=uuids,
-                    manufacturer_data=manufacturer_data,
-                    service_data=service_data,
-                    delegate=self._manager.central_manager.delegate(),
-                )
-            )
-
-        return found
 
     # macOS specific methods
 

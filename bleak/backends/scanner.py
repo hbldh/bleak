@@ -3,44 +3,71 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Type
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from ..exc import BleakError
 from .device import BLEDevice
 
 
-class AdvertisementData:
+class AdvertisementData(NamedTuple):
     """
     Wrapper around the advertisement data that each platform returns upon discovery
     """
 
-    def __init__(self, **kwargs):
-        """
-        Keyword Args:
-            local_name (str): The name of the ble device advertising
-            manufacturer_data (dict): Manufacturer data from the device
-            service_data (dict): Service data from the device
-            service_uuids (list): UUIDs associated with the device
-            platform_data (tuple): Tuple of platform specific advertisement data
-            tx_power (int): Transmit power level of the device
-        """
-        # The local name of the device
-        self.local_name: Optional[str] = kwargs.get("local_name", None)
+    local_name: Optional[str]
+    """
+    The local name of the device or ``None`` if not included in advertising data.
+    """
 
-        # Dictionary of manufacturer data in bytes
-        self.manufacturer_data: Dict[int, bytes] = kwargs.get("manufacturer_data", {})
+    manufacturer_data: Dict[int, bytes]
+    """
+    Dictionary of manufacturer data in bytes from the received advertisement data or empty dict if not present.
 
-        # Dictionary of service data
-        self.service_data: Dict[str, bytes] = kwargs.get("service_data", {})
+    The keys are Bluetooth SIG assigned Company Identifiers and the values are bytes.
 
-        # List of UUIDs
-        self.service_uuids: List[str] = kwargs.get("service_uuids", [])
+    https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers/
+    """
 
-        # Tuple of platform specific data
-        self.platform_data: Tuple = kwargs.get("platform_data", ())
+    service_data: Dict[str, bytes]
+    """
+    Dictionary of service data from the received advertisement data or empty dict if not present.
+    """
 
-        # Tx Power data
-        self.tx_power: Optional[int] = kwargs.get("tx_power")
+    service_uuids: List[str]
+    """
+    List of service UUIDs from the received advertisement data or empty list if not present.
+    """
+
+    tx_power: Optional[int]
+    """
+    Tx Power data from the received advertising data or ``None`` if not present.
+
+    .. versionadded:: 0.17.0
+    """
+
+    rssi: int
+    """
+    The Radio Receive Signal Strength (RSSI) in dBm.
+
+    .. versionadded:: 0.19.0
+    """
+
+    platform_data: Tuple
+    """
+    Tuple of platform specific data.
+
+    This is not a stable API. The actual values may change between releases.
+    """
 
     def __repr__(self) -> str:
         kwargs = []
@@ -54,6 +81,7 @@ class AdvertisementData:
             kwargs.append(f"service_uuids={repr(self.service_uuids)}")
         if self.tx_power is not None:
             kwargs.append(f"tx_power={repr(self.tx_power)}")
+        kwargs.append(f"rssi={repr(self.rssi)}")
         return f"AdvertisementData({', '.join(kwargs)})"
 
 
@@ -61,11 +89,19 @@ AdvertisementDataCallback = Callable[
     [BLEDevice, AdvertisementData],
     Optional[Awaitable[None]],
 ]
+"""
+Type alias for callback called when advertisement data is received.
+"""
 
 AdvertisementDataFilter = Callable[
     [BLEDevice, AdvertisementData],
     bool,
 ]
+"""
+Type alias for an advertisement data filter function.
+
+Implementations should return ``True`` for matches, otherwise ``False``.
+"""
 
 
 class BaseBleakScanner(abc.ABC):
@@ -81,6 +117,13 @@ class BaseBleakScanner(abc.ABC):
             containing this advertising data will be received.
     """
 
+    seen_devices: Dict[str, Tuple[BLEDevice, AdvertisementData]]
+    """
+    Map of device identifier to BLEDevice and most recent advertisement data.
+
+    This map must be cleared when scanning starts.
+    """
+
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
@@ -92,6 +135,8 @@ class BaseBleakScanner(abc.ABC):
         self._service_uuids: Optional[List[str]] = (
             [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
+
+        self.seen_devices = {}
 
     def register_detection_callback(
         self, callback: Optional[AdvertisementDataCallback]
@@ -127,6 +172,45 @@ class BaseBleakScanner(abc.ABC):
 
         self._callback = detection_callback
 
+    def create_or_update_device(
+        self, address: str, name: str, details: Any, adv: AdvertisementData
+    ) -> BLEDevice:
+        """
+        Creates or updates a device in :attr:`seen_devices`.
+
+        Args:
+            address: The Bluetooth address of the device (UUID on macOS).
+            name: The OS display name for the device.
+            details: The platform-specific handle for the device.
+            adv: The most recent advertisement data received.
+
+        Returns:
+            The updated device.
+        """
+
+        # for backwards compatibility, see https://github.com/hbldh/bleak/issues/1025
+        metadata = dict(
+            uuids=adv.service_uuids,
+            manufacturer_data=adv.manufacturer_data,
+        )
+
+        try:
+            device, _ = self.seen_devices[address]
+
+            device.metadata = metadata
+        except KeyError:
+            device = BLEDevice(
+                address,
+                name,
+                details,
+                adv.rssi,
+                **metadata,
+            )
+
+        self.seen_devices[address] = (device, adv)
+
+        return device
+
     @abc.abstractmethod
     async def start(self):
         """Start scanning for devices"""
@@ -144,16 +228,6 @@ class BaseBleakScanner(abc.ABC):
         Args:
             **kwargs: The filter details. This will differ a lot between backend implementations.
 
-        """
-        raise NotImplementedError()
-
-    @property
-    @abc.abstractmethod
-    def discovered_devices(self) -> List[BLEDevice]:
-        """Gets the devices registered by the BleakScanner.
-
-        Returns:
-            A list of the devices that the scanner has discovered during the scanning.
         """
         raise NotImplementedError()
 

@@ -10,6 +10,36 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.19.0`_ (2022-10-13)
+======================
+
+Added
+-----
+* Added support for Python 3.11. Merged #990.
+* Added better error message for Bluetooth not authorized on macOS. Merged #1033.
+* Added ``BleakDeviceNotFoundError`` which should is raised if a device can not
+  be found by ``connect``, ``pair`` and ``unpair``. Merged #1022.
+* Added ``rssi`` attribute to ``AdvertisementData``. Merged #1047.
+* Added ``BleakScanner.discovered_devices_and_advertisement_data`` property. Merged #1047.
+* Added ``return_adv`` argument to ``BleakScanner.discover`` method. Merged #1047.
+* Added ``BleakClient.unpair()`` implementation for BlueZ backend. Merged #1067.
+
+Changed
+-------
+* Changed ``AdvertisementData`` to a named tuple. Merged #1047.
+* A faster ``unpack_variants`` is now provided by dbus-fast. Merged #1055.
+
+Fixed
+-----
+* On BlueZ, support creating additional instances running on a different event
+  loops (i.e. multiple pytest-asyncio cases). Merged #1034.
+* Fixed unhandled exception in ``max_pdu_size_changed_handler`` in WinRT backend. Fixes #1039.
+* Fixed stale services in WinRT backend causing ``WinError -2147483629``. Fixes #1061.
+
+Removed
+-------
+Removed ``bleak.__version__``. Use ``importlib.metadata.version('bleak')`` instead.
+
 `0.18.1`_ (2022-09-25)
 ======================
 
@@ -56,7 +86,7 @@ Changed
   argument to avoid services being resolved again. Merged #923.
 * The BlueZ D-Bus backend now uses ``dbus-fast`` package instead of ``dbus-next`` which significantly improves performance. Merged #988.
 * The BlueZ D-Bus backend will not avoid trying to connect to devices that are already connected. Fixes #992.
-* Updated logging to lazy version and replaced format by f-string for BleakClientWinRT. #1000.
+* Updated logging to lazy version and replaced format by f-string for ``BleakClientWinRT``. #1000.
 * Added deprecation warning to ``discover()`` method. Merged #1005.
 * BlueZ adapter is chosen dynamically if not provided, instead of using hardcoded "hci0". Fixes #513.
 
@@ -90,7 +120,7 @@ Fixed
 Changed
 -------
 * Made BlueZ D-Bus signal callback logging lazy to improve performance. Merged #912.
-* Switch to using async_timeout instead of asyncio.wait_for for performance. Merged #916.
+* Switch to using ``async_timeout`` instead of ``asyncio.wait_for for performance``. Merged #916.
 * Improved performance of ``BlueZManager.get_services()``. Fixes #927.
 
 Removed
@@ -811,7 +841,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.18.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.0...develop
+.. _0.19.0: https://github.com/hbldh/bleak/compare/v0.18.1...v0.19.0
 .. _0.18.1: https://github.com/hbldh/bleak/compare/v0.18.0...v0.18.1
 .. _0.18.0: https://github.com/hbldh/bleak/compare/v0.17.0...v0.18.0
 .. _0.17.0: https://github.com/hbldh/bleak/compare/v0.16.0...v0.17.0
