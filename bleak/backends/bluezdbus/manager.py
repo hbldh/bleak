@@ -570,7 +570,7 @@ class BlueZManager:
                 logger.debug("Using cached services for %s", device_path)
                 return services
 
-        await self._wait_condition(device_path, "ServicesResolved", True)
+        await self._wait_for_services_disovery(device_path)
 
         services = BleakGATTServiceCollection()
 
@@ -647,6 +647,29 @@ class BlueZManager:
             return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
         except KeyError:
             return False
+
+    async def _wait_for_services_disovery(self, device_path: str) -> None:
+        """Wait for the device services to be discovered.
+
+        If a disconnect happens before the completion a BleakError exception is raised.
+
+        """
+        services_discovered_wait_task = asyncio.create_task(
+            self._wait_condition(device_path, "ServicesResolved", True)
+        )
+        device_disconnected_wait_task = asyncio.create_task(
+            self._wait_condition(device_path, "Connected", False)
+        )
+        done, pending = await asyncio.wait(
+            {services_discovered_wait_task, device_disconnected_wait_task},
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        for p in pending:
+            p.cancel()
+
+        if device_disconnected_wait_task in done:
+            raise BleakError("failed to discover services, device disconnected")
 
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
