@@ -156,8 +156,16 @@ class BleakScannerWinRT(BaseBleakScanner):
             if args.advertisement.local_name:
                 local_name = args.advertisement.local_name
 
-            if args.transmit_power_level_in_d_bm is not None:
-                tx_power = raw_data.adv.transmit_power_level_in_d_bm
+            try:
+                if args.transmit_power_level_in_d_bm is not None:
+                    tx_power = args.transmit_power_level_in_d_bm
+            except AttributeError:
+                # the transmit_power_level_in_d_bm property was introduce in
+                # Windows build 19041 so we have a fallback for older versions
+                for section in args.advertisement.get_sections_by_type(
+                    AdvertisementDataType.TX_POWER_LEVEL
+                ):
+                    tx_power = bytes(section.data)[0]
 
             # Decode service data
             for section in args.advertisement.get_sections_by_type(
