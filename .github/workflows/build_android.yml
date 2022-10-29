@@ -5,13 +5,13 @@ on: workflow_dispatch
 jobs:
     build_android:
         name: "Build Android"
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-22.04
         steps:
-            -   uses: actions/checkout@v2
+            -   uses: actions/checkout@v3
             -   name: Install dependencies
                 run: pip install buildozer cython
             -   name: Cache buildozer files
-                uses: actions/cache@v2
+                uses: actions/cache@v3
                 id: buildozer-cache
                 with:
                     path: |
