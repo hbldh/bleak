@@ -10,11 +10,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.19.1`_ (2022-10-29)
+======================
+
 Fixed
 -----
 * Fixed crash in Android backend introduced in v0.19.0. Fixes #1085.
-* BlueZ: Cancel the device discovery wait task if the device disconnects in
-  between to avoid a timeout
+* Fixed service discovery blocking forever if device disconnects in BlueZ backend. Merged #1092.
 * Fixed ``AttributeError`` crash when scanning on Windows builds < 19041. Fixes #1094.
 
 `0.19.0`_ (2022-10-13)
@@ -848,7 +850,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.1...develop
+.. _0.19.1: https://github.com/hbldh/bleak/compare/v0.19.0...v0.19.1
 .. _0.19.0: https://github.com/hbldh/bleak/compare/v0.18.1...v0.19.0
 .. _0.18.1: https://github.com/hbldh/bleak/compare/v0.18.0...v0.18.1
 .. _0.18.0: https://github.com/hbldh/bleak/compare/v0.17.0...v0.18.0
