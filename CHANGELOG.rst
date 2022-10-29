@@ -15,6 +15,7 @@ Fixed
 * Fixed crash in Android backend introduced in v0.19.0. Fixes #1085.
 * BlueZ: Cancel the device discovery wait task if the device disconnects in
   between to avoid a timeout
+* Fixed ``AttributeError`` crash when scanning on Windows builds < 19041. Fixes #1094.
 
 `0.19.0`_ (2022-10-13)
 ======================
