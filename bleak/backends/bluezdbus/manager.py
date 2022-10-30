@@ -621,6 +621,20 @@ class BlueZManager:
 
         return services
 
+    def get_device_props(self, device_path: str) -> Device1:
+        """
+        Gets the current properties of a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current properties.
+        """
+        return cast(
+            Device1, self._properties[device_path][defs.DEVICE_INTERFACE].copy()
+        )
+
     def get_device_name(self, device_path: str) -> str:
         """
         Gets the value of the "Name" property for a device.

@@ -17,6 +17,8 @@ BLUEZ_SERVICE = "org.bluez"
 ADAPTER_INTERFACE = "org.bluez.Adapter1"
 ADVERTISEMENT_MONITOR_INTERFACE = "org.bluez.AdvertisementMonitor1"
 ADVERTISEMENT_MONITOR_MANAGER_INTERFACE = "org.bluez.AdvertisementMonitorManager1"
+AGENT_INTERFACE = "org.bluez.Agent1"
+AGENT_MANAGER_INTERFACE = "org.bluez.AgentManager1"
 DEVICE_INTERFACE = "org.bluez.Device1"
 BATTERY_INTERFACE = "org.bluez.Battery1"
 

@@ -3,6 +3,7 @@
 BLE Client for BlueZ on Linux
 """
 import asyncio
+import contextlib
 import logging
 import os
 import sys
@@ -22,12 +23,19 @@ from dbus_fast.signature import Variant
 
 from ... import BleakScanner
 from ...agent import BaseBleakAgentCallbacks
-from ...exc import BleakDBusError, BleakError, BleakDeviceNotFoundError
+from ...exc import (
+    BleakDBusError,
+    BleakDeviceNotFoundError,
+    BleakError,
+    BleakPairingCancelledError,
+    BleakPairingFailedError,
+)
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
 from ..service import BleakGATTServiceCollection
 from . import defs
+from .agent import bluez_agent
 from .characteristic import BleakGATTCharacteristicBlueZDBus
 from .manager import get_global_bluez_manager
 from .scanner import BleakScannerBlueZDBus
@@ -343,9 +351,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Pair with the peripheral.
         """
 
-        if callbacks:
-            raise NotImplementedError
-
         # See if it is already paired.
         reply = await self._bus.call(
             Message(
@@ -377,29 +382,31 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         logger.debug("Pairing to BLE device @ %s", self.address)
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.DEVICE_INTERFACE,
-                member="Pair",
+        async with contextlib.nullcontext() if callbacks is None else bluez_agent(
+            self._bus, callbacks
+        ):
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=self._device_path,
+                    interface=defs.DEVICE_INTERFACE,
+                    member="Pair",
+                )
             )
-        )
-        assert_reply(reply)
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.PROPERTIES_INTERFACE,
-                member="Get",
-                signature="ss",
-                body=[defs.DEVICE_INTERFACE, "Paired"],
-            )
-        )
-        assert_reply(reply)
+            try:
+                assert_reply(reply)
+            except BleakDBusError as e:
+                if e.dbus_error == "org.bluez.Error.AuthenticationCanceled":
+                    raise BleakPairingCancelledError from e
 
-        return reply.body[0].value
+                if e.dbus_error == "org.bluez.Error.AuthenticationFailed":
+                    raise BleakPairingFailedError from e
+
+                raise
+
+        # for backwards compatibility
+        return True
 
     async def unpair(self) -> bool:
         """Unpair with the peripheral.
