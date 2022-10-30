@@ -13,10 +13,11 @@ import uuid
 from typing import Callable, Optional, Type, Union
 from warnings import warn
 
+from ..agent import BaseBleakAgentCallbacks
 from ..exc import BleakError
-from .service import BleakGATTServiceCollection
 from .characteristic import BleakGATTCharacteristic
 from .device import BLEDevice
+from .service import BleakGATTServiceCollection
 
 NotifyCallback = Callable[[bytearray], None]
 
@@ -105,7 +106,9 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(
+        self, callbacks: Optional[BaseBleakAgentCallbacks], **kwargs
+    ) -> bool:
         """Pair with the peripheral."""
         raise NotImplementedError()
 

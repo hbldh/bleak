@@ -21,6 +21,7 @@ from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from ... import BleakScanner
+from ...agent import BaseBleakAgentCallbacks
 from ...exc import BleakDBusError, BleakError, BleakDeviceNotFoundError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
@@ -335,16 +336,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         return True
 
-    async def pair(self, *args, **kwargs) -> bool:
-        """Pair with the peripheral.
-
-        You can use ConnectDevice method if you already know the MAC address of the device.
-        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
-
-        Returns:
-            Boolean regarding success of pairing.
-
+    async def pair(
+        self, callbacks: Optional[BaseBleakAgentCallbacks], **kwargs
+    ) -> bool:
         """
+        Pair with the peripheral.
+        """
+
+        if callbacks:
+            raise NotImplementedError
+
         # See if it is already paired.
         reply = await self._bus.call(
             Message(

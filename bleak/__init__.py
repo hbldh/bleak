@@ -38,6 +38,7 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
+from .agent import BaseBleakAgentCallbacks
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type
 from .backends.device import BLEDevice
@@ -493,7 +494,9 @@ class BleakClient:
         """
         return await self._backend.disconnect()
 
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(
+        self, callbacks: Optional[BaseBleakAgentCallbacks] = None, **kwargs
+    ) -> bool:
         """
         Pair with the specified GATT server.
 
@@ -502,11 +505,22 @@ class BleakClient:
         that a characteristic that requires authentication is read or written.
         This method may have backend-specific additional keyword arguments.
 
+        Args:
+            callbacks:
+                Optional callbacks for confirming or requesting pin. This is
+                only supported on Linux and Windows. If omitted, the OS will
+                handle the pairing request.
+
         Returns:
             Always returns ``True`` for backwards compatibility.
 
+        Raises:
+            BleakPairingCancelledError:
+                if pairing was canceled before it completed (device disconnected, etc.)
+            BleakPairingFailedError:
+                if pairing failed (rejected, wrong pin, etc.)
         """
-        return await self._backend.pair(*args, **kwargs)
+        return await self._backend.pair(callbacks, **kwargs)
 
     async def unpair(self) -> bool:
         """

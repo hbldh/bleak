@@ -11,6 +11,7 @@ from typing import Optional, Union
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
+from ...agent import BaseBleakAgentCallbacks
 from ...exc import BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
@@ -156,16 +157,15 @@ class BleakClientP4Android(BaseBleakClient):
 
         return True
 
-    async def pair(self, *args, **kwargs) -> bool:
-        """Pair with the peripheral.
-
-        You can use ConnectDevice method if you already know the MAC address of the device.
-        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
-
-        Returns:
-            Boolean regarding success of pairing.
-
+    async def pair(
+        self, callbacks: Optional[BaseBleakAgentCallbacks], **kwargs
+    ) -> bool:
         """
+        Pair with the peripheral.
+        """
+        if callbacks is not None:
+            warnings.warn("callbacks ignored on Android", RuntimeWarning, stacklevel=2)
+
         loop = asyncio.get_running_loop()
 
         bondedFuture = loop.create_future()

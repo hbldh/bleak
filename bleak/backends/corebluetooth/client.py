@@ -17,7 +17,8 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from ... import BleakScanner
-from ...exc import BleakError, BleakDeviceNotFoundError
+from ...agent import BaseBleakAgentCallbacks
+from ...exc import BleakDeviceNotFoundError, BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -154,24 +155,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             + 3
         )
 
-    async def pair(self, *args, **kwargs) -> bool:
-        """Attempt to pair with a peripheral.
-
-        .. note::
-
-            This is not available on macOS since there is not explicit method to do a pairing, Instead the docs
-            state that it "auto-pairs" when trying to read a characteristic that requires encryption, something
-            Bleak cannot do apparently.
-
-        Reference:
-
-            - `Apple Docs <https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral.html#//apple_ref/doc/uid/TP40013257-CH5-SW1>`_
-            - `Stack Overflow post #1 <https://stackoverflow.com/questions/25254932/can-you-pair-a-bluetooth-le-device-in-an-ios-app>`_
-            - `Stack Overflow post #2 <https://stackoverflow.com/questions/47546690/ios-bluetooth-pairing-request-dialog-can-i-know-the-users-choice>`_
-
-        Returns:
-            Boolean regarding success of pairing.
-
+    async def pair(
+        self, callbacks: Optional[BaseBleakAgentCallbacks], **kwargs
+    ) -> bool:
+        """
+        Attempt to pair with a peripheral.
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
