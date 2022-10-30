@@ -49,6 +49,9 @@ class BaseBleakClient(abc.ABC):
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
 
+    def close(self):
+        pass
+
     @property
     @abc.abstractmethod
     def mtu_size(self) -> int:

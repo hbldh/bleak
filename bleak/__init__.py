@@ -438,6 +438,17 @@ class BleakClient:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.disconnect()
+        self.close()
+
+    def __del__(self):
+        # Remember kids: __del__is NOT guaranteed to run EVER!
+        # Use the context manager or call close explicitly.
+        # This is only here for people with long running programs that didn't
+        # follow that advice so that they don't run out of file descriptors.
+        self.close()
+
+    def close(self):
+        self._backend.close()
 
     # Connectivity methods
 

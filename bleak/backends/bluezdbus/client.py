@@ -65,8 +65,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._device_path = None
             self._device_info = None
 
-        # D-Bus message bus
-        self._bus: Optional[MessageBus] = None
+        # Each client needs it's own D-Bus connection to avoid a quirk where
+        # BlueZ automatically enables notifications on reconnection (before
+        # we can add a handler for them) and also ensures that the pairing
+        # agent will only handle handle requests for this specific connection.
+        self._bus: MessageBus = MessageBus(
+            bus_type=BusType.SYSTEM, negotiate_unix_fd=True
+        )
+
         # tracks device watcher subscription
         self._remove_device_watcher: Optional[Callable] = None
         # private backing for is_connected property
@@ -80,6 +86,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
+
+    def close(self):
+        self._bus.disconnect()
 
     # Connectivity methods
 
@@ -127,11 +136,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         manager = await get_global_bluez_manager()
 
-        # Each BLE connection session needs a new D-Bus connection to avoid a
-        # BlueZ quirk where notifications are automatically enabled on reconnect.
-        self._bus = await MessageBus(
-            bus_type=BusType.SYSTEM, negotiate_unix_fd=True
-        ).connect()
+        if not self._bus.connected:
+            await self._bus.connect()
 
         def on_connected_changed(connected: bool) -> None:
             if not connected:
@@ -218,31 +224,27 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # if connection was successful but get_services() raises (e.g.
                 # because task was cancelled), the we still need to disconnect
                 # before passing on the exception.
-                if self._bus:
-                    # If disconnected callback already fired, this will be a no-op
-                    # since self._bus will be None and the _cleanup_all call will
-                    # have already disconnected.
+                try:
+                    reply = await self._bus.call(
+                        Message(
+                            destination=defs.BLUEZ_SERVICE,
+                            interface=defs.DEVICE_INTERFACE,
+                            path=self._device_path,
+                            member="Disconnect",
+                        )
+                    )
                     try:
-                        reply = await self._bus.call(
-                            Message(
-                                destination=defs.BLUEZ_SERVICE,
-                                interface=defs.DEVICE_INTERFACE,
-                                path=self._device_path,
-                                member="Disconnect",
-                            )
-                        )
-                        try:
-                            assert_reply(reply)
-                        except BleakDBusError as e:
-                            # if the object no longer exists, then we know we
-                            # are disconnected for sure, so don't need to log a
-                            # warning about it
-                            if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
-                                raise
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to cancel connection ({self._device_path}): {e}"
-                        )
+                        assert_reply(reply)
+                    except BleakDBusError as e:
+                        # if the object no longer exists, then we know we
+                        # are disconnected for sure, so don't need to log a
+                        # warning about it
+                        if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
+                            raise
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to cancel connection ({self._device_path}): {e}"
+                    )
 
                 raise
         except BaseException:
@@ -287,30 +289,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         logger.debug(f"_cleanup_all({self._device_path})")
 
+        # Reset all stored services.
+        self.services = BleakGATTServiceCollection()
+        self._services_resolved = False
+
         if self._remove_device_watcher:
             self._remove_device_watcher()
             self._remove_device_watcher = None
-
-        if not self._bus:
-            logger.debug(f"already disconnected ({self._device_path})")
-            return
-
-        # Try to disconnect the System Bus.
-        try:
-            self._bus.disconnect()
-        except Exception as e:
-            logger.error(
-                f"Attempt to disconnect system bus failed ({self._device_path}): {e}"
-            )
-        else:
-            # Critical to remove the `self._bus` object here to since it was
-            # closed above. If not, calls made to it later could lead to
-            # a stuck client.
-            self._bus = None
-
-            # Reset all stored services.
-            self.services = BleakGATTServiceCollection()
-            self._services_resolved = False
+            self._is_connected = False
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -323,13 +309,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
         logger.debug(f"Disconnecting ({self._device_path})")
-
-        if self._bus is None:
-            # No connection exists. Either one hasn't been created or
-            # we have already called disconnect and closed the D-Bus
-            # connection.
-            logger.debug(f"already disconnected ({self._device_path})")
-            return True
 
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
@@ -353,10 +332,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     await self._disconnecting_event.wait()
             finally:
                 self._disconnecting_event = None
-
-        # sanity check to make sure _cleanup_all() was triggered by the
-        # "PropertiesChanged" signal handler and that it completed successfully
-        assert self._bus is None
 
         return True
 
@@ -481,9 +456,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        return self._DeprecatedIsConnectedReturn(
-            False if self._bus is None else self._is_connected
-        )
+        return self._DeprecatedIsConnectedReturn(self._is_connected)
 
     async def _acquire_mtu(self) -> None:
         """Acquires the MTU for this device by calling the "AcquireWrite" or
@@ -876,8 +849,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         characteristic = cast(BleakGATTCharacteristicBlueZDBus, characteristic)
 
         self._notification_callbacks[characteristic.path] = callback
-
-        assert self._bus is not None
 
         reply = await self._bus.call(
             Message(
