@@ -591,7 +591,7 @@ class BleakClientWinRT(BaseBleakClient):
                 "%s: restarting get services due to services changed event",
                 self.address,
             )
-            args = [BluetoothCacheMode.UNCACHED]
+            args = [BluetoothCacheMode.CACHED]
 
         services: Sequence[GattDeviceService] = _ensure_success(
             get_services_task.result(),
