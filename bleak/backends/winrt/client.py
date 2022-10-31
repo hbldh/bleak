@@ -568,7 +568,11 @@ class BleakClientWinRT(BaseBleakClient):
                 services_changed_event.wait()
             )
             self._services_changed_events.append(services_changed_event)
-            get_services_task = self._requester.get_gatt_services_async(*args)
+
+            async def get_services():
+                return await self._requester.get_gatt_services_async(*args)
+
+            get_services_task = asyncio.create_task(get_services())
 
             try:
                 await asyncio.wait(
@@ -590,7 +594,7 @@ class BleakClientWinRT(BaseBleakClient):
             args = [BluetoothCacheMode.UNCACHED]
 
         services: Sequence[GattDeviceService] = _ensure_success(
-            get_services_task.get_results(),
+            get_services_task.result(),
             "services",
             "Could not get GATT services",
         )
