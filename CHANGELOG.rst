@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+------
+* Fixed crash when getting services in WinRT backend.
+
 `0.19.1`_ (2022-10-29)
 ======================
 
