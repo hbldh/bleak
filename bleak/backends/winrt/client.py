@@ -256,7 +256,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         def handle_services_changed():
             if not self._services_changed_events:
-                logger.warn("%s: unhandled services changed event", self.address)
+                logger.warning("%s: unhandled services changed event", self.address)
             else:
                 for event in self._services_changed_events:
                     event.set()
