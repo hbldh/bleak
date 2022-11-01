@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Dropped ``async-timeout`` dependency on Python >= 3.11.
+
 Fixed
 ------
 * Fixed crash when getting services in WinRT backend.

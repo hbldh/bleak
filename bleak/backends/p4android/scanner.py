@@ -6,12 +6,16 @@ import sys
 import warnings
 from typing import List, Optional
 
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
+
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal
 else:
     from typing import Literal
 
-import async_timeout
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
@@ -137,7 +141,7 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__javascanner.flushPendingScanResults(self.__callback.java)
 
         try:
-            async with async_timeout.timeout(0.2):
+            async with async_timeout(0.2):
                 await scanfuture
         except asyncio.exceptions.TimeoutError:
             pass

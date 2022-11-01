@@ -28,7 +28,10 @@ from typing import (
 )
 from warnings import warn
 
-import async_timeout
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
 
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal
@@ -322,7 +325,7 @@ class BleakScanner:
 
         async with cls(detection_callback=apply_filter, **kwargs):
             try:
-                async with async_timeout.timeout(timeout):
+                async with async_timeout(timeout):
                     return await found_device_queue.get()
             except asyncio.TimeoutError:
                 return None

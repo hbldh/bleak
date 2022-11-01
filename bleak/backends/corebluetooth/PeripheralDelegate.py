@@ -9,9 +9,14 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import itertools
 import logging
+import sys
 from typing import Any, Dict, Iterable, NewType, Optional
 
-import async_timeout
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
+
 import objc
 from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
 from CoreBluetooth import (
@@ -146,7 +151,7 @@ class PeripheralDelegate(NSObject):
         self._characteristic_read_futures[characteristic.handle()] = future
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
-            async with async_timeout.timeout(timeout):
+            async with async_timeout(timeout):
                 return await future
         finally:
             del self._characteristic_read_futures[characteristic.handle()]

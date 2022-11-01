@@ -14,7 +14,10 @@ import warnings
 from ctypes import pythonapi
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
-import async_timeout
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
 
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal, TypedDict
@@ -367,7 +370,7 @@ class BleakClientWinRT(BaseBleakClient):
             # This keeps the device connected until we set maintain_connection = False.
 
             # wait for the session to become active
-            async with async_timeout.timeout(timeout):
+            async with async_timeout(timeout):
                 await event.wait()
         except BaseException:
             handle_disconnect()
@@ -416,7 +419,7 @@ class BleakClientWinRT(BaseBleakClient):
                 self._requester.close()
                 # sometimes it can take over one minute before Windows decides
                 # to end the GATT session/disconnect the device
-                async with async_timeout.timeout(120):
+                async with async_timeout(120):
                     await event.wait()
             finally:
                 self._session_closed_events.remove(event)
