@@ -5,11 +5,16 @@ BLE Client for BlueZ on Linux
 import asyncio
 import logging
 import os
+import sys
 import warnings
 from typing import Callable, Dict, Optional, Union, cast
 from uuid import UUID
 
-import async_timeout
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
+
 from dbus_fast.aio import MessageBus
 from dbus_fast.constants import BusType, ErrorType, MessageType
 from dbus_fast.message import Message
@@ -168,7 +173,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 #
                 if not manager.is_connected(self._device_path):
                     logger.debug("Connecting to BlueZ path %s", self._device_path)
-                    async with async_timeout.timeout(timeout):
+                    async with async_timeout(timeout):
                         reply = await self._bus.call(
                             Message(
                                 destination=defs.BLUEZ_SERVICE,
@@ -329,7 +334,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
             logger.debug(f"already in progress ({self._device_path})")
-            async with async_timeout.timeout(10):
+            async with async_timeout(10):
                 await self._disconnecting_event.wait()
         elif self.is_connected:
             self._disconnecting_event = asyncio.Event()
@@ -344,7 +349,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                 )
                 assert_reply(reply)
-                async with async_timeout.timeout(10):
+                async with async_timeout(10):
                     await self._disconnecting_event.wait()
             finally:
                 self._disconnecting_event = None

@@ -8,10 +8,15 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 
 import asyncio
 import logging
+import sys
 import threading
 from typing import Any, Callable, Dict, Optional
 
-import async_timeout
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
+
 import objc
 from CoreBluetooth import (
     CBCentralManager,
@@ -156,7 +161,7 @@ class CentralManagerDelegate(NSObject):
             self._connect_futures[peripheral.identifier()] = future
             try:
                 self.central_manager.connectPeripheral_options_(peripheral, None)
-                async with async_timeout.timeout(timeout):
+                async with async_timeout(timeout):
                     await future
             finally:
                 del self._connect_futures[peripheral.identifier()]
