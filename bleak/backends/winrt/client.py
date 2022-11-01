@@ -6,10 +6,12 @@ Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
+import functools
 import logging
 import sys
 import uuid
 import warnings
+from ctypes import pythonapi
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 import async_timeout
@@ -44,11 +46,15 @@ from bleak_winrt.windows.devices.enumeration import (
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
 )
-from bleak_winrt.windows.foundation import EventRegistrationToken
+from bleak_winrt.windows.foundation import (
+    AsyncStatus,
+    EventRegistrationToken,
+    IAsyncOperation,
+)
 from bleak_winrt.windows.storage.streams import Buffer
 
 from ... import BleakScanner
-from ...exc import PROTOCOL_ERROR_CODES, BleakError, BleakDeviceNotFoundError
+from ...exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -569,10 +575,9 @@ class BleakClientWinRT(BaseBleakClient):
             )
             self._services_changed_events.append(services_changed_event)
 
-            async def get_services():
-                return await self._requester.get_gatt_services_async(*args)
-
-            get_services_task = asyncio.create_task(get_services())
+            get_services_task = FutureLike(
+                self._requester.get_gatt_services_async(*args)
+            )
 
             try:
                 await asyncio.wait(
@@ -889,3 +894,64 @@ class BleakClientWinRT(BaseBleakClient):
 
         event_handler_token = self._notification_callbacks.pop(characteristic.handle)
         characteristic.obj.remove_value_changed(event_handler_token)
+
+
+class FutureLike:
+    """
+    Wraps a WinRT IAsyncOperation in a "future-like" object so that it can
+    be passed to Python APIs.
+
+    Needed until https://github.com/pywinrt/pywinrt/issues/14
+    """
+
+    _asyncio_future_blocking = True
+
+    def __init__(self, async_result: IAsyncOperation) -> None:
+        self._async_result = async_result
+        self._callbacks = []
+        self._loop = asyncio.get_running_loop()
+
+        def call_callbacks(op: IAsyncOperation, status: AsyncStatus):
+            for c in self._callbacks:
+                c(self)
+
+        async_result.completed = functools.partial(
+            self._loop.call_soon_threadsafe, call_callbacks
+        )
+
+    def result(self) -> Any:
+        return self._async_result.get_results()
+
+    def done(self) -> bool:
+        return self._async_result.status != AsyncStatus.STARTED
+
+    def cancelled(self) -> bool:
+        return self._async_result.status == AsyncStatus.CANCELED
+
+    def add_done_callback(self, callback, *, context=None) -> None:
+        self._callbacks.append(callback)
+
+    def remove_done_callback(self, callback) -> None:
+        self._callbacks.remove(callback)
+
+    def cancel(self, msg=None) -> bool:
+        if self._async_result.status != AsyncStatus.STARTED:
+            return False
+        self._async_result.cancel()
+        return True
+
+    def exception(self) -> Optional[Exception]:
+        if self._async_result.status == AsyncStatus.STARTED:
+            raise asyncio.InvalidStateError
+        if self._async_result.status == AsyncStatus.COMPLETED:
+            return None
+        if self._async_result.status == AsyncStatus.CANCELED:
+            raise asyncio.CancelledError
+        if self._async_result.status == AsyncStatus.ERROR:
+            try:
+                pythonapi.PyErr_SetFromWindowsErr(self._async_result.error_code)
+            except OSError as e:
+                return e
+
+    def get_loop(self) -> asyncio.AbstractEventLoop:
+        return self._loop
