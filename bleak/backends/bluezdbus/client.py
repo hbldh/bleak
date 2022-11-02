@@ -126,7 +126,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # BlueZ quirk where notifications are automatically enabled on reconnect.
         self._bus = await MessageBus(
             bus_type=BusType.SYSTEM,
-            negotiate_unix_fd=not BlueZFeatures.has_mtu_property,
+            negotiate_unix_fd=not BlueZFeatures.has_mtu_property
+            and not BlueZFeatures.write_without_response_workaround_needed,
         ).connect()
 
         def on_connected_changed(connected: bool) -> None:
