@@ -495,7 +495,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # We would rather not start notifications if we don't have to.
         if BlueZFeatures.has_mtu_property:
             self._mtu_size = (
-                min(
+                max(
                     c.max_write_without_response_size
                     for c in self.services.characteristics.values()
                 )
