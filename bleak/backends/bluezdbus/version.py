@@ -29,6 +29,7 @@ class BlueZFeatures:
     write_without_response_workaround_needed = False
     hides_battery_characteristic = True
     hides_device_name_characteristic = True
+    has_mtu_property = False
     _check_bluez_event: Optional[asyncio.Event] = None
 
     @classmethod
@@ -50,6 +51,7 @@ class BlueZFeatures:
             )
             cls.hides_battery_characteristic = major == 5 and minor >= 48 and minor < 55
             cls.hides_device_name_characteristic = major == 5 and minor >= 48
+            cls.has_mtu_property = major == 5 and minor >= 62
         else:
             # Its possible they may be running inside a container where
             # bluetoothctl is not available and they only have access to the

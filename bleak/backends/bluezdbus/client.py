@@ -125,7 +125,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # Each BLE connection session needs a new D-Bus connection to avoid a
         # BlueZ quirk where notifications are automatically enabled on reconnect.
         self._bus = await MessageBus(
-            bus_type=BusType.SYSTEM, negotiate_unix_fd=True
+            bus_type=BusType.SYSTEM,
+            negotiate_unix_fd=not BlueZFeatures.has_mtu_property,
         ).connect()
 
         def on_connected_changed(connected: bool) -> None:
@@ -492,6 +493,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         # This will try to get the "best" characteristic for getting the MTU.
         # We would rather not start notifications if we don't have to.
+        if BlueZFeatures.has_mtu_property:
+            self._mtu_size = (
+                min(
+                    c.max_write_without_response_size
+                    for c in self.services.characteristics.values()
+                )
+                + 3
+            )
+            return
+
         try:
             method = "AcquireWrite"
             char = next(
