@@ -818,7 +818,12 @@ class BlueZManager:
                 self_interface.update(unpack_variants(changed))
 
                 for name in invalidated:
-                    del self_interface[name]
+                    try:
+                        del self_interface[name]
+                    except KeyError:
+                        # sometimes there BlueZ tries to remove properties
+                        # that were never added
+                        pass
 
                 # then call any callbacks so they will be called with the
                 # updated state
