@@ -14,6 +14,7 @@ Fixed
 ------
 * Fixed crash when getting services in WinRT backend.
 * Fixed cache mode when retrying get services in WinRT backend.
+* Fixed ``KeyError`` crash in BlueZ backend when removing non-existent property. Fixes #1107.
 
 `0.19.1`_ (2022-10-29)
 ======================
