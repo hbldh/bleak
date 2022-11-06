@@ -6,13 +6,18 @@ Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 
 import asyncio
+import functools
 import logging
 import sys
 import uuid
 import warnings
+from ctypes import pythonapi
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
-import async_timeout
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
 
 if sys.version_info[:2] < (3, 8):
     from typing_extensions import Literal, TypedDict
@@ -44,11 +49,15 @@ from bleak_winrt.windows.devices.enumeration import (
     DevicePairingResultStatus,
     DeviceUnpairingResultStatus,
 )
-from bleak_winrt.windows.foundation import EventRegistrationToken
+from bleak_winrt.windows.foundation import (
+    AsyncStatus,
+    EventRegistrationToken,
+    IAsyncOperation,
+)
 from bleak_winrt.windows.storage.streams import Buffer
 
 from ... import BleakScanner
-from ...exc import PROTOCOL_ERROR_CODES, BleakError, BleakDeviceNotFoundError
+from ...exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -172,7 +181,8 @@ class BleakClientWinRT(BaseBleakClient):
             self._device_info = address_or_ble_device.details.adv.bluetooth_address
         else:
             self._device_info = None
-        self._requester = None
+        self._requester: Optional[BluetoothLEDevice] = None
+        self._services_changed_events: List[asyncio.Event] = []
         self._session_active_events: List[asyncio.Event] = []
         self._session_closed_events: List[asyncio.Event] = []
         self._session: GattSession = None
@@ -189,6 +199,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._use_cached_services = winrt.get("use_cached_services")
         self._address_type = winrt.get("address_type", kwargs.get("address_type"))
 
+        self._session_services_changed_token: Optional[EventRegistrationToken] = None
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
         self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
@@ -197,7 +208,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     # Connectivity methods
 
-    def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
+    async def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
         args = [
             bluetooth_address,
         ]
@@ -207,7 +218,9 @@ class BleakClientWinRT(BaseBleakClient):
                 if self._address_type == "public"
                 else BluetoothAddressType.RANDOM
             )
-        requester = BluetoothLEDevice.from_bluetooth_address_async(*args)
+        requester = await BluetoothLEDevice.from_bluetooth_address_async(*args)
+
+        # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
         if requester is None:
             raise BleakDeviceNotFoundError(
                 self.address, f"Device with address {self.address} was not found."
@@ -240,33 +253,50 @@ class BleakClientWinRT(BaseBleakClient):
 
         logger.debug("Connecting to BLE device @ %s", self.address)
 
+        loop = asyncio.get_running_loop()
+
         self._requester = await self._create_requester(self._device_info)
 
-        if self._requester is None:
-            # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
-            raise BleakError(
-                f"Failed to connect to {self._device_info}. If the device requires pairing, then pair first. If the device uses a random address, it may have changed."
-            )
+        def handle_services_changed():
+            if not self._services_changed_events:
+                logger.warning("%s: unhandled services changed event", self.address)
+            else:
+                for event in self._services_changed_events:
+                    event.set()
+
+        def services_changed_handler(sender, args):
+            logger.debug("%s: services changed", self.address)
+            loop.call_soon_threadsafe(handle_services_changed)
+
+        self._services_changed_token = self._requester.add_gatt_services_changed(
+            services_changed_handler
+        )
 
         # Called on disconnect event or on failure to connect.
         def handle_disconnect():
-            if self._session_status_changed_token:
-                self._session.remove_session_status_changed(
-                    self._session_status_changed_token
-                )
-                self._session_status_changed_token = None
-
-            if self._max_pdu_size_changed_token:
-                self._session.remove_max_pdu_size_changed(
-                    self._max_pdu_size_changed_token
-                )
-                self._max_pdu_size_changed_token = None
-
             if self._requester:
+                if self._services_changed_token:
+                    self._requester.remove_gatt_services_changed(
+                        self._services_changed_token
+                    )
+                    self._services_changed_token = None
+
                 self._requester.close()
                 self._requester = None
 
             if self._session:
+                if self._session_status_changed_token:
+                    self._session.remove_session_status_changed(
+                        self._session_status_changed_token
+                    )
+                    self._session_status_changed_token = None
+
+                if self._max_pdu_size_changed_token:
+                    self._session.remove_max_pdu_size_changed(
+                        self._max_pdu_size_changed_token
+                    )
+                    self._max_pdu_size_changed_token = None
+
                 self._session.close()
                 self._session = None
 
@@ -288,8 +318,6 @@ class BleakClientWinRT(BaseBleakClient):
                     e.set()
 
                 handle_disconnect()
-
-        loop = asyncio.get_running_loop()
 
         # this is the WinRT event handler will be called on another thread
         def session_status_changed_event_handler(
@@ -342,7 +370,7 @@ class BleakClientWinRT(BaseBleakClient):
             # This keeps the device connected until we set maintain_connection = False.
 
             # wait for the session to become active
-            async with async_timeout.timeout(timeout):
+            async with async_timeout(timeout):
                 await event.wait()
         except BaseException:
             handle_disconnect()
@@ -391,7 +419,7 @@ class BleakClientWinRT(BaseBleakClient):
                 self._requester.close()
                 # sometimes it can take over one minute before Windows decides
                 # to end the GATT session/disconnect the device
-                async with async_timeout.timeout(120):
+                async with async_timeout(120):
                     await event.wait()
             finally:
                 self._session_closed_events.remove(event)
@@ -539,8 +567,42 @@ class BleakClientWinRT(BaseBleakClient):
                 else BluetoothCacheMode.UNCACHED
             )
 
+        # if we receive a services changed event before get_gatt_services_async()
+        # finishes, we need to call it again with BluetoothCacheMode.UNCACHED
+        # to ensure we have the correct services as described in
+        # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothledevice.gattserviceschanged
+        while True:
+            services_changed_event = asyncio.Event()
+            services_changed_event_task = asyncio.create_task(
+                services_changed_event.wait()
+            )
+            self._services_changed_events.append(services_changed_event)
+
+            get_services_task = FutureLike(
+                self._requester.get_gatt_services_async(*args)
+            )
+
+            try:
+                await asyncio.wait(
+                    [services_changed_event_task, get_services_task],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            finally:
+                services_changed_event_task.cancel()
+                self._services_changed_events.remove(services_changed_event)
+                get_services_task.cancel()
+
+            if not services_changed_event.is_set():
+                break
+
+            logger.debug(
+                "%s: restarting get services due to services changed event",
+                self.address,
+            )
+            args = [BluetoothCacheMode.CACHED]
+
         services: Sequence[GattDeviceService] = _ensure_success(
-            await self._requester.get_gatt_services_async(*args),
+            get_services_task.result(),
             "services",
             "Could not get GATT services",
         )
@@ -582,7 +644,6 @@ class BleakClientWinRT(BaseBleakClient):
                         )
                     )
 
-        logger.info("Services resolved for %s", str(self))
         self._services_resolved = True
         return self.services
 
@@ -836,3 +897,64 @@ class BleakClientWinRT(BaseBleakClient):
 
         event_handler_token = self._notification_callbacks.pop(characteristic.handle)
         characteristic.obj.remove_value_changed(event_handler_token)
+
+
+class FutureLike:
+    """
+    Wraps a WinRT IAsyncOperation in a "future-like" object so that it can
+    be passed to Python APIs.
+
+    Needed until https://github.com/pywinrt/pywinrt/issues/14
+    """
+
+    _asyncio_future_blocking = True
+
+    def __init__(self, async_result: IAsyncOperation) -> None:
+        self._async_result = async_result
+        self._callbacks = []
+        self._loop = asyncio.get_running_loop()
+
+        def call_callbacks(op: IAsyncOperation, status: AsyncStatus):
+            for c in self._callbacks:
+                c(self)
+
+        async_result.completed = functools.partial(
+            self._loop.call_soon_threadsafe, call_callbacks
+        )
+
+    def result(self) -> Any:
+        return self._async_result.get_results()
+
+    def done(self) -> bool:
+        return self._async_result.status != AsyncStatus.STARTED
+
+    def cancelled(self) -> bool:
+        return self._async_result.status == AsyncStatus.CANCELED
+
+    def add_done_callback(self, callback, *, context=None) -> None:
+        self._callbacks.append(callback)
+
+    def remove_done_callback(self, callback) -> None:
+        self._callbacks.remove(callback)
+
+    def cancel(self, msg=None) -> bool:
+        if self._async_result.status != AsyncStatus.STARTED:
+            return False
+        self._async_result.cancel()
+        return True
+
+    def exception(self) -> Optional[Exception]:
+        if self._async_result.status == AsyncStatus.STARTED:
+            raise asyncio.InvalidStateError
+        if self._async_result.status == AsyncStatus.COMPLETED:
+            return None
+        if self._async_result.status == AsyncStatus.CANCELED:
+            raise asyncio.CancelledError
+        if self._async_result.status == AsyncStatus.ERROR:
+            try:
+                pythonapi.PyErr_SetFromWindowsErr(self._async_result.error_code)
+            except OSError as e:
+                return e
+
+    def get_loop(self) -> asyncio.AbstractEventLoop:
+        return self._loop

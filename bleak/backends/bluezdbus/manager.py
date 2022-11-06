@@ -368,6 +368,14 @@ class BlueZManager:
                 assert_reply(reply)
 
                 async def stop() -> None:
+                    # need to remove callbacks first, otherwise we get TxPower
+                    # and RSSI properties removed during stop which causes
+                    # incorrect advertisement data callbacks
+                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._device_removed_callbacks.remove(
+                        device_removed_callback_and_state
+                    )
+
                     async with self._bus_lock:
                         reply = await self._bus.call(
                             Message(
@@ -391,11 +399,6 @@ class BlueZManager:
                             )
                         )
                         assert_reply(reply)
-
-                        self._advertisement_callbacks.remove(callback_and_state)
-                        self._device_removed_callbacks.remove(
-                            device_removed_callback_and_state
-                        )
 
                 return stop
             except BaseException:
@@ -473,6 +476,14 @@ class BlueZManager:
                 self._bus.export(monitor_path, monitor)
 
                 async def stop():
+                    # need to remove callbacks first, otherwise we get TxPower
+                    # and RSSI properties removed during stop which causes
+                    # incorrect advertisement data callbacks
+                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._device_removed_callbacks.remove(
+                        device_removed_callback_and_state
+                    )
+
                     async with self._bus_lock:
                         self._bus.unexport(monitor_path, monitor)
 
@@ -487,11 +498,6 @@ class BlueZManager:
                             )
                         )
                         assert_reply(reply)
-
-                        self._advertisement_callbacks.remove(callback_and_state)
-                        self._device_removed_callbacks.remove(
-                            device_removed_callback_and_state
-                        )
 
                 return stop
 
@@ -564,7 +570,7 @@ class BlueZManager:
                 logger.debug("Using cached services for %s", device_path)
                 return services
 
-        await self._wait_condition(device_path, "ServicesResolved", True)
+        await self._wait_for_services_discovery(device_path)
 
         services = BleakGATTServiceCollection()
 
@@ -641,6 +647,29 @@ class BlueZManager:
             return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
         except KeyError:
             return False
+
+    async def _wait_for_services_discovery(self, device_path: str) -> None:
+        """
+        Waits for the device services to be discovered.
+
+        If a disconnect happens before the completion a BleakError exception is raised.
+        """
+        services_discovered_wait_task = asyncio.create_task(
+            self._wait_condition(device_path, "ServicesResolved", True)
+        )
+        device_disconnected_wait_task = asyncio.create_task(
+            self._wait_condition(device_path, "Connected", False)
+        )
+        done, pending = await asyncio.wait(
+            {services_discovered_wait_task, device_disconnected_wait_task},
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        for p in pending:
+            p.cancel()
+
+        if device_disconnected_wait_task in done:
+            raise BleakError("failed to discover services, device disconnected")
 
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
@@ -789,7 +818,12 @@ class BlueZManager:
                 self_interface.update(unpack_variants(changed))
 
                 for name in invalidated:
-                    del self_interface[name]
+                    try:
+                        del self_interface[name]
+                    except KeyError:
+                        # sometimes there BlueZ tries to remove properties
+                        # that were never added
+                        pass
 
                 # then call any callbacks so they will be called with the
                 # updated state
