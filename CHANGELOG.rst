@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 -------
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
+* Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
 
 `0.19.2`_ (2022-11-06)
 ======================

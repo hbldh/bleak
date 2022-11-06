@@ -197,7 +197,8 @@ class BaseBleakScanner(abc.ABC):
         try:
             device, _ = self.seen_devices[address]
 
-            device.metadata = metadata
+            device._rssi = adv.rssi
+            device._metadata = metadata
         except KeyError:
             device = BLEDevice(
                 address,
