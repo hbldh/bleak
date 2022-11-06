@@ -17,6 +17,8 @@ class BLEDevice:
     A simple wrapper class representing a BLE server detected during scanning.
     """
 
+    __slots__ = ("address", "name", "details", "_rssi", "_metadata")
+
     def __init__(
         self, address: str, name: Optional[str], details: Any, rssi: int, **kwargs
     ):
