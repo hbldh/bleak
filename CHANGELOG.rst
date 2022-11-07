@@ -10,6 +10,12 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Dropped ``async-timeout`` dependency on Python >= 3.11.
+* Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
+* ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
+
 
 `0.19.4`_ (2022-11-06)
 ======================
@@ -26,12 +32,6 @@ Fixed
 -----
 * Fixed ``TimeoutError`` when connecting to certain devices with WinRT backend. Fixes #604.
 
-
-Changed
--------
-* Dropped ``async-timeout`` dependency on Python >= 3.11.
-* Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
-* ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
 
 `0.19.2`_ (2022-11-06)
 ======================
