@@ -376,7 +376,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                 try:
                     # wait for the session to become active
-                    async with async_timeout(timeout):
+                    async with async_timeout.timeout(timeout):
                         await asyncio.gather(wait_connect_task, wait_get_services_task)
 
                 finally:
