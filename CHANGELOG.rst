@@ -10,6 +10,23 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+
+`0.19.4`_ (2022-11-06)
+======================
+
+Fixed
+-----
+* Fixed ``TypeError`` in WinRT backend introduced in v0.19.3.
+
+
+`0.19.3`_ (2022-11-06)
+======================
+
+Fixed
+-----
+* Fixed ``TimeoutError`` when connecting to certain devices with WinRT backend. Fixes #604.
+
+
 Changed
 -------
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
@@ -865,7 +882,9 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.2...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.4...develop
+.. _0.19.4: https://github.com/hbldh/bleak/compare/v0.19.3...v0.19.4
+.. _0.19.3: https://github.com/hbldh/bleak/compare/v0.19.2...v0.19.3
 .. _0.19.2: https://github.com/hbldh/bleak/compare/v0.19.1...v0.19.2
 .. _0.19.1: https://github.com/hbldh/bleak/compare/v0.19.0...v0.19.1
 .. _0.19.0: https://github.com/hbldh/bleak/compare/v0.18.1...v0.19.0

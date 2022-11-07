@@ -369,17 +369,29 @@ class BleakClientWinRT(BaseBleakClient):
             self._session.maintain_connection = True
             # This keeps the device connected until we set maintain_connection = False.
 
-            # wait for the session to become active
-            async with async_timeout(timeout):
-                await event.wait()
+            wait_connect_task = asyncio.create_task(event.wait())
+
+            try:
+                # a connection may not be made until we request info from the
+                # device, so we have to get services before the GATT session
+                # is set to active
+                wait_get_services_task = asyncio.create_task(self.get_services())
+
+                try:
+                    # wait for the session to become active
+                    async with async_timeout(timeout):
+                        await asyncio.gather(wait_connect_task, wait_get_services_task)
+
+                finally:
+                    wait_get_services_task.cancel()
+            finally:
+                wait_connect_task.cancel()
+
         except BaseException:
             handle_disconnect()
             raise
         finally:
             self._session_active_events.remove(event)
-
-        # Obtain services, which also leads to connection being established.
-        await self.get_services()
 
         return True
 
@@ -543,8 +555,6 @@ class BleakClientWinRT(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
-        if not self.is_connected:
-            raise BleakError("Not connected")
 
         # Return the Service Collection.
         if self._services_resolved:
