@@ -371,10 +371,6 @@ class BleakClientWinRT(BaseBleakClient):
                 self._session.maintain_connection = True
                 # This keeps the device connected until we set maintain_connection = False.
 
-                # if we receive a services changed event before get_gatt_services_async()
-                # finishes, we need to call it again with BluetoothCacheMode.CACHED
-                # to ensure we have the correct services as described in
-                # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothledevice.gattserviceschanged
                 cache_mode = None
 
                 if self._use_cached_services is not None:
@@ -384,6 +380,12 @@ class BleakClientWinRT(BaseBleakClient):
                         else BluetoothCacheMode.UNCACHED
                     )
 
+                # if we receive a services changed event before get_gatt_services_async()
+                # finishes, we need to call it again with BluetoothCacheMode.CACHED
+                # to ensure we have the correct services as described in
+                # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothledevice.gattserviceschanged
+                service_cache_mode = cache_mode
+
                 async with async_timeout.timeout(timeout):
                     while True:
                         services_changed_event_task = asyncio.create_task(
@@ -391,7 +393,10 @@ class BleakClientWinRT(BaseBleakClient):
                         )
 
                         get_services_task = asyncio.create_task(
-                            self.get_services(cache_mode=cache_mode)
+                            self.get_services(
+                                service_cache_mode=service_cache_mode,
+                                cache_mode=cache_mode,
+                            )
                         )
 
                         _, pending = await asyncio.wait(
@@ -413,7 +418,7 @@ class BleakClientWinRT(BaseBleakClient):
                             "%s: restarting get services due to services changed event",
                             self.address,
                         )
-                        cache_mode = BluetoothCacheMode.CACHED
+                        service_cache_mode = BluetoothCacheMode.CACHED
                         services_changed_event.clear()
 
                         # ensure the task ran to completion to avoid OSError
@@ -594,7 +599,11 @@ class BleakClientWinRT(BaseBleakClient):
     # GATT services methods
 
     async def get_services(
-        self, *, cache_mode: Optional[BluetoothCacheMode] = None, **kwargs
+        self,
+        *,
+        service_cache_mode: Optional[BluetoothCacheMode] = None,
+        cache_mode: Optional[BluetoothCacheMode] = None,
+        **kwargs,
     ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
@@ -607,23 +616,32 @@ class BleakClientWinRT(BaseBleakClient):
         if self._services_resolved:
             return self.services
 
-        logger.debug("getting services (cache_mode=%r)...", cache_mode)
+        logger.debug(
+            "getting services (service_cache_mode=%r, cache_mode=%r)...",
+            service_cache_mode,
+            cache_mode,
+        )
 
         new_services = BleakGATTServiceCollection()
 
         # Each of the get_serv/char/desc_async() methods has two forms, one
         # with no args and one with a cache_mode argument
+        srv_args = []
         args = []
 
         # If the os-specific use_cached_services arg was given when BleakClient
         # was created, the we use the second form with explicit cache mode.
         # Otherwise we use the first form with no explicit cache mode which
         # allows the OS Bluetooth stack to decide what is best.
+
+        if service_cache_mode is not None:
+            srv_args.append(service_cache_mode)
+
         if cache_mode is not None:
             args.append(cache_mode)
 
         services: Sequence[GattDeviceService] = _ensure_success(
-            await FutureLike(self._requester.get_gatt_services_async(*args)),
+            await FutureLike(self._requester.get_gatt_services_async(*srv_args)),
             "services",
             "Could not get GATT services",
         )
