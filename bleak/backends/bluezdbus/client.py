@@ -96,6 +96,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
 
+        if kwargs.get("pairing_callbacks"):
+            warnings.warn(
+                "Pairing on connect not yet implemented for BlueZ",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
     def close(self):
         self._bus.disconnect()
 

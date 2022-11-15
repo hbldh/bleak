@@ -6,6 +6,7 @@ Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 import asyncio
 import logging
 import uuid
+import warnings
 from typing import Optional, Union
 
 from CoreBluetooth import (
@@ -51,6 +52,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self._peripheral: Optional[CBPeripheral] = None
         self._delegate: Optional[PeripheralDelegate] = None
         self._central_manager_delegate: Optional[CentralManagerDelegate] = None
+
+        if kwargs.get("pairing_callbacks"):
+            warnings.warn(
+                "Pairing is not available in Core Bluetooth.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         if isinstance(address_or_ble_device, BLEDevice):
             (
