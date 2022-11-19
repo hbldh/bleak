@@ -17,6 +17,14 @@ Changed
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
 
 
+`0.19.5`_ (2022-11-19)
+======================
+
+Fixed
+-----
+* Fixed more issues with getting services in WinRT backend.
+
+
 `0.19.4`_ (2022-11-06)
 ======================
 
@@ -882,7 +890,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.4...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.5...develop
+.. _0.19.5: https://github.com/hbldh/bleak/compare/v0.19.4...v0.19.5
 .. _0.19.4: https://github.com/hbldh/bleak/compare/v0.19.3...v0.19.4
 .. _0.19.3: https://github.com/hbldh/bleak/compare/v0.19.2...v0.19.3
 .. _0.19.2: https://github.com/hbldh/bleak/compare/v0.19.1...v0.19.2
