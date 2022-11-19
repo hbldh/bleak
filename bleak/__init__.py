@@ -284,11 +284,9 @@ class BleakScanner:
         """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
         Args:
-            device_identifier (str): The Bluetooth/UUID address of the Bluetooth peripheral sought.
-            timeout (float): Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
-
-        Keyword Args:
-            adapter (str): Bluetooth adapter to use for discovery.
+            device_identifier: The Bluetooth/UUID address of the Bluetooth peripheral sought.
+            timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+            **kwargs: additional args passed to the :class:`BleakScanner` constructor.
 
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.
@@ -297,6 +295,27 @@ class BleakScanner:
         device_identifier = device_identifier.lower()
         return await cls.find_device_by_filter(
             lambda d, ad: d.address.lower() == device_identifier,
+            timeout=timeout,
+            **kwargs,
+        )
+
+    @classmethod
+    async def find_device_by_name(
+        cls, name: str, timeout: float = 10.0, **kwargs
+    ) -> Optional[BLEDevice]:
+        """Obtain a ``BLEDevice`` for a BLE server specified by the local name in the advertising data.
+
+        Args:
+            name: The name sought.
+            timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+            **kwargs: additional args passed to the :class:`BleakScanner` constructor.
+
+        Returns:
+            The ``BLEDevice`` sought or ``None`` if not detected.
+
+        """
+        return await cls.find_device_by_filter(
+            lambda d, ad: ad.local_name == name,
             timeout=timeout,
             **kwargs,
         )

@@ -16,6 +16,7 @@ more advanced use cases like long running programs, GUIs or connecting to
 multiple devices.
 
 .. automethod:: bleak.BleakScanner.discover
+.. automethod:: bleak.BleakScanner.find_device_by_name
 .. automethod:: bleak.BleakScanner.find_device_by_address
 .. automethod:: bleak.BleakScanner.find_device_by_filter
 
