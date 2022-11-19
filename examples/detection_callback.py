@@ -8,9 +8,9 @@ Updated on 2020-10-11 by bernstern <bernie@allthenticate.net>
 
 """
 
+import argparse
 import asyncio
 import logging
-import sys
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
@@ -20,14 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
-    logger.info(f"{device.address}: {advertisement_data}")
+    logger.info("%s: %r", device.address, advertisement_data)
 
 
-async def main(service_uuids):
-    scanner = BleakScanner(simple_callback, service_uuids)
+async def main(args: argparse.Namespace):
+    scanner = BleakScanner(
+        simple_callback, args.services, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+    )
 
     while True:
-        print("(re)starting scanner")
+        logger.info("(re)starting scanner")
         await scanner.start()
         await asyncio.sleep(5.0)
         await scanner.stop()
@@ -38,5 +40,22 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
     )
-    service_uuids = sys.argv[1:]
-    asyncio.run(main(service_uuids))
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--macos-use-bdaddr",
+        action="store_true",
+        help="when true use Bluetooth address instead of UUID on macOS",
+    )
+
+    parser.add_argument(
+        "--services",
+        metavar="<uuid>",
+        nargs="*",
+        help="UUIDs of one or more services to filter for",
+    )
+
+    args = parser.parse_args()
+
+    asyncio.run(main(args))

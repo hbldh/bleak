@@ -9,56 +9,103 @@ Created on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 
-import sys
-import platform
+import argparse
 import asyncio
 import logging
 
-from bleak import BleakClient
+from bleak import BleakClient, BleakScanner
 
 logger = logging.getLogger(__name__)
 
-ADDRESS = (
-    "24:71:89:cc:09:05"
-    if platform.system() != "Darwin"
-    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
-)
 
+async def main(args: argparse.Namespace):
+    logger.info("starting scan...")
 
-async def main(address):
-    async with BleakClient(address) as client:
-        logger.info(f"Connected: {client.is_connected}")
+    if args.address:
+        device = await BleakScanner.find_device_by_address(
+            args.address, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        )
+        if device is None:
+            logger.error("could not find device with address '%s'", args.address)
+            return
+    else:
+        device = await BleakScanner.find_device_by_name(
+            args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        )
+        if device is None:
+            logger.error("could not find device with name '%s'", args.name)
+            return
+
+    logger.info("connecting to device...")
+
+    async with BleakClient(device) as client:
+        logger.info("connected")
 
         for service in client.services:
-            logger.info(f"[Service] {service}")
+            logger.info("[Service] %s", service)
+
             for char in service.characteristics:
                 if "read" in char.properties:
                     try:
-                        value = bytes(await client.read_gatt_char(char.uuid))
+                        value = await client.read_gatt_char(char.uuid)
                         logger.info(
-                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                            "  [Characteristic] %s (%s), Value: %r",
+                            char,
+                            ",".join(char.properties),
+                            value,
                         )
                     except Exception as e:
                         logger.error(
-                            f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {e}"
+                            "  [Characteristic] %s (%s), Error: %s",
+                            char,
+                            ",".join(char.properties),
+                            e,
                         )
 
                 else:
-                    value = None
                     logger.info(
-                        f"\t[Characteristic] {char} ({','.join(char.properties)}), Value: {value}"
+                        "  [Characteristic] %s (%s)", char, ",".join(char.properties)
                     )
 
                 for descriptor in char.descriptors:
                     try:
-                        value = bytes(
-                            await client.read_gatt_descriptor(descriptor.handle)
-                        )
-                        logger.info(f"\t\t[Descriptor] {descriptor}) | Value: {value}")
+                        value = await client.read_gatt_descriptor(descriptor.handle)
+                        logger.info("    [Descriptor] %s, Value: %r", descriptor, value)
                     except Exception as e:
-                        logger.error(f"\t\t[Descriptor] {descriptor}) | Value: {e}")
+                        logger.error("    [Descriptor] %s, Error: %s", descriptor, e)
+
+        logger.info("disconnecting...")
+
+    logger.info("disconnected")
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(main(sys.argv[1] if len(sys.argv) == 2 else ADDRESS))
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
+    )
+
+    parser = argparse.ArgumentParser()
+
+    device_group = parser.add_mutually_exclusive_group(required=True)
+
+    device_group.add_argument(
+        "--name",
+        metavar="<name>",
+        help="the name of the bluetooth device to connect to",
+    )
+    device_group.add_argument(
+        "--address",
+        metavar="<address>",
+        help="the address of the bluetooth device to connect to",
+    )
+
+    parser.add_argument(
+        "--macos-use-bdaddr",
+        action="store_true",
+        help="when true use Bluetooth address instead of UUID on macOS",
+    )
+
+    args = parser.parse_args()
+
+    asyncio.run(main(args))
