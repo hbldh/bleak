@@ -10,11 +10,17 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``BleakClient.close()`` method.
+
+
 Changed
 -------
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
 * Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
+* BlueZ no longer closes D-Bus socket on disconnect of ``BleakClient``.
 
 
 `0.19.5`_ (2022-11-19)
@@ -49,6 +55,7 @@ Fixed
 * Fixed crash when getting services in WinRT backend in Python 3.11. Fixes #1112.
 * Fixed cache mode when retrying get services in WinRT backend. Merged #1102.
 * Fixed ``KeyError`` crash in BlueZ backend when removing non-existent property. Fixes #1107.
+
 
 `0.19.1`_ (2022-10-29)
 ======================

@@ -27,6 +27,18 @@ class BleakDeviceNotFoundError(BleakError):
         self.identifier = identifier
 
 
+class BleakPairingCancelledError(BleakError):
+    """
+    Specialized exception to indicate that pairing was canceled.
+    """
+
+
+class BleakPairingFailedError(BleakError):
+    """
+    Specialized exception to indicate that pairing failed.
+    """
+
+
 class BleakDBusError(BleakError):
     """Specialized exception type for D-Bus errors."""
 

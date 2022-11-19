@@ -56,6 +56,7 @@ from bleak_winrt.windows.foundation import (
 from bleak_winrt.windows.storage.streams import Buffer
 
 from ... import BleakScanner
+from ...agent import BaseBleakAgentCallbacks
 from ...exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
@@ -510,21 +511,18 @@ class BleakClientWinRT(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
 
-    async def pair(self, protection_level: int = None, **kwargs) -> bool:
-        """Attempts to pair with the device.
-
-        Keyword Args:
-            protection_level (int): A ``DevicePairingProtectionLevel`` enum value:
-
-                1. None - Pair the device using no levels of protection.
-                2. Encryption - Pair the device using encryption.
-                3. EncryptionAndAuthentication - Pair the device using
-                   encryption and authentication. (This will not work in Bleak...)
-
-        Returns:
-            Boolean regarding success of pairing.
-
+    async def pair(
+        self,
+        callbacks: Optional[BaseBleakAgentCallbacks],
+        protection_level: int = None,
+        **kwargs,
+    ) -> bool:
         """
+        Attempts to pair with the device.
+        """
+        if callbacks:
+            raise NotImplementedError
+
         # New local device information object created since the object from the requester isn't updated
         device_information = await DeviceInformation.create_from_id_async(
             self._requester.device_information.id
