@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`0.19.5`_ (2022-11-19)
+======================
+
+Fixed
+-----
+* Fixed more issues with getting services in WinRT backend.
+
+
 `0.19.4`_ (2022-11-06)
 ======================
 
@@ -872,7 +880,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.4...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.5...develop
+.. _0.19.5: https://github.com/hbldh/bleak/compare/v0.19.4...v0.19.5
 .. _0.19.4: https://github.com/hbldh/bleak/compare/v0.19.3...v0.19.4
 .. _0.19.3: https://github.com/hbldh/bleak/compare/v0.19.2...v0.19.3
 .. _0.19.2: https://github.com/hbldh/bleak/compare/v0.19.1...v0.19.2
