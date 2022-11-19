@@ -8,30 +8,75 @@ Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 
 """
 
+import argparse
 import asyncio
+import logging
 
 from bleak import BleakScanner, BleakClient
 
 
-async def main():
-    devs = await BleakScanner.discover()
-    if not devs:
-        print("No devices found, try again later.")
-        return
+logger = logging.getLogger(__name__)
+
+
+async def main(args: argparse.Namespace):
+    logger.info("scanning...")
+
+    if args.address:
+        device = await BleakScanner.find_device_by_address(
+            args.address, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        )
+        if device is None:
+            logger.error("could not find device with address '%s'", args.address)
+            return
+    else:
+        device = await BleakScanner.find_device_by_name(
+            args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        )
+        if device is None:
+            logger.error("could not find device with name '%s'", args.name)
+            return
 
     disconnected_event = asyncio.Event()
 
     def disconnected_callback(client):
-        print("Disconnected callback called!")
+        logger.info("Disconnected callback called!")
         disconnected_event.set()
 
     async with BleakClient(
-        devs[0], disconnected_callback=disconnected_callback
+        device, disconnected_callback=disconnected_callback
     ) as client:
-        print("Sleeping until device disconnects...")
+        logger.info("Sleeping until device disconnects...")
         await disconnected_event.wait()
-        print("Connected:", client.is_connected)
+        logger.info("Connected: %r", client.is_connected)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
+    )
+
+    parser = argparse.ArgumentParser()
+
+    device_group = parser.add_mutually_exclusive_group(required=True)
+
+    device_group.add_argument(
+        "--name",
+        metavar="<name>",
+        help="the name of the bluetooth device to connect to",
+    )
+    device_group.add_argument(
+        "--address",
+        metavar="<address>",
+        help="the address of the bluetooth device to connect to",
+    )
+
+    parser.add_argument(
+        "--macos-use-bdaddr",
+        action="store_true",
+        help="when true use Bluetooth address instead of UUID on macOS",
+    )
+
+    args = parser.parse_args()
+
+    asyncio.run(main(args))
