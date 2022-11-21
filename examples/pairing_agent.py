@@ -4,7 +4,11 @@ import sys
 
 from bleak import BleakScanner, BleakClient, BaseBleakAgentCallbacks
 from bleak.backends.device import BLEDevice
-from bleak.exc import BleakPairingCancelledError, BleakPairingFailedError
+from bleak.exc import (
+    BleakPairingCancelledError,
+    BleakPairingFailedError,
+    BleakDeviceNotFoundError,
+)
 
 
 class AgentCallbacks(BaseBleakAgentCallbacks):
@@ -58,7 +62,11 @@ class AgentCallbacks(BaseBleakAgentCallbacks):
 async def main(addr: str, unpair: bool) -> None:
     if unpair:
         print("unpairing...")
-        await BleakClient(addr).unpair()
+        try:
+            await BleakClient(addr).unpair()
+            print("unpaired")
+        except BleakDeviceNotFoundError:
+            print("device was not paired")
 
     print("scanning...")
 
@@ -68,9 +76,12 @@ async def main(addr: str, unpair: bool) -> None:
         print("device was not found")
         return
 
+    print("pairing...")
+
     async with BleakClient(device) as client, AgentCallbacks() as callbacks:
         try:
             await client.pair(callbacks)
+            print("pairing successful")
         except BleakPairingCancelledError:
             print("paring was canceled")
         except BleakPairingFailedError:
