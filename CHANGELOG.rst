@@ -20,6 +20,8 @@ Changed
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
 * Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
+* ``BaseBleakClient.services`` is now ``None`` instead of empty service collection
+  until services are discovered.
 
 Fixed
 -----

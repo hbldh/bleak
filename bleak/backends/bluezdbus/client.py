@@ -309,8 +309,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._bus = None
 
             # Reset all stored services.
-            self.services = BleakGATTServiceCollection()
-            self._services_resolved = False
+            self.services = None
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.
@@ -587,7 +586,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if self._services_resolved:
+        if self.services is not None:
             return self.services
 
         manager = await get_global_bluez_manager()
@@ -595,7 +594,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self.services = await manager.get_services(
             self._device_path, dangerous_use_bleak_cache
         )
-        self._services_resolved = True
 
         return self.services
 
