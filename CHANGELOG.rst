@@ -21,6 +21,9 @@ Changed
 * Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
 
+Fixed
+-----
+- Fixed ``AttributeError`` in ``_ensure_success`` in WinRT backend.
 
 `0.19.5`_ (2022-11-19)
 ======================
