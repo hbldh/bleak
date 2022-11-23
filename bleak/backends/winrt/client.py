@@ -197,6 +197,7 @@ class BleakClientWinRT(BaseBleakClient):
         # os-specific options
         self._use_cached_services = winrt.get("use_cached_services")
         self._address_type = winrt.get("address_type", kwargs.get("address_type"))
+        self._retry_on_services_changed = False
 
         self._session_services_changed_token: Optional[EventRegistrationToken] = None
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
@@ -390,47 +391,53 @@ class BleakClientWinRT(BaseBleakClient):
                 service_cache_mode = cache_mode
 
                 async with async_timeout(timeout):
-                    while True:
-                        services_changed_event.clear()
-                        services_changed_event_task = asyncio.create_task(
-                            services_changed_event.wait()
-                        )
-
-                        get_services_task = asyncio.create_task(
-                            self.get_services(
-                                service_cache_mode=service_cache_mode,
-                                cache_mode=cache_mode,
+                    if self._retry_on_services_changed:
+                        while True:
+                            services_changed_event.clear()
+                            services_changed_event_task = asyncio.create_task(
+                                services_changed_event.wait()
                             )
+
+                            get_services_task = asyncio.create_task(
+                                self.get_services(
+                                    service_cache_mode=service_cache_mode,
+                                    cache_mode=cache_mode,
+                                )
+                            )
+
+                            _, pending = await asyncio.wait(
+                                [services_changed_event_task, get_services_task],
+                                return_when=asyncio.FIRST_COMPLETED,
+                            )
+
+                            for p in pending:
+                                p.cancel()
+
+                            if not services_changed_event.is_set():
+                                # services did not change while getting services,
+                                # so this is the final result
+                                self.services = get_services_task.result()
+                                break
+
+                            logger.debug(
+                                "%s: restarting get services due to services changed event",
+                                self.address,
+                            )
+                            service_cache_mode = BluetoothCacheMode.CACHED
+
+                            # ensure the task ran to completion to avoid OSError
+                            # on next call to get_services()
+                            try:
+                                await get_services_task
+                            except OSError:
+                                pass
+                            except asyncio.CancelledError:
+                                pass
+                    else:
+                        self.services = await self.get_services(
+                            service_cache_mode=service_cache_mode,
+                            cache_mode=cache_mode,
                         )
-
-                        _, pending = await asyncio.wait(
-                            [services_changed_event_task, get_services_task],
-                            return_when=asyncio.FIRST_COMPLETED,
-                        )
-
-                        for p in pending:
-                            p.cancel()
-
-                        if not services_changed_event.is_set():
-                            # services did not change while getting services,
-                            # so this is the final result
-                            self.services = get_services_task.result()
-                            break
-
-                        logger.debug(
-                            "%s: restarting get services due to services changed event",
-                            self.address,
-                        )
-                        service_cache_mode = BluetoothCacheMode.CACHED
-
-                        # ensure the task ran to completion to avoid OSError
-                        # on next call to get_services()
-                        try:
-                            await get_services_task
-                        except OSError:
-                            pass
-                        except asyncio.CancelledError:
-                            pass
 
                 # a connection may not be made until we request info from the
                 # device, so we have to get services before the GATT session
