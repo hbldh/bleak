@@ -391,6 +391,7 @@ class BleakClientWinRT(BaseBleakClient):
 
                 async with async_timeout(timeout):
                     while True:
+                        services_changed_event.clear()
                         services_changed_event_task = asyncio.create_task(
                             services_changed_event.wait()
                         )
@@ -421,7 +422,6 @@ class BleakClientWinRT(BaseBleakClient):
                             self.address,
                         )
                         service_cache_mode = BluetoothCacheMode.CACHED
-                        services_changed_event.clear()
 
                         # ensure the task ran to completion to avoid OSError
                         # on next call to get_services()
