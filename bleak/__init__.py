@@ -576,7 +576,13 @@ class BleakClient:
         Gets the collection of GATT services available on the device.
 
         The returned value is only valid as long as the device is connected.
+
+        Raises:
+            BleakError: if service discovery has not been performed yet during this connection.
         """
+        if not self._backend.services:
+            raise BleakError("Service Discovery has not been performed yet")
+
         return self._backend.services
 
     # I/O methods
