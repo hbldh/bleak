@@ -22,6 +22,10 @@ Changed
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
 
 
+Fixed
+-----
+- Fixed invalid UTF-8 in ``uuids.uuid16_dict``.
+
 `0.19.5`_ (2022-11-19)
 ======================
 
