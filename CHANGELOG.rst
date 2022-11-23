@@ -30,13 +30,11 @@ Changed
 
 Fixed
 -----
+* Fixed invalid UTF*8 in ``uuids.uuid16_dict``.
 * Fixed ``AttributeError`` in ``_ensure_success`` in WinRT backend.
 * Fixed ``BleakScanner.stop()`` can raise ``BleakDBusError`` with ``org.bluez.Error.NotReady`` in BlueZ backend.
 * Fixed ``BleakScanner.stop()`` hanging in WinRT backend when Bluetooth is disabled.
-
-Fixed
------
-- Fixed invalid UTF-8 in ``uuids.uuid16_dict``.
+* Fixed leaking services when ``get_services()`` is cancelled in WinRT backend.
 
 `0.19.5`_ (2022-11-19)
 ======================

@@ -642,50 +642,79 @@ class BleakClientWinRT(BaseBleakClient):
         if cache_mode is not None:
             args.append(cache_mode)
 
+        logger.debug("calling get_gatt_services_async")
+
+        def dispose_on_cancel(future):
+            if future._cancel_requested and future._result is not None:
+                logger.debug("disposing services object because of cancel")
+                for service in future._result:
+                    service.close()
+
+        future = FutureLike(self._requester.get_gatt_services_async(*srv_args))
+        future.add_done_callback(dispose_on_cancel)
+
         services: Sequence[GattDeviceService] = _ensure_success(
-            await FutureLike(self._requester.get_gatt_services_async(*srv_args)),
+            await future,
             "services",
             "Could not get GATT services",
         )
 
-        for service in services:
-            # Windows returns an ACCESS_DENIED error when trying to enumerate
-            # characteristics of services used by the OS, like the HID service
-            # so we have to exclude those services.
-            if service.uuid in _ACCESS_DENIED_SERVICES:
-                continue
+        logger.debug("returned from get_gatt_services_async")
 
-            new_services.add_service(BleakGATTServiceWinRT(service))
+        try:
+            for service in services:
+                # Windows returns an ACCESS_DENIED error when trying to enumerate
+                # characteristics of services used by the OS, like the HID service
+                # so we have to exclude those services.
+                if service.uuid in _ACCESS_DENIED_SERVICES:
+                    continue
 
-            characteristics: Sequence[GattCharacteristic] = _ensure_success(
-                await FutureLike(service.get_characteristics_async(*args)),
-                "characteristics",
-                f"Could not get GATT characteristics for {service}",
-            )
+                new_services.add_service(BleakGATTServiceWinRT(service))
 
-            for characteristic in characteristics:
-                new_services.add_characteristic(
-                    BleakGATTCharacteristicWinRT(
-                        characteristic, self._session.max_pdu_size - 3
-                    )
+                logger.debug("calling get_characteristics_async")
+
+                characteristics: Sequence[GattCharacteristic] = _ensure_success(
+                    await FutureLike(service.get_characteristics_async(*args)),
+                    "characteristics",
+                    f"Could not get GATT characteristics for {service}",
                 )
 
-                descriptors: Sequence[GattDescriptor] = _ensure_success(
-                    await FutureLike(characteristic.get_descriptors_async(*args)),
-                    "descriptors",
-                    f"Could not get GATT descriptors for {service}",
-                )
+                logger.debug("returned from get_characteristics_async")
 
-                for descriptor in descriptors:
-                    new_services.add_descriptor(
-                        BleakGATTDescriptorWinRT(
-                            descriptor,
-                            str(characteristic.uuid),
-                            characteristic.attribute_handle,
+                for characteristic in characteristics:
+                    new_services.add_characteristic(
+                        BleakGATTCharacteristicWinRT(
+                            characteristic, self._session.max_pdu_size - 3
                         )
                     )
 
-        return new_services
+                    logger.debug("calling get_descriptors_async")
+
+                    descriptors: Sequence[GattDescriptor] = _ensure_success(
+                        await FutureLike(characteristic.get_descriptors_async(*args)),
+                        "descriptors",
+                        f"Could not get GATT descriptors for {service}",
+                    )
+
+                    logger.debug("returned from get_descriptors_async")
+
+                    for descriptor in descriptors:
+                        new_services.add_descriptor(
+                            BleakGATTDescriptorWinRT(
+                                descriptor,
+                                str(characteristic.uuid),
+                                characteristic.attribute_handle,
+                            )
+                        )
+
+            return new_services
+        except BaseException:
+            # Don't leak services. WinRT is quite particular about services
+            # being closed.
+            logger.debug("disposing service objects")
+            for service in services:
+                service.close()
+            raise
 
     # I/O methods
 
