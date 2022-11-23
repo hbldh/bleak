@@ -20,6 +20,7 @@ Changed
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
 * Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
+* Include thread name in ``BLEAK_LOGGING`` output.
 
 Fixed
 -----
