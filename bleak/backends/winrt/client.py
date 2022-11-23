@@ -122,7 +122,7 @@ def _ensure_success(result: Any, attr: Optional[str], fail_msg: str) -> Any:
     if status == GattCommunicationStatus.UNREACHABLE:
         raise BleakError(f"{fail_msg}: Unreachable")
 
-    raise BleakError(f"{fail_msg}: Unexpected status code 0x{result.status:02X}")
+    raise BleakError(f"{fail_msg}: Unexpected status code 0x{status:02X}")
 
 
 class WinRTClientArgs(TypedDict, total=False):
