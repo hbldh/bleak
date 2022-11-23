@@ -22,6 +22,7 @@ Changed
 * ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
 * ``BaseBleakClient.services`` is now ``None`` instead of empty service collection
   until services are discovered.
+* Include thread name in ``BLEAK_LOGGING`` output. Merged #1144.
 
 Fixed
 -----
