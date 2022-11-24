@@ -27,7 +27,7 @@ from weakref import WeakKeyDictionary
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
-from ...exc import BleakDBusError, BleakError
+from ...exc import BleakDBusError, BleakError, BleakNoPassiveScanError
 from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
@@ -470,8 +470,9 @@ class BlueZManager:
                     reply.message_type == MessageType.ERROR
                     and reply.error_name == "org.freedesktop.DBus.Error.UnknownMethod"
                 ):
-                    raise BleakError(
-                        "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled and Linux kernel >= 5.10"
+                    raise BleakNoPassiveScanError(
+                        "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled"
+                        " and Linux kernel >= 5.10"
                     )
 
                 assert_reply(reply)

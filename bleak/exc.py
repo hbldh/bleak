@@ -63,6 +63,14 @@ class BleakDBusError(BleakError):
         return (name + " " + details) if details else name
 
 
+class BleakNoPassiveScanError(BleakError):
+    """
+    Exception raised when passive scanning mode is tried to be used on the system not supporting it
+    """
+
+    pass
+
+
 CONTROLLER_ERROR_CODES = {
     0x00: "Success",
     0x01: "Unknown HCI Command",
