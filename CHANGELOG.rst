@@ -17,7 +17,8 @@ Added
 * Added optional command line argument to use debug log level to all applicable examples.
 * Make sure the disconnect monitor task is properly cancelled on the BlueZ client.
 * Added ``BleakNoPassiveScanError`` exception.
-* Make sure that BlueZ Advertisement Monitor is actually registered when passive scanning. Solves #1136.
+* Added check to verify that BlueZ Advertisement Monitor was actually registered. Solves #1136.
+* Added ``passive_scan.py`` example.
 
 Changed
 -------
