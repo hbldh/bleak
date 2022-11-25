@@ -96,12 +96,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
 
-        if kwargs.get("pairing_callbacks"):
-            warnings.warn(
-                "Pairing on connect not yet implemented for BlueZ",
-                RuntimeWarning,
-                stacklevel=2,
-            )
+        self._pairing_callbacks: Optional[BaseBleakAgentCallbacks] = kwargs.get(
+            "pairing_callbacks"
+        )
 
     def close(self):
         self._bus.disconnect()
@@ -193,6 +190,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 #
                 # For additional details see https://github.com/bluez/bluez/issues/89
                 #
+                if self._pairing_callbacks:
+                    # org.bluez.Device1.Pair() will connect to the remote device, initiate
+                    # pairing and then retrieve all SDP records (or GATT primary services).
+                    await self.pair(self._pairing_callbacks)
+
                 if not manager.is_connected(self._device_path):
                     logger.debug("Connecting to BlueZ path %s", self._device_path)
                     async with async_timeout(timeout):
@@ -400,6 +402,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="Pair",
                 )
             )
+            # TODO: Call "CancelPairing" if this task is cancelled
 
             try:
                 assert_reply(reply)

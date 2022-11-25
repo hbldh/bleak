@@ -59,7 +59,7 @@ class AgentCallbacks(BaseBleakAgentCallbacks):
         return response
 
 
-async def main(addr: str, unpair: bool) -> None:
+async def main(addr: str, unpair: bool, auto: bool) -> None:
     if unpair:
         print("unpairing...")
         try:
@@ -76,16 +76,26 @@ async def main(addr: str, unpair: bool) -> None:
         print("device was not found")
         return
 
-    print("pairing...")
+    if auto:
+        print("connecting and pairing...")
 
-    async with BleakClient(device) as client, AgentCallbacks() as callbacks:
-        try:
-            await client.pair(callbacks)
-            print("pairing successful")
-        except BleakPairingCancelledError:
-            print("paring was canceled")
-        except BleakPairingFailedError:
-            print("pairing failed (bad pin?)")
+        async with AgentCallbacks() as callbacks, BleakClient(
+            device, pairing_callbacks=callbacks
+        ) as client:
+            print(f"connection and pairing to {client.address} successful")
+
+    else:
+        print("connecting...")
+
+        async with BleakClient(device) as client, AgentCallbacks() as callbacks:
+            try:
+                print("pairing...")
+                await client.pair(callbacks)
+                print("pairing successful")
+            except BleakPairingCancelledError:
+                print("paring was canceled")
+            except BleakPairingFailedError:
+                print("pairing failed (bad pin?)")
 
 
 if __name__ == "__main__":
@@ -94,6 +104,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--unpair", action="store_true", help="unpair first before pairing"
     )
+    parser.add_argument(
+        "--auto", action="store_true", help="automatically pair during connect"
+    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.address, args.unpair))
+    asyncio.run(main(args.address, args.unpair, args.auto))
