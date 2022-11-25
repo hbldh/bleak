@@ -140,6 +140,9 @@ class BleakScannerP4Android(BaseBleakScanner):
         )
         self.__javascanner.flushPendingScanResults(self.__callback.java)
 
+        # REVISIT: we shouldn't wait and check for error here, instead we should
+        # just allow the stopped early callback to handle this and let the user
+        # decide what to do.
         try:
             async with async_timeout(0.2):
                 await scanfuture
@@ -292,6 +295,7 @@ class _PythonScanCallback(utils.AsyncJavaCallbacks):
 
     @java_method("(I)V")
     def onScanFailed(self, errorCode):
+        self._loop.call_soon_threadsafe(self._scanner.handle_early_stop)
         self.result_state(defs.ScanFailed(errorCode).name, "onScan")
 
     @java_method("(Landroid/bluetooth/le/ScanResult;)V")

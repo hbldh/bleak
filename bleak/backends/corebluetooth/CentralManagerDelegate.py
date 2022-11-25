@@ -10,7 +10,7 @@ import asyncio
 import logging
 import sys
 import threading
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -49,6 +49,7 @@ CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
 
 DisconnectCallback = Callable[[], None]
+ScanningStoppedCallback = Callable[[], None]
 
 
 class CentralManagerDelegate(NSObject):
@@ -93,6 +94,8 @@ class CentralManagerDelegate(NSObject):
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
 
+        self._scanning_stopped_callback: Optional[ScanningStoppedCallback]
+
         # isScanning property was added in 10.13
         if objc.macos_available(10, 13):
             self.central_manager.addObserver_forKeyPath_options_context_(
@@ -110,7 +113,11 @@ class CentralManagerDelegate(NSObject):
     # User defined functions
 
     @objc.python_method
-    async def start_scan(self, service_uuids) -> None:
+    async def start_scan(
+        self,
+        service_uuids: Iterable[str],
+        scanning_stopped_callback: ScanningStoppedCallback,
+    ) -> None:
         service_uuids = (
             NSArray.alloc().initWithArray_(
                 list(map(CBUUID.UUIDWithString_, service_uuids))
@@ -133,8 +140,11 @@ class CentralManagerDelegate(NSObject):
         else:
             await asyncio.sleep(0.1)
 
+        self._scanning_stopped_callback = scanning_stopped_callback
+
     @objc.python_method
     async def stop_scan(self) -> None:
+        self._scanning_stopped_callback = None
         self.central_manager.stopScan()
 
         # The `isScanning` property was added in macOS 10.13, so before that
@@ -199,11 +209,13 @@ class CentralManagerDelegate(NSObject):
         else:
             if self._did_stop_scanning_event:
                 self._did_stop_scanning_event.set()
+            if self._scanning_stopped_callback:
+                self._scanning_stopped_callback()
 
     def observeValueForKeyPath_ofObject_change_context_(
         self, keyPath: NSString, object: Any, change: NSDictionary, context: int
     ) -> None:
-        logger.debug("'%s' changed", keyPath)
+        logger.debug("'%s' changed: %r", keyPath, change)
 
         if keyPath != "isScanning":
             return
