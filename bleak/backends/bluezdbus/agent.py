@@ -39,15 +39,19 @@ class Agent(ServiceInterface):
         self._callbacks = callbacks
         self._tasks: Set[asyncio.Task] = set()
 
-    async def _create_ble_device(self, device_path: str) -> BLEDevice:
+    @staticmethod
+    async def _create_ble_device(device_path: str) -> BLEDevice:
         manager = await get_global_bluez_manager()
         props = manager.get_device_props(device_path)
         return BLEDevice(
-            props["Address"], props["Alias"], {"path": device_path, "props": props}
+            props["Address"],
+            props["Alias"],
+            {"path": device_path, "props": props},
+            props.get("RSSI", -127),
         )
 
     @method()
-    def Release(self):
+    def Release(self):  # noqa: N802
         logger.debug("Release")
 
     # REVISIT: mypy is broke, so we have to add redundant @no_type_check
@@ -55,19 +59,19 @@ class Agent(ServiceInterface):
 
     @method()
     @no_type_check
-    async def RequestPinCode(self, device: "o") -> "s":  # noqa: F821
+    async def RequestPinCode(self, device: "o") -> "s":  # noqa: F821 N802
         logger.debug("RequestPinCode %s", device)
         raise NotImplementedError
 
     @method()
     @no_type_check
-    async def DisplayPinCode(self, device: "o", pincode: "s"):  # noqa: F821
+    async def DisplayPinCode(self, device: "o", pincode: "s"):  # noqa: F821 N802
         logger.debug("DisplayPinCode %s %s", device, pincode)
         raise NotImplementedError
 
     @method()
     @no_type_check
-    async def RequestPasskey(self, device: "o") -> "u":  # noqa: F821
+    async def RequestPasskey(self, device: "o") -> "u":  # noqa: F821 N802
         logger.debug("RequestPasskey %s", device)
 
         ble_device = await self._create_ble_device(device)
@@ -89,7 +93,7 @@ class Agent(ServiceInterface):
 
     @method()
     @no_type_check
-    async def DisplayPasskey(
+    async def DisplayPasskey(  # noqa: N802
         self, device: "o", passkey: "u", entered: "q"  # noqa: F821
     ):
         passkey = f"{passkey:06}"
@@ -98,26 +102,26 @@ class Agent(ServiceInterface):
 
     @method()
     @no_type_check
-    async def RequestConfirmation(self, device: "o", passkey: "u"):  # noqa: F821
+    async def RequestConfirmation(self, device: "o", passkey: "u"):  # noqa: F821 N802
         passkey = f"{passkey:06}"
         logger.debug("RequestConfirmation %s %s", device, passkey)
         raise NotImplementedError
 
     @method()
     @no_type_check
-    async def RequestAuthorization(self, device: "o"):  # noqa: F821
+    async def RequestAuthorization(self, device: "o"):  # noqa: F821 N802
         logger.debug("RequestAuthorization %s", device)
         raise NotImplementedError
 
     @method()
     @no_type_check
-    async def AuthorizeService(self, device: "o", uuid: "s"):  # noqa: F821
+    async def AuthorizeService(self, device: "o", uuid: "s"):  # noqa: F821 N802
         logger.debug("AuthorizeService %s", device, uuid)
         raise NotImplementedError
 
     @method()
     @no_type_check
-    def Cancel(self):  # noqa: F821
+    def Cancel(self):  # noqa: F821 N802
         logger.debug("Cancel")
         for t in self._tasks:
             t.cancel()
@@ -129,6 +133,7 @@ async def bluez_agent(bus: MessageBus, callbacks: BaseBleakAgentCallbacks):
 
     # REVISIT: implement passing capability if needed
     # "DisplayOnly", "DisplayYesNo", "KeyboardOnly", "NoInputNoOutput", "KeyboardDisplay"
+    # Note: If an empty string is used, BlueZ will fall back to "KeyboardDisplay".
     capability = ""
 
     # this should be a unique path to allow multiple python interpreters

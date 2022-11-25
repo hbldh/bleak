@@ -45,6 +45,11 @@ class BleakClientP4Android(BaseBleakClient):
         self.__gatt = None
         self.__mtu = 23
 
+        if kwargs.get("pairing_callbacks"):
+            warnings.warn(
+                "pairing_callbacks are ignored on Android", RuntimeWarning, stacklevel=2
+            )
+
     def __del__(self):
         if self.__gatt is not None:
             self.__gatt.close()

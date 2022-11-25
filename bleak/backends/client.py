@@ -35,6 +35,10 @@ class BaseBleakClient(abc.ABC):
         disconnected_callback (callable): Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
+        pairing_callbacks (BaseBleakAgentCallbacks):
+            Optional callbacks otherwise provided as ``callbacks`` parameter to the
+            :meth:`pair` method. If provided here, device will be implicitly paired
+            during connection establishment.
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):

@@ -349,6 +349,13 @@ class BleakClient:
             Callback that will be scheduled in the event loop when the client is
             disconnected. The callable must take one argument, which will be
             this client object.
+        pairing_callbacks:
+            Optional callbacks used in the pairing process (e.g. displaying,
+            confirming, requesting pin). If provided here instead of to the
+            :meth:`pair` method as ``callbacks`` parameter, device will be
+            implicitly paired during connection establishment. This is useful
+            for devices sending Slave Security Request immediately after
+            connection, requiring pairing before GATT service discovery.
         timeout:
             Timeout in seconds passed to the implicit ``discover`` call when
             ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 10.0.
@@ -385,6 +392,7 @@ class BleakClient:
         self,
         address_or_ble_device: Union[BLEDevice, str],
         disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
+        pairing_callbacks: Optional[BaseBleakAgentCallbacks] = None,
         *,
         timeout: float = 10.0,
         winrt: WinRTClientArgs = {},
@@ -398,6 +406,7 @@ class BleakClient:
         self._backend = PlatformBleakClient(
             address_or_ble_device,
             disconnected_callback=disconnected_callback,
+            pairing_callbacks=pairing_callbacks,
             timeout=timeout,
             winrt=winrt,
             **kwargs,
@@ -507,9 +516,10 @@ class BleakClient:
 
         Args:
             callbacks:
-                Optional callbacks for confirming or requesting pin. This is
-                only supported on Linux and Windows. If omitted, the OS will
-                handle the pairing request.
+                Optional callbacks used in the pairing process (e.g. displaying,
+                confirming, requesting pin).
+                This is only supported on Linux and Windows.
+                If omitted, the OS will handle the pairing request.
 
         Returns:
             Always returns ``True`` for backwards compatibility.

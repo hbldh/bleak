@@ -4,7 +4,11 @@ import sys
 
 from bleak import BleakScanner, BleakClient, BaseBleakAgentCallbacks
 from bleak.backends.device import BLEDevice
-from bleak.exc import BleakPairingCancelledError, BleakPairingFailedError
+from bleak.exc import (
+    BleakPairingCancelledError,
+    BleakPairingFailedError,
+    BleakDeviceNotFoundError,
+)
 
 
 class AgentCallbacks(BaseBleakAgentCallbacks):
@@ -55,10 +59,14 @@ class AgentCallbacks(BaseBleakAgentCallbacks):
         return response
 
 
-async def main(addr: str, unpair: bool) -> None:
+async def main(addr: str, unpair: bool, auto: bool) -> None:
     if unpair:
         print("unpairing...")
-        await BleakClient(addr).unpair()
+        try:
+            await BleakClient(addr).unpair()
+            print("unpaired")
+        except BleakDeviceNotFoundError:
+            print("device was not paired")
 
     print("scanning...")
 
@@ -68,13 +76,26 @@ async def main(addr: str, unpair: bool) -> None:
         print("device was not found")
         return
 
-    async with BleakClient(device) as client, AgentCallbacks() as callbacks:
-        try:
-            await client.pair(callbacks)
-        except BleakPairingCancelledError:
-            print("paring was canceled")
-        except BleakPairingFailedError:
-            print("pairing failed (bad pin?)")
+    if auto:
+        print("connecting and pairing...")
+
+        async with AgentCallbacks() as callbacks, BleakClient(
+            device, pairing_callbacks=callbacks
+        ) as client:
+            print(f"connection and pairing to {client.address} successful")
+
+    else:
+        print("connecting...")
+
+        async with BleakClient(device) as client, AgentCallbacks() as callbacks:
+            try:
+                print("pairing...")
+                await client.pair(callbacks)
+                print("pairing successful")
+            except BleakPairingCancelledError:
+                print("paring was canceled")
+            except BleakPairingFailedError:
+                print("pairing failed (bad pin?)")
 
 
 if __name__ == "__main__":
@@ -83,6 +104,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--unpair", action="store_true", help="unpair first before pairing"
     )
+    parser.add_argument(
+        "--auto", action="store_true", help="automatically pair during connect"
+    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.address, args.unpair))
+    asyncio.run(main(args.address, args.unpair, args.auto))

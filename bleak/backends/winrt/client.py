@@ -204,6 +204,13 @@ class BleakClientWinRT(BaseBleakClient):
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
         self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
+        if kwargs.get("pairing_callbacks"):
+            warnings.warn(
+                "pairing_callbacks not yet implemented for Windows",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
     def __str__(self):
         return f"{type(self).__name__} ({self.address})"
 
