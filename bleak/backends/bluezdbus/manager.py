@@ -27,7 +27,7 @@ from weakref import WeakKeyDictionary
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
-from ...exc import BleakError
+from ...exc import BleakDBusError, BleakError
 from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
@@ -385,20 +385,25 @@ class BlueZManager:
                                 member="StopDiscovery",
                             )
                         )
-                        assert_reply(reply)
 
-                        # remove the filters
-                        reply = await self._bus.call(
-                            Message(
-                                destination=defs.BLUEZ_SERVICE,
-                                path=adapter_path,
-                                interface=defs.ADAPTER_INTERFACE,
-                                member="SetDiscoveryFilter",
-                                signature="a{sv}",
-                                body=[{}],
+                        try:
+                            assert_reply(reply)
+                        except BleakDBusError as ex:
+                            if ex.dbus_error != "org.bluez.Error.NotReady":
+                                raise
+                        else:
+                            # remove the filters
+                            reply = await self._bus.call(
+                                Message(
+                                    destination=defs.BLUEZ_SERVICE,
+                                    path=adapter_path,
+                                    interface=defs.ADAPTER_INTERFACE,
+                                    member="SetDiscoveryFilter",
+                                    signature="a{sv}",
+                                    body=[{}],
+                                )
                             )
-                        )
-                        assert_reply(reply)
+                            assert_reply(reply)
 
                 return stop
             except BaseException:
