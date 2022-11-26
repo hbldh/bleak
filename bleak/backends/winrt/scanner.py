@@ -5,10 +5,11 @@ from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
 from bleak_winrt.windows.devices.bluetooth.advertisement import (
-    BluetoothLEScanningMode,
-    BluetoothLEAdvertisementWatcher,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEAdvertisementWatcherStatus,
+    BluetoothLEScanningMode,
 )
 
 if sys.version_info[:2] < (3, 8):
@@ -16,9 +17,8 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
-from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
 from ...assigned_numbers import AdvertisementDataType
-
+from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +257,14 @@ class BleakScannerWinRT(BaseBleakScanner):
 
     async def stop(self):
         self.watcher.stop()
-        await self._stopped_event.wait()
+
+        if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.STOPPING:
+            await self._stopped_event.wait()
+        else:
+            logger.debug(
+                "skipping waiting for stop because status is %s",
+                self.watcher.status.name,
+            )
 
         try:
             self.watcher.remove_received(self._received_token)
