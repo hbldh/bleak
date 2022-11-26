@@ -91,6 +91,14 @@ class DeviceRemovedCallbackAndState(NamedTuple):
     """
 
 
+DiscoveryStoppedCallback = Callable[[], None]
+
+
+class DiscoveryStoppedCallbackAndState(NamedTuple):
+    callback: DiscoveryStoppedCallback
+    adapter_path: str
+
+
 DeviceConnectedChangedCallback = Callable[[bool], None]
 """
 A callback that is called when a device's "Connected" property changes.
@@ -167,6 +175,7 @@ class BlueZManager:
 
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
+        self._discovery_stopped_callbacks: List[DiscoveryStoppedCallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
         self._condition_callbacks: Set[Callable] = set()
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
@@ -312,6 +321,7 @@ class BlueZManager:
         filters: Dict[str, Variant],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
+        discovery_stopped_callback: DiscoveryStoppedCallback,
     ) -> Callable[[], Coroutine]:
         """
         Configures the advertisement data filters and starts scanning.
@@ -323,6 +333,9 @@ class BlueZManager:
                 A callable that will be called when new advertisement data is received.
             device_removed_callback:
                 A callable that will be called when a device is removed from BlueZ.
+            discovery_stopped_callback:
+                A callable that will be called if discovery is stopped early
+                (before stop was requested by calling the return value).
 
         Returns:
             An async function that is used to stop scanning and remove the filters.
@@ -341,6 +354,13 @@ class BlueZManager:
                 device_removed_callback, adapter_path
             )
             self._device_removed_callbacks.append(device_removed_callback_and_state)
+
+            discovery_stopped_callback_and_state = DiscoveryStoppedCallbackAndState(
+                discovery_stopped_callback, adapter_path
+            )
+            self._discovery_stopped_callbacks.append(
+                discovery_stopped_callback_and_state
+            )
 
             try:
                 # Apply the filters
@@ -374,6 +394,9 @@ class BlueZManager:
                     self._advertisement_callbacks.remove(callback_and_state)
                     self._device_removed_callbacks.remove(
                         device_removed_callback_and_state
+                    )
+                    self._discovery_stopped_callbacks.remove(
+                        discovery_stopped_callback_and_state
                     )
 
                     async with self._bus_lock:
@@ -413,6 +436,7 @@ class BlueZManager:
         filters: List[OrPatternLike],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
+        discovery_stopped_callback: DiscoveryStoppedCallback,
     ) -> Callable[[], Coroutine]:
         """
         Configures the advertisement data filters and starts scanning.
@@ -444,7 +468,7 @@ class BlueZManager:
             self._device_removed_callbacks.append(device_removed_callback_and_state)
 
             try:
-                monitor = AdvertisementMonitor(filters)
+                monitor = AdvertisementMonitor(filters, discovery_stopped_callback)
 
                 # this should be a unique path to allow multiple python interpreters
                 # running bleak and multiple scanners within a single interpreter
@@ -828,7 +852,14 @@ class BlueZManager:
                 # then call any callbacks so they will be called with the
                 # updated state
 
-                if interface == defs.DEVICE_INTERFACE:
+                if interface == defs.ADAPTER_INTERFACE:
+                    if "Discovering" in changed and not self_interface["Discovering"]:
+                        for (
+                            discovery_stopped_callback,
+                            _,
+                        ) in self._discovery_stopped_callbacks:
+                            discovery_stopped_callback()
+                elif interface == defs.DEVICE_INTERFACE:
                     # handle advertisement watchers
 
                     self._run_advertisement_callbacks(

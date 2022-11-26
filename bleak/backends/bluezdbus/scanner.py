@@ -186,6 +186,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self._or_patterns,
                 self._handle_advertising_data,
                 self._handle_device_removed,
+                self.handle_early_stop,
             )
         else:
             self._stop = await manager.active_scan(
@@ -193,6 +194,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self._filters,
                 self._handle_advertising_data,
                 self._handle_device_removed,
+                self.handle_early_stop,
             )
 
     async def stop(self):

@@ -212,6 +212,9 @@ class BaseBleakScanner(abc.ABC):
 
         return device
 
+    def handle_early_stop(self) -> None:
+        ...
+
     @abc.abstractmethod
     async def start(self):
         """Start scanning for devices"""

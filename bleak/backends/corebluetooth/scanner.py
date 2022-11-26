@@ -152,7 +152,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             self._callback(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
-        await self._manager.start_scan(self._service_uuids)
+        await self._manager.start_scan(self._service_uuids, self.handle_early_stop)
 
     async def stop(self):
         await self._manager.stop_scan()

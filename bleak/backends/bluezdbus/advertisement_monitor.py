@@ -7,7 +7,7 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/advertisement-monito
 """
 
 import logging
-from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
+from typing import Callable, Iterable, NamedTuple, Tuple, Union, no_type_check
 
 from dbus_fast.service import ServiceInterface, dbus_property, method, PropertyAccess
 
@@ -34,6 +34,9 @@ class OrPattern(NamedTuple):
 OrPatternLike = Union[OrPattern, Tuple[int, AdvertisementDataType, bytes]]
 
 
+ReleasedCallback = Callable[[], None]
+
+
 class AdvertisementMonitor(ServiceInterface):
     """
     Implementation of the org.bluez.AdvertisementMonitor1 D-Bus interface.
@@ -49,21 +52,24 @@ class AdvertisementMonitor(ServiceInterface):
     """
 
     def __init__(
-        self,
-        or_patterns: Iterable[OrPatternLike],
+        self, or_patterns: Iterable[OrPatternLike], released_callback: ReleasedCallback
     ):
         """
         Args:
             or_patterns:
                 List of or patterns that will be returned by the ``Patterns`` property.
+            released_callback:
+                A callback that is called when the D-bus "Release" method is called.
         """
         super().__init__(defs.ADVERTISEMENT_MONITOR_INTERFACE)
         # dbus_fast marshaling requires list instead of tuple
         self._or_patterns = [list(p) for p in or_patterns]
+        self._released_callback = released_callback
 
     @method()
     def Release(self):
         logger.debug("Release")
+        self._released_callback()
 
     @method()
     def Activate(self):

@@ -1,14 +1,17 @@
 import asyncio
+import functools
 import logging
 import sys
 from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
 from bleak_winrt.windows.devices.bluetooth.advertisement import (
-    BluetoothLEScanningMode,
-    BluetoothLEAdvertisementWatcher,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEAdvertisementWatcherStatus,
+    BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    BluetoothLEScanningMode,
 )
 
 if sys.version_info[:2] < (3, 8):
@@ -222,12 +225,29 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self._callback(device, advertisement_data)
 
-    def _stopped_handler(self, sender, e):
+    def _handle_stopped_threadsafe(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    ) -> None:
+        logger.debug("watcher status: %s, error: %s", sender.status.name, e.error.name)
+
+        loop.call_soon_threadsafe(
+            self._handle_stopped,
+            sender.status == BluetoothLEAdvertisementWatcherStatus.ABORTED,
+        )
+
+    def _handle_stopped(self, from_error: bool) -> None:
         logger.debug(
             "{0} devices found. Watcher status: {1}.".format(
-                len(self.seen_devices), self.watcher.status
+                len(self.seen_devices), self.watcher.status.name
             )
         )
+
+        if from_error:
+            self.handle_early_stop()
+
         self._stopped_event.set()
 
     async def start(self):
@@ -245,7 +265,7 @@ class BleakScannerWinRT(BaseBleakScanner):
             lambda s, e: event_loop.call_soon_threadsafe(self._received_handler, s, e)
         )
         self._stopped_token = self.watcher.add_stopped(
-            lambda s, e: event_loop.call_soon_threadsafe(self._stopped_handler, s, e)
+            functools.partial(self._handle_stopped_threadsafe, event_loop)
         )
 
         if self._signal_strength_filter is not None:
