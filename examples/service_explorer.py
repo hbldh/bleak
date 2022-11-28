@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    log_level = "DEBUG" if args.debug else "INFO"
+    log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
         level=log_level,
         format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
