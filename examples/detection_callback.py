@@ -36,11 +36,6 @@ async def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
-    )
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -56,6 +51,18 @@ if __name__ == "__main__":
         help="UUIDs of one or more services to filter for",
     )
 
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        metavar="<level>",
+        help="sets the log level. Example: --log-level DEBUG"
+    )
+
     args = parser.parse_args()
+
+    logging.basicConfig(
+        level=args.log_level.upper(),
+        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
+    )
 
     asyncio.run(main(args))

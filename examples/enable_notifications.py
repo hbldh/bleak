@@ -53,11 +53,6 @@ async def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
-    )
-
     parser = argparse.ArgumentParser()
 
     device_group = parser.add_mutually_exclusive_group(required=True)
@@ -85,6 +80,18 @@ if __name__ == "__main__":
         help="UUID of a characteristic that supports notifications",
     )
 
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        metavar="<level>",
+        help="sets the log level. Example: --log-level DEBUG"
+    )
+
     args = parser.parse_args()
+
+    logging.basicConfig(
+        level=args.log_level.upper(),
+        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
+    )
 
     asyncio.run(main(args))
