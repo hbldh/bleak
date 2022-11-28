@@ -14,6 +14,7 @@ Added
 -----
 * Added optional hack to use Bluetooth address instead of UUID on macOS.
 * Added ``BleakScanner.find_device_by_name()`` class method.
+* Added optional command line argument to use debug log level to all applicable examples.
 
 Changed
 -------
@@ -27,6 +28,7 @@ Changed
 Fixed
 -----
 * Fixed ``AttributeError`` in ``_ensure_success`` in WinRT backend.
+* Fixed ``BleakScanner.stop()`` can raise ``BleakDBusError`` with ``org.bluez.Error.NotReady`` in BlueZ backend.
 * Fixed ``BleakScanner.stop()`` hanging in WinRT backend when Bluetooth is disabled.
 
 Fixed
