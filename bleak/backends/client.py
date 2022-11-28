@@ -10,7 +10,7 @@ import asyncio
 import os
 import platform
 import uuid
-from typing import Callable, Optional, Type, Union
+from typing import Callable, List, Optional, Type, Union
 from warnings import warn
 
 from ..exc import BleakError
@@ -34,6 +34,7 @@ class BaseBleakClient(abc.ABC):
         disconnected_callback (callable): Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
+        events_to_set_on_disconnection (List): list of events to set on disconnection.
     """
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
@@ -48,6 +49,9 @@ class BaseBleakClient(abc.ABC):
 
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
+        self._events_to_set_on_disconnection: Optional[
+            List[asyncio.Event]
+        ] = kwargs.get("events_to_set_on_disconnection", [])
 
     @property
     @abc.abstractmethod
@@ -80,6 +84,20 @@ class BaseBleakClient(abc.ABC):
 
         """
         self._disconnected_callback = callback
+
+    def set_events_to_set_on_disconnection(self, events: Optional[List[asyncio.Event]]):
+        """List of events to set on disconnection.
+        The events in this list will be set on disconnection.
+
+        It is an alternative to passing a disconnected_callback that only sets one or
+        more events.
+
+        Pass ``None`` to remove any existing list.
+
+        Args:
+            events:: list of events.
+        """
+        self._events_to_set_on_disconnection = [] if events is None else events
 
     @abc.abstractmethod
     async def connect(self, **kwargs) -> bool:

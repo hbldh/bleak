@@ -107,6 +107,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     # the future was already done
                     pass
 
+            # sets all events in self._events_to_set_on_disconnection, without failing if
+            # the list or some of its elements are None
+            for event in filter(None, self._events_to_set_on_disconnection or []):
+                event.set()
+
             if self._disconnected_callback:
                 self._disconnected_callback(self)
 
