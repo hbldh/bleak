@@ -29,6 +29,7 @@ Fixed
 -----
 * Fixed ``AttributeError`` in ``_ensure_success`` in WinRT backend.
 * Fixed ``BleakScanner.stop()`` can raise ``BleakDBusError`` with ``org.bluez.Error.NotReady`` in BlueZ backend.
+* Fixed ``BleakScanner.stop()`` hanging in WinRT backend when Bluetooth is disabled.
 
 Fixed
 -----
