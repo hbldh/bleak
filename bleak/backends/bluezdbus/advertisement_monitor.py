@@ -7,7 +7,7 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/advertisement-monito
 """
 
 import logging
-from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
+from typing import Callable, Iterable, NamedTuple, Tuple, Union, no_type_check
 
 from dbus_fast.service import ServiceInterface, dbus_property, method, PropertyAccess
 
@@ -34,6 +34,9 @@ class OrPattern(NamedTuple):
 OrPatternLike = Union[OrPattern, Tuple[int, AdvertisementDataType, bytes]]
 
 
+StatusCallback = Callable[[bool], None]
+
+
 class AdvertisementMonitor(ServiceInterface):
     """
     Implementation of the org.bluez.AdvertisementMonitor1 D-Bus interface.
@@ -49,25 +52,30 @@ class AdvertisementMonitor(ServiceInterface):
     """
 
     def __init__(
-        self,
-        or_patterns: Iterable[OrPatternLike],
+        self, or_patterns: Iterable[OrPatternLike], status_callback: StatusCallback
     ):
         """
         Args:
             or_patterns:
                 List of or patterns that will be returned by the ``Patterns`` property.
+            status_callback:
+                A callback that is called with argument ``True`` when the D-bus "Activate"
+                method is called, or with ``False`` when "Release" is called.
         """
         super().__init__(defs.ADVERTISEMENT_MONITOR_INTERFACE)
         # dbus_fast marshaling requires list instead of tuple
         self._or_patterns = [list(p) for p in or_patterns]
+        self._status_callback = status_callback
 
     @method()
     def Release(self):
         logger.debug("Release")
+        self._status_callback(False)
 
     @method()
     def Activate(self):
         logger.debug("Activate")
+        self._status_callback(True)
 
     # REVISIT: mypy is broke, so we have to add redundant @no_type_check
     # https://github.com/python/mypy/issues/6583

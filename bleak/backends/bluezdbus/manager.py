@@ -9,6 +9,7 @@ used internally by Bleak.
 import asyncio
 import logging
 import os
+import sys
 from typing import (
     Any,
     Callable,
@@ -23,6 +24,11 @@ from typing import (
     cast,
 )
 from weakref import WeakKeyDictionary
+
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
 
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
@@ -448,12 +454,20 @@ class BlueZManager:
             )
             self._device_removed_callbacks.append(device_removed_callback_and_state)
 
+            # If advertisement monitor is released before the scanning is stopped, it means that the
+            # kernel does not support passive scanning and error was returned when trying to execute
+            # MGMT command "Add Adv Patterns Monitor" (see #1136). Otherwise, monitor is activated
+            # and starts to receive advertisement packets.
+            monitor_activated = asyncio.Queue()
+
             try:
-                monitor = AdvertisementMonitor(filters)
+                monitor = AdvertisementMonitor(filters, monitor_activated.put_nowait)
 
                 # this should be a unique path to allow multiple python interpreters
                 # running bleak and multiple scanners within a single interpreter
-                monitor_path = f"/org/bleak/{os.getpid()}/{id(monitor)}"
+                monitor_path = (
+                    f"/org/bleak/{os.getpid()}/{type(monitor).__name__}_{id(monitor)}"
+                )
 
                 reply = await self._bus.call(
                     Message(
@@ -505,13 +519,31 @@ class BlueZManager:
                         )
                         assert_reply(reply)
 
-                return stop
+                try:
+                    # Advertising Monitor will be "immediately" activated or released
+                    async with async_timeout(1):
+                        if await monitor_activated.get():
+                            # Advertising Monitor has been activated
+                            return stop
+
+                except asyncio.TimeoutError:
+                    pass
+
+                # Do not call await stop() here as the bus is already locked
 
             except BaseException:
                 # if starting scanning failed, don't leak the callbacks
                 self._advertisement_callbacks.remove(callback_and_state)
                 self._device_removed_callbacks.remove(device_removed_callback_and_state)
                 raise
+
+        # Reaching here means that the Advertising Monitor has not been successfully activated
+        await stop()
+
+        raise BleakNoPassiveScanError(
+            "Advertising Monitor (required for passive scanning) is not supported by this kernel"
+            " (Linux kernel >= 5.10 is required)"
+        )
 
     def add_device_watcher(
         self,
