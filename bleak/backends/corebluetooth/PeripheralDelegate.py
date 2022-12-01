@@ -28,7 +28,7 @@ from CoreBluetooth import (
 )
 
 from ...exc import BleakError
-from ..client import NotifyCallback
+from ..client import NotifyCallback, ServicesModifiedCallback
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -67,6 +67,8 @@ class PeripheralDelegate(NSObject):
 
         self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
         self._characteristic_notify_callbacks: Dict[int, NotifyCallback] = {}
+
+        self._services_modified_callback: Optional[ServicesModifiedCallback] = None
 
         self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
 
@@ -570,12 +572,25 @@ class PeripheralDelegate(NSObject):
         )
 
     @objc.python_method
+    def set_services_modified_callback(
+        self,
+        callback: ServicesModifiedCallback,
+    ) -> None:
+        self._services_modified_callback = callback
+
+    @objc.python_method
     def did_modify_services(
         self, peripheral: CBPeripheral, invalidated_services: NSArray
     ) -> None:
         logger.debug(
             f"{peripheral.identifier()} invalidated services: {invalidated_services}"
         )
+
+        if self._services_modified_callback is not None:
+            invalidated_services_uuids = []
+            for service in invalidated_services:
+                invalidated_services_uuids.append(service.UUID().UUIDString())
+            self._services_modified_callback(invalidated_services_uuids)
 
     def peripheral_didModifyServices_(
         self, peripheral: CBPeripheral, invalidatedServices: NSArray

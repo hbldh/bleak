@@ -10,7 +10,7 @@ import asyncio
 import os
 import platform
 import uuid
-from typing import Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, Type, Union
 from warnings import warn
 
 from ..exc import BleakError
@@ -19,6 +19,7 @@ from .characteristic import BleakGATTCharacteristic
 from .device import BLEDevice
 
 NotifyCallback = Callable[[bytearray], None]
+ServicesModifiedCallback = Callable[[Any], None]
 
 
 class BaseBleakClient(abc.ABC):
@@ -48,6 +49,7 @@ class BaseBleakClient(abc.ABC):
 
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
+        self._services_modified_callback = kwargs.get("services_modified_callback")
 
     @property
     @abc.abstractmethod
@@ -80,6 +82,30 @@ class BaseBleakClient(abc.ABC):
 
         """
         self._disconnected_callback = callback
+
+    def set_services_modified_callback(
+        self, callback: Optional[ServicesModifiedCallback], **kwargs
+    ) -> None:
+        """Set the services modified callback.
+        The callback will only be called on services modified event.
+
+        Callbacks must accept one input which is the client object itself.
+
+        Set the callback to ``None`` to remove any existing callback.
+
+        .. code-block:: python
+
+            def callback(client):
+                print("Client with address {} got services modified!".format(client.address))
+
+            client.set_services_modified_callback(callback)
+            client.connect()
+
+        Args:
+            callback: callback to be called on services modified.
+
+        """
+        self._services_modified_callback = callback
 
     @abc.abstractmethod
     async def connect(self, **kwargs) -> bool:

@@ -623,6 +623,18 @@ class BleakClient:
         """
         await self._backend.write_gatt_char(char_specifier, data, response)
 
+    def set_services_modified_callback(self, callback: Callable[[], None]) -> None:
+        """
+        Set a callback to be called when the services tree is modified.
+
+        This is only available on macOS and will raise an exception on other platforms.
+
+        Args:
+            callback: The callback to be called when the services tree is modified.
+
+        """
+        self._backend.set_services_modified_callback(callback)
+
     async def start_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],

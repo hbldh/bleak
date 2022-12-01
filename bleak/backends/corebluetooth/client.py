@@ -19,7 +19,7 @@ from Foundation import NSArray, NSData
 from ... import BleakScanner
 from ...exc import BleakError, BleakDeviceNotFoundError
 from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
+from ..client import BaseBleakClient, NotifyCallback, ServicesModifiedCallback
 from ..device import BLEDevice
 from ..service import BleakGATTServiceCollection
 from .CentralManagerDelegate import CentralManagerDelegate
@@ -379,6 +379,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             raise BleakError("Characteristic {} not found!".format(char_specifier))
 
         await self._delegate.stop_notifications(characteristic.obj)
+
+    def set_services_modified_callback(
+        self, callback: Optional[ServicesModifiedCallback], **kwargs
+    ) -> None:
+        super().set_services_modified_callback(callback, **kwargs)
+        self._delegate.set_services_modified_callback(callback, **kwargs)
 
     async def get_rssi(self) -> int:
         """To get RSSI value in dBm of the connected Peripheral"""
