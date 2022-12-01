@@ -161,6 +161,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         self._remove_device_watcher = lambda: manager.remove_device_watcher(watcher)
 
+        local_disconnect_monitor_event = asyncio.Event()
+
         try:
             try:
                 #
@@ -197,10 +199,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 self._is_connected = True
 
                 # Create a task that runs until the device is disconnected.
-                self._disconnect_monitor_event = asyncio.Event()
+                self._disconnect_monitor_event = local_disconnect_monitor_event
                 asyncio.ensure_future(
                     self._disconnect_monitor(
-                        self._bus, self._device_path, self._disconnect_monitor_event
+                        self._bus, self._device_path, local_disconnect_monitor_event
                     )
                 )
 
@@ -246,6 +248,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 raise
         except BaseException:
+            # this effectively cancels the disconnect monitor in case the event
+            # was not triggered by a D-Bus callback
+            local_disconnect_monitor_event.set()
             self._cleanup_all()
             raise
 
