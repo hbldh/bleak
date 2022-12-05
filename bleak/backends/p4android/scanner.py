@@ -11,11 +11,6 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
-
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
@@ -39,8 +34,8 @@ class BleakScannerP4Android(BaseBleakScanner):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+        passive:
+            Use passive instead of active scanning mode.
     """
 
     __scanner = None
@@ -49,12 +44,12 @@ class BleakScannerP4Android(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[List[str]],
-        scanning_mode: Literal["active", "passive"],
+        passive: bool,
         **kwargs,
     ):
         super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)
 
-        if scanning_mode == "passive":
+        if passive:
             self.__scan_mode = defs.ScanSettings.SCAN_MODE_OPPORTUNISTIC
         else:
             self.__scan_mode = defs.ScanSettings.SCAN_MODE_LOW_LATENCY

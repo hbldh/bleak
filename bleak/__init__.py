@@ -87,10 +87,10 @@ class BleakScanner:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Required on
             macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
-            Passive scanning is not supported on macOS! Will raise
-            :class:`BleakError` if set to ``"passive"`` on macOS.
+        passive:
+            Use passive instead of active scanning mode. Passive scanning
+            is not supported on macOS! Will raise :class:`BleakError` if
+            set to ``True`` on macOS.
         bluez:
             Dictionary of arguments specific to the BlueZ backend.
         cb:
@@ -114,7 +114,7 @@ class BleakScanner:
         self,
         detection_callback: Optional[AdvertisementDataCallback] = None,
         service_uuids: Optional[List[str]] = None,
-        scanning_mode: Literal["active", "passive"] = "active",
+        passive: bool = False,
         *,
         bluez: BlueZScannerArgs = {},
         cb: CBScannerArgs = {},
@@ -125,10 +125,18 @@ class BleakScanner:
             get_platform_scanner_backend_type() if backend is None else backend
         )
 
+        # Backward compatibility with scanning_mode: Literal["active", "passive"] parameter
+        scanning_mode = kwargs.get("scanning_mode")
+        if scanning_mode is not None:
+            _logger.debug(
+                f"Overwriting parameter passive={passive} with legacy scanning_mode={scanning_mode}"
+            )
+            passive = scanning_mode == "passive"
+
         self._backend = PlatformBleakScanner(
             detection_callback,
             service_uuids,
-            scanning_mode,
+            passive,
             bluez=bluez,
             cb=cb,
             **kwargs,

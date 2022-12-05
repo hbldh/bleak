@@ -3,9 +3,9 @@ import sys
 from typing import Any, Dict, List, Optional
 
 if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import TypedDict
 else:
-    from typing import Literal, TypedDict
+    from typing import TypedDict
 
 import objc
 from CoreBluetooth import CBPeripheral
@@ -52,10 +52,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Required on
             macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode. Not
-            supported on macOS! Will raise :class:`BleakError` if set to
-            ``"passive"``
+        passive:
+            Use passive instead of active scanning mode. Not supported on
+            macOS! Will raise :class:`BleakError` if enabled.
         **timeout (float):
              The scanning timeout to be used, in case of missing
             ``stopScan_`` method.
@@ -65,7 +64,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[List[str]],
-        scanning_mode: Literal["active", "passive"],
+        passive: bool = False,
         *,
         cb: CBScannerArgs,
         **kwargs
@@ -76,7 +75,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
         self._use_bdaddr = cb.get("use_bdaddr", False)
 
-        if scanning_mode == "passive":
+        if passive:
             raise BleakError("macOS does not support passive scanning")
 
         self._manager = CentralManagerDelegate.alloc().init()

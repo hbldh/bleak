@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import sys
 from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
@@ -11,11 +10,6 @@ from bleak_winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementWatcherStatus,
     BluetoothLEScanningMode,
 )
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
 
 from ...assigned_numbers import AdvertisementDataType
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
@@ -64,8 +58,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         service_uuids:
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received.
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+        passive:
+            Use passive instead of active scanning mode.
 
     """
 
@@ -73,7 +67,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[List[str]],
-        scanning_mode: Literal["active", "passive"],
+        passive: bool,
         **kwargs,
     ):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
@@ -82,8 +76,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._advertisement_pairs: Dict[int, _RawAdvData] = {}
         self._stopped_event = None
 
-        # case insensitivity is for backwards compatibility on Windows only
-        if scanning_mode.lower() == "passive":
+        if passive:
             self._scanning_mode = BluetoothLEScanningMode.PASSIVE
         else:
             self._scanning_mode = BluetoothLEScanningMode.ACTIVE

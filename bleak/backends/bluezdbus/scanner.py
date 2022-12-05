@@ -6,9 +6,9 @@ from warnings import warn
 from dbus_fast import Variant
 
 if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import TypedDict
 else:
-    from typing import Literal, TypedDict
+    from typing import TypedDict
 
 from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
@@ -109,8 +109,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             Optional list of service UUIDs to filter on. Only advertisements
             containing this advertising data will be received. Specifying this
             also enables scanning while the screen is off on Android.
-        scanning_mode:
-            Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+        passive:
+            Use passive instead of active scanning mode.
         **bluez:
             Dictionary of arguments specific to the BlueZ backend.
         **adapter (str):
@@ -121,14 +121,14 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self,
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[List[str]],
-        scanning_mode: Literal["active", "passive"],
+        passive: bool,
         *,
         bluez: BlueZScannerArgs,
         **kwargs,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
 
-        self._scanning_mode = scanning_mode
+        self._passive_mode = passive
 
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
@@ -162,12 +162,12 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         self._or_patterns = bluez.get("or_patterns")
 
-        if self._scanning_mode == "passive" and service_uuids:
+        if self._passive_mode and service_uuids:
             logger.warning(
                 "service uuid filtering is not implemented for passive scanning, use bluez or_patterns as a workaround"
             )
 
-        if self._scanning_mode == "passive" and not self._or_patterns:
+        if self._passive_mode and not self._or_patterns:
             raise BleakError("passive scanning mode requires bluez or_patterns")
 
     async def start(self):
@@ -180,7 +180,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         self.seen_devices = {}
 
-        if self._scanning_mode == "passive":
+        if self._passive_mode:
             self._stop = await manager.passive_scan(
                 adapter_path,
                 self._or_patterns,
