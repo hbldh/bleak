@@ -164,7 +164,8 @@ class BleakScannerBGAPI(BaseBleakScanner):
                 service_uuids.extend([f"{uuid.UUID(bytes=bytes(reversed(dat)))}"])
             elif type in [0x08, 0x09]:
                 # FIXME - um, shortened name? do we just call that local name?
-                local_name = dat.decode("utf8")
+                # XXX - sometimes we get trailing zero bytes here? just remove them.
+                local_name = dat.decode("utf8").rstrip('\0')
             elif type == 0x0a:
                 tx_power, = struct.unpack_from("<b", dat, 0)
             elif type == 0x16:
