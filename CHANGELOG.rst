@@ -12,6 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
+* Added return type None to some scanner methods.
 * Added optional hack to use Bluetooth address instead of UUID on macOS.
 * Added ``BleakScanner.find_device_by_name()`` class method.
 * Added optional command line argument to use debug log level to all applicable examples.

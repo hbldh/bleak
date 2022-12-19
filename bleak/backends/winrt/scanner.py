@@ -230,7 +230,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         )
         self._stopped_event.set()
 
-    async def start(self):
+    async def start(self) -> None:
         # start with fresh list of discovered devices
         self.seen_devices = {}
         self._advertisement_pairs.clear()
@@ -255,7 +255,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher.start()
 
-    async def stop(self):
+    async def stop(self) -> None:
         self.watcher.stop()
 
         if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.STOPPING:
@@ -277,7 +277,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher = None
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """Set a scanning filter for the BleakScanner.
 
         Keyword Args:

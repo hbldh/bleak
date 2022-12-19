@@ -170,7 +170,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if self._scanning_mode == "passive" and not self._or_patterns:
             raise BleakError("passive scanning mode requires bluez or_patterns")
 
-    async def start(self):
+    async def start(self) -> None:
         manager = await get_global_bluez_manager()
 
         if self._adapter:
@@ -195,14 +195,14 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self._handle_device_removed,
             )
 
-    async def stop(self):
+    async def stop(self) -> None:
         if self._stop:
             # avoid reentrancy
             stop, self._stop = self._stop, None
 
             await stop()
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """Sets OS level scanning filters for the BleakScanner.
 
         For possible values for `filters`, see the parameters to the
