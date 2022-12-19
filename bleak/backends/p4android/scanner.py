@@ -63,10 +63,10 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__javascanner = None
         self.__callback = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.__stop()
 
-    async def start(self):
+    async def start(self) -> None:
         if BleakScannerP4Android.__scanner is not None:
             raise BleakError("A BleakScanner is already scanning on this adapter.")
 
@@ -213,7 +213,7 @@ class BleakScannerP4Android(BaseBleakScanner):
 
                 return await self.start()
 
-    def __stop(self):
+    def __stop(self) -> None:
         if self.__javascanner is not None:
             logger.debug("Stopping BTLE scan")
             self.__javascanner.stopScan(self.__callback.java)
@@ -222,15 +222,15 @@ class BleakScannerP4Android(BaseBleakScanner):
         else:
             logger.debug("BTLE scan already stopped")
 
-    async def stop(self):
+    async def stop(self) -> None:
         self.__stop()
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         # If we do end up implementing this, this should accept List<ScanFilter>
         # and ScanSettings java objects to pass to startScan().
         raise NotImplementedError("not implemented in Android backend")
 
-    def _handle_scan_result(self, result):
+    def _handle_scan_result(self, result) -> None:
         native_device = result.getDevice()
         record = result.getScanRecord()
 

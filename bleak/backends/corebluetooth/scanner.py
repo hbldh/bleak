@@ -92,7 +92,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                     "macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received"
                 )
 
-    async def start(self):
+    async def start(self) -> None:
         self.seen_devices = {}
 
         def callback(p: CBPeripheral, a: Dict[str, Any], r: int) -> None:
@@ -154,11 +154,11 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager.callbacks[id(self)] = callback
         await self._manager.start_scan(self._service_uuids)
 
-    async def stop(self):
+    async def stop(self) -> None:
         await self._manager.stop_scan()
         self._manager.callbacks.pop(id(self), None)
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """Set scanning filter for the scanner.
 
         .. note::

@@ -213,17 +213,17 @@ class BaseBleakScanner(abc.ABC):
         return device
 
     @abc.abstractmethod
-    async def start(self):
+    async def start(self) -> None:
         """Start scanning for devices"""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop scanning for devices"""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """Set scanning filter for the BleakScanner.
 
         Args:
