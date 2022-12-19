@@ -27,6 +27,7 @@ Changed
 * ``BaseBleakClient.services`` is now ``None`` instead of empty service collection
   until services are discovered.
 * Include thread name in ``BLEAK_LOGGING`` output. Merged #1144.
+* Updated PyObjC dependency on macOS to v9.x.
 
 Fixed
 -----
