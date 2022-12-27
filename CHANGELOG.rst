@@ -12,6 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
+* Added ``BLEAK_DBUS_AUTH_UID`` environment var for hardcoding DBus UID.
 * Added return type None to some scanner methods.
 * Added optional hack to use Bluetooth address instead of UUID on macOS.
 * Added ``BleakScanner.find_device_by_name()`` class method.

@@ -41,6 +41,15 @@ individual Bleak objects should not be shared between event loops. Otherwise,
 RuntimeErrors similar to ``[...] got Future <Future pending> attached to a
 different loop`` will be thrown.
 
+D-Bus Authentication
+--------------------
+
+Connecting to the host DBus from within a user namespace will fail. This is
+because the remapped UID will not match the UID that the hosts sees. To work
+around this, you can hardcode a UID with the `BLEAK_DBUS_AUTH_UID` environment
+variable.
+
+
 API
 ---
 
