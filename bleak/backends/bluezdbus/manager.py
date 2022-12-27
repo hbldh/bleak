@@ -36,7 +36,7 @@ from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
-from .utils import assert_reply
+from .utils import assert_reply, get_dbus_authenticator
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +187,7 @@ class BlueZManager:
             # We need to create a new MessageBus each time as
             # dbus-next will destory the underlying file descriptors
             # when the previous one is closed in its finalizer.
-            bus = MessageBus(bus_type=BusType.SYSTEM)
+            bus = MessageBus(bus_type=BusType.SYSTEM, auth=get_dbus_authenticator())
             await bus.connect()
 
             try:
