@@ -5,18 +5,20 @@ from uuid import UUID
 from ..characteristic import BleakGATTCharacteristic, GattCharacteristicsFlags
 from ..descriptor import BleakGATTDescriptor
 
-PartialCharacteristic = collections.namedtuple("PartialCharacteristic", ["uuid", "handle", "properties"])
+PartialCharacteristic = collections.namedtuple(
+    "PartialCharacteristic", ["uuid", "handle", "properties"]
+)
 
 
 class BleakGATTCharacteristicBGAPI(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the Silicon Labs BGAPI backend"""
 
     def __init__(
-            self,
-            obj: PartialCharacteristic,
-            service_uuid: str,
-            service_handle: int,
-            max_write_without_response_size: int,
+        self,
+        obj: PartialCharacteristic,
+        service_uuid: str,
+        service_handle: int,
+        max_write_without_response_size: int,
     ):
         super(BleakGATTCharacteristicBGAPI, self).__init__(
             obj, max_write_without_response_size
@@ -28,7 +30,9 @@ class BleakGATTCharacteristicBGAPI(BleakGATTCharacteristic):
         self.__descriptors = []
         self.__notification_descriptor = None
 
-        self.__properties = [x.name for x in GattCharacteristicsFlags if x.value & obj.properties > 0]
+        self.__properties = [
+            x.name for x in GattCharacteristicsFlags if x.value & obj.properties > 0
+        ]
 
     @property
     def service_uuid(self) -> str:
@@ -61,7 +65,7 @@ class BleakGATTCharacteristicBGAPI(BleakGATTCharacteristic):
         return self.__descriptors
 
     def get_descriptor(
-            self, specifier: Union[str, UUID]
+        self, specifier: Union[str, UUID]
     ) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by UUID (str or uuid.UUID)"""
 

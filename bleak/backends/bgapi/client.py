@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import struct
@@ -27,10 +26,10 @@ def _bgapi_uuid_to_str(uuid_bytes):
     the "normal" bleak string form.
     """
     if len(uuid_bytes) == 2:
-        uu, = struct.unpack("<H", uuid_bytes)
+        (uu,) = struct.unpack("<H", uuid_bytes)
         return f"0000{uu:04x}-0000-1000-8000-00805f9b34fb"
     elif len(uuid_bytes) == 4:
-        uu, = struct.unpack("<L", uuid_bytes)
+        (uu,) = struct.unpack("<L", uuid_bytes)
         return f"{uu:08x}-0000-1000-8000-00805f9b34fb"
     elif len(uuid_bytes) == 16:
         return f"{uuid.UUID(bytes=bytes(reversed(uuid_bytes)))}"
@@ -58,9 +57,16 @@ class BleakClientBGAPI(BaseBleakClient):
         self._services_resolved = False
 
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("ncp"))
-        self._bgapi = kwargs.get("bgapi", "/home/karlp/SimplicityStudio/SDKs/gecko_sdk_2/protocol/bluetooth/api/sl_bt.xapi")
+        self._bgapi = kwargs.get(
+            "bgapi",
+            "/home/karlp/SimplicityStudio/SDKs/gecko_sdk_2/protocol/bluetooth/api/sl_bt.xapi",
+        )
         ### XXX are we in trouble here making a new serial connection? the scanner does too!
-        self._lib = bgapi.BGLib(bgapi.SerialConnector(self._adapter), self._bgapi, event_handler=self._bgapi_evt_handler)
+        self._lib = bgapi.BGLib(
+            bgapi.SerialConnector(self._adapter),
+            self._bgapi,
+            event_handler=self._bgapi_evt_handler,
+        )
         self._ev_connect = asyncio.Event()
         self._ev_gatt_op = asyncio.Event()
         self._buffer_characteristics = []
@@ -75,10 +81,20 @@ class BleakClientBGAPI(BaseBleakClient):
         # Can't / shouldn't do a reset here?!  I wish the serial layer was more robust! (are we just not cleaning up after ourselves well enough?
 
         # TODO - move this elsewhere? we like it now for tracking adapters, but bleak has no real concept of that.
-        _, self._our_address, self._our_address_type = self._lib.bt.system.get_identity_address()
-        logger.info("Our Bluetooth %s address: %s", "static random" if self._our_address_type else "public device", self._our_address)
+        (
+            _,
+            self._our_address,
+            self._our_address_type,
+        ) = self._lib.bt.system.get_identity_address()
+        logger.info(
+            "Our Bluetooth %s address: %s",
+            "static random" if self._our_address_type else "public device",
+            self._our_address,
+        )
 
-        phy = self._lib.bt.gap.PHY_PHY_1M  # XXX: some people _may_ wish to specify this. (can't use PHY_ANY!)
+        phy = (
+            self._lib.bt.gap.PHY_PHY_1M
+        )  # XXX: some people _may_ wish to specify this. (can't use PHY_ANY!)
         atype = self._lib.bt.gap.ADDRESS_TYPE_PUBLIC_ADDRESS
         if self._device:
             # FIXME - we have the address type information in the scanner, make sure it gets here?
@@ -116,15 +132,28 @@ class BleakClientBGAPI(BaseBleakClient):
         remember to use _loop.call_soon_threadsafe....
         """
         if evt == "bt_evt_system_boot":
-            logger.debug("NCP booted: %d.%d.%db%d hw:%d hash: %x", evt.major, evt.minor, evt.patch, evt.build, evt.hw, evt.hash)
+            logger.debug(
+                "NCP booted: %d.%d.%db%d hw:%d hash: %x",
+                evt.major,
+                evt.minor,
+                evt.patch,
+                evt.build,
+                evt.hw,
+                evt.hash,
+            )
             # We probably don't want to do anything else here?!
         elif evt == "bt_evt_connection_opened":
             # Right? right?!
-            assert(self._ch == evt.connection)
+            assert self._ch == evt.connection
             # do this on the right thread!
             self._loop.call_soon_threadsafe(self._ev_connect.set)
         elif evt == "bt_evt_connection_closed":
-            logger.debug("Disconnected conn: %d: reason: %d (%#x)", evt.connection, evt.reason, evt.reason)
+            logger.info(
+                "Disconnected connection: %d: reason: %d (%#x)",
+                evt.connection,
+                evt.reason,
+                evt.reason,
+            )
             self._loop.call_soon_threadsafe(self._disconnected_callback, self)
             self._ch = None
         elif (
@@ -143,18 +172,28 @@ class BleakClientBGAPI(BaseBleakClient):
         elif evt == "bt_evt_gatt_characteristic":
             uus = _bgapi_uuid_to_str(evt.uuid)
             # Unlike with services, we don't have enough information to directly create the BleakCharacteristic here.
-            self._loop.call_soon_threadsafe(self._buffer_characteristics.append, PartialCharacteristic(uuid=uus, handle=evt.characteristic, properties=evt.properties))
+            self._loop.call_soon_threadsafe(
+                self._buffer_characteristics.append,
+                PartialCharacteristic(
+                    uuid=uus, handle=evt.characteristic, properties=evt.properties
+                ),
+            )
         elif evt == "bt_evt_gatt_characteristic_value":
             # This handles reads, long reads, and notifications/indications
             if self._cbs_notify.get(evt.characteristic, False):
-                self._loop.call_soon_threadsafe(self._cbs_notify[evt.characteristic], evt.value)
+                self._loop.call_soon_threadsafe(
+                    self._cbs_notify[evt.characteristic], evt.value
+                )
             else:
                 # because long reads are autohandled, we must keep adding data until the operation completes.
                 self._loop.call_soon_threadsafe(self._buffer_data.extend, evt.value)
         elif evt == "bt_evt_gatt_descriptor":
             uus = _bgapi_uuid_to_str(evt.uuid)
             # Unlike with services, we don't have enough information to directly create the BleakDescriptor here.
-            self._loop.call_soon_threadsafe(self._buffer_descriptors.append, PartialDescriptor(uuid=uus, handle=evt.descriptor))
+            self._loop.call_soon_threadsafe(
+                self._buffer_descriptors.append,
+                PartialDescriptor(uuid=uus, handle=evt.descriptor),
+            )
         elif evt == "bt_evt_gatt_procedure_completed":
             self._loop.call_soon_threadsafe(self._ev_gatt_op.set)
         else:
@@ -198,7 +237,9 @@ class BleakClientBGAPI(BaseBleakClient):
 
             # ok, we've now got a stack of partial characteristics
             for pc in self._buffer_characteristics:
-                bc = BleakGATTCharacteristicBGAPI(pc, s.uuid, s.handle, self.mtu_size - 3)
+                bc = BleakGATTCharacteristicBGAPI(
+                    pc, s.uuid, s.handle, self.mtu_size - 3
+                )
                 self.services.add_characteristic(bc)  # Add to the root collection!
 
                 # Now also get the descriptors
@@ -213,8 +254,11 @@ class BleakClientBGAPI(BaseBleakClient):
         self._services_resolved = True
         return self.services
 
-    async def read_gatt_char(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-                             **kwargs) -> bytearray:
+    async def read_gatt_char(
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        **kwargs,
+    ) -> bytearray:
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -232,8 +276,12 @@ class BleakClientBGAPI(BaseBleakClient):
     async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         raise NotImplementedError
 
-    async def write_gatt_char(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-                              data: Union[bytes, bytearray, memoryview], response: bool = False) -> None:
+    async def write_gatt_char(
+        self,
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        data: Union[bytes, bytearray, memoryview],
+        response: bool = False,
+    ) -> None:
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -241,35 +289,61 @@ class BleakClientBGAPI(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
 
-        if (GattCharacteristicsFlags.write.name not in characteristic.properties
-                and GattCharacteristicsFlags.write_without_response.name not in characteristic.properties):
-            raise BleakError(f"Characteristic {characteristic} does not support write operations!")
-        if not response and GattCharacteristicsFlags.write_without_response.name not in characteristic.properties:
+        if (
+            GattCharacteristicsFlags.write.name not in characteristic.properties
+            and GattCharacteristicsFlags.write_without_response.name
+            not in characteristic.properties
+        ):
+            raise BleakError(
+                f"Characteristic {characteristic} does not support write operations!"
+            )
+        if (
+            not response
+            and GattCharacteristicsFlags.write_without_response.name
+            not in characteristic.properties
+        ):
             # Warning seems harsh, this is just magically "fixing" things, but it's what the bluez backend does.
-            logger.warning(f"Characteristic {characteristic} does not support write without response, auto-trying as write")
+            logger.warning(
+                f"Characteristic {characteristic} does not support write without response, auto-trying as write"
+            )
             response = True
         # bgapi needs "bytes" or a string that it will encode as latin1.
         # All of the bleak types can be cast to bytes, and that's easier than modifying pybgapi
         odata = bytes(data)
         if response:
             self._ev_gatt_op.clear()
-            self._lib.bt.gatt.write_characteristic_value(self._ch, characteristic.handle, odata)
+            self._lib.bt.gatt.write_characteristic_value(
+                self._ch, characteristic.handle, odata
+            )
             await self._ev_gatt_op.wait()
         else:
-            self._lib.bt.gatt.write_characteristic_value_without_response(self._ch, characteristic.handle, odata)
+            self._lib.bt.gatt.write_characteristic_value_without_response(
+                self._ch, characteristic.handle, odata
+            )
 
-    async def write_gatt_descriptor(self, handle: int, data: Union[bytes, bytearray, memoryview]) -> None:
+    async def write_gatt_descriptor(
+        self, handle: int, data: Union[bytes, bytearray, memoryview]
+    ) -> None:
         raise NotImplementedError
 
-    async def start_notify(self, characteristic: BleakGATTCharacteristic, callback: NotifyCallback, **kwargs) -> None:
+    async def start_notify(
+        self,
+        characteristic: BleakGATTCharacteristic,
+        callback: NotifyCallback,
+        **kwargs,
+    ) -> None:
         self._cbs_notify[characteristic.handle] = callback
         enable = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_NOTIFICATION
         force_indic = kwargs.get("force_indicate", False)
         if force_indic:
             enable = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_INDICATION
-        self._lib.bt.gatt.set_characteristic_notification(self._ch, characteristic.handle, enable)
+        self._lib.bt.gatt.set_characteristic_notification(
+            self._ch, characteristic.handle, enable
+        )
 
-    async def stop_notify(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]) -> None:
+    async def stop_notify(
+        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+    ) -> None:
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -278,4 +352,6 @@ class BleakClientBGAPI(BaseBleakClient):
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
         self._cbs_notify.pop(characteristic.handle, None)  # hard remove callback
         cancel = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_DISABLE
-        self._lib.bt.gatt.set_characteristic_notification(self._ch, characteristic.handle, cancel)
+        self._lib.bt.gatt.set_characteristic_notification(
+            self._ch, characteristic.handle, cancel
+        )

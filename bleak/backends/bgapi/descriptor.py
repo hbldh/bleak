@@ -8,10 +8,10 @@ class BleakGATTDescriptorBGAPI(BleakGATTDescriptor):
     """GATT Descriptor implementation for Silicon Labs BGAPI backend"""
 
     def __init__(
-            self,
-            obj: PartialDescriptor,
-            characteristic_uuid: str,
-            characteristic_handle: int,
+        self,
+        obj: PartialDescriptor,
+        characteristic_uuid: str,
+        characteristic_handle: int,
     ):
         super(BleakGATTDescriptorBGAPI, self).__init__(obj)
         self.__characteristic_uuid = characteristic_uuid
