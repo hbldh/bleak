@@ -42,7 +42,7 @@ class BaseBleakClient(abc.ABC):
         else:
             self.address = address_or_ble_device
 
-        self.services: Optional[BleakGATTServiceCollection] = None
+        self.services = BleakGATTServiceCollection()
 
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
