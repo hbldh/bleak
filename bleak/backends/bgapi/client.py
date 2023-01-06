@@ -8,7 +8,8 @@ import warnings
 
 import bgapi
 
-from ..characteristic import BleakGATTCharacteristic
+from ...exc import BleakError
+from ..characteristic import BleakGATTCharacteristic, GattCharacteristicsFlags
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
 from ..service import BleakGATTServiceCollection
@@ -64,6 +65,8 @@ class BleakClientBGAPI(BaseBleakClient):
         self._ev_gatt_op = asyncio.Event()
         self._buffer_characteristics = []
         self._buffer_descriptors = []
+        self._buffer_data = []
+        self._cbs_notify = {}
 
     async def connect(self, **kwargs) -> bool:
         self._lib.open()  # this starts a new thread, remember that!
@@ -141,6 +144,13 @@ class BleakClientBGAPI(BaseBleakClient):
             uus = _bgapi_uuid_to_str(evt.uuid)
             # Unlike with services, we don't have enough information to directly create the BleakCharacteristic here.
             self._loop.call_soon_threadsafe(self._buffer_characteristics.append, PartialCharacteristic(uuid=uus, handle=evt.characteristic, properties=evt.properties))
+        elif evt == "bt_evt_gatt_characteristic_value":
+            # This handles reads, long reads, and notifications/indications
+            if self._cbs_notify.get(evt.characteristic, False):
+                self._loop.call_soon_threadsafe(self._cbs_notify[evt.characteristic], evt.value)
+            else:
+                # because long reads are autohandled, we must keep adding data until the operation completes.
+                self._loop.call_soon_threadsafe(self._buffer_data.extend, evt.value)
         elif evt == "bt_evt_gatt_descriptor":
             uus = _bgapi_uuid_to_str(evt.uuid)
             # Unlike with services, we don't have enough information to directly create the BleakDescriptor here.
@@ -205,23 +215,67 @@ class BleakClientBGAPI(BaseBleakClient):
 
     async def read_gatt_char(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
                              **kwargs) -> bytearray:
-        raise NotImplementedError
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
+            characteristic = self.services.get_characteristic(char_specifier)
+        else:
+            characteristic = char_specifier
+        if not characteristic:
+            raise BleakError("Characteristic {} was not found!".format(char_specifier))
+
+        # this will automatically use long reads if needed, so need to make sure that we bunch up data
+        self._ev_gatt_op.clear()
+        self._buffer_data.clear()
+        self._lib.bt.gatt.read_characteristic_value(self._ch, characteristic.handle)
+        await self._ev_gatt_op.wait()
+        return bytearray(self._buffer_data)
 
     async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
         raise NotImplementedError
 
     async def write_gatt_char(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
                               data: Union[bytes, bytearray, memoryview], response: bool = False) -> None:
-        raise NotImplementedError
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
+            characteristic = self.services.get_characteristic(char_specifier)
+        else:
+            characteristic = char_specifier
+        if not characteristic:
+            raise BleakError("Characteristic {} was not found!".format(char_specifier))
+
+        if (GattCharacteristicsFlags.write.name not in characteristic.properties
+                and GattCharacteristicsFlags.write_without_response.name not in characteristic.properties):
+            raise BleakError(f"Characteristic {characteristic} does not support write operations!")
+        if not response and GattCharacteristicsFlags.write_without_response.name not in characteristic.properties:
+            # Warning seems harsh, this is just magically "fixing" things, but it's what the bluez backend does.
+            logger.warning(f"Characteristic {characteristic} does not support write without response, auto-trying as write")
+            response = True
+        # bgapi needs "bytes" or a string that it will encode as latin1.
+        # All of the bleak types can be cast to bytes, and that's easier than modifying pybgapi
+        odata = bytes(data)
+        if response:
+            self._ev_gatt_op.clear()
+            self._lib.bt.gatt.write_characteristic_value(self._ch, characteristic.handle, odata)
+            await self._ev_gatt_op.wait()
+        else:
+            self._lib.bt.gatt.write_characteristic_value_without_response(self._ch, characteristic.handle, odata)
 
     async def write_gatt_descriptor(self, handle: int, data: Union[bytes, bytearray, memoryview]) -> None:
         raise NotImplementedError
 
     async def start_notify(self, characteristic: BleakGATTCharacteristic, callback: NotifyCallback, **kwargs) -> None:
-        raise NotImplementedError
+        self._cbs_notify[characteristic.handle] = callback
+        enable = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_NOTIFICATION
+        force_indic = kwargs.get("force_indicate", False)
+        if force_indic:
+            enable = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_INDICATION
+        self._lib.bt.gatt.set_characteristic_notification(self._ch, characteristic.handle, enable)
 
     async def stop_notify(self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]) -> None:
-        raise NotImplementedError
-
-
-
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
+            characteristic = self.services.get_characteristic(char_specifier)
+        else:
+            characteristic = char_specifier
+        if not characteristic:
+            raise BleakError("Characteristic {} was not found!".format(char_specifier))
+        self._cbs_notify.pop(characteristic.handle, None)  # hard remove callback
+        cancel = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_DISABLE
+        self._lib.bt.gatt.set_characteristic_notification(self._ch, characteristic.handle, cancel)
