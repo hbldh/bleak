@@ -1,3 +1,5 @@
+import os
+
 import asyncio
 import logging
 import struct
@@ -56,14 +58,22 @@ class BleakClientBGAPI(BaseBleakClient):
         self._mtu_size: Optional[int] = None
         self._services_resolved = False
 
-        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("ncp"))
-        self._bgapi = kwargs.get(
-            "bgapi",
-            "/home/karlp/SimplicityStudio/SDKs/gecko_sdk_2/protocol/bluetooth/api/sl_bt.xapi",
+        # Env vars have priority
+        self._bgapi = os.environ.get("BLEAK_BGAPI_XAPI", kwargs.get("bgapi", None))
+        if not self._bgapi:
+            raise BleakError(
+                "BGAPI file for your target (sl_bt.xapi) is required, normally this is in your SDK tree"
+            )
+        self._adapter = os.environ.get(
+            "BLEAK_BGAPI_ADAPTER", kwargs.get("adapter", "/dev/ttyACM0")
         )
+        baudrate = os.environ.get(
+            "BLEAK_BGAPI_BAUDRATE", kwargs.get("bgapi_baudrate", 115200)
+        )
+
         ### XXX are we in trouble here making a new serial connection? the scanner does too!
         self._lib = bgapi.BGLib(
-            bgapi.SerialConnector(self._adapter),
+            bgapi.SerialConnector(self._adapter, baudrate=baudrate),
             self._bgapi,
             event_handler=self._bgapi_evt_handler,
         )

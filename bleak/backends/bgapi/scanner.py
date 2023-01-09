@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import struct
 import sys
 from typing import List, Optional
@@ -12,6 +13,7 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
+from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
 logger = logging.getLogger(__name__)
@@ -33,14 +35,22 @@ class BleakScannerBGAPI(BaseBleakScanner):
         super(BleakScannerBGAPI, self).__init__(detection_callback, service_uuids)
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("ncp"))
 
-        self._bgapi = kwargs.get(
-            "bgapi",
-            "/home/karlp/SimplicityStudio/SDKs/gecko_sdk_2/protocol/bluetooth/api/sl_bt.xapi",
+        # Env vars have priority
+        self._bgapi = os.environ.get("BLEAK_BGAPI_XAPI", kwargs.get("bgapi", None))
+        if not self._bgapi:
+            raise BleakError(
+                "BGAPI file for your target (sl_bt.xapi) is required, normally this is in your SDK tree"
+            )
+        self._adapter = os.environ.get(
+            "BLEAK_BGAPI_ADAPTER", kwargs.get("adapter", "/dev/ttyACM0")
+        )
+        baudrate = os.environ.get(
+            "BLEAK_BGAPI_BAUDRATE", kwargs.get("bgapi_baudrate", 115200)
         )
 
         self._loop = asyncio.get_running_loop()
         self._lib = bgapi.BGLib(
-            bgapi.SerialConnector(self._adapter),
+            bgapi.SerialConnector(self._adapter, baudrate=baudrate),
             self._bgapi,
             event_handler=self._bgapi_evt_handler,
         )
