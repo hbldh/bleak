@@ -21,16 +21,25 @@ This backend uses `pyBGAPI <https://pypi.org/project/pybgapi/>`_ to handle the p
 
 Usage
 -----
-This backend cannot be automatically selected based on system type, so must be manually
-selected, using code such as:
+This backend can either be explicitly selected via the ``backend`` kwarg when creating a BleakClient,
+or, environment variables can be used.
+
+Environment variables understood:
+ * BLEAK_BGAPI_XAPI Must be a path to the ``sl_bt.xapi`` file.
+   If this env var exists, the BGAPI backend will be automatically loaded
+ * BLEAK_BGAPI_ADAPTER The serial port to use, eg ``/dev/ttyACM1``
+ * BLEAK_BGAPI_BAUDRATE The serial baudrate to use when opening the port, if required.
+
+Alternatively, these can all be provided directly as kwargs, as show below:
 
 .. code-block:: python
 
     async with bleak.BleakClient(
             "11:aa:bb:cc:22:33",
             backend=bleak.backends.bgapi.client.BleakClientBGAPI,
-            bgapi="/home/karlp/SimplicityStudio/SDKs/gecko-4.2.0/protocol/bluetooth/api/sl_bt.xapi",
+            bgapi="/home/.../SimplicityStudio/SDKs/gecko-4.2.0/protocol/bluetooth/api/sl_bt.xapi",
             adapter="/dev/ttyACM1",
+            baudrate=921600,
             ) as client:
         logging.info("Connected to %s", client)
 
