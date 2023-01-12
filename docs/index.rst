@@ -23,7 +23,7 @@ bleak
     :alt: Black
 
 
-Bleak is an acronym for Bluetooth Low Energy platform Agnostic Klient.
+Bleak is an acronym for Bluetooth Low Energy platform Agnostic client.
 
 * Free software: MIT license
 * Documentation: https://bleak.readthedocs.io.
