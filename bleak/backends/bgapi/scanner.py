@@ -211,6 +211,11 @@ class BleakScannerBGAPI(BaseBleakScanner):
             elif type == 0x16:
                 (uuid16,) = struct.unpack("<H", dat[:2])
                 service_data[f"0000{uuid16:04x}-0000-1000-8000-00805f9b34fb"] = dat[2:]
+            elif type == 0x1b:
+                # LE device address is used by SiLabs Apploader at least.
+                bdaddr_flags = dat[0]
+                bdaddr_le = struct.unpack("<6B", dat[1:])  ## reversed order?
+                #logging.debug("ignoring LE device address as uninteresting: flags: %x, addr: %s", bdaddr_flags, bdaddr_le)
             elif type == 0x20:
                 (uuid32,) = struct.unpack("<H", dat[:4])
                 service_data[f"{uuid32:084x}-0000-1000-8000-00805f9b34fb"] = dat[4:]
