@@ -644,8 +644,9 @@ class BleakClient:
         and the second will be a ``bytearray`` containing the data received.
 
         .. code-block:: python
+            from bleak.backends.characteristic import BleakGATTCharacteristic
 
-            def callback(sender: int, data: bytearray):
+            def callback(sender: BleakGATTCharacteristic, data: bytearray):
                 print(f"{sender}: {data}")
 
             client.start_notify(char_uuid, callback)
