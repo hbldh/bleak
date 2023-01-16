@@ -44,7 +44,7 @@ from .backends.device import BLEDevice
 from .backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
-    AdvertisementDataFilter
+    AdvertisementDataFilter,
     BaseBleakScanner,
     get_platform_scanner_backend_type,
 )
