@@ -44,7 +44,7 @@ from .backends.device import BLEDevice
 from .backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
-    AdvertisementDataFilter,
+    AdvertisementDataFilter
     BaseBleakScanner,
     get_platform_scanner_backend_type,
 )
@@ -644,7 +644,6 @@ class BleakClient:
         and the second will be a ``bytearray`` containing the data received.
 
         .. code-block:: python
-            from bleak.backends.characteristic import BleakGATTCharacteristic
 
             def callback(sender: BleakGATTCharacteristic, data: bytearray):
                 print(f"{sender}: {data}")
