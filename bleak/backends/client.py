@@ -42,7 +42,7 @@ class BaseBleakClient(abc.ABC):
         else:
             self.address = address_or_ble_device
 
-        self.services: Optional[BleakGATTServiceCollection] = None
+        self.services = BleakGATTServiceCollection()
 
         self._timeout = kwargs.get("timeout", 10.0)
         self._disconnected_callback = kwargs.get("disconnected_callback")
@@ -257,6 +257,11 @@ def get_platform_client_backend_type() -> Type[BaseBleakClient]:
     """
     Gets the platform-specific :class:`BaseBleakClient` type.
     """
+    if os.environ.get("BLEAK_BGAPI_XAPI") is not None:
+        from bleak.backends.bgapi.client import BleakClientBGAPI
+
+        return BleakClientBGAPI
+
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         from bleak.backends.p4android.client import BleakClientP4Android
 

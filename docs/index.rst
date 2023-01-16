@@ -39,6 +39,7 @@ Features
 * Supports Windows 10, version 16299 (Fall Creators Update) or greater
 * Supports Linux distributions with BlueZ >= 5.43 (See :ref:`linux-backend` for more details)
 * OS X/macOS support via Core Bluetooth API, from at least OS X version 10.11
+* Supports any os via Silicon Labs NCP devices. (See :ref:`bgapi-backend` for more details)
 
 Bleak supports reading, writing and getting notifications from
 GATT servers, as well as a function for discovering BLE devices.

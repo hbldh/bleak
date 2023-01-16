@@ -237,6 +237,11 @@ def get_platform_scanner_backend_type() -> Type[BaseBleakScanner]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """
+    if os.environ.get("BLEAK_BGAPI_XAPI") is not None:
+        from bleak.backends.bgapi.scanner import BleakScannerBGAPI
+
+        return BleakScannerBGAPI
+
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         from bleak.backends.p4android.scanner import BleakScannerP4Android
 
