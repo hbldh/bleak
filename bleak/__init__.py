@@ -645,7 +645,7 @@ class BleakClient:
 
         .. code-block:: python
 
-            def callback(sender: int, data: bytearray):
+            def callback(sender: BleakGATTCharacteristic, data: bytearray):
                 print(f"{sender}: {data}")
 
             client.start_notify(char_uuid, callback)
