@@ -90,7 +90,7 @@ class BleakScanner:
         scanning_mode:
             Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
             Passive scanning is not supported on macOS! Will raise
-            :class:`BleakError` if set to ``"passive"`` on macOS.
+            :class:`BleakNoPassiveScanError` if set to ``"passive"`` on macOS.
         bluez:
             Dictionary of arguments specific to the BlueZ backend.
         cb:

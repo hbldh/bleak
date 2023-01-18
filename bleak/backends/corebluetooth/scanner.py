@@ -11,7 +11,7 @@ import objc
 from CoreBluetooth import CBPeripheral
 from Foundation import NSBundle
 
-from ...exc import BleakError
+from ...exc import BleakNoPassiveScanError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from .CentralManagerDelegate import CentralManagerDelegate
 from .utils import cb_uuid_to_str
@@ -54,8 +54,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
         scanning_mode:
             Set to ``"passive"`` to avoid the ``"active"`` scanning mode. Not
-            supported on macOS! Will raise :class:`BleakError` if set to
-            ``"passive"``
+            supported on macOS! Will raise :class:`BleakNoPassiveScanError`
+            if set to ``"passive"``
         **timeout (float):
              The scanning timeout to be used, in case of missing
             ``stopScan_`` method.
@@ -77,7 +77,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._use_bdaddr = cb.get("use_bdaddr", False)
 
         if scanning_mode == "passive":
-            raise BleakError("macOS does not support passive scanning")
+            raise BleakNoPassiveScanError("macOS does not support passive scanning")
 
         self._manager = CentralManagerDelegate.alloc().init()
         self._timeout: float = kwargs.get("timeout", 5.0)
@@ -89,7 +89,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             # See https://github.com/hbldh/bleak/issues/720
             if NSBundle.mainBundle().bundleIdentifier() == "org.python.python":
                 logger.error(
-                    "macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received"
+                    "macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg,"
+                    " otherwise no advertisement data will be received"
                 )
 
     async def start(self) -> None:
