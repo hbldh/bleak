@@ -254,9 +254,10 @@ class BleakScannerBGAPI(BaseBleakScanner):
             rssi=evt.rssi,
             platform_data=(dict(flags=flags),),  # do we need/want more?
         )
-        devname = local_name if local_name else evt.address.replace(":", "-").upper()
+        ea = evt.address.upper()
+        devname = local_name if local_name else ea.replace(":", "-").upper()
         device = self.create_or_update_device(
-            evt.address, devname, evt.address, advertisement_data
+            ea, devname, ea, advertisement_data
         )
         if self._callback is None:
             return
