@@ -4,6 +4,7 @@ See: https://pypi.org/project/pybgapi/
 """
 import asyncio
 import logging
+import typing
 
 import bgapi
 
@@ -42,20 +43,17 @@ class BgapiHandler():
             self.log.debug("booted, marking available")
             self._loop.call_soon_threadsafe(self.is_booted.set)
 
-        self.log.debug("Internal event received, sending to %d subs: %s", len(self._scan_handlers), evt)
+        #self.log.debug("Internal event received, sending to %d subs: %s", len(self._scan_handlers), evt)
         for x in self._scan_handlers:
             x(evt)
-        self.log.debug("int event finished")
+        #self.log.debug("int event finished")
 
-    def add_scan_handler(self, callable):
-        self.log.debug("adding scan handler: %s", callable)
-        self._scan_handlers.append(callable)
-
-    async def start_scan(self, phy, scanning_mode, discover_mode):
+    async def start_scan(self, phy, scanning_mode, discover_mode, handler: typing.Callable):
         """
         :return:
         """
         await self.is_booted.wait()
+        self._scan_handlers.append(handler)
         if self._is_scanning:
             # TODO - If params are the same, return, if params are different....
             # reinitialize with new ones?  we're still by definition one app,
@@ -69,6 +67,13 @@ class BgapiHandler():
         self.scan_discover_mode = discover_mode
         self.lib.bt.scanner.set_parameters(self.scan_parameters, 0x10, 0x10)
         self.lib.bt.scanner.start(self.scan_phy, self.scan_discover_mode)
+
+    async def stop_scan(self, handler: typing.Callable):
+        self._scan_handlers.remove(handler)
+        if len(self._scan_handlers) == 0:
+            self.log.info("Stopping scanners, all listeners have exited")
+            self.lib.bt.scanner.stop()
+            self._is_scanning = False
 
 
 

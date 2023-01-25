@@ -17,8 +17,6 @@ from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from . import BgapiRegistry
 
-#logger = logging.getLogger(__name__)
-
 
 class BleakScannerBGAPI(BaseBleakScanner):
     """
@@ -35,8 +33,8 @@ class BleakScannerBGAPI(BaseBleakScanner):
 
         super(BleakScannerBGAPI, self).__init__(detection_callback, service_uuids)
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("ncp"))
-        tag = kwargs.get("logtag", "UNKNOWN")
-        self.log = logging.getLogger(f"bleak.scanner.{tag}")
+        tag = kwargs.get("logtag", hex(id(self)))
+        self.log = logging.getLogger(f"bleak.backends.bgapi.scanner.{tag}")
 
         # Env vars have priority
         self._bgapi = os.environ.get("BLEAK_BGAPI_XAPI", kwargs.get("bgapi", None))
@@ -47,19 +45,9 @@ class BleakScannerBGAPI(BaseBleakScanner):
         self._adapter = os.environ.get(
             "BLEAK_BGAPI_ADAPTER", kwargs.get("adapter", "/dev/ttyACM0")
         )
-        baudrate = os.environ.get(
-            "BLEAK_BGAPI_BAUDRATE", kwargs.get("bgapi_baudrate", 115200)
-        )
 
         self._loop = asyncio.get_running_loop()
-        # FIXME - needs to move to top level, and somehow register it's own scanner evt handler on it?
-        # self._lib = bgapi.BGLib(
-        #     bgapi.SerialConnector(self._adapter, baudrate=baudrate),
-        #     self._bgapi,
-        #     event_handler=self._bgapi_evt_handler,
-        # )
         self._bgh = BgapiRegistry.get(self._adapter, self._bgapi)
-        self._bgh.add_scan_handler(self._bgapi_evt_handler)
 
         scan_modes = {
             "passive": self._bgh.lib.bt.scanner.SCAN_MODE_SCAN_MODE_PASSIVE,
@@ -103,14 +91,6 @@ class BleakScannerBGAPI(BaseBleakScanner):
                 evt.hw,
                 evt.hash,
             )
-            # scanner.set_mode() is the older deprecated function
-            # self._loop.call_soon_threadsafe(self._lib.bt.scanner.set_mode, self._phy, self._scanning_mode)
-            #self._loop.call_soon_threadsafe(
-            #    self._lib.bt.scanner.set_parameters, self._scanning_mode, 0x10, 0x10
-            #)
-            #self._loop.call_soon_threadsafe(
-            #    self._lib.bt.scanner.start, self._phy, self._discover_mode
-            #)
         elif (
             evt == "bt_evt_scanner_legacy_advertisement_report"
             or evt == "bt_evt_scanner_extended_advertisement_report"
@@ -128,33 +108,10 @@ class BleakScannerBGAPI(BaseBleakScanner):
             self.log.warning(f"unhandled bgapi evt! {evt}")
 
     async def start(self):
-        # bglib already handles open redundantly....
-        #self._bgh.lib.open()  # this starts a new thread, remember that!
-        # XXX make this more reliable? if it fails hello, try again, try reset?
-        #self._bgh.lib.bt.system.hello()
-        # Get Bluetooth address
-        #_, self.address, self.address_type = self._bgh.lib.bt.system.get_identity_address()
-        #self.log.info(
-        #    "Our Bluetooth %s address: %s",
-        #    "static random" if self.address_type else "public device",
-        #    self.address,
-        #)
-
-        # Calling reset gets us into a known state, and we're being asked to
-        # start scanning anyway.  We may want to change this if you want to
-        # turn scanning on / off while staying connected to other devices?
-        # but that will require quite a bit more state detection?
-        # seems bad when we're trying to have a singleton shared...
-        await self._bgh.start_scan(self._phy, self._scanning_mode, self._discover_mode)
-        #self._lib.bt.system.reset(0)
-        # Alternately, just explicitly try and call start ourselves...
-        # Chances of the bluetooth stack not being booted are ... 0?
+        await self._bgh.start_scan(self._phy, self._scanning_mode, self._discover_mode, self._bgapi_evt_handler)
 
     async def stop(self):
-        # FIXME - probably onyl want to stop this if we have all scanners stopped?
-        self.log.debug("Stopping scanner")
-        self._bgh.lib.bt.scanner.stop()
-        self._bgh.lib.close()
+        await self._bgh.stop_scan(self._bgapi_evt_handler)
 
     def set_scanning_filter(self, **kwargs):
         # BGAPI doesn't do any itself, but doing it bleak can still be very userfriendly.
