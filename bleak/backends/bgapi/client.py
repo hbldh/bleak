@@ -96,6 +96,8 @@ class BleakClientBGAPI(BaseBleakClient):
 
         except asyncio.exceptions.TimeoutError:
             self.log.warning("Timed out attempting connection to %s", self.address)
+            # According to the NCP API docs, we "should" request to close the connection here!
+            await self._bgh.disconnect(self._ch)
             # FIXME - what's the "correct" exception to raise here?
             raise
 
