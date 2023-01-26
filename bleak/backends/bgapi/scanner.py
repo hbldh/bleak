@@ -80,18 +80,7 @@ class BleakScannerBGAPI(BaseBleakScanner):
         and because of this, we can't call commands from here ourself, we'd have to
         recall them back onto the other thread?
         """
-        if evt == "bt_evt_system_boot":
-            # This handles starting scanning if we were reset...
-            self.log.debug(
-                "NCP booted: %d.%d.%db%d hw:%d hash: %x",
-                evt.major,
-                evt.minor,
-                evt.patch,
-                evt.build,
-                evt.hw,
-                evt.hash,
-            )
-        elif (
+        if (
             evt == "bt_evt_scanner_legacy_advertisement_report"
             or evt == "bt_evt_scanner_extended_advertisement_report"
         ):

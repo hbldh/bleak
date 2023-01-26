@@ -11,7 +11,7 @@ import bgapi
 class BgapiHandler():
     def __init__(self, adapter, xapi):
         self.log = logging.getLogger(f"BgapiHandler-{adapter}")
-        self.log.info("creating an explicit handler")
+        self.log.info("Creating an explicit handler")
         self._loop = asyncio.get_running_loop()
 
         self.lib = bgapi.BGLib(
@@ -19,7 +19,8 @@ class BgapiHandler():
             xapi,
             self.bgapi_evt_handler,
         )
-        self._scan_handlers = list()
+        self._scan_handlers: typing.List[typing.Callable] = list()
+        self._conn_handlers: typing.Dict[int, typing.Callable] = {}
         self._is_scanning = False
         self.scan_phy = None
         self.scan_parameters = None
@@ -27,11 +28,9 @@ class BgapiHandler():
         # We should make _this_ layer do a .lib.open() straight away, so it can call reset...?
         # then it can manage start_scan
         self.lib.open()
-        self.log.info("Opened.")
         self.is_booted = asyncio.Event()
         self.lib.bt.system.reset(0)
         # block other actions here til we get the booted message?
-        self.log.info("Requested a reset to synchronize")
 
     def bgapi_evt_handler(self, evt):
         """
@@ -40,12 +39,35 @@ class BgapiHandler():
         recall them back onto the other thread?
         """
         if evt == "bt_evt_system_boot":
-            self.log.debug("booted, marking available")
+            self.log.debug(
+                "NCP booted: %d.%d.%db%d hw:%d hash: %x",
+                evt.major,
+                evt.minor,
+                evt.patch,
+                evt.build,
+                evt.hw,
+                evt.hash,
+            )
+            # TODO - save boot info? any purpose?
             self._loop.call_soon_threadsafe(self.is_booted.set)
 
         #self.log.debug("Internal event received, sending to %d subs: %s", len(self._scan_handlers), evt)
-        for x in self._scan_handlers:
-            x(evt)
+        if hasattr(evt, "connection"):
+            handler = self._conn_handlers.get(evt.connection, None)
+            if handler:
+                handler(evt)
+            else:
+                if evt.reason == 4118:
+                    # disconnected at local request, and our client has gone away
+                    # without waiting.  waiting for this would be possible, but seems unnecessary
+                    pass
+                else:
+                    self.log.warning("Connection event with no matching handler!: %s", evt)
+        else:
+            # CAUTION: is this too restrictive? (only ending events without connection details)
+            for x in self._scan_handlers:
+                x(evt)
+
         #self.log.debug("int event finished")
 
     async def start_scan(self, phy, scanning_mode, discover_mode, handler: typing.Callable):
@@ -75,6 +97,18 @@ class BgapiHandler():
             self.lib.bt.scanner.stop()
             self._is_scanning = False
 
+    async def connect(self, address, address_type, phy, handler: typing.Callable):
+        await self.is_booted.wait()
+        _, ch = self.lib.bt.connection.open(address, address_type, phy)
+        self._conn_handlers[ch] = handler
+        self.log.debug("Attempting connection to addr: %s, assigned ch: %d", address, ch)
+        return ch
+
+    async def disconnect(self, ch):
+        self.log.debug("attempting to disconnect ch: %d", ch)
+        self.lib.bt.connection.close(ch)
+        # the user won't get a final event, but they're exiting anyway, they don't care
+        self._conn_handlers.pop(ch)
 
 
 class BgapiRegistry:
@@ -89,9 +123,7 @@ class BgapiRegistry:
     def get(cls, adapter, xapi):
         x = cls.registry.get(adapter)
         if x:
-            print("Returning existing instance: ", x)
             return x
-        print("Creating a new bgapi chunk!")
         x = BgapiHandler(adapter, xapi)
         cls.registry[adapter] = x
         return x

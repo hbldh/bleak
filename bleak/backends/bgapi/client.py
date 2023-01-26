@@ -7,7 +7,6 @@ from typing import Optional, Union
 import uuid
 import warnings
 
-import bgapi
 
 from ...exc import BleakError
 from ..characteristic import BleakGATTCharacteristic, GattCharacteristicsFlags
@@ -19,7 +18,7 @@ from .characteristic import BleakGATTCharacteristicBGAPI, PartialCharacteristic
 from .descriptor import BleakGATTDescriptorBGAPI, PartialDescriptor
 from .service import BleakGATTServiceBGAPI
 
-logger = logging.getLogger(__name__)
+from . import BgapiRegistry
 
 
 def _bgapi_uuid_to_str(uuid_bytes):
@@ -47,6 +46,8 @@ class BleakClientBGAPI(BaseBleakClient):
 
     def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
         super(BleakClientBGAPI, self).__init__(address_or_ble_device, **kwargs)
+        tag = kwargs.get("logtag", hex(id(self)))
+        self.log = logging.getLogger(f"bleak.backends.bgapi.client.{tag}")
 
         self._device = None
         if isinstance(address_or_ble_device, BLEDevice):
@@ -67,57 +68,34 @@ class BleakClientBGAPI(BaseBleakClient):
         self._adapter = os.environ.get(
             "BLEAK_BGAPI_ADAPTER", kwargs.get("adapter", "/dev/ttyACM0")
         )
-        baudrate = os.environ.get(
-            "BLEAK_BGAPI_BAUDRATE", kwargs.get("bgapi_baudrate", 115200)
-        )
 
-        ### XXX are we in trouble here making a new serial connection? the scanner does too!
-        self._lib = bgapi.BGLib(
-            bgapi.SerialConnector(self._adapter, baudrate=baudrate),
-            self._bgapi,
-            event_handler=self._bgapi_evt_handler,
-        )
+        self._bgh = BgapiRegistry.get(self._adapter, self._bgapi)
+
         self._ev_connect = asyncio.Event()
         self._ev_gatt_op = asyncio.Event()
+        self._ev_disconnected = asyncio.Event()
         self._buffer_characteristics = []
         self._buffer_descriptors = []
         self._buffer_data = []
         self._cbs_notify = {}
 
     async def connect(self, **kwargs) -> bool:
-        self._lib.open()  # this starts a new thread, remember that!
-        # XXX make this more reliable? if it fails hello, try again, try reset?
-        self._lib.bt.system.hello()
-        # Can't / shouldn't do a reset here?!  I wish the serial layer was more robust! (are we just not cleaning up after ourselves well enough?
-
-        # TODO - move this elsewhere? we like it now for tracking adapters, but bleak has no real concept of that.
-        (
-            _,
-            self._our_address,
-            self._our_address_type,
-        ) = self._lib.bt.system.get_identity_address()
-        logger.info(
-            "Our Bluetooth %s address: %s",
-            "static random" if self._our_address_type else "public device",
-            self._our_address,
-        )
-
-        phy = (
-            self._lib.bt.gap.PHY_PHY_1M
-        )  # XXX: some people _may_ wish to specify this. (can't use PHY_ANY!)
-        atype = self._lib.bt.gap.ADDRESS_TYPE_PUBLIC_ADDRESS
+        # TODO both of these should be ... layered differentyly?
+        # XXX: some people _may_ wish to specify this. (can't use PHY_ANY!)
+        phy = self._bgh.lib.bt.gap.PHY_PHY_1M
+        atype = self._bgh.lib.bt.gap.ADDRESS_TYPE_PUBLIC_ADDRESS
         if self._device:
             # FIXME - we have the address type information in the scanner, make sure it gets here?
             pass
-        _, self._ch = self._lib.bt.connection.open(self.address, atype, phy)
-
-        async def waiter():
-            await self._ev_connect.wait()
+        self._ch = await self._bgh.connect(self.address, atype, phy, self._bgapi_evt_handler)
+        self._ev_disconnected.clear()  # This should allow people to re-use client objects.
 
         try:
-            await asyncio.wait_for(waiter(), timeout=self._timeout)
+            # with the invoke or not?!
+            await asyncio.wait_for(self._ev_connect.wait(), timeout=self._timeout)
+
         except asyncio.exceptions.TimeoutError:
-            logger.warning("Timed out attempting connection to %s", self.address)
+            self.log.warning("Timed out attempting connection to %s", self.address)
             # FIXME - what's the "correct" exception to raise here?
             raise
 
@@ -128,11 +106,12 @@ class BleakClientBGAPI(BaseBleakClient):
         return True
 
     async def disconnect(self) -> bool:
-        logger.debug("attempting to disconnect")
         if self._ch is not None:
-            self._lib.bt.connection.close(self._ch)
+            await self._bgh.disconnect(self._ch)
+        else:
+            # This happens when the remote side disconnects us
+            pass
         self._ch = None
-        self._lib.close()
         return True
 
     def _bgapi_evt_handler(self, evt):
@@ -141,38 +120,32 @@ class BleakClientBGAPI(BaseBleakClient):
         and because of this, we can't call commands from here ourself,
         remember to use _loop.call_soon_threadsafe....
         """
-        if evt == "bt_evt_system_boot":
-            logger.debug(
-                "NCP booted: %d.%d.%db%d hw:%d hash: %x",
-                evt.major,
-                evt.minor,
-                evt.patch,
-                evt.build,
-                evt.hw,
-                evt.hash,
-            )
-            # We probably don't want to do anything else here?!
-        elif evt == "bt_evt_connection_opened":
-            # Right? right?!
+        if evt == "bt_evt_connection_opened":
+            # The internal handler should ensure this
             assert self._ch == evt.connection
             # do this on the right thread!
             self._loop.call_soon_threadsafe(self._ev_connect.set)
         elif evt == "bt_evt_connection_closed":
-            logger.info(
+            self.log.info(
                 "Disconnected connection: %d: reason: %d (%#x)",
                 evt.connection,
                 evt.reason,
                 evt.reason,
             )
-            self._loop.call_soon_threadsafe(self._disconnected_callback, self)
+            if self._disconnected_callback:
+                self._loop.call_soon_threadsafe(self._disconnected_callback, self)
+            self._loop.call_soon_threadsafe(self._ev_disconnected.set)
+            # the conn handle is _dead_ now. if you try and keep using this, you'll get command errors
             self._ch = None
         elif (
             evt == "bt_evt_connection_parameters"
             or evt == "bt_evt_connection_phy_status"
             or evt == "bt_evt_connection_remote_used_features"
+            or evt == "bt_evt_connection_tx_power"
         ):
-            logger.debug("ignoring 'extra' info in: %s", evt)
+            #self.log.debug("ignoring 'extra' info in: %s", evt)
             # We don't need anything else here? just confirmations, and avoid "unhandled" warnings?
+            pass
         elif evt == "bt_evt_gatt_mtu_exchanged":
             self._mtu_size = evt.mtu
         elif evt == "bt_evt_gatt_service":
@@ -208,7 +181,7 @@ class BleakClientBGAPI(BaseBleakClient):
             self._loop.call_soon_threadsafe(self._ev_gatt_op.set)
         else:
             # Loudly show all the places we're not handling things yet!
-            logger.warning(f"unhandled bgapi evt! {evt}")
+            self.log.warning(f"unhandled bgapi evt! {evt}")
 
     @property
     def mtu_size(self) -> int:
@@ -229,6 +202,7 @@ class BleakClientBGAPI(BaseBleakClient):
 
     @property
     def is_connected(self) -> bool:
+        # TODO - could also look at ev_disconnected.is_set()?
         return self._ch is not None
 
     async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
@@ -236,14 +210,24 @@ class BleakClientBGAPI(BaseBleakClient):
             return self.services
 
         self._ev_gatt_op.clear()
-        self._lib.bt.gatt.discover_primary_services(self._ch)
-        await self._ev_gatt_op.wait()
+        self._bgh.lib.bt.gatt.discover_primary_services(self._ch)
+        # if we lose the connection, we'll wait on gatt_op forever.
+        # bail out early if we were disconnected.
+        d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
+                           return_when=asyncio.FIRST_COMPLETED)
+        [t.cancel() for t in p]  # cleanup and avoid "Task was destroyed but it is pending"
+        if self._ev_disconnected.is_set():
+            return self.services
 
         for s in self.services:
             self._ev_gatt_op.clear()
             self._buffer_characteristics.clear()
-            self._lib.bt.gatt.discover_characteristics(self._ch, s.handle)
-            await self._ev_gatt_op.wait()
+            self._bgh.lib.bt.gatt.discover_characteristics(self._ch, s.handle)
+            d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
+                               return_when=asyncio.FIRST_COMPLETED)
+            [t.cancel() for t in p]
+            if self._ev_disconnected.is_set():
+                break
 
             # ok, we've now got a stack of partial characteristics
             for pc in self._buffer_characteristics:
@@ -255,8 +239,12 @@ class BleakClientBGAPI(BaseBleakClient):
                 # Now also get the descriptors
                 self._ev_gatt_op.clear()
                 self._buffer_descriptors.clear()
-                self._lib.bt.gatt.discover_descriptors(self._ch, bc.handle)
-                await self._ev_gatt_op.wait()
+                self._bgh.lib.bt.gatt.discover_descriptors(self._ch, bc.handle)
+                d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
+                                   return_when=asyncio.FIRST_COMPLETED)
+                [t.cancel() for t in p]
+                if self._ev_disconnected.is_set():
+                    break
                 for pd in self._buffer_descriptors:
                     bd = BleakGATTDescriptorBGAPI(pd, bc.uuid, bc.handle)
                     self.services.add_descriptor(bd)  # Add to the root collection!
@@ -279,8 +267,12 @@ class BleakClientBGAPI(BaseBleakClient):
         # this will automatically use long reads if needed, so need to make sure that we bunch up data
         self._ev_gatt_op.clear()
         self._buffer_data.clear()
-        self._lib.bt.gatt.read_characteristic_value(self._ch, characteristic.handle)
-        await self._ev_gatt_op.wait()
+        self._bgh.lib.bt.gatt.read_characteristic_value(self._ch, characteristic.handle)
+        d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
+                           return_when=asyncio.FIRST_COMPLETED)
+        [t.cancel() for t in p]
+        if self._ev_disconnected.is_set():
+            pass  # nothing we can do differently here.
         return bytearray(self._buffer_data)
 
     async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
@@ -313,7 +305,7 @@ class BleakClientBGAPI(BaseBleakClient):
             not in characteristic.properties
         ):
             # Warning seems harsh, this is just magically "fixing" things, but it's what the bluez backend does.
-            logger.warning(
+            self.log.warning(
                 f"Characteristic {characteristic} does not support write without response, auto-trying as write"
             )
             response = True
@@ -322,12 +314,16 @@ class BleakClientBGAPI(BaseBleakClient):
         odata = bytes(data)
         if response:
             self._ev_gatt_op.clear()
-            self._lib.bt.gatt.write_characteristic_value(
+            self._bgh.lib.bt.gatt.write_characteristic_value(
                 self._ch, characteristic.handle, odata
             )
-            await self._ev_gatt_op.wait()
+            d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
+                               return_when=asyncio.FIRST_COMPLETED)
+            [t.cancel() for t in p]
+            if self._ev_disconnected.is_set():
+                pass  # Nothing special we can do anyway.
         else:
-            self._lib.bt.gatt.write_characteristic_value_without_response(
+            self._bgh.lib.bt.gatt.write_characteristic_value_without_response(
                 self._ch, characteristic.handle, odata
             )
 
@@ -343,11 +339,11 @@ class BleakClientBGAPI(BaseBleakClient):
         **kwargs,
     ) -> None:
         self._cbs_notify[characteristic.handle] = callback
-        enable = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_NOTIFICATION
+        enable = self._bgh.lib.bt.gatt.CLIENT_CONFIG_FLAG_NOTIFICATION
         force_indic = kwargs.get("force_indicate", False)
         if force_indic:
-            enable = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_INDICATION
-        self._lib.bt.gatt.set_characteristic_notification(
+            enable = self._bgh.lib.bt.gatt.CLIENT_CONFIG_FLAG_INDICATION
+        self._bgh.lib.bt.gatt.set_characteristic_notification(
             self._ch, characteristic.handle, enable
         )
 
@@ -361,7 +357,7 @@ class BleakClientBGAPI(BaseBleakClient):
         if not characteristic:
             raise BleakError("Characteristic {} was not found!".format(char_specifier))
         self._cbs_notify.pop(characteristic.handle, None)  # hard remove callback
-        cancel = self._lib.bt.gatt.CLIENT_CONFIG_FLAG_DISABLE
-        self._lib.bt.gatt.set_characteristic_notification(
+        cancel = self._bgh.lib.bt.gatt.CLIENT_CONFIG_FLAG_DISABLE
+        self._bgh.lib.bt.gatt.set_characteristic_notification(
             self._ch, characteristic.handle, cancel
         )
