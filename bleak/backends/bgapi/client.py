@@ -97,13 +97,21 @@ class BleakClientBGAPI(BaseBleakClient):
         except asyncio.exceptions.TimeoutError:
             self.log.warning("Timed out attempting connection to %s", self.address)
             # According to the NCP API docs, we "should" request to close the connection here!
-            await self._bgh.disconnect(self._ch)
+            await self.disconnect()
             # FIXME - what's the "correct" exception to raise here?
             raise
 
         # nominally, you don't need to do this, but it's how bleak behaves, so just do it,
         # even though it's "wasteful" to enumerate everything.  It's predictable behaviour
-        await self.get_services()
+        # enumerating services/characteristics does a series of nested waits,
+        # make sure we can handle being disconnected during that process
+        d, p = await asyncio.wait([asyncio.Task(self.get_services(), name="get_services"),
+                                   asyncio.Task(self._ev_disconnected.wait(), name="disconn")
+                                   ],
+                                  return_when=asyncio.FIRST_COMPLETED)
+        [t.cancel() for t in p]  # cleanup and avoid "Task was destroyed but it is pending"
+        if self._ev_disconnected.is_set():
+            return False
 
         return True
 
@@ -214,23 +222,13 @@ class BleakClientBGAPI(BaseBleakClient):
 
         self._ev_gatt_op.clear()
         self._bgh.lib.bt.gatt.discover_primary_services(self._ch)
-        # if we lose the connection, we'll wait on gatt_op forever.
-        # bail out early if we were disconnected.
-        d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
-                           return_when=asyncio.FIRST_COMPLETED)
-        [t.cancel() for t in p]  # cleanup and avoid "Task was destroyed but it is pending"
-        if self._ev_disconnected.is_set():
-            return self.services
+        await self._ev_gatt_op.wait()
 
         for s in self.services:
             self._ev_gatt_op.clear()
             self._buffer_characteristics.clear()
             self._bgh.lib.bt.gatt.discover_characteristics(self._ch, s.handle)
-            d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
-                               return_when=asyncio.FIRST_COMPLETED)
-            [t.cancel() for t in p]
-            if self._ev_disconnected.is_set():
-                break
+            await self._ev_gatt_op.wait()
 
             # ok, we've now got a stack of partial characteristics
             for pc in self._buffer_characteristics:
@@ -243,11 +241,7 @@ class BleakClientBGAPI(BaseBleakClient):
                 self._ev_gatt_op.clear()
                 self._buffer_descriptors.clear()
                 self._bgh.lib.bt.gatt.discover_descriptors(self._ch, bc.handle)
-                d, p = await asyncio.wait([asyncio.Task(self._ev_gatt_op.wait(), name="gattop"), asyncio.Task(self._ev_disconnected.wait(), name="disconn")],
-                                   return_when=asyncio.FIRST_COMPLETED)
-                [t.cancel() for t in p]
-                if self._ev_disconnected.is_set():
-                    break
+                await self._ev_gatt_op.wait()
                 for pd in self._buffer_descriptors:
                     bd = BleakGATTDescriptorBGAPI(pd, bc.uuid, bc.handle)
                     self.services.add_descriptor(bd)  # Add to the root collection!
