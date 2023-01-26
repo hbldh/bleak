@@ -16,7 +16,7 @@ else:
 from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 from . import BgapiRegistry
-
+from ... import assigned_numbers
 
 class BleakScannerBGAPI(BaseBleakScanner):
     """
@@ -183,6 +183,16 @@ class BleakScannerBGAPI(BaseBleakScanner):
                 bdaddr_flags = dat[0]
                 bdaddr_le = struct.unpack("<6B", dat[1:])  ## reversed order?
                 #logging.debug("ignoring LE device address as uninteresting: flags: %x, addr: %s", bdaddr_flags, bdaddr_le)
+            elif type == 0x19:
+                # Appearance.  Uncommon, nowhere in bleak advertisement data to put it
+                app, = struct.unpack("<H", dat)
+                cat = app >> 6
+                subcat = app & 0x3f
+
+                # self.log.debug("Appearance: %#x: %s-%s", app,
+                #                assigned_numbers.AppearanceCategories[cat],
+                #                "TODO"
+                #                )
             elif type == 0x20:
                 (uuid32,) = struct.unpack("<H", dat[:4])
                 service_data[f"{uuid32:084x}-0000-1000-8000-00805f9b34fb"] = dat[4:]
