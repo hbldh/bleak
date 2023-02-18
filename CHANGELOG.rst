@@ -18,6 +18,7 @@ Added
 * Added ``BleakScanner.find_device_by_name()`` class method.
 * Added optional command line argument to use debug log level to all applicable examples.
 * Make sure the disconnect monitor task is properly cancelled on the BlueZ client.
+* Added ``bleak.uuids.normalize_uuid_str()`` function.
 
 Changed
 -------
