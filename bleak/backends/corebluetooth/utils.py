@@ -1,27 +1,22 @@
 from Foundation import NSData
 from CoreBluetooth import CBUUID
 
+from ...uuids import normalize_uuid_str
 
-def cb_uuid_to_str(_uuid: CBUUID) -> str:
+
+def cb_uuid_to_str(uuid: CBUUID) -> str:
     """Converts a CoreBluetooth UUID to a Python string.
 
-    If ``_uuid`` is a 16-bit UUID, it is assumed to be a Bluetooth GATT UUID
+    If ``uuid`` is a 16-bit UUID, it is assumed to be a Bluetooth GATT UUID
     (``0000xxxx-0000-1000-8000-00805f9b34fb``).
 
     Args
-        _uuid: The UUID.
+        uuid: The UUID.
 
     Returns:
         The UUID as a lower case Python string (``xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx``)
     """
-    _uuid = _uuid.UUIDString()
-    if len(_uuid) == 4:
-        return "0000{0}-0000-1000-8000-00805f9b34fb".format(_uuid.lower())
-    # TODO: Evaluate if this is a necessary method...
-    # elif _is_uuid_16bit_compatible(_uuid):
-    #    return _uuid[4:8].lower()
-    else:
-        return _uuid.lower()
+    return normalize_uuid_str(uuid.UUIDString())
 
 
 def _is_uuid_16bit_compatible(_uuid: str) -> bool:

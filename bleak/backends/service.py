@@ -11,7 +11,7 @@ from typing import Dict, Iterator, List, Optional, Union
 from uuid import UUID
 
 from ..exc import BleakError
-from ..uuids import uuidstr_to_str
+from ..uuids import uuidstr_to_str, normalize_uuid_str
 from .characteristic import BleakGATTCharacteristic
 from .descriptor import BleakGATTDescriptor
 
@@ -70,13 +70,10 @@ class BleakGATTService(abc.ABC):
             The first characteristic matching ``uuid`` or ``None`` if no
             matching characteristic was found.
         """
-        if type(uuid) == str and len(uuid) == 4:
-            # Convert 16-bit uuid to 128-bit uuid
-            uuid = f"0000{uuid}-0000-1000-8000-00805f9b34fb"
+        uuid = normalize_uuid_str(str(uuid))
+
         try:
-            return next(
-                filter(lambda x: x.uuid == str(uuid).lower(), self.characteristics)
-            )
+            return next(filter(lambda x: x.uuid == uuid, self.characteristics))
         except StopIteration:
             return None
 
@@ -140,16 +137,11 @@ class BleakGATTServiceCollection:
         if isinstance(specifier, int):
             return self.services.get(specifier)
 
-        _specifier = str(specifier).lower()
-
-        # Assume uuid usage.
-        # Convert 16-bit uuid to 128-bit uuid
-        if len(_specifier) == 4:
-            _specifier = f"0000{_specifier}-0000-1000-8000-00805f9b34fb"
+        uuid = normalize_uuid_str(str(specifier))
 
         x = list(
             filter(
-                lambda x: x.uuid.lower() == _specifier,
+                lambda x: x.uuid == uuid,
                 self.services.values(),
             )
         )

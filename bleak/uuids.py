@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from typing import Dict
+from uuid import UUID
 
 
 uuid16_dict = {
@@ -1147,3 +1148,18 @@ def register_uuids(uuids_to_descriptions: Dict[str, str]) -> None:
 
     """
     uuid128_dict.update(uuids_to_descriptions)
+
+
+def normalize_uuid_str(uuid: str) -> str:
+    """
+    Normaizes a UUID to the format used by Bleak.
+
+    - Converted to lower case.
+    - 16-bit UUIDs are expanded to 128-bit.
+    """
+    if len(uuid) == 4:
+        # Bluetooth SIG registered 16-bit UUIDs
+        uuid = f"0000{uuid}-0000-1000-8000-00805f9b34fb"
+
+    # let UUID class do the validation and conversion to lower case
+    return str(UUID(uuid))
