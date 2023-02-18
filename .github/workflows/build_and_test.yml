@@ -25,6 +25,9 @@ jobs:
             -   name: Create virtual environment
                 run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
             -   name: Install dependencies
+                # work around https://github.com/python-poetry/poetry/issues/7161
+                env:
+                    SYSTEM_VERSION_COMPAT: 0
                 run: pipx run poetry install --only main,test
             -   name: Test with pytest
                 run: |
