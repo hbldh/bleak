@@ -24,6 +24,8 @@ jobs:
                     python-version: ${{ matrix.python-version }}
             -   name: Create virtual environment
                 run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
+            -   name: Upgrade pip
+                run: pipx run poetry run python -m pip install --upgrade pip
             -   name: Install dependencies
                 run: pipx run poetry install --only main,test
             -   name: Test with pytest
