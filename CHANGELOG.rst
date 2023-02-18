@@ -41,6 +41,7 @@ Fixed
 * Fixed leaking services when ``get_services()`` is cancelled in WinRT backend.
 * Fixed WinRT scanner never calling ``detection_callback`` when a device does
   not send a scan response. Fixes #1211.
+* Fixed ``BLEDevice`` name sometimes incorrectly ``None``.
 
 `0.19.5`_ (2022-11-19)
 ======================
