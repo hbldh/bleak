@@ -101,6 +101,13 @@ class BleakScanner:
         **kwargs:
             Additional args for backwards compatibility.
 
+    .. tip:: The first received advertisement in ``detection_callback`` may or
+        may not include scan response data if the remote device supports it.
+        Be sure to take this into account when handing the callback. For example,
+        the scan response often contains the local name of the device so if you
+        are matching a device based on other data but want to display the local
+        name to the user, be sure to wait for ``adv_data.local_name is not None``.
+
     .. versionchanged:: 0.15.0
         ``detection_callback``, ``service_uuids`` and ``scanning_mode`` are no longer keyword-only.
         Added ``bluez`` parameter.

@@ -124,21 +124,6 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self._advertisement_pairs[bdaddr] = raw_data
 
-        # if we are expecting scan response and we haven't received both a
-        # regular advertisement and a scan response, don't do callbacks yet,
-        # wait until we have both instead so we get a callback with partial data
-
-        if (raw_data.adv is None or raw_data.scan is None) and (
-            event_args.advertisement_type
-            in [
-                BluetoothLEAdvertisementType.CONNECTABLE_UNDIRECTED,
-                BluetoothLEAdvertisementType.SCANNABLE_UNDIRECTED,
-                BluetoothLEAdvertisementType.SCAN_RESPONSE,
-            ]
-        ):
-            logger.debug("skipping callback, waiting for scan response")
-            return
-
         uuids = []
         mfg_data = {}
         service_data = {}
