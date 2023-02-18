@@ -35,6 +35,8 @@ Fixed
 * Fixed ``BleakScanner.stop()`` can raise ``BleakDBusError`` with ``org.bluez.Error.NotReady`` in BlueZ backend.
 * Fixed ``BleakScanner.stop()`` hanging in WinRT backend when Bluetooth is disabled.
 * Fixed leaking services when ``get_services()`` is cancelled in WinRT backend.
+* Fixed WinRT scanner never calling ``detection_callback`` when a device does
+  not send a scan response. Fixes #1211.
 
 `0.19.5`_ (2022-11-19)
 ======================
