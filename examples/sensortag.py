@@ -124,7 +124,7 @@ async def main(address):
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
         print("I/O Data Pre-Write Value: {0}".format(value))
 
-        await client.write_gatt_char(IO_DATA_CHAR_UUID, write_value)
+        await client.write_gatt_char(IO_DATA_CHAR_UUID, write_value, response=True)
 
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
         print("I/O Data Post-Write Value: {0}".format(value))
@@ -134,7 +134,7 @@ async def main(address):
         value = await client.read_gatt_char(IO_CONFIG_CHAR_UUID)
         print("I/O Config Pre-Write Value: {0}".format(value))
 
-        await client.write_gatt_char(IO_CONFIG_CHAR_UUID, write_value)
+        await client.write_gatt_char(IO_CONFIG_CHAR_UUID, write_value, response=True)
 
         value = await client.read_gatt_char(IO_CONFIG_CHAR_UUID)
         print("I/O Config Post-Write Value: {0}".format(value))

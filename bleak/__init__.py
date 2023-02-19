@@ -650,23 +650,66 @@ class BleakClient:
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         data: Union[bytes, bytearray, memoryview],
-        response: bool = False,
+        response: bool = None,
     ) -> None:
         """
         Perform a write operation on the specified GATT characteristic.
 
+        There are two possible kinds of writes. *Write with response* (sometimes
+        called a *Request*) will write the data then wait for a response from
+        the remote device. *Write without response* (sometimes called *Command*)
+        will queue data to be written and return immediately.
+
+        Each characteristic may support one kind or the other or both or neither.
+        Consult the device's documentation or inspect the properties of the
+        characteristic to find out which kind of writes are supported.
+
+        .. tip:: Explicit is better than implicit. Best practice is to always
+            include an explicit ``response=True`` or ``response=False``
+            when calling this method.
+
         Args:
             char_specifier:
                 The characteristic to write to, specified by either integer
-                handle, UUID or directly by the BleakGATTCharacteristic object
-                representing it.
+                handle, UUID or directly by the :class:`~bleak.backends.characteristic.BleakGATTCharacteristic`
+                object representing it. If a device has more than one characteristic
+                with the same UUID, then attempting to use the UUID wil fail and
+                a characteristic object must be used instead.
             data:
-                The data to send.
+                The data to send. When a write-with-response operation is used,
+                the length of the data is limited to 512 bytes. When a
+                write-without-response operation is used, the length of the
+                data is limited to :attr:`~bleak.backends.characteristic.BleakGATTCharacteristic.max_write_without_response_size`.
+                Any type that supports the buffer protocol can be passed.
             response:
-                If write-with-response operation should be done. Defaults to ``False``.
+                If ``True``, a write-with-response operation will be used. If
+                ``False``, a write-without-response operation will be used.
+                If omitted or ``None``, the "best" operation will be used
+                based on the reported properties of the characteristic.
 
+        .. versionchanged:: 0.21
+            The default behavior when ``response=`` is omitted was changed.
+
+        Example::
+
+            MY_CHAR_UUID = "1234"
+            ...
+            await client.write_gatt_char(MY_CHAR_UUID, b"\x00\x01\x02\x03", response=True)
         """
-        await self._backend.write_gatt_char(char_specifier, data, response)
+        if isinstance(char_specifier, BleakGATTCharacteristic):
+            characteristic = char_specifier
+        else:
+            characteristic = self.services.get_characteristic(char_specifier)
+
+        if not characteristic:
+            raise BleakError("Characteristic {char_specifier} was not found!")
+
+        if response is None:
+            # if not specified, prefer write-with-response over write-without-
+            # response if it is available since it is the more reliable write.
+            response = "write" in characteristic.properties
+
+        await self._backend.write_gatt_char(characteristic, data, response)
 
     async def start_notify(
         self,

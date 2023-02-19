@@ -38,7 +38,7 @@ async def main():
         for chunk in (
             data[i : i + chunk_size] for i in range(0, len(data), chunk_size)
         ):
-            await client.write_gatt_char(CHAR_UUID, chunk)
+            await client.write_gatt_char(CHAR_UUID, chunk, response=False)
 
 
 if __name__ == "__main__":

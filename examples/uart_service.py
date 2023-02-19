@@ -89,7 +89,7 @@ async def uart_terminal():
             # property to split the data into chunks that will fit.
 
             for s in sliced(data, rx_char.max_write_without_response_size):
-                await client.write_gatt_char(rx_char, s)
+                await client.write_gatt_char(rx_char, s, response=False)
 
             print("sent:", data)
 
