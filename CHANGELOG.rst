@@ -42,6 +42,7 @@ Fixed
 * Fixed WinRT scanner never calling ``detection_callback`` when a device does
   not send a scan response. Fixes #1211.
 * Fixed ``BLEDevice`` name sometimes incorrectly ``None``.
+* Fixed unhandled exception in ``CentralManagerDelegate`` destructor on macOS. Fixes #1219.
 
 `0.19.5`_ (2022-11-19)
 ======================

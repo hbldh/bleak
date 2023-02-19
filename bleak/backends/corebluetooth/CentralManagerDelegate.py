@@ -105,7 +105,13 @@ class CentralManagerDelegate(NSObject):
 
     def __del__(self):
         if objc.macos_available(10, 13):
-            self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
+            try:
+                self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
+            except IndexError:
+                # If self.init() raised an exception before calling
+                # addObserver_forKeyPath_options_context_, attempting
+                # to remove the observer will fail with IndexError
+                pass
 
     # User defined functions
 
