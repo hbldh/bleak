@@ -53,25 +53,25 @@ async def main(address):
         print(f"Paired: {paired}")
 
         print("Turning Light off...")
-        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x00")
+        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x00", response=False)
         await asyncio.sleep(1.0)
         print("Turning Light on...")
-        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x01")
+        await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x01", response=False)
         await asyncio.sleep(1.0)
 
         print("Setting color to RED...")
         color = convert_rgb([255, 0, 0])
-        await client.write_gatt_char(COLOR_CHARACTERISTIC, color)
+        await client.write_gatt_char(COLOR_CHARACTERISTIC, color, response=False)
         await asyncio.sleep(1.0)
 
         print("Setting color to GREEN...")
         color = convert_rgb([0, 255, 0])
-        await client.write_gatt_char(COLOR_CHARACTERISTIC, color)
+        await client.write_gatt_char(COLOR_CHARACTERISTIC, color, response=False)
         await asyncio.sleep(1.0)
 
         print("Setting color to BLUE...")
         color = convert_rgb([0, 0, 255])
-        await client.write_gatt_char(COLOR_CHARACTERISTIC, color)
+        await client.write_gatt_char(COLOR_CHARACTERISTIC, color, response=False)
         await asyncio.sleep(1.0)
 
         for brightness in range(256):
@@ -83,6 +83,7 @@ async def main(address):
                         brightness,
                     ]
                 ),
+                response=False,
             )
             await asyncio.sleep(0.2)
 
@@ -94,6 +95,7 @@ async def main(address):
                     40,
                 ]
             ),
+            response=False,
         )
 
 

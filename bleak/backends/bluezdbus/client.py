@@ -811,66 +811,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     async def write_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
+        characteristic: BleakGATTCharacteristic,
         data: Union[bytes, bytearray, memoryview],
-        response: bool = False,
+        response: bool,
     ) -> None:
-        """Perform a write operation on the specified GATT characteristic.
-
-        .. note::
-
-            The version check below is for the "type" option to the
-            "Characteristic.WriteValue" method that was added to `Bluez in 5.51
-            <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a>`_
-            Before that commit, ``Characteristic.WriteValue`` was only "Write with
-            response". ``Characteristic.AcquireWrite`` was `added in Bluez 5.46
-            <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e>`_
-            which can be used to "Write without response", but for older versions
-            of Bluez, it is not possible to "Write without response".
-
-        Args:
-            char_specifier (BleakGATTCharacteristicBlueZDBus, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristicBlueZDBus object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
-        """
         if not self.is_connected:
             raise BleakError("Not connected")
-
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakError("Characteristic {0} was not found!".format(char_specifier))
-        if (
-            "write" not in characteristic.properties
-            and "write-without-response" not in characteristic.properties
-        ):
-            raise BleakError(
-                "Characteristic %s does not support write operations!"
-                % str(characteristic.uuid)
-            )
-        if not response and "write-without-response" not in characteristic.properties:
-            response = True
-            # Force response here, since the device only supports that.
-        if (
-            response
-            and "write" not in characteristic.properties
-            and "write-without-response" in characteristic.properties
-        ):
-            response = False
-            logger.warning(
-                "Characteristic %s does not support Write with response. Trying without..."
-                % str(characteristic.uuid)
-            )
 
         # See docstring for details about this handling.
         if not response and not BlueZFeatures.can_write_without_response:
             raise BleakError("Write without response requires at least BlueZ 5.46")
+
         if response or not BlueZFeatures.write_without_response_workaround_needed:
             while True:
                 assert self._bus

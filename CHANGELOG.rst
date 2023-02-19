@@ -20,6 +20,8 @@ Changed
 * Improved error messages when failing to get services in WinRT backend.
 * Improved error messages with enum values in WinRT backend. Fixes #1284.
 * Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
+* Changed default handling of the ``response`` argument in ``BleakClient.write_gatt_char``.
+  Fixes #909.
 
 Fixed
 -----

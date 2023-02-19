@@ -183,19 +183,17 @@ class BaseBleakClient(abc.ABC):
     @abc.abstractmethod
     async def write_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        characteristic: BleakGATTCharacteristic,
         data: Union[bytes, bytearray, memoryview],
-        response: bool = False,
+        response: bool,
     ) -> None:
-        """Perform a write operation on the specified GATT characteristic.
+        """
+        Perform a write operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
+            characteristic: The characteristic to write to.
+            data: The data to send.
+            response: If write-with-response operation should be done.
         """
         raise NotImplementedError()
 
