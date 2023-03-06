@@ -322,6 +322,7 @@ class BleakScanner:
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.
 
+        .. versionadded:: 0.20.0
         """
         return await cls.find_device_by_filter(
             lambda d, ad: ad.local_name == name,
