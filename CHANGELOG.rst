@@ -12,15 +12,13 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
-* Added ``BLEAK_DBUS_AUTH_UID`` environment var for hardcoding DBus UID.
-* Added return type None to some scanner methods.
+* Added ``BLEAK_DBUS_AUTH_UID`` environment variable for hardcoding D-Bus UID.
+* Added return type ``None`` to some scanner methods.
 * Added optional hack to use Bluetooth address instead of UUID on macOS.
 * Added ``BleakScanner.find_device_by_name()`` class method.
 * Added optional command line argument to use debug log level to all applicable examples.
-* Make sure the disconnect monitor task is properly cancelled on the BlueZ client.
 * Added ``bleak.uuids.normalize_uuid_str()`` function.
-* Added optional ``services`` argument to ``BleakClient()`` to filter services
-  that will be used.
+* Added optional ``services`` argument to ``BleakClient()`` to filter services. Merged #654.
 
 Changed
 -------
@@ -34,11 +32,12 @@ Changed
 
 Fixed
 -----
-* Fixed invalid UTF*8 in ``uuids.uuid16_dict``.
+* Fixed invalid UTF-8 in ``uuids.uuid16_dict``.
 * Fixed ``AttributeError`` in ``_ensure_success`` in WinRT backend.
 * Fixed ``BleakScanner.stop()`` can raise ``BleakDBusError`` with ``org.bluez.Error.NotReady`` in BlueZ backend.
 * Fixed ``BleakScanner.stop()`` hanging in WinRT backend when Bluetooth is disabled.
 * Fixed leaking services when ``get_services()`` is cancelled in WinRT backend.
+* Fixed disconnect monitor task not always cancelled on the BlueZ client. Merged #1159.
 * Fixed WinRT scanner never calling ``detection_callback`` when a device does
   not send a scan response. Fixes #1211.
 * Fixed ``BLEDevice`` name sometimes incorrectly ``None``.
