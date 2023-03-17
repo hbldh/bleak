@@ -10,26 +10,29 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.20.0`_ (2023-03-17)
+======================
+
 Added
 -----
-* Added ``BLEAK_DBUS_AUTH_UID`` environment variable for hardcoding D-Bus UID.
+* Added ``BLEAK_DBUS_AUTH_UID`` environment variable for hardcoding D-Bus UID. Merged #1182.
 * Added return type ``None`` to some scanner methods.
-* Added optional hack to use Bluetooth address instead of UUID on macOS.
+* Added optional hack to use Bluetooth address instead of UUID on macOS. Merged #1073.
 * Added ``BleakScanner.find_device_by_name()`` class method.
 * Added optional command line argument to use debug log level to all applicable examples.
 * Added ``bleak.uuids.normalize_uuid_str()`` function.
 * Added optional ``services`` argument to ``BleakClient()`` to filter services. Merged #654.
+* Added automatic retry on ``le-connection-abort-by-local`` in BlueZ backend. Fixes #1220.
 
 Changed
 -------
 * Dropped ``async-timeout`` dependency on Python >= 3.11.
 * Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
-* ``BLEDevice`` now uses ``__slots__`` to reduce memory usage.
+* ``BLEDevice`` now uses ``__slots__`` to reduce memory usage. Merged #1117.
 * ``BaseBleakClient.services`` is now ``None`` instead of empty service collection
   until services are discovered.
 * Include thread name in ``BLEAK_LOGGING`` output. Merged #1144.
 * Updated PyObjC dependency on macOS to v9.x.
-* Added automatic retry on ``le-connection-abort-by-local`` in BlueZ backend. Fixes #1220.
 
 Fixed
 -----
@@ -918,7 +921,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.5...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.20.0...develop
+.. _0.20.0: https://github.com/hbldh/bleak/compare/v0.19.5...v0.20.0
 .. _0.19.5: https://github.com/hbldh/bleak/compare/v0.19.4...v0.19.5
 .. _0.19.4: https://github.com/hbldh/bleak/compare/v0.19.3...v0.19.4
 .. _0.19.3: https://github.com/hbldh/bleak/compare/v0.19.2...v0.19.3
