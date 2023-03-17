@@ -313,7 +313,7 @@ class BleakClientWinRT(BaseBleakClient):
 
             elif args.status == GattSessionStatus.CLOSED:
                 if self._disconnected_callback:
-                    self._disconnected_callback(self)
+                    self._disconnected_callback()
 
                 for e in self._session_closed_events:
                     e.set()

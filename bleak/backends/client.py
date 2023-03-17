@@ -45,7 +45,9 @@ class BaseBleakClient(abc.ABC):
         self.services: Optional[BleakGATTServiceCollection] = None
 
         self._timeout = kwargs.get("timeout", 10.0)
-        self._disconnected_callback = kwargs.get("disconnected_callback")
+        self._disconnected_callback: Optional[Callable[[], None]] = kwargs.get(
+            "disconnected_callback"
+        )
 
     @property
     @abc.abstractmethod
@@ -56,22 +58,12 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Optional[Callable[["BaseBleakClient"], None]], **kwargs
+        self, callback: Optional[Callable[[], None]], **kwargs
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.
 
-        Callbacks must accept one input which is the client object itself.
-
         Set the callback to ``None`` to remove any existing callback.
-
-        .. code-block:: python
-
-            def callback(client):
-                print("Client with address {} got disconnected!".format(client.address))
-
-            client.set_disconnected_callback(callback)
-            client.connect()
 
         Args:
             callback: callback to be called on disconnection.

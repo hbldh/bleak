@@ -441,7 +441,9 @@ class BleakClient:
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,
-            disconnected_callback=disconnected_callback,
+            disconnected_callback=None
+            if disconnected_callback is None
+            else functools.partial(disconnected_callback, self),
             services=None
             if services is None
             else set(map(normalize_uuid_str, services)),
@@ -507,7 +509,9 @@ class BleakClient:
             FutureWarning,
             stacklevel=2,
         )
-        self._backend.set_disconnected_callback(callback, **kwargs)
+        self._backend.set_disconnected_callback(
+            None if callback is None else functools.partial(callback, self), **kwargs
+        )
 
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
