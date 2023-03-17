@@ -5,10 +5,11 @@ from typing import Dict, List, NamedTuple, Optional
 from uuid import UUID
 
 from bleak_winrt.windows.devices.bluetooth.advertisement import (
-    BluetoothLEScanningMode,
-    BluetoothLEAdvertisementWatcher,
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEAdvertisementWatcherStatus,
+    BluetoothLEScanningMode,
 )
 
 if sys.version_info[:2] < (3, 8):
@@ -16,9 +17,8 @@ if sys.version_info[:2] < (3, 8):
 else:
     from typing import Literal
 
-from ..scanner import AdvertisementDataCallback, BaseBleakScanner, AdvertisementData
 from ...assigned_numbers import AdvertisementDataType
-
+from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
 logger = logging.getLogger(__name__)
 
@@ -124,21 +124,6 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self._advertisement_pairs[bdaddr] = raw_data
 
-        # if we are expecting scan response and we haven't received both a
-        # regular advertisement and a scan response, don't do callbacks yet,
-        # wait until we have both instead so we get a callback with partial data
-
-        if (raw_data.adv is None or raw_data.scan is None) and (
-            event_args.advertisement_type
-            in [
-                BluetoothLEAdvertisementType.CONNECTABLE_UNDIRECTED,
-                BluetoothLEAdvertisementType.SCANNABLE_UNDIRECTED,
-                BluetoothLEAdvertisementType.SCAN_RESPONSE,
-            ]
-        ):
-            logger.debug("skipping callback, waiting for scan response")
-            return
-
         uuids = []
         mfg_data = {}
         service_data = {}
@@ -230,7 +215,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         )
         self._stopped_event.set()
 
-    async def start(self):
+    async def start(self) -> None:
         # start with fresh list of discovered devices
         self.seen_devices = {}
         self._advertisement_pairs.clear()
@@ -255,9 +240,16 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher.start()
 
-    async def stop(self):
+    async def stop(self) -> None:
         self.watcher.stop()
-        await self._stopped_event.wait()
+
+        if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.STOPPING:
+            await self._stopped_event.wait()
+        else:
+            logger.debug(
+                "skipping waiting for stop because status is %s",
+                self.watcher.status.name,
+            )
 
         try:
             self.watcher.remove_received(self._received_token)
@@ -270,7 +262,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher = None
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """Set a scanning filter for the BleakScanner.
 
         Keyword Args:

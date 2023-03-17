@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bleak"
-version = "0.19.5"
+version = "0.20.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = ["Henrik Blidh <henrik.blidh@nedomkull.com>"]
 license = "MIT"
@@ -23,13 +23,13 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-async-timeout = ">= 3.0.0, < 5"
+async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
 typing-extensions = { version = "^4.2.0", python = "<3.8" }
-pyobjc-core = { version = "^8.5.1", markers = "platform_system=='Darwin'" }
-pyobjc-framework-CoreBluetooth = { version = "^8.5.1", markers = "platform_system=='Darwin'" }
-pyobjc-framework-libdispatch = { version = "^8.5.1", markers = "platform_system=='Darwin'" }
+pyobjc-core = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
+pyobjc-framework-CoreBluetooth = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
+pyobjc-framework-libdispatch = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
 bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'" }
-dbus-fast = { version = "^1.22.0", markers = "platform_system == 'Linux'" }
+dbus-fast = { version = "^1.83.0", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = { version = "^5.1.1", python = ">=3.8" }

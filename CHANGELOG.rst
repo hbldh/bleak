@@ -7,6 +7,47 @@ All notable changes to this project will be documented in this file.
 The format is based on `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_,
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`Unreleased`_
+=============
+
+`0.20.0`_ (2023-03-17)
+======================
+
+Added
+-----
+* Added ``BLEAK_DBUS_AUTH_UID`` environment variable for hardcoding D-Bus UID. Merged #1182.
+* Added return type ``None`` to some scanner methods.
+* Added optional hack to use Bluetooth address instead of UUID on macOS. Merged #1073.
+* Added ``BleakScanner.find_device_by_name()`` class method.
+* Added optional command line argument to use debug log level to all applicable examples.
+* Added ``bleak.uuids.normalize_uuid_str()`` function.
+* Added optional ``services`` argument to ``BleakClient()`` to filter services. Merged #654.
+* Added automatic retry on ``le-connection-abort-by-local`` in BlueZ backend. Fixes #1220.
+
+Changed
+-------
+* Dropped ``async-timeout`` dependency on Python >= 3.11.
+* Deprecated ``BLEDevice.rssi`` and ``BLEDevice.metadata``. Fixes #1025.
+* ``BLEDevice`` now uses ``__slots__`` to reduce memory usage. Merged #1117.
+* ``BaseBleakClient.services`` is now ``None`` instead of empty service collection
+  until services are discovered.
+* Include thread name in ``BLEAK_LOGGING`` output. Merged #1144.
+* Updated PyObjC dependency on macOS to v9.x.
+
+Fixed
+-----
+* Fixed invalid UTF-8 in ``uuids.uuid16_dict``.
+* Fixed ``AttributeError`` in ``_ensure_success`` in WinRT backend.
+* Fixed ``BleakScanner.stop()`` can raise ``BleakDBusError`` with ``org.bluez.Error.NotReady`` in BlueZ backend.
+* Fixed ``BleakScanner.stop()`` hanging in WinRT backend when Bluetooth is disabled.
+* Fixed leaking services when ``get_services()`` is cancelled in WinRT backend.
+* Fixed disconnect monitor task not always cancelled on the BlueZ client. Merged #1159.
+* Fixed WinRT scanner never calling ``detection_callback`` when a device does
+  not send a scan response. Fixes #1211.
+* Fixed ``BLEDevice`` name sometimes incorrectly ``None``.
+* Fixed unhandled exception in ``CentralManagerDelegate`` destructor on macOS. Fixes #1219.
+* Fixed object passed to ``disconnected_callback`` is not ``BleakClient``. Fixes #1200.
+
 `0.19.5`_ (2022-11-19)
 ======================
 
@@ -880,7 +921,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.19.5...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.20.0...develop
+.. _0.20.0: https://github.com/hbldh/bleak/compare/v0.19.5...v0.20.0
 .. _0.19.5: https://github.com/hbldh/bleak/compare/v0.19.4...v0.19.5
 .. _0.19.4: https://github.com/hbldh/bleak/compare/v0.19.3...v0.19.4
 .. _0.19.3: https://github.com/hbldh/bleak/compare/v0.19.2...v0.19.3

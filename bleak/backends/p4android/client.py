@@ -6,7 +6,7 @@ import asyncio
 import logging
 import uuid
 import warnings
-from typing import Optional, Union
+from typing import Optional, Set, Union
 
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
@@ -28,17 +28,23 @@ class BleakClientP4Android(BaseBleakClient):
     """A python-for-android Bleak Client
 
     Args:
-        address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
-
-    Keyword Args:
-        disconnected_callback (callable): Callback that will be scheduled in the
-            event loop when the client is disconnected. The callable must take one
-            argument, which will be this client object.
-        adapter (str): Bluetooth adapter to use for discovery. [unused]
+        address_or_ble_device:
+            The Bluetooth address of the BLE peripheral to connect to or the
+            :class:`BLEDevice` object representing it.
+        services:
+            Optional set of services UUIDs to filter.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+    def __init__(
+        self,
+        address_or_ble_device: Union[BLEDevice, str],
+        services: Optional[Set[uuid.UUID]],
+        **kwargs,
+    ):
         super(BleakClientP4Android, self).__init__(address_or_ble_device, **kwargs)
+        self._requested_services = (
+            set(map(defs.UUID.fromString, services)) if services else None
+        )
         # kwarg "device" is for backwards compatibility
         self.__adapter = kwargs.get("adapter", kwargs.get("device", None))
         self.__gatt = None
@@ -151,8 +157,7 @@ class BleakClientP4Android(BaseBleakClient):
         self.__callbacks = None
 
         # Reset all stored services.
-        self.services = BleakGATTServiceCollection()
-        self._services_resolved = False
+        self.services = None
 
         return True
 
@@ -246,14 +251,21 @@ class BleakClientP4Android(BaseBleakClient):
            A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
 
         """
-        if self._services_resolved:
+        if self.services is not None:
             return self.services
+
+        services = BleakGATTServiceCollection()
 
         logger.debug("Get Services...")
         for java_service in self.__gatt.getServices():
+            if (
+                self._requested_services is not None
+                and java_service.getUuid() not in self._requested_services
+            ):
+                continue
 
             service = BleakGATTServiceP4Android(java_service)
-            self.services.add_service(service)
+            services.add_service(service)
 
             for java_characteristic in java_service.getCharacteristics():
 
@@ -263,7 +275,7 @@ class BleakClientP4Android(BaseBleakClient):
                     service.handle,
                     self.__mtu - 3,
                 )
-                self.services.add_characteristic(characteristic)
+                services.add_characteristic(characteristic)
 
                 for descriptor_index, java_descriptor in enumerate(
                     java_characteristic.getDescriptors()
@@ -275,9 +287,9 @@ class BleakClientP4Android(BaseBleakClient):
                         characteristic.handle,
                         descriptor_index,
                     )
-                    self.services.add_descriptor(descriptor)
+                    services.add_descriptor(descriptor)
 
-        self._services_resolved = True
+        self.services = services
         return self.services
 
     # IO methods
@@ -539,7 +551,7 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
             new_state == defs.BluetoothProfile.STATE_DISCONNECTED
             and self._client._disconnected_callback is not None
         ):
-            self._client._disconnected_callback(self._client)
+            self._client._disconnected_callback()
 
     @java_method("(II)V")
     def onMtuChanged(self, mtu, status):

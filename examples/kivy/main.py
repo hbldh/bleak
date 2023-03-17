@@ -49,8 +49,6 @@ class ExampleApp(App):
                 if len(scanned_devices) == 0:
                     raise bleak.exc.BleakError("no devices found")
 
-                scanned_devices.sort(key=lambda device: -device.rssi)
-
                 for device in scanned_devices:
                     self.line(f"{device.name} ({device.address})")
 

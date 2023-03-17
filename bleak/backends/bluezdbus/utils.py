@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import os
 import re
 
+from dbus_fast.auth import AuthExternal
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
@@ -43,3 +45,17 @@ def bdaddr_from_device_path(device_path: str) -> str:
         A Bluetooth address as a string.
     """
     return ":".join(device_path[-17:].split("_"))
+
+
+def get_dbus_authenticator():
+    uid = None
+    try:
+        uid = int(os.environ.get("BLEAK_DBUS_AUTH_UID", ""))
+    except ValueError:
+        pass
+
+    auth = None
+    if uid is not None:
+        auth = AuthExternal(uid=uid)
+
+    return auth

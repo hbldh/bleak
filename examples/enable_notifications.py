@@ -9,41 +9,90 @@ Updated on 2019-07-03 by hbldh <henrik.blidh@gmail.com>
 
 """
 
-import sys
+import argparse
 import asyncio
-import platform
+import logging
 
-from bleak import BleakClient
+from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-
-# you can change these to match your device or override them from the command line
-CHARACTERISTIC_UUID = "f000aa65-0451-4000-b000-000000000000"
-ADDRESS = (
-    "24:71:89:cc:09:05"
-    if platform.system() != "Darwin"
-    else "B9EA5233-37EF-4DD6-87A8-2A875E821C46"
-)
+logger = logging.getLogger(__name__)
 
 
 def notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray):
     """Simple notification handler which prints the data received."""
-    print(f"{characteristic.description}: {data}")
+    logger.info("%s: %r", characteristic.description, data)
 
 
-async def main(address, char_uuid):
-    async with BleakClient(address) as client:
-        print(f"Connected: {client.is_connected}")
+async def main(args: argparse.Namespace):
+    logger.info("starting scan...")
 
-        await client.start_notify(char_uuid, notification_handler)
+    if args.address:
+        device = await BleakScanner.find_device_by_address(
+            args.address, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        )
+        if device is None:
+            logger.error("could not find device with address '%s'", args.address)
+            return
+    else:
+        device = await BleakScanner.find_device_by_name(
+            args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        )
+        if device is None:
+            logger.error("could not find device with name '%s'", args.name)
+            return
+
+    logger.info("connecting to device...")
+
+    async with BleakClient(device) as client:
+        logger.info("Connected")
+
+        await client.start_notify(args.characteristic, notification_handler)
         await asyncio.sleep(5.0)
-        await client.stop_notify(char_uuid)
+        await client.stop_notify(args.characteristic)
 
 
 if __name__ == "__main__":
-    asyncio.run(
-        main(
-            sys.argv[1] if len(sys.argv) > 1 else ADDRESS,
-            sys.argv[2] if len(sys.argv) > 2 else CHARACTERISTIC_UUID,
-        )
+    parser = argparse.ArgumentParser()
+
+    device_group = parser.add_mutually_exclusive_group(required=True)
+
+    device_group.add_argument(
+        "--name",
+        metavar="<name>",
+        help="the name of the bluetooth device to connect to",
     )
+    device_group.add_argument(
+        "--address",
+        metavar="<address>",
+        help="the address of the bluetooth device to connect to",
+    )
+
+    parser.add_argument(
+        "--macos-use-bdaddr",
+        action="store_true",
+        help="when true use Bluetooth address instead of UUID on macOS",
+    )
+
+    parser.add_argument(
+        "characteristic",
+        metavar="<notify uuid>",
+        help="UUID of a characteristic that supports notifications",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="sets the log level to debug",
+    )
+
+    args = parser.parse_args()
+
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)-15s %(name)-8s %(levelname)s: %(message)s",
+    )
+
+    asyncio.run(main(args))

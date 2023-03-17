@@ -27,7 +27,7 @@ from weakref import WeakKeyDictionary
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
-from ...exc import BleakError
+from ...exc import BleakDBusError, BleakError
 from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
@@ -36,7 +36,7 @@ from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
-from .utils import assert_reply
+from .utils import assert_reply, get_dbus_authenticator
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +187,7 @@ class BlueZManager:
             # We need to create a new MessageBus each time as
             # dbus-next will destory the underlying file descriptors
             # when the previous one is closed in its finalizer.
-            bus = MessageBus(bus_type=BusType.SYSTEM)
+            bus = MessageBus(bus_type=BusType.SYSTEM, auth=get_dbus_authenticator())
             await bus.connect()
 
             try:
@@ -385,20 +385,25 @@ class BlueZManager:
                                 member="StopDiscovery",
                             )
                         )
-                        assert_reply(reply)
 
-                        # remove the filters
-                        reply = await self._bus.call(
-                            Message(
-                                destination=defs.BLUEZ_SERVICE,
-                                path=adapter_path,
-                                interface=defs.ADAPTER_INTERFACE,
-                                member="SetDiscoveryFilter",
-                                signature="a{sv}",
-                                body=[{}],
+                        try:
+                            assert_reply(reply)
+                        except BleakDBusError as ex:
+                            if ex.dbus_error != "org.bluez.Error.NotReady":
+                                raise
+                        else:
+                            # remove the filters
+                            reply = await self._bus.call(
+                                Message(
+                                    destination=defs.BLUEZ_SERVICE,
+                                    path=adapter_path,
+                                    interface=defs.ADAPTER_INTERFACE,
+                                    member="SetDiscoveryFilter",
+                                    signature="a{sv}",
+                                    body=[{}],
+                                )
                             )
-                        )
-                        assert_reply(reply)
+                            assert_reply(reply)
 
                 return stop
             except BaseException:
@@ -548,7 +553,7 @@ class BlueZManager:
         self._device_watchers.remove(watcher)
 
     async def get_services(
-        self, device_path: str, use_cached: bool
+        self, device_path: str, use_cached: bool, requested_services: Optional[Set[str]]
     ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
@@ -560,6 +565,9 @@ class BlueZManager:
                 When ``True`` if there is a cached :class:`BleakGATTServiceCollection`,
                 the method will not wait for ``"ServicesResolved"`` to become true
                 and instead return the cached service collection immediately.
+            requested_services:
+                When given, only return services with UUID that is in the list
+                of requested services.
 
         Returns:
             A new :class:`BleakGATTServiceCollection`.
@@ -581,6 +589,12 @@ class BlueZManager:
             )
 
             service = BleakGATTServiceBlueZDBus(service_props, service_path)
+
+            if (
+                requested_services is not None
+                and service.uuid not in requested_services
+            ):
+                continue
 
             services.add_service(service)
 
