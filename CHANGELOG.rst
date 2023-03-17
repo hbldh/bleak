@@ -29,6 +29,7 @@ Changed
   until services are discovered.
 * Include thread name in ``BLEAK_LOGGING`` output. Merged #1144.
 * Updated PyObjC dependency on macOS to v9.x.
+* Added automatic retry on ``le-connection-abort-by-local`` in BlueZ backend. Fixes #1220.
 
 Fixed
 -----
