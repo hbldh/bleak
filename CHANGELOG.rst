@@ -43,6 +43,7 @@ Fixed
   not send a scan response. Fixes #1211.
 * Fixed ``BLEDevice`` name sometimes incorrectly ``None``.
 * Fixed unhandled exception in ``CentralManagerDelegate`` destructor on macOS. Fixes #1219.
+* Fixed object passed to ``disconnected_callback`` is not ``BleakClient``. Fixes #1200.
 
 `0.19.5`_ (2022-11-19)
 ======================

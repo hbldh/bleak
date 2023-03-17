@@ -551,7 +551,7 @@ class _PythonBluetoothGattCallback(utils.AsyncJavaCallbacks):
             new_state == defs.BluetoothProfile.STATE_DISCONNECTED
             and self._client._disconnected_callback is not None
         ):
-            self._client._disconnected_callback(self._client)
+            self._client._disconnected_callback()
 
     @java_method("(II)V")
     def onMtuChanged(self, mtu, status):

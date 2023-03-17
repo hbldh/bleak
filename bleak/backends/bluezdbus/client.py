@@ -157,7 +157,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                         self._cleanup_all()
                         if self._disconnected_callback is not None:
-                            self._disconnected_callback(self)
+                            self._disconnected_callback()
                         disconnecting_event = self._disconnecting_event
                         if disconnecting_event:
                             disconnecting_event.set()

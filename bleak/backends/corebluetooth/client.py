@@ -117,7 +117,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     pass
 
             if self._disconnected_callback:
-                self._disconnected_callback(self)
+                self._disconnected_callback()
 
         manager = self._central_manager_delegate
         logger.debug("CentralManagerDelegate  at {}".format(manager))
