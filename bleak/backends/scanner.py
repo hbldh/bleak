@@ -11,12 +11,16 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Set,
     Tuple,
     Type,
 )
 
 from ..exc import BleakError
 from .device import BLEDevice
+
+# prevent tasks from being garbage collected
+_background_tasks: Set[asyncio.Task] = set()
 
 
 class AdvertisementData(NamedTuple):
@@ -165,7 +169,9 @@ class BaseBleakScanner(abc.ABC):
         if inspect.iscoroutinefunction(callback):
 
             def detection_callback(s, d):
-                asyncio.ensure_future(callback(s, d))
+                task = asyncio.create_task(callback(s, d))
+                _background_tasks.add(task)
+                task.add_done_callback(_background_tasks.discard)
 
         else:
             detection_callback = callback
