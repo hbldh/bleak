@@ -22,6 +22,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -68,6 +69,10 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
     handler.setFormatter(logging.Formatter(fmt=FORMAT))
     _logger.addHandler(handler)
     _logger.setLevel(logging.DEBUG)
+
+
+# prevent tasks from being garbage collected
+_background_tasks: Set[asyncio.Task] = set()
 
 
 class BleakScanner:
@@ -702,7 +707,9 @@ class BleakClient:
         if inspect.iscoroutinefunction(callback):
 
             def wrapped_callback(data):
-                asyncio.ensure_future(callback(characteristic, data))
+                task = asyncio.create_task(callback(characteristic, data))
+                _background_tasks.add(task)
+                task.add_done_callback(_background_tasks.discard)
 
         else:
             wrapped_callback = functools.partial(callback, characteristic)

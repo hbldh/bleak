@@ -10,6 +10,12 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Fixed possible garbage collection of running async callback from ``BleakClient.start_notify()``.
+* Fixed possible garbage collection of running async callback from ``BleakScanner(detection_callback=)``.
+* Fixed possible garbage collection of disconnect monitor in BlueZ backend. Fixed #1258.
+
 `0.20.0`_ (2023-03-17)
 ======================
 
