@@ -35,6 +35,9 @@ from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)
 
+# prevent tasks from being garbage collected
+_background_tasks: Set[asyncio.Task] = set()
+
 
 class BleakClientBlueZDBus(BaseBleakClient):
     """A native Linux Bleak Client
@@ -243,13 +246,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         self._is_connected = True
 
                         # Create a task that runs until the device is disconnected.
-                        asyncio.ensure_future(
+                        task = asyncio.create_task(
                             self._disconnect_monitor(
                                 self._bus,
                                 self._device_path,
                                 local_disconnect_monitor_event,
                             )
                         )
+                        _background_tasks.add(task)
+                        task.add_done_callback(_background_tasks.discard)
 
                         #
                         # We will try to use the cache if it exists and `dangerous_use_bleak_cache`

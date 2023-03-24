@@ -10,6 +10,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.20.1`_ (2023-03-24)
+======================
+
+Fixed
+-----
+* Fixed possible garbage collection of running async callback from ``BleakClient.start_notify()``.
+* Fixed possible garbage collection of running async callback from ``BleakScanner(detection_callback=)``.
+* Fixed possible garbage collection of disconnect monitor in BlueZ backend. Fixed #1258.
+
 `0.20.0`_ (2023-03-17)
 ======================
 
@@ -921,7 +930,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.20.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.20.1...develop
+.. _0.20.1: https://github.com/hbldh/bleak/compare/v0.20.0...v0.20.1
 .. _0.20.0: https://github.com/hbldh/bleak/compare/v0.19.5...v0.20.0
 .. _0.19.5: https://github.com/hbldh/bleak/compare/v0.19.4...v0.19.5
 .. _0.19.4: https://github.com/hbldh/bleak/compare/v0.19.3...v0.19.4
