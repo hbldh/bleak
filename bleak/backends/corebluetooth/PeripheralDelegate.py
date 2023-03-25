@@ -368,7 +368,7 @@ class PeripheralDelegate(NSObject):
         future = self._characteristic_read_futures.get(c_handle)
 
         # If there is no pending read request, then this must be a notification
-        # (the same delagate callback is used by both).
+        # (the same delegate callback is used by both).
         if not future:
             if error is None:
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
