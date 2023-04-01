@@ -26,8 +26,8 @@ async def main():
         # BlueZ doesn't have a proper way to get the MTU, so we have this hack.
         # If this doesn't work for you, you can set the client._mtu_size attribute
         # to override the value instead.
-        if client.__class__.__name__ == "BleakClientBlueZDBus":
-            await client._acquire_mtu()
+        if client._backend.__class__.__name__ == "BleakClientBlueZDBus":
+            await client._backend._acquire_mtu()
 
         print("MTU:", client.mtu_size)
 
