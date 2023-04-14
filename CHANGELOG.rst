@@ -14,6 +14,8 @@ Fixed
 -----
 - Fixed ``org.bluez.Error.InProgress`` in characteristic and descriptor read and
   write methods in BlueZ backend.
+- Fixed ``OSError: [WinError -2147483629] The object has been closed`` when
+  connecting on Windows. Fixes #1280.
 
 `0.20.1`_ (2023-03-24)
 ======================
