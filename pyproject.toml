@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bleak"
-version = "0.20.1"
+version = "0.20.2"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = ["Henrik Blidh <henrik.blidh@nedomkull.com>"]
 license = "MIT"

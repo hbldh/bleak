@@ -19,6 +19,7 @@ Contributors
 * Bernie Conrad <bernie@allthenticate.net>
 * Jonathan Soto <jsotogaviard@alum.mit.edu>
 * Kyle J. Williams <kyle@kjwill.tech>
+* Edward Betts <edward@4angle.com>
 
 Sponsors
 --------

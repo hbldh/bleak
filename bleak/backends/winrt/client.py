@@ -301,6 +301,8 @@ class BleakClientWinRT(BaseBleakClient):
                 self._session.close()
                 self._session = None
 
+        is_connect_complete = False
+
         def handle_session_status_changed(
             args: GattSessionStatusChangedEventArgs,
         ):
@@ -311,7 +313,9 @@ class BleakClientWinRT(BaseBleakClient):
                 for e in self._session_active_events:
                     e.set()
 
-            elif args.status == GattSessionStatus.CLOSED:
+            # Don't run this if we have not exited from the connect method yet.
+            # Cleanup is handled by the connect method in that case.
+            elif args.status == GattSessionStatus.CLOSED and is_connect_complete:
                 if self._disconnected_callback:
                     self._disconnected_callback()
 
@@ -326,7 +330,7 @@ class BleakClientWinRT(BaseBleakClient):
         ):
             logger.debug(
                 "session_status_changed_event_handler: id: %s, error: %s, status: %s",
-                sender.device_id,
+                sender.device_id.id,
                 args.error,
                 args.status,
             )
@@ -442,6 +446,7 @@ class BleakClientWinRT(BaseBleakClient):
                 # device, so we have to get services before the GATT session
                 # is set to active
                 await event.wait()
+                is_connect_complete = True
             finally:
                 self._services_changed_events.remove(services_changed_event)
 

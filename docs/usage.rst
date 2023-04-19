@@ -12,7 +12,7 @@ Usage
 
 
 One can use the ``BleakClient`` to connect to a Bluetooth device and read its model number
-via the asyncronous context manager like this:
+via the asynchronous context manager like this:
 
 .. code-block:: python
 

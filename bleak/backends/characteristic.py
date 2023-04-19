@@ -86,6 +86,9 @@ class BleakGATTCharacteristic(abc.ABC):
         Gets the maximum size in bytes that can be used for the *data* argument
         of :meth:`BleakClient.write_gatt_char()` when ``response=False``.
 
+        .. warning:: Linux quirk: For BlueZ versions < 5.62, this property
+            will always return ``20``.
+
         .. versionadded:: 0.16.0
         """
         return self._max_write_without_response_size
