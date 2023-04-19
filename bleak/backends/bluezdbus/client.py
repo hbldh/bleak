@@ -724,17 +724,32 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.path,
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member="ReadValue",
-                signature="a{sv}",
-                body=[{}],
+        while True:
+            assert self._bus
+
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.path,
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="ReadValue",
+                    signature="a{sv}",
+                    body=[{}],
+                )
             )
-        )
-        assert_reply(reply)
+
+            assert reply
+
+            if reply.error_name == "org.bluez.Error.InProgress":
+                logger.debug("retrying characteristic ReadValue due to InProgress")
+                # Avoid calling in a tight loop. There is no dbus signal to
+                # indicate ready, so unfortunately, we have to poll.
+                await asyncio.sleep(0.01)
+                continue
+
+            assert_reply(reply)
+            break
+
         value = bytearray(reply.body[0])
 
         logger.debug(
@@ -761,17 +776,32 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=descriptor.path,
-                interface=defs.GATT_DESCRIPTOR_INTERFACE,
-                member="ReadValue",
-                signature="a{sv}",
-                body=[{}],
+        while True:
+            assert self._bus
+
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=descriptor.path,
+                    interface=defs.GATT_DESCRIPTOR_INTERFACE,
+                    member="ReadValue",
+                    signature="a{sv}",
+                    body=[{}],
+                )
             )
-        )
-        assert_reply(reply)
+
+            assert reply
+
+            if reply.error_name == "org.bluez.Error.InProgress":
+                logger.debug("retrying descriptor ReadValue due to InProgress")
+                # Avoid calling in a tight loop. There is no dbus signal to
+                # indicate ready, so unfortunately, we have to poll.
+                await asyncio.sleep(0.01)
+                continue
+
+            assert_reply(reply)
+            break
+
         value = bytearray(reply.body[0])
 
         logger.debug(
@@ -842,21 +872,38 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not response and not BlueZFeatures.can_write_without_response:
             raise BleakError("Write without response requires at least BlueZ 5.46")
         if response or not BlueZFeatures.write_without_response_workaround_needed:
-            # TODO: Add OnValueUpdated handler for response=True?
-            reply = await self._bus.call(
-                Message(
-                    destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.path,
-                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                    member="WriteValue",
-                    signature="aya{sv}",
-                    body=[
-                        bytes(data),
-                        {"type": Variant("s", "request" if response else "command")},
-                    ],
+            while True:
+                assert self._bus
+
+                reply = await self._bus.call(
+                    Message(
+                        destination=defs.BLUEZ_SERVICE,
+                        path=characteristic.path,
+                        interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                        member="WriteValue",
+                        signature="aya{sv}",
+                        body=[
+                            bytes(data),
+                            {
+                                "type": Variant(
+                                    "s", "request" if response else "command"
+                                )
+                            },
+                        ],
+                    )
                 )
-            )
-            assert_reply(reply)
+
+                assert reply
+
+                if reply.error_name == "org.bluez.Error.InProgress":
+                    logger.debug("retrying characteristic WriteValue due to InProgress")
+                    # Avoid calling in a tight loop. There is no dbus signal to
+                    # indicate ready, so unfortunately, we have to poll.
+                    await asyncio.sleep(0.01)
+                    continue
+
+                assert_reply(reply)
+                break
         else:
             # Older versions of BlueZ don't have the "type" option, so we have
             # to write the hard way. This isn't the most efficient way of doing
@@ -898,24 +945,37 @@ class BleakClientBlueZDBus(BaseBleakClient):
             raise BleakError("Not connected")
 
         descriptor = self.services.get_descriptor(handle)
+
         if not descriptor:
-            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
+            raise BleakError(f"Descriptor with handle {handle} was not found!")
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=descriptor.path,
-                interface=defs.GATT_DESCRIPTOR_INTERFACE,
-                member="WriteValue",
-                signature="aya{sv}",
-                body=[bytes(data), {"type": Variant("s", "command")}],
+        while True:
+            assert self._bus
+
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=descriptor.path,
+                    interface=defs.GATT_DESCRIPTOR_INTERFACE,
+                    member="WriteValue",
+                    signature="aya{sv}",
+                    body=[bytes(data), {"type": Variant("s", "command")}],
+                )
             )
-        )
-        assert_reply(reply)
 
-        logger.debug(
-            "Write Descriptor {0} | {1}: {2}".format(handle, descriptor.path, data)
-        )
+            assert reply
+
+            if reply.error_name == "org.bluez.Error.InProgress":
+                logger.debug("retrying descriptor WriteValue due to InProgress")
+                # Avoid calling in a tight loop. There is no dbus signal to
+                # indicate ready, so unfortunately, we have to poll.
+                await asyncio.sleep(0.01)
+                continue
+
+            assert_reply(reply)
+            break
+
+        logger.debug("Write Descriptor %s | %s: %s", handle, descriptor.path, data)
 
     async def start_notify(
         self,
