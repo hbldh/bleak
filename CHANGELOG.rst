@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+- Fixed ``org.bluez.Error.InProgress`` in characteristic and descriptor read and
+  write methods in BlueZ backend.
+
 `0.20.1`_ (2023-03-24)
 ======================
 
