@@ -543,7 +543,6 @@ class BleakClientWinRT(BaseBleakClient):
             device_information.pairing.can_pair
             and not device_information.pairing.is_paired
         ):
-
             # Currently only supporting Just Works solutions...
             ceremony = DevicePairingKinds.CONFIRM_ONLY
             custom_pairing = device_information.pairing.custom
@@ -706,7 +705,7 @@ class BleakClientWinRT(BaseBleakClient):
                 characteristics: Sequence[GattCharacteristic] = _ensure_success(
                     await FutureLike(service.get_characteristics_async(*args)),
                     "characteristics",
-                    f"Could not get GATT characteristics for {service}",
+                    f"Could not get GATT characteristics for service {service.uuid} ({service.attribute_handle})",
                 )
 
                 logger.debug("returned from get_characteristics_async")
@@ -723,7 +722,7 @@ class BleakClientWinRT(BaseBleakClient):
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
                         await FutureLike(characteristic.get_descriptors_async(*args)),
                         "descriptors",
-                        f"Could not get GATT descriptors for {service}",
+                        f"Could not get GATT descriptors for characteristic {characteristic.uuid} ({characteristic.attribute_handle})",
                     )
 
                     logger.debug("returned from get_descriptors_async")
