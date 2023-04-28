@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+- Improved error messages when failing to get services in WinRT backend.
+
 `0.20.2`_ (2023-04-19)
 ======================
 
