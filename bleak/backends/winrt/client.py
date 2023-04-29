@@ -68,11 +68,6 @@ from .service import BleakGATTServiceWinRT
 
 logger = logging.getLogger(__name__)
 
-_ACCESS_DENIED_SERVICES = list(
-    uuid.UUID(u)
-    for u in ("00001812-0000-1000-8000-00805f9b34fb",)  # Human Interface Device Service
-)
-
 # TODO: we can use this when minimum Python is 3.8
 # class _Result(typing.Protocol):
 #     status: GattCommunicationStatus
@@ -652,8 +647,6 @@ class BleakClientWinRT(BaseBleakClient):
         if cache_mode is not None:
             args.append(cache_mode)
 
-        logger.debug("calling get_gatt_services_async")
-
         def dispose_on_cancel(future):
             if future._cancel_requested and future._result is not None:
                 logger.debug("disposing services object because of cancel")
@@ -688,44 +681,39 @@ class BleakClientWinRT(BaseBleakClient):
                     )
                 )
 
-        logger.debug("returned from get_gatt_services_async")
-
         try:
             for service in services:
-                # Windows returns an ACCESS_DENIED error when trying to enumerate
-                # characteristics of services used by the OS, like the HID service
-                # so we have to exclude those services.
-                if service.uuid in _ACCESS_DENIED_SERVICES:
+
+                result = await FutureLike(service.get_characteristics_async(*args))
+
+                if result.status == GattCommunicationStatus.ACCESS_DENIED:
+                    # Windows does not allow access to services "owned" by the
+                    # OS. This includes services like HID and Bond Manager.
+                    logger.debug(
+                        "skipping service %s due to access denied", service.uuid
+                    )
                     continue
 
-                new_services.add_service(BleakGATTServiceWinRT(service))
-
-                logger.debug("calling get_characteristics_async")
-
                 characteristics: Sequence[GattCharacteristic] = _ensure_success(
-                    await FutureLike(service.get_characteristics_async(*args)),
+                    result,
                     "characteristics",
                     f"Could not get GATT characteristics for service {service.uuid} ({service.attribute_handle})",
                 )
 
-                logger.debug("returned from get_characteristics_async")
+                new_services.add_service(BleakGATTServiceWinRT(service))
 
                 for characteristic in characteristics:
-                    new_services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(
-                            characteristic, self._session.max_pdu_size - 3
-                        )
-                    )
-
-                    logger.debug("calling get_descriptors_async")
-
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
                         await FutureLike(characteristic.get_descriptors_async(*args)),
                         "descriptors",
                         f"Could not get GATT descriptors for characteristic {characteristic.uuid} ({characteristic.attribute_handle})",
                     )
 
-                    logger.debug("returned from get_descriptors_async")
+                    new_services.add_characteristic(
+                        BleakGATTCharacteristicWinRT(
+                            characteristic, self._session.max_pdu_size - 3
+                        )
+                    )
 
                     for descriptor in descriptors:
                         new_services.add_descriptor(

@@ -14,6 +14,10 @@ Changed
 -------
 - Improved error messages when failing to get services in WinRT backend.
 
+Fixed
+-----
+- Fix handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
+
 `0.20.2`_ (2023-04-19)
 ======================
 
