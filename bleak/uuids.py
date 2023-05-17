@@ -1157,11 +1157,16 @@ def normalize_uuid_str(uuid: str) -> str:
     - Converted to lower case.
     - 16-bit UUIDs are expanded to 128-bit.
 
+    BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part B - Section 2.5.1
+
     .. versionadded:: 0.20.0
     """
     if len(uuid) == 4:
         # Bluetooth SIG registered 16-bit UUIDs
         uuid = f"0000{uuid}-0000-1000-8000-00805f9b34fb"
+    elif len(uuid) == 8:
+        # Bluetooth SIG registered 32-bit UUIDs
+        uuid = f"{uuid}-0000-1000-8000-00805f9b34fb"
 
     # let UUID class do the validation and conversion to lower case
     return str(UUID(uuid))
