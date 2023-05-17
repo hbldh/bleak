@@ -1160,6 +1160,8 @@ def normalize_uuid_str(uuid: str) -> str:
     BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part B - Section 2.5.1
 
     .. versionadded:: 0.20.0
+    .. versionchanged:: 0.21.0
+        Added support for 32-bit UUIDs.
     """
     if len(uuid) == 4:
         # Bluetooth SIG registered 16-bit UUIDs
