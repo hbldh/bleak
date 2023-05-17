@@ -1155,7 +1155,7 @@ def normalize_uuid_str(uuid: str) -> str:
     Normaizes a UUID to the format used by Bleak.
 
     - Converted to lower case.
-    - 16-bit UUIDs are expanded to 128-bit.
+    - 16-bit and 32-bit UUIDs are expanded to 128-bit.
 
     BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part B - Section 2.5.1
 
