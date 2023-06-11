@@ -210,7 +210,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     def _stopped_handler(self, sender, e):
         logger.debug(
             "{0} devices found. Watcher status: {1}.".format(
-                len(self.seen_devices), "?" if self.watcher is None else self.watcher.status
+                len(self.seen_devices), sender.status
             )
         )
         self._stopped_event.set()
