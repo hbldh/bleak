@@ -17,6 +17,7 @@ Changed
 Fixed
 -----
 - Fix handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
+- Added support for 32bit UUIDs. Fixes #1314 
 
 `0.20.2`_ (2023-04-19)
 ======================
