@@ -22,6 +22,8 @@ Changed
 * Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
 * Changed default handling of the ``response`` argument in ``BleakClient.write_gatt_char``.
   Fixes #909.
+* Added ``advertisement_data()`` async iterator method to ``BleakScanner``.
+* Added ``scan_iterator.py`` example.
 
 Fixed
 -----

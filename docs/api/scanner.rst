@@ -62,12 +62,18 @@ following methods:
 Getting discovered devices and advertisement data
 -------------------------------------------------
 
-If you aren't using the "easy" class methods, there are two ways to get the
+If you aren't using the "easy" class methods, there are three ways to get the
 discovered devices and advertisement data.
 
 For event-driven programming, you can provide a ``detection_callback`` callback
 to the :class:`BleakScanner` constructor. This will be called back each time
 and advertisement is received.
+
+Alternatively, you can utilize the asynchronous iterator to iterate over
+advertisements as they are received. The method below returns an async iterator
+that yields the same tuples as otherwise provided to ``detection_callback``.
+
+.. automethod:: bleak.BleakScanner.advertisement_data
 
 Otherwise, you can use one of the properties below after scanning has stopped.
 

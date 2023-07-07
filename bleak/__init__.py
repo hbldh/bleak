@@ -16,6 +16,7 @@ import sys
 import uuid
 from typing import (
     TYPE_CHECKING,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Dict,
@@ -214,6 +215,31 @@ class BleakScanner:
         )
         self._backend.set_scanning_filter(**kwargs)
 
+    async def advertisement_data(
+        self,
+    ) -> AsyncGenerator[Tuple[BLEDevice, AdvertisementData], None]:
+        """
+        Yields devices and associated advertising data packets as they are discovered.
+
+        .. note::
+            Ensure that scanning is started before calling this method.
+
+        Returns:
+            An async iterator that yields tuples (:class:`BLEDevice`, :class:`AdvertisementData`).
+
+        .. versionadded:: 0.20.1
+        """
+        devices = asyncio.Queue()
+
+        unregister_callback = self._backend.register_detection_callback(
+            lambda bd, ad: devices.put_nowait((bd, ad))
+        )
+        try:
+            while True:
+                yield await devices.get()
+        finally:
+            unregister_callback()
+
     @overload
     @classmethod
     async def discover(
@@ -370,16 +396,12 @@ class BleakScanner:
             the timeout.
 
         """
-        found_device_queue: asyncio.Queue[BLEDevice] = asyncio.Queue()
-
-        def apply_filter(d: BLEDevice, ad: AdvertisementData):
-            if filterfunc(d, ad):
-                found_device_queue.put_nowait(d)
-
-        async with cls(detection_callback=apply_filter, **kwargs):
+        async with cls(**kwargs) as scanner:
             try:
                 async with async_timeout(timeout):
-                    return await found_device_queue.get()
+                    async for bd, ad in scanner.advertisement_data():
+                        if filterfunc(bd, ad):
+                            return bd
             except asyncio.TimeoutError:
                 return None
 
