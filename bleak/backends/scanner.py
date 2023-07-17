@@ -5,8 +5,8 @@ import os
 import platform
 from typing import (
     Any,
-    Awaitable,
     Callable,
+    Coroutine,
     Dict,
     List,
     NamedTuple,
@@ -91,7 +91,7 @@ class AdvertisementData(NamedTuple):
 
 AdvertisementDataCallback = Callable[
     [BLEDevice, AdvertisementData],
-    Optional[Awaitable[None]],
+    Optional[Coroutine[Any, Any, None]],
 ]
 """
 Type alias for callback called when advertisement data is received.
@@ -134,7 +134,7 @@ class BaseBleakScanner(abc.ABC):
         service_uuids: Optional[List[str]],
     ):
         super(BaseBleakScanner, self).__init__()
-        self._callback: Optional[AdvertisementDataCallback] = None
+        self._callback: Optional[Callable[[BLEDevice, AdvertisementData], None]] = None
         self.register_detection_callback(detection_callback)
         self._service_uuids: Optional[List[str]] = (
             [u.lower() for u in service_uuids] if service_uuids is not None else None
