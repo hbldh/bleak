@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def _format_bdaddr(a: int) -> str:
-    return ":".join("{:02X}".format(x) for x in a.to_bytes(6, byteorder="big"))
+    return ":".join(f"{x:02X}" for x in a.to_bytes(6, byteorder="big"))
 
 
 def _format_event_args(e: BluetoothLEAdvertisementReceivedEventArgs) -> str:
@@ -101,7 +101,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     ):
         """Callback for AdvertisementWatcher.Received"""
         # TODO: Cannot check for if sender == self.watcher in winrt?
-        logger.debug("Received {0}.".format(_format_event_args(event_args)))
+        logger.debug("Received %s.", _format_event_args(event_args))
 
         # REVISIT: if scanning filters with BluetoothSignalStrengthFilter.OutOfRangeTimeout
         # are in place, an RSSI of -127 means that the device has gone out of range and should
@@ -209,9 +209,9 @@ class BleakScannerWinRT(BaseBleakScanner):
 
     def _stopped_handler(self, sender, e):
         logger.debug(
-            "{0} devices found. Watcher status: {1}.".format(
-                len(self.seen_devices), sender.status
-            )
+            "%s devices found. Watcher status: %r.",
+            len(self.seen_devices),
+            sender.status,
         )
         self._stopped_event.set()
 
@@ -247,15 +247,15 @@ class BleakScannerWinRT(BaseBleakScanner):
             await self._stopped_event.wait()
         else:
             logger.debug(
-                "skipping waiting for stop because status is %s",
-                self.watcher.status.name,
+                "skipping waiting for stop because status is %r",
+                self.watcher.status,
             )
 
         try:
             self.watcher.remove_received(self._received_token)
             self.watcher.remove_stopped(self._stopped_token)
         except Exception as e:
-            logger.debug("Could not remove event handlers: {0}...".format(e))
+            logger.debug("Could not remove event handlers: %s", e)
 
         self._stopped_token = None
         self._received_token = None

@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 -------
 - Improved error messages when failing to get services in WinRT backend.
+- Improved error messages with enum values in WinRT backend. Fixes #1284.
 
 Fixed
 -----
