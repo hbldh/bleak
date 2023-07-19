@@ -194,7 +194,7 @@ class BaseBleakScanner(abc.ABC):
 
     def call_detection_callbacks(
         self, device: BLEDevice, advertisement_data: AdvertisementData
-    ):
+    ) -> None:
         """
         Calls all registered detection callbacks.
 
