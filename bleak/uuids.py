@@ -1157,8 +1157,22 @@ def normalize_uuid_str(uuid: str) -> str:
     - Converted to lower case.
     - 16-bit and 32-bit UUIDs are expanded to 128-bit.
 
-    .. versionadded:: 0.20.0
-    .. versionchanged:: 0.21.0
+    Example::
+
+        # 16-bit
+        uuid1 = normalize_uuid_str("1234")
+        # uuid1 == "00001234-1000-8000-00805f9b34fb"
+
+        # 32-bit
+        uuid2 = normalize_uuid_str("12345678")
+        # uuid2 == "12345678-1000-8000-00805f9b34fb"
+
+        # 128-bit
+        uuid3 = normalize_uuid_str("12345678-1234-1234-1234567890ABC")
+        # uuid3 == "12345678-1234-1234-1234567890abc"
+
+    .. versionadded:: 0.20
+    .. versionchanged:: 0.21
         Added support for 32-bit UUIDs.
     """
     # See: BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part B - Section 2.5.1
@@ -1171,3 +1185,37 @@ def normalize_uuid_str(uuid: str) -> str:
 
     # let UUID class do the validation and conversion to lower case
     return str(UUID(uuid))
+
+
+def normalize_uuid_16(uuid: int) -> str:
+    """
+    Normaizes a 16-bit integer UUID to the format used by Bleak.
+
+    Returns:
+        128-bit UUID as string with the format ``"0000xxxx-1000-8000-00805f9b34fb"``.
+
+    Example::
+
+        uuid = normalize_uuid_16(0x1234)
+        # uuid == "00001234-1000-8000-00805f9b34fb"
+
+    .. versionadded:: 0.21
+    """
+    return normalize_uuid_str(f"{uuid:04X}")
+
+
+def normalize_uuid_32(uuid: int) -> str:
+    """
+    Normaizes a 32-bit integer UUID to the format used by Bleak.
+
+    Returns:
+        128-bit UUID as string with the format ``"xxxxxxxx-1000-8000-00805f9b34fb"``.
+
+    Example::
+
+        uuid = normalize_uuid_32(0x12345678)
+        # uuid == "12345678-1000-8000-00805f9b34fb"
+
+    .. versionadded:: 0.21
+    """
+    return normalize_uuid_str(f"{uuid:08X}")
