@@ -137,7 +137,7 @@ class BaseBleakScanner(abc.ABC):
 
         self._ad_callbacks: List[Callable[[BLEDevice, AdvertisementData], None]] = []
         """
-        List of callbacks to call when an advertisement is received
+        List of callbacks to call when an advertisement is received.
         """
 
         if detection_callback is not None:
