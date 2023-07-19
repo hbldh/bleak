@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``bleak.uuids.normalize_uuid_16()`` function.
+* Added ``bleak.uuids.normalize_uuid_32()`` function.
+
 Changed
 -------
 - Improved error messages when failing to get services in WinRT backend.
