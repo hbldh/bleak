@@ -29,7 +29,8 @@ class CBScannerArgs(TypedDict, total=False):
     If true, use Bluetooth address instead of UUID.
 
     .. warning:: This uses an undocumented IOBluetooth API to get the Bluetooth
-        address and may break in the future macOS releases.
+        address and may break in the future macOS releases. `It is known to not
+        work on macOS 10.15 <https://github.com/hbldh/bleak/issues/1286>`_.
     """
 
 
