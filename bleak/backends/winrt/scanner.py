@@ -18,6 +18,7 @@ else:
     from typing import Literal
 
 from ...assigned_numbers import AdvertisementDataType
+from ...uuids import normalize_uuid_str
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
 logger = logging.getLogger(__name__)
@@ -157,15 +158,17 @@ class BleakScannerWinRT(BaseBleakScanner):
                 AdvertisementDataType.SERVICE_DATA_UUID16
             ):
                 data = bytes(section.data)
-                service_data[
-                    f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
-                ] = data[2:]
+                service_data[normalize_uuid_str(f"{data[1]:02x}{data[0]:02x}")] = data[
+                    2:
+                ]
             for section in args.advertisement.get_sections_by_type(
                 AdvertisementDataType.SERVICE_DATA_UUID32
             ):
                 data = bytes(section.data)
                 service_data[
-                    f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                    normalize_uuid_str(
+                        f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}"
+                    )
                 ] = data[4:]
             for section in args.advertisement.get_sections_by_type(
                 AdvertisementDataType.SERVICE_DATA_UUID128
