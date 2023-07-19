@@ -146,10 +146,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 advertisement_data,
             )
 
-            if not self._callback:
-                return
-
-            self._callback(device, advertisement_data)
+            self.call_detection_callbacks(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
         await self._manager.start_scan(self._service_uuids)

@@ -273,10 +273,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             advertisement_data,
         )
 
-        if self._callback is None:
-            return
-
-        self._callback(device, advertisement_data)
+        self.call_detection_callbacks(device, advertisement_data)
 
     def _handle_device_removed(self, device_path: str) -> None:
         """
