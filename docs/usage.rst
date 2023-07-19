@@ -20,7 +20,7 @@ via the asynchronous context manager like this:
     from bleak import BleakClient
 
     address = "24:71:89:cc:09:05"
-    MODEL_NBR_UUID = "00002a24-0000-1000-8000-00805f9b34fb"
+    MODEL_NBR_UUID = "2A24"
 
     async def main(address):
         async with BleakClient(address) as client:
@@ -37,7 +37,7 @@ or one can do it without the context manager like this:
     from bleak import BleakClient
 
     address = "24:71:89:cc:09:05"
-    MODEL_NBR_UUID = "00002a24-0000-1000-8000-00805f9b34fb"
+    MODEL_NBR_UUID = "2A24"
 
     async def main(address):
         client = BleakClient(address)
