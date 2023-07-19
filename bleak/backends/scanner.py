@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
+    Hashable,
     List,
     NamedTuple,
     Optional,
@@ -135,7 +136,9 @@ class BaseBleakScanner(abc.ABC):
     ):
         super(BaseBleakScanner, self).__init__()
 
-        self._ad_callbacks: List[Callable[[BLEDevice, AdvertisementData], None]] = []
+        self._ad_callbacks: Dict[
+            Hashable, Callable[[BLEDevice, AdvertisementData], None]
+        ] = {}
         """
         List of callbacks to call when an advertisement is received.
         """
@@ -185,10 +188,12 @@ class BaseBleakScanner(abc.ABC):
         else:
             detection_callback = callback
 
-        self._ad_callbacks.append(detection_callback)
+        token = object()
+
+        self._ad_callbacks[token] = detection_callback
 
         def remove():
-            self._ad_callbacks.remove(detection_callback)
+            self._ad_callbacks.pop(token, None)
 
         return remove
 
@@ -201,7 +206,7 @@ class BaseBleakScanner(abc.ABC):
         Backend implementations should call this method when an advertisement
         event is received from the OS.
         """
-        for callback in self._ad_callbacks:
+        for callback in self._ad_callbacks.values():
             callback(device, advertisement_data)
 
     def create_or_update_device(
