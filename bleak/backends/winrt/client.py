@@ -302,7 +302,7 @@ class BleakClientWinRT(BaseBleakClient):
             args: GattSessionStatusChangedEventArgs,
         ):
             if args.error != BluetoothError.SUCCESS:
-                logger.error(f"Unhandled GATT error {args.error}")
+                logger.error("Unhandled GATT error %r", args.error)
 
             if args.status == GattSessionStatus.ACTIVE:
                 for e in self._session_active_events:
@@ -324,7 +324,7 @@ class BleakClientWinRT(BaseBleakClient):
             sender: GattSession, args: GattSessionStatusChangedEventArgs
         ):
             logger.debug(
-                "session_status_changed_event_handler: id: %s, error: %s, status: %s",
+                "session_status_changed_event_handler: id: %s, error: %r, status: %r",
                 sender.device_id.id,
                 args.error,
                 args.status,
@@ -566,7 +566,7 @@ class BleakClientWinRT(BaseBleakClient):
                 raise BleakError(f"Could not pair with device: {pairing_result.status}")
             else:
                 logger.info(
-                    "Paired to device with protection level %d.",
+                    "Paired to device with protection level %r.",
                     pairing_result.protection_level_used,
                 )
                 return True
@@ -887,7 +887,7 @@ class BleakClientWinRT(BaseBleakClient):
         _ensure_success(
             await descriptor.obj.write_value_with_result_async(buf),
             None,
-            f"Could not write value {data} to descriptor {handle:04X}",
+            f"Could not write value {data!r} to descriptor {handle:04X}",
         )
 
         logger.debug("Write Descriptor %04X : %s", handle, data)
