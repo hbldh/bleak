@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 -------
 - Improved error messages when failing to get services in WinRT backend.
+- Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
 
 Fixed
 -----

@@ -175,7 +175,17 @@ class BleakScanner:
             FutureWarning,
             stacklevel=2,
         )
-        self._backend.register_detection_callback(callback)
+
+        try:
+            unregister = getattr(self, "_unregister_")
+        except AttributeError:
+            pass
+        else:
+            unregister()
+
+        if callback is not None:
+            unregister = self._backend.register_detection_callback(callback)
+            setattr(self, "_unregister_", unregister)
 
     async def start(self):
         """Start scanning for devices"""
