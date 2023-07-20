@@ -17,25 +17,25 @@ Added
 
 Changed
 -------
-- Improved error messages when failing to get services in WinRT backend.
-- Improved error messages with enum values in WinRT backend. Fixes #1284.
-- Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
+* Improved error messages when failing to get services in WinRT backend.
+* Improved error messages with enum values in WinRT backend. Fixes #1284.
+* Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
 
 Fixed
 -----
-- Fix handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
-- Added support for 32bit UUIDs. Fixes #1314.
-- Fixed typing for ``BaseBleakScanner`` detection callback.
-- Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
+* Fix handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
+* Added support for 32bit UUIDs. Fixes #1314.
+* Fixed typing for ``BaseBleakScanner`` detection callback.
+* Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
 
 `0.20.2`_ (2023-04-19)
 ======================
 
 Fixed
 -----
-- Fixed ``org.bluez.Error.InProgress`` in characteristic and descriptor read and
+* Fixed ``org.bluez.Error.InProgress`` in characteristic and descriptor read and
   write methods in BlueZ backend.
-- Fixed ``OSError: [WinError -2147483629] The object has been closed`` when
+* Fixed ``OSError: [WinError -2147483629] The object has been closed`` when
   connecting on Windows. Fixes #1280.
 
 `0.20.1`_ (2023-03-24)
