@@ -188,9 +188,6 @@ class BleakScannerWinRT(BaseBleakScanner):
             bdaddr, local_name, raw_data, advertisement_data
         )
 
-        if self._callback is None:
-            return
-
         # On Windows, we have to fake service UUID filtering. If we were to pass
         # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
         # with the service UUIDs appropriately set, we would no longer receive
@@ -205,7 +202,7 @@ class BleakScannerWinRT(BaseBleakScanner):
                 # if there were no matching service uuids, the don't call the callback
                 return
 
-        self._callback(device, advertisement_data)
+        self.call_detection_callbacks(device, advertisement_data)
 
     def _stopped_handler(self, sender, e):
         logger.debug(

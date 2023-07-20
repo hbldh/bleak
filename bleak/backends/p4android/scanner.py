@@ -271,10 +271,7 @@ class BleakScannerP4Android(BaseBleakScanner):
             advertisement,
         )
 
-        if not self._callback:
-            return
-
-        self._callback(device, advertisement)
+        self.call_detection_callbacks(device, advertisement)
 
 
 class _PythonScanCallback(utils.AsyncJavaCallbacks):
