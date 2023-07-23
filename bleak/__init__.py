@@ -227,7 +227,7 @@ class BleakScanner:
         Returns:
             An async iterator that yields tuples (:class:`BLEDevice`, :class:`AdvertisementData`).
 
-        .. versionadded:: 0.20.1
+        .. versionadded:: 0.21
         """
         devices = asyncio.Queue()
 
