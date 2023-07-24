@@ -262,7 +262,7 @@ class CentralManagerDelegate(NSObject):
 
         for callback in self.callbacks.values():
             if callback:
-                callback(peripheral, advertisementData, RSSI)
+                callback(peripheral, advertisementData, int(RSSI))
 
         logger.debug(
             "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
