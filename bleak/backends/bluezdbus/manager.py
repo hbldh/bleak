@@ -668,6 +668,11 @@ class BlueZManager:
 
         If a disconnect happens before the completion a BleakError exception is raised.
         """
+        if device_path not in self._properties:
+            raise BleakError(
+                f"Device '{device_path}' disappeared while waiting to discover services"
+            )
+
         services_discovered_wait_task = asyncio.create_task(
             self._wait_condition(device_path, "ServicesResolved", True)
         )
