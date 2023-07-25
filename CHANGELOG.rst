@@ -14,6 +14,7 @@ Added
 -----
 * Added ``bleak.uuids.normalize_uuid_16()`` function.
 * Added ``bleak.uuids.normalize_uuid_32()`` function.
+* Added ``advertisement_data()`` async iterator method to ``BleakScanner``. Merged #1361.
 
 Changed
 -------
@@ -22,16 +23,14 @@ Changed
 * Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
 * Changed default handling of the ``response`` argument in ``BleakClient.write_gatt_char``.
   Fixes #909.
-* Added ``advertisement_data()`` async iterator method to ``BleakScanner``. Merged #1361.
-* Added ``scan_iterator.py`` example.
 
 Fixed
 -----
-* Fix handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
+* Fixed handling all access denied errors when enumerating characteristics on Windows. Fixes #1291.
 * Added support for 32bit UUIDs. Fixes #1314.
 * Fixed typing for ``BaseBleakScanner`` detection callback.
 * Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
-* Reduce expensive logging in the BlueZ backend.
+* Reduced expensive logging in the BlueZ backend. Merged #1376.
 
 `0.20.2`_ (2023-04-19)
 ======================
