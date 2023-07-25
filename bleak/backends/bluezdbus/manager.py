@@ -110,7 +110,6 @@ Args:
 
 
 class DeviceWatcher(NamedTuple):
-
     device_path: str
     """
     The D-Bus object path of the device.
@@ -274,7 +273,8 @@ class BlueZManager:
                             desc_props["Characteristic"], set()
                         ).add(path)
 
-                logger.debug(f"initial properties: {self._properties}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("initial properties: %s", self._properties)
 
             except BaseException:
                 # if setup failed, disconnect
@@ -727,13 +727,14 @@ class BlueZManager:
         if message.message_type != MessageType.SIGNAL:
             return
 
-        logger.debug(
-            "received D-Bus signal: %s.%s (%s): %s",
-            message.interface,
-            message.member,
-            message.path,
-            message.body,
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "received D-Bus signal: %s.%s (%s): %s",
+                message.interface,
+                message.member,
+                message.path,
+                message.body,
+            )
 
         # type hints
         obj_path: str
@@ -884,7 +885,7 @@ class BlueZManager:
             device: The current D-Bus properties of the device.
             changed: A list of properties that have changed since the last call.
         """
-        for (callback, adapter_path) in self._advertisement_callbacks:
+        for callback, adapter_path in self._advertisement_callbacks:
             # filter messages from other adapters
             if adapter_path != device["Adapter"]:
                 continue
