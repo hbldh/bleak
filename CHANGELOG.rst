@@ -31,6 +31,7 @@ Fixed
 * Added support for 32bit UUIDs. Fixes #1314.
 * Fixed typing for ``BaseBleakScanner`` detection callback.
 * Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
+* Reduce expensive logging in the BlueZ backend.
 
 `0.20.2`_ (2023-04-19)
 ======================

@@ -75,12 +75,14 @@ class AdvertisementMonitor(ServiceInterface):
     @method()
     @no_type_check
     def DeviceFound(self, device: "o"):  # noqa: F821
-        logger.debug("DeviceFound %s", device)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("DeviceFound %s", device)
 
     @method()
     @no_type_check
     def DeviceLost(self, device: "o"):  # noqa: F821
-        logger.debug("DeviceLost %s", device)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("DeviceLost %s", device)
 
     @dbus_property(PropertyAccess.READ)
     @no_type_check

@@ -150,7 +150,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 def on_connected_changed(connected: bool) -> None:
                     if not connected:
-                        logger.debug(f"Device disconnected ({self._device_path})")
+                        logger.debug("Device disconnected (%s)", self._device_path)
 
                         self._is_connected = False
 
@@ -340,14 +340,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Free all the allocated resource in DBus. Use this method to
         eventually cleanup all otherwise leaked resources.
         """
-        logger.debug(f"_cleanup_all({self._device_path})")
+        logger.debug("_cleanup_all(%s)", self._device_path)
 
         if self._remove_device_watcher:
             self._remove_device_watcher()
             self._remove_device_watcher = None
 
         if not self._bus:
-            logger.debug(f"already disconnected ({self._device_path})")
+            logger.debug("already disconnected (%s)", self._device_path)
             return
 
         # Try to disconnect the System Bus.
@@ -355,7 +355,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._bus.disconnect()
         except Exception as e:
             logger.error(
-                f"Attempt to disconnect system bus failed ({self._device_path}): {e}"
+                "Attempt to disconnect system bus failed (%s): %s",
+                self._device_path,
+                e,
             )
         else:
             # Critical to remove the `self._bus` object here to since it was
@@ -376,18 +378,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
-        logger.debug(f"Disconnecting ({self._device_path})")
+        logger.debug("Disconnecting ({%s})", self._device_path)
 
         if self._bus is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the D-Bus
             # connection.
-            logger.debug(f"already disconnected ({self._device_path})")
+            logger.debug("already disconnected ({%s})", self._device_path)
             return True
 
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
-            logger.debug(f"already in progress ({self._device_path})")
+            logger.debug("already in progress ({%s})", self._device_path)
             async with async_timeout(10):
                 await self._disconnecting_event.wait()
         elif self.is_connected:
@@ -804,9 +806,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         value = bytearray(reply.body[0])
 
-        logger.debug(
-            "Read Descriptor {0} | {1}: {2}".format(handle, descriptor.path, value)
-        )
+        logger.debug("Read Descriptor %s | %s: %s", handle, descriptor.path, value)
         return value
 
     async def write_gatt_char(
@@ -877,9 +877,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 os.close(fd)
 
         logger.debug(
-            "Write Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.path, data
-            )
+            "Write Characteristic %s | %s: %s",
+            characteristic.uuid,
+            characteristic.path,
+            data,
         )
 
     async def write_gatt_descriptor(
