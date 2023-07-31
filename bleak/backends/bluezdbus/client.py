@@ -210,36 +210,36 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                 )
                             )
 
-                            assert reply is not None
+                            if reply is not None:
 
-                            if reply.message_type == MessageType.ERROR:
-                                # This error is often caused by RF interference
-                                # from other Bluetooth or Wi-Fi devices. In many
-                                # cases, retrying will connect successfully.
-                                # Note: this error was added in BlueZ 6.62.
-                                if (
-                                    reply.error_name == "org.bluez.Error.Failed"
-                                    and reply.body
-                                    and reply.body[0] == "le-connection-abort-by-local"
-                                ):
-                                    logger.debug(
-                                        "retry due to le-connection-abort-by-local"
-                                    )
+                                if reply.message_type == MessageType.ERROR:
+                                    # This error is often caused by RF interference
+                                    # from other Bluetooth or Wi-Fi devices. In many
+                                    # cases, retrying will connect successfully.
+                                    # Note: this error was added in BlueZ 6.62.
+                                    if (
+                                        reply.error_name == "org.bluez.Error.Failed"
+                                        and reply.body
+                                        and reply.body[0] == "le-connection-abort-by-local"
+                                    ):
+                                        logger.debug(
+                                            "retry due to le-connection-abort-by-local"
+                                        )
 
-                                    # When this error occurs, BlueZ actually
-                                    # connected so we get "Connected" property changes
-                                    # that we need to wait for before attempting
-                                    # to connect again.
-                                    await local_disconnect_monitor_event.wait()
+                                        # When this error occurs, BlueZ actually
+                                        # connected so we get "Connected" property changes
+                                        # that we need to wait for before attempting
+                                        # to connect again.
+                                        await local_disconnect_monitor_event.wait()
 
-                                    # Jump way back to the `while True:`` to retry.
-                                    continue
+                                        # Jump way back to the `while True:`` to retry.
+                                        continue
 
-                                if reply.error_name == ErrorType.UNKNOWN_OBJECT.value:
-                                    raise BleakDeviceNotFoundError(
-                                        self.address,
-                                        f"Device with address {self.address} was not found. It may have been removed from BlueZ when scanning stopped.",
-                                    )
+                                    if reply.error_name == ErrorType.UNKNOWN_OBJECT.value:
+                                        raise BleakDeviceNotFoundError(
+                                            self.address,
+                                            f"Device with address {self.address} was not found. It may have been removed from BlueZ when scanning stopped.",
+                                        )
 
                             assert_reply(reply)
 
