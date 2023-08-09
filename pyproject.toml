@@ -25,9 +25,9 @@ classifiers = [
 python = "^3.8"
 async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
 typing-extensions = { version = ">=4.7.0", python = "<3.12" }
-pyobjc-core = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
-pyobjc-framework-CoreBluetooth = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
-pyobjc-framework-libdispatch = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
+pyobjc-core = { version = "^9.2", markers = "platform_system=='Darwin'" }
+pyobjc-framework-CoreBluetooth = { version = "^9.2", markers = "platform_system=='Darwin'" }
+pyobjc-framework-libdispatch = { version = "^9.2", markers = "platform_system=='Darwin'" }
 bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'" }
 dbus-fast = { version = "^1.83.0", markers = "platform_system == 'Linux'" }
 
