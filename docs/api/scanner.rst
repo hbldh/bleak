@@ -19,6 +19,8 @@ multiple devices.
 .. automethod:: bleak.BleakScanner.find_device_by_name
 .. automethod:: bleak.BleakScanner.find_device_by_address
 .. automethod:: bleak.BleakScanner.find_device_by_filter
+.. autoclass:: bleak.BleakScanner.ExtraArgs
+    :members:
 
 
 ---------------------
