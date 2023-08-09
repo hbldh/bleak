@@ -9,9 +9,15 @@ import abc
 import asyncio
 import os
 import platform
+import sys
 import uuid
 from typing import Callable, Optional, Type, Union
 from warnings import warn
+
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
 
 from ..exc import BleakError
 from .service import BleakGATTServiceCollection
@@ -184,7 +190,7 @@ class BaseBleakClient(abc.ABC):
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
-        data: Union[bytes, bytearray, memoryview],
+        data: Buffer,
         response: bool,
     ) -> None:
         """
@@ -198,14 +204,12 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
+            handle: The handle of the descriptor to read from.
+            data: The data to send (any bytes-like object).
 
         """
         raise NotImplementedError()

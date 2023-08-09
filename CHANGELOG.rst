@@ -26,6 +26,7 @@ Changed
 * Added missing permissions and requirements in android kivy example. Fixes #1184.
 * Bleak recipe now automatically installs bleak from github release.
 * Changed `BlueZManager` methods to raise `BleakError` when device is not in BlueZ.
+* Changed type hint for buffer protocol to ``collections.abc.Buffer``.
 
 Fixed
 -----
