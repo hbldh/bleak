@@ -15,6 +15,7 @@ Added
 * Added ``bleak.uuids.normalize_uuid_16()`` function.
 * Added ``bleak.uuids.normalize_uuid_32()`` function.
 * Added ``advertisement_data()`` async iterator method to ``BleakScanner``. Merged #1361.
+* Added type hints for kwargs on ``BleakScanner`` class methods.
 
 Changed
 -------
