@@ -11,7 +11,19 @@ import sys
 import uuid
 import warnings
 from ctypes import WinError
-from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Set,
+    TypedDict,
+    Union,
+    cast,
+)
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -22,11 +34,6 @@ if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
 else:
     from asyncio import timeout as async_timeout
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
-else:
-    from typing import Literal, TypedDict
 
 from bleak_winrt.windows.devices.bluetooth import (
     BluetoothAddressType,
@@ -73,10 +80,10 @@ from .service import BleakGATTServiceWinRT
 
 logger = logging.getLogger(__name__)
 
-# TODO: we can use this when minimum Python is 3.8
-# class _Result(typing.Protocol):
-#     status: GattCommunicationStatus
-#     protocol_error: typing.Optional[int]
+
+class _Result(Protocol):
+    status: GattCommunicationStatus
+    protocol_error: int
 
 
 def _address_to_int(address: str) -> int:
@@ -95,7 +102,7 @@ def _address_to_int(address: str) -> int:
     return int(address, base=16)
 
 
-def _ensure_success(result: Any, attr: Optional[str], fail_msg: str) -> Any:
+def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
     """
     Ensures that *status* is ``GattCommunicationStatus.SUCCESS``, otherwise
     raises ``BleakError``.

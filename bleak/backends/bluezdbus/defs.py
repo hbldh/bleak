@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys
-from typing import Dict, List, Tuple
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
-else:
-    from typing import Literal, TypedDict
+from typing import Dict, List, Literal, Tuple, TypedDict
 
 # DBus Interfaces
 OBJECT_MANAGER_INTERFACE = "org.freedesktop.DBus.ObjectManager"

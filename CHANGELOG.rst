@@ -39,6 +39,10 @@ Fixed
 * Optimize BlueZ backend device watchers and condition callbacks to avoid linear searches
 * Fixed WinRT backend sometimes hanging forever when a device goes out of range during connection. Fixes #1359.
 
+Removed
+-------
+Dropped support for Python 3.7.
+
 `0.20.2`_ (2023-04-19)
 ======================
 

@@ -2,15 +2,9 @@
 
 """Tests for `bleak.backends.bluezdbus.version` package."""
 
-import sys
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
-if sys.version_info[:2] < (3, 8):
-    from asynctest.mock import CoroutineMock as AsyncMock
-else:
-    from unittest.mock import AsyncMock
 
 from bleak.backends.bluezdbus.version import BlueZFeatures
 

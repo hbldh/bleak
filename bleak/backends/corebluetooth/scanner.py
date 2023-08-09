@@ -1,11 +1,5 @@
 import logging
-import sys
-from typing import Any, Dict, List, Optional
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
-else:
-    from typing import Literal, TypedDict
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 import objc
 from CoreBluetooth import CBPeripheral
