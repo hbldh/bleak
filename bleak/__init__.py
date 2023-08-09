@@ -30,6 +30,7 @@ from typing import (
     overload,
 )
 from warnings import warn
+from typing import Literal
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -41,10 +42,6 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
 
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type

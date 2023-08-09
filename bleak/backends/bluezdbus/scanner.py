@@ -1,14 +1,8 @@
 import logging
-import sys
-from typing import Callable, Coroutine, Dict, List, Optional
+from typing import Callable, Coroutine, Dict, List, Literal, Optional, TypedDict
 from warnings import warn
 
 from dbus_fast import Variant
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
-else:
-    from typing import Literal, TypedDict
 
 from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
