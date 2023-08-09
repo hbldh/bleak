@@ -31,6 +31,11 @@ from typing import (
 )
 from warnings import warn
 
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
+
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
 else:
@@ -671,7 +676,7 @@ class BleakClient:
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: Union[bytes, bytearray, memoryview],
+        data: Buffer,
         response: bool = None,
     ) -> None:
         """
@@ -822,9 +827,7 @@ class BleakClient:
         """
         return await self._backend.read_gatt_descriptor(handle, **kwargs)
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """
         Perform a write operation on the specified GATT descriptor.
 

@@ -13,6 +13,11 @@ import warnings
 from ctypes import WinError
 from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
 
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
+
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
 else:
@@ -53,7 +58,7 @@ from bleak_winrt.windows.foundation import (
     EventRegistrationToken,
     IAsyncOperation,
 )
-from bleak_winrt.windows.storage.streams import Buffer
+from bleak_winrt.windows.storage.streams import Buffer as WinBuffer
 
 from ... import BleakScanner
 from ...exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
@@ -836,7 +841,7 @@ class BleakClientWinRT(BaseBleakClient):
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
-        data: Union[bytes, bytearray, memoryview],
+        data: Buffer,
         response: bool,
     ) -> None:
         if not self.is_connected:
@@ -847,7 +852,7 @@ class BleakClientWinRT(BaseBleakClient):
             if response
             else GattWriteOption.WRITE_WITHOUT_RESPONSE
         )
-        buf = Buffer(len(data))
+        buf = WinBuffer(len(data))
         buf.length = buf.capacity
         with memoryview(buf) as mv:
             mv[:] = data
@@ -857,14 +862,12 @@ class BleakClientWinRT(BaseBleakClient):
             f"Could not write value {data} to characteristic {characteristic.handle:04X}",
         )
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
+            handle: The handle of the descriptor to read from.
+            data: The data to send (any bytes-like object).
 
         """
         if not self.is_connected:
@@ -874,7 +877,7 @@ class BleakClientWinRT(BaseBleakClient):
         if not descriptor:
             raise BleakError(f"Descriptor with handle {handle} was not found!")
 
-        buf = Buffer(len(data))
+        buf = WinBuffer(len(data))
         buf.length = buf.capacity
         with memoryview(buf) as mv:
             mv[:] = data

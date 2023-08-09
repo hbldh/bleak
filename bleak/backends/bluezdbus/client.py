@@ -10,6 +10,11 @@ import warnings
 from typing import Callable, Dict, Optional, Set, Union, cast
 from uuid import UUID
 
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
+
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
 else:
@@ -812,7 +817,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
-        data: Union[bytes, bytearray, memoryview],
+        data: Buffer,
         response: bool,
     ) -> None:
         if not self.is_connected:
@@ -883,14 +888,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
             data,
         )
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
+            handle: The handle of the descriptor to read from.
+            data: The data to send (any bytes-like object).
 
         """
         if not self.is_connected:
