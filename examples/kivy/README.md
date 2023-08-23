@@ -15,3 +15,9 @@ Instead the recipe build must be cleaned:
 An iOS backend has not been implemented yet.
 
 This kivy example can also be run on desktop.
+
+**To use bleak in your own app:**
+
+Copy the bleak folder under bleak/backends/p4android/recipes into the app recipes folder.
+Make sure that 'local_recipes' in buildozer.spec points to the app recipes folder.
+Add 'bleak' and it's dependencies to the requirements in your buildozer.spec file.
