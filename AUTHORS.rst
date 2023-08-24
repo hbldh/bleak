@@ -20,6 +20,7 @@ Contributors
 * Jonathan Soto <jsotogaviard@alum.mit.edu>
 * Kyle J. Williams <kyle@kjwill.tech>
 * Edward Betts <edward@4angle.com>
+* Robbe Gaeremynck <robbe.gaeremynck@outlook.com>
 
 Sponsors
 --------

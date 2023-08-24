@@ -23,6 +23,8 @@ Changed
 * Scanner backends modified to allow multiple advertisement callbacks. Merged #1367.
 * Changed default handling of the ``response`` argument in ``BleakClient.write_gatt_char``.
   Fixes #909.
+* Added missing permissions and requirements in android kivy example. Fixes #1184.
+* Bleak recipe now automatically installs bleak from github release.
 
 Fixed
 -----
