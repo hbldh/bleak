@@ -7,6 +7,7 @@ used internally by Bleak.
 """
 
 import asyncio
+import contextlib
 import logging
 import os
 from typing import (
@@ -708,22 +709,70 @@ class BlueZManager:
         """
         self._check_device(device_path)
 
-        services_discovered_wait_task = asyncio.create_task(
-            self._wait_condition(device_path, "ServicesResolved", True)
-        )
-        device_disconnected_wait_task = asyncio.create_task(
-            self._wait_condition(device_path, "Connected", False)
-        )
-        done, pending = await asyncio.wait(
-            {services_discovered_wait_task, device_disconnected_wait_task},
-            return_when=asyncio.FIRST_COMPLETED,
+        with contextlib.ExitStack() as stack:
+            services_discovered_wait_task = asyncio.create_task(
+                self._wait_condition(device_path, "ServicesResolved", True)
+            )
+            stack.callback(services_discovered_wait_task.cancel)
+
+            device_disconnected_wait_task = asyncio.create_task(
+                self._wait_condition(device_path, "Connected", False)
+            )
+            stack.callback(device_disconnected_wait_task.cancel)
+
+            # in some cases, we can get "InterfaceRemoved" without the
+            # "Connected" property changing, so we need to race against both
+            # conditions
+            device_removed_wait_task = asyncio.create_task(
+                self._wait_removed(device_path)
+            )
+            stack.callback(device_removed_wait_task.cancel)
+
+            done, _ = await asyncio.wait(
+                {
+                    services_discovered_wait_task,
+                    device_disconnected_wait_task,
+                    device_removed_wait_task,
+                },
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            # check for exceptions
+            for task in done:
+                task.result()
+
+            if not done.isdisjoint(
+                {device_disconnected_wait_task, device_removed_wait_task}
+            ):
+                raise BleakError("failed to discover services, device disconnected")
+
+    async def _wait_removed(self, device_path: str) -> None:
+        """
+        Waits for the device interface to be removed.
+
+        If the device is not present in BlueZ, this returns immediately.
+
+        Args:
+            device_path: The D-Bus object path of a Bluetooth device.
+        """
+        if device_path not in self._properties:
+            return
+
+        event = asyncio.Event()
+
+        def callback(_: str):
+            event.set()
+
+        device_removed_callback_and_state = DeviceRemovedCallbackAndState(
+            callback, self._properties[device_path][defs.DEVICE_INTERFACE]["Adapter"]
         )
 
-        for p in pending:
-            p.cancel()
-
-        if device_disconnected_wait_task in done:
-            raise BleakError("failed to discover services, device disconnected")
+        with contextlib.ExitStack() as stack:
+            self._device_removed_callbacks.append(device_removed_callback_and_state)
+            stack.callback(
+                self._device_removed_callbacks.remove, device_removed_callback_and_state
+            )
+            await event.wait()
 
     async def _wait_condition(
         self, device_path: str, property_name: str, property_value: Any
