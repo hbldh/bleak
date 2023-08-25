@@ -170,6 +170,22 @@ class BlueZManager:
         self._condition_callbacks: Set[Callable] = set()
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
+    def _check_adapter(self, adapter_path: str) -> None:
+        """
+        Raises:
+            BleakError: if adapter is not present in BlueZ
+        """
+        if adapter_path not in self._properties:
+            raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
+
+    def _check_device(self, device_path: str) -> None:
+        """
+        Raises:
+            BleakError: if device is not present in BlueZ
+        """
+        if device_path not in self._properties:
+            raise BleakError(f"device '{device_path.split('/')[-1]}' not found")
+
     async def async_init(self):
         """
         Connects to the D-Bus message bus and begins monitoring signals.
@@ -326,13 +342,15 @@ class BlueZManager:
 
         Returns:
             An async function that is used to stop scanning and remove the filters.
+
+        Raises:
+            BleakError: if the adapter is not present in BlueZ
         """
         async with self._bus_lock:
             # If the adapter doesn't exist, then the message calls below would
             # fail with "method not found". This provides a more informative
             # error message.
-            if adapter_path not in self._properties:
-                raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
+            self._check_adapter(adapter_path)
 
             callback_and_state = CallbackAndState(advertisement_callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
@@ -432,13 +450,15 @@ class BlueZManager:
 
         Returns:
             An async function that is used to stop scanning and remove the filters.
+
+        Raises:
+            BleakError: if the adapter is not present in BlueZ
         """
         async with self._bus_lock:
             # If the adapter doesn't exist, then the message calls below would
             # fail with "method not found". This provides a more informative
             # error message.
-            if adapter_path not in self._properties:
-                raise BleakError(f"adapter '{adapter_path.split('/')[-1]}' not found")
+            self._check_adapter(adapter_path)
 
             callback_and_state = CallbackAndState(advertisement_callback, adapter_path)
             self._advertisement_callbacks.append(callback_and_state)
@@ -534,7 +554,12 @@ class BlueZManager:
 
         Returns:
             A device watcher object that acts a token to unregister the watcher.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
         """
+        self._check_device(device_path)
+
         watcher = DeviceWatcher(
             device_path, on_connected_changed, on_characteristic_value_changed
         )
@@ -571,7 +596,12 @@ class BlueZManager:
 
         Returns:
             A new :class:`BleakGATTServiceCollection`.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
         """
+        self._check_device(device_path)
+
         if use_cached:
             services = self._services_cache.get(device_path)
             if services is not None:
@@ -644,7 +674,12 @@ class BlueZManager:
 
         Returns:
             The current property value.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
         """
+        self._check_device(device_path)
+
         return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
 
     def is_connected(self, device_path: str) -> bool:
@@ -655,7 +690,7 @@ class BlueZManager:
             device_path: The D-Bus object path of the device.
 
         Returns:
-            The current property value.
+            The current property value or ``False`` if the device does not exist in BlueZ.
         """
         try:
             return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
@@ -667,7 +702,12 @@ class BlueZManager:
         Waits for the device services to be discovered.
 
         If a disconnect happens before the completion a BleakError exception is raised.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
         """
+        self._check_device(device_path)
+
         services_discovered_wait_task = asyncio.create_task(
             self._wait_condition(device_path, "ServicesResolved", True)
         )
@@ -695,7 +735,12 @@ class BlueZManager:
             device_path: The D-Bus object path of a Bluetooth device.
             property_name: The name of the property to test.
             property_value: A value to compare the current property value to.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
         """
+        self._check_device(device_path)
+
         if (
             self._properties[device_path][defs.DEVICE_INTERFACE][property_name]
             == property_value
