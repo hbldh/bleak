@@ -33,6 +33,7 @@ Fixed
 * Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
 * Reduced expensive logging in the BlueZ backend. Merged #1376.
 * Fixed race condition with ``"InterfaceRemoved"`` when getting services in BlueZ backend.
+* Optimize BlueZ backend device watchers and condition callbacks to avoid linear searches
 
 `0.20.2`_ (2023-04-19)
 ======================
