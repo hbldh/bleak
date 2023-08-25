@@ -7,8 +7,9 @@ from os.path import join
 
 
 class BleakRecipe(PythonRecipe):
-    version = '0.20.2'
-    url = 'https://github.com/hbldh/bleak/archive/refs/tags/v{version}.tar.gz'
+    version = None  # Must be none for p4a to correctly clone repo
+    fix_setup_py_version = 'bleak develop branch'
+    url = 'git+https://github.com/hbldh/bleak.git'
     name = "bleak"
 
     depends = ["pyjnius"]
@@ -32,7 +33,7 @@ class BleakRecipe(PythonRecipe):
 
             # Write to the correct location and fill in the version number
             with open(setup_py_path, 'w') as f:
-                f.write(contents.replace('[VERSION]', self.version))
+                f.write(contents.replace('[VERSION]', self.fix_setup_py_version))
         else:
             info('setup.py found in bleak directory, are you installing older version?')
 
