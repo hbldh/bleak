@@ -67,6 +67,12 @@ class CallbackAndState(NamedTuple):
     """
 
 
+DevicePropertiesChangedCallback = Callable[[], None]
+"""
+A callback that is called when the properties of a device change in BlueZ.
+"""
+
+
 DeviceRemovedCallback = Callable[[str], None]
 """
 A callback that is called when a device is removed from BlueZ.
@@ -168,7 +174,7 @@ class BlueZManager:
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Set[DeviceWatcher] = set()
-        self._condition_callbacks: Set[Callable] = set()
+        self._condition_callbacks: Dict[str, Set[DevicePropertiesChangedCallback]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     def _check_adapter(self, adapter_path: str) -> None:
@@ -805,13 +811,14 @@ class BlueZManager:
             ):
                 event.set()
 
-        self._condition_callbacks.add(callback)
+        device_callbacks = self._condition_callbacks.setdefault(device_path, set())
+        device_callbacks.add(callback)
 
         try:
             # can be canceled
             await event.wait()
         finally:
-            self._condition_callbacks.remove(callback)
+            device_callbacks.remove(callback)
 
     def _parse_msg(self, message: Message):
         """
@@ -945,7 +952,9 @@ class BlueZManager:
                     )
 
                     # handle device condition watchers
-                    for condition_callback in self._condition_callbacks:
+                    for condition_callback in self._condition_callbacks.get(
+                        message.path, ()
+                    ):
                         condition_callback()
 
                     # handle device connection change watchers
