@@ -44,7 +44,6 @@ asynctest = { version = "^0.13.0",  python = "<3.8" }
 pytest = "^7.0.0"
 pytest-asyncio = "^0.19.0"
 pytest-cov = "^3.0.0 "
-dbus-fast = { version = "^1.83.0", markers = "platform_system == 'Linux'" }
 
 [build-system]
 requires = ["poetry-core"]
