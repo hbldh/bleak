@@ -74,6 +74,9 @@ class CallbackAndState(NamedTuple):
 DevicePropertiesChangedCallback = Callable[[Optional[Any]], None]
 """
 A callback that is called when the properties of a device change in BlueZ.
+
+Args:
+    arg0: The new property value.
 """
 
 
