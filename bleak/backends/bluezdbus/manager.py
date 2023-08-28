@@ -37,7 +37,11 @@ from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
-from .utils import assert_reply, get_dbus_authenticator
+from .utils import (
+    assert_reply,
+    get_dbus_authenticator,
+    device_path_from_characteristic_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -996,12 +1000,12 @@ class BlueZManager:
                     # handle characteristic value change watchers
 
                     if "Value" in changed:
-                        for device_path, watchers in self._device_watchers.items():
-                            if message_path.startswith(device_path):
-                                for watcher in watchers:
-                                    watcher.on_characteristic_value_changed(
-                                        message_path, self_interface["Value"]
-                                    )
+                        device_path = device_path_from_characteristic_path(message_path)
+                        watchers = self._device_watchers.get(device_path)
+                        for watcher in watchers:
+                            watcher.on_characteristic_value_changed(
+                                message_path, self_interface["Value"]
+                            )
 
     def _run_advertisement_callbacks(
         self, device_path: str, device: Device1, changed: Iterable[str]
