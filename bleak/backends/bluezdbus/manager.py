@@ -173,7 +173,7 @@ class BlueZManager:
 
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
-        self._device_watchers: Dict[str, List[DeviceWatcher]] = {}
+        self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
         self._condition_callbacks: Dict[str, Set[Callable[[Dict[str, Any], None]]]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
@@ -571,7 +571,7 @@ class BlueZManager:
             device_path, on_connected_changed, on_characteristic_value_changed
         )
 
-        self._device_watchers.setdefault(device_path, []).append(watcher)
+        self._device_watchers.setdefault(device_path, set()).add(watcher)
         return watcher
 
     def remove_device_watcher(self, watcher: DeviceWatcher) -> None:
