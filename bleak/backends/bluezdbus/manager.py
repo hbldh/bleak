@@ -963,6 +963,16 @@ class BlueZManager:
                         for condition_callback in condition_callbacks:
                             condition_callback(unpacked_changed)
 
+                    # handle device connection change watchers
+                    if "Connected" in changed:
+                        watchers = self._device_watchers.get(device_path)
+                        if watchers:
+                            # callbacks may remove the watcher, hence the view
+                            for watcher in watchers[:]:
+                                watcher.on_connected_changed(
+                                    self_interface["Connected"]
+                                )
+
                 elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                     # handle characteristic value change watchers
 
