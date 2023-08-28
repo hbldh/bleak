@@ -925,7 +925,6 @@ class BlueZManager:
                     for callback, adapter_path in self._device_removed_callbacks:
                         if obj_path.startswith(adapter_path):
                             callback(obj_path)
-
                 elif interface == defs.GATT_SERVICE_INTERFACE:
                     try:
                         del self._characteristic_map[obj_path]
@@ -952,6 +951,7 @@ class BlueZManager:
                 pass
             else:
                 # update self._properties first
+
                 self_interface.update(unpack_variants(changed))
 
                 for name in invalidated:
