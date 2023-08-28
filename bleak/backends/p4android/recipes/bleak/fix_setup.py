@@ -6,5 +6,5 @@ NAME = "bleak"
 setup(
     name=NAME,
     version=VERSION,
-    packages=find_packages(exclude=("tests", "examples", "docs", "BleakUWPBridge")),
+    packages=find_packages(exclude=("tests", "examples", "docs")),
 )
