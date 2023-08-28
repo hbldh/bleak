@@ -25,6 +25,7 @@ Changed
   Fixes #909.
 * Added missing permissions and requirements in android kivy example. Fixes #1184.
 * Bleak recipe now automatically installs bleak from github release.
+* Changed `BlueZManager` methods to raise `BleakError` when device is not in BlueZ.
 
 Fixed
 -----
@@ -33,6 +34,8 @@ Fixed
 * Fixed typing for ``BaseBleakScanner`` detection callback.
 * Fixed possible crash in ``_stopped_handler()`` in WinRT backend. Fixes #1330.
 * Reduced expensive logging in the BlueZ backend. Merged #1376.
+* Fixed race condition with ``"InterfaceRemoved"`` when getting services in BlueZ backend.
+* Optimize BlueZ backend device watchers and condition callbacks to avoid linear searches
 
 `0.20.2`_ (2023-04-19)
 ======================
