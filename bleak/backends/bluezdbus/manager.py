@@ -954,7 +954,7 @@ class BlueZManager:
                 # update self._properties first
                 unpacked_changed: Dict[str, Any] = unpack_variants(changed)
 
-                unpacked_changed.update(unpacked_changed)
+                self_interface.update(unpacked_changed)
 
                 for name in invalidated:
                     try:
