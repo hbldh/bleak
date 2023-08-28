@@ -197,7 +197,7 @@ class BlueZManager:
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
-        self._condition_callbacks: Dict[str, set[DeviceConditionCallback]] = {}
+        self._condition_callbacks: Dict[str, Set[DeviceConditionCallback]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     def _check_adapter(self, adapter_path: str) -> None:
