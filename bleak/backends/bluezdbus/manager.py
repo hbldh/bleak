@@ -173,7 +173,7 @@ class BlueZManager:
 
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
-        self._device_watchers: Dict[str, list[DeviceWatcher]] = {}
+        self._device_watchers: Dict[str, List[DeviceWatcher]] = {}
         self._condition_callbacks: Dict[str, Set[Callable[[Dict[str, Any], None]]]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
