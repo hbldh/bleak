@@ -988,24 +988,23 @@ class BlueZManager:
 
                     # handle device connection change watchers
                     if "Connected" in changed:
+                        new_connected = self_interface["Connected"]
                         watchers = self._device_watchers.get(device_path)
                         if watchers:
                             # callbacks may remove the watcher, hence the copy
                             for watcher in watchers.copy():
-                                watcher.on_connected_changed(
-                                    self_interface["Connected"]
-                                )
+                                watcher.on_connected_changed(new_connected)
 
                 elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                     # handle characteristic value change watchers
-
                     if "Value" in changed:
+                        new_value = self_interface["Value"]
                         device_path = device_path_from_characteristic_path(message_path)
                         watchers = self._device_watchers.get(device_path)
                         if watchers:
                             for watcher in watchers:
                                 watcher.on_characteristic_value_changed(
-                                    message_path, self_interface["Value"]
+                                    message_path, new_value
                                 )
 
     def _run_advertisement_callbacks(
