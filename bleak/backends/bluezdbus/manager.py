@@ -1002,10 +1002,11 @@ class BlueZManager:
                     if "Value" in changed:
                         device_path = device_path_from_characteristic_path(message_path)
                         watchers = self._device_watchers.get(device_path)
-                        for watcher in watchers:
-                            watcher.on_characteristic_value_changed(
-                                message_path, self_interface["Value"]
-                            )
+                        if watchers:
+                            for watcher in watchers:
+                                watcher.on_characteristic_value_changed(
+                                    message_path, self_interface["Value"]
+                                )
 
     def _run_advertisement_callbacks(
         self, device_path: str, device: Device1, changed: Iterable[str]
