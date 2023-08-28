@@ -75,7 +75,7 @@ A callback that is called when the properties of a device change in BlueZ.
 
 class DeviceConditionCallback(NamedTuple):
     """
-    Encapsulates a :data:`DevicePropertiesChangedCallback` and some state.
+    Encapsulates a :data:`DevicePropertiesChangedCallback` and the property name being watched.
     """
 
     callback: DevicePropertiesChangedCallback
@@ -85,7 +85,7 @@ class DeviceConditionCallback(NamedTuple):
 
     property_name: str
     """
-    The name of the property to test.
+    The name of the property to watch.
     """
 
 
