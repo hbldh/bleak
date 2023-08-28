@@ -67,10 +67,26 @@ class CallbackAndState(NamedTuple):
     """
 
 
-DevicePropertiesChangedCallback = Callable[[Dict[str, Any], None]]
+DevicePropertiesChangedCallback = Callable[[Optional[Any]], None]
 """
 A callback that is called when the properties of a device change in BlueZ.
 """
+
+
+class DeviceConditionCallback(NamedTuple):
+    """
+    Encapsulates a :data:`DevicePropertiesChangedCallback` and some state.
+    """
+
+    callback: DevicePropertiesChangedCallback
+    """
+    The callback.
+    """
+
+    property_name: str
+    """
+    The name of the property to test.
+    """
 
 
 DeviceRemovedCallback = Callable[[str], None]
@@ -174,7 +190,7 @@ class BlueZManager:
         self._advertisement_callbacks: List[CallbackAndState] = []
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
-        self._condition_callbacks: Dict[str, Set[DevicePropertiesChangedCallback]] = {}
+        self._condition_callbacks: Dict[str, set[DeviceConditionCallback]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
 
     def _check_adapter(self, adapter_path: str) -> None:
@@ -807,21 +823,23 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def _wait_condition_callback(changed: Dict[str, Any]) -> None:
+        def _wait_condition_callback(new_value: Optional[Any]) -> None:
             """Callback for when a property changes."""
-            if changed.get(property_name) == property_value:
+            if new_value == property_value:
                 event.set()
 
-        device_callbacks = self._condition_callbacks.setdefault(device_path, set())
-        device_callbacks.add(_wait_condition_callback)
+        condition_callbacks = self._condition_callbacks
+        device_callbacks = condition_callbacks.setdefault(device_path, set())
+        callback = DeviceConditionCallback(_wait_condition_callback, property_name)
+        device_callbacks.add(callback)
 
         try:
             # can be canceled
             await event.wait()
         finally:
-            device_callbacks.remove(_wait_condition_callback)
+            device_callbacks.remove(callback)
             if not device_callbacks:
-                del self._condition_callbacks[device_path]
+                del condition_callbacks[property_name]
 
     def _parse_msg(self, message: Message):
         """
@@ -936,7 +954,7 @@ class BlueZManager:
                 # update self._properties first
                 unpacked_changed: Dict[str, Any] = unpack_variants(changed)
 
-                self_interface.update(unpacked_changed)
+                unpacked_changed.update(unpacked_changed)
 
                 for name in invalidated:
                     try:
@@ -958,10 +976,13 @@ class BlueZManager:
                     )
 
                     # handle device condition watchers
-                    condition_callbacks = self._condition_callbacks.get(device_path)
-                    if condition_callbacks:
-                        for condition_callback in condition_callbacks:
-                            condition_callback(unpacked_changed)
+                    device_condition_callbacks = self._condition_callbacks.get(
+                        device_path
+                    )
+                    if device_condition_callbacks:
+                        for property_name, callback in device_condition_callbacks:
+                            if property_name in changed:
+                                callback(self_interface.get(property_name))
 
                     # handle device connection change watchers
                     if "Connected" in changed:
