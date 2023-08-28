@@ -47,6 +47,20 @@ def bdaddr_from_device_path(device_path: str) -> str:
     return ":".join(device_path[-17:].split("_"))
 
 
+def device_path_from_characteristic_path(characteristic_path: str) -> str:
+    """
+    Scrape the device path from a D-Bus characteristic path.
+
+    Args:
+        characteristic_path: The D-Bus object path of the characteristic.
+
+    Returns:
+        A D-Bus object path of the device.
+    """
+    # /org/bluez/hci1/dev_FA_23_9D_AA_45_46/service000c/char000d
+    return characteristic_path[:37]
+
+
 def get_dbus_authenticator():
     uid = None
     try:
