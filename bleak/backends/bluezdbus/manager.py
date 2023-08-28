@@ -839,7 +839,7 @@ class BlueZManager:
         finally:
             device_callbacks.remove(callback)
             if not device_callbacks:
-                del condition_callbacks[property_name]
+                del condition_callbacks[device_path]
 
     def _parse_msg(self, message: Message):
         """
