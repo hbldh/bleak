@@ -36,6 +36,7 @@ Fixed
 * Reduced expensive logging in the BlueZ backend. Merged #1376.
 * Fixed race condition with ``"InterfaceRemoved"`` when getting services in BlueZ backend.
 * Optimize BlueZ backend device watchers and condition callbacks to avoid linear searches
+* Fixed WinRT backend sometimes hanging forever when a device goes out of range during connection. Fixes #1359.
 
 `0.20.2`_ (2023-04-19)
 ======================

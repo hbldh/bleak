@@ -469,6 +469,11 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Dispose all service components that we have requested and created.
         if self.services:
+            # HACK: sometimes GattDeviceService.Close() hangs forever, so we
+            # add a delay to give the Windows Bluetooth stack some time to
+            # "settle" before closing the services
+            await asyncio.sleep(0.1)
+
             for service in self.services:
                 service.obj.close()
             self.services = None
@@ -729,6 +734,12 @@ class BleakClientWinRT(BaseBleakClient):
             # Don't leak services. WinRT is quite particular about services
             # being closed.
             logger.debug("disposing service objects")
+
+            # HACK: sometimes GattDeviceService.Close() hangs forever, so we
+            # add a delay to give the Windows Bluetooth stack some time to
+            # "settle" before closing the services
+            await asyncio.sleep(0.1)
+
             for service in services:
                 service.close()
             raise
