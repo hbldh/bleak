@@ -10,7 +10,7 @@ import logging
 import sys
 import uuid
 import warnings
-from ctypes import pythonapi
+from ctypes import WinError
 from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
 
 if sys.version_info < (3, 11):
@@ -1027,7 +1027,7 @@ class FutureLike:
                 raise asyncio.CancelledError
 
             error_code = self._op.error_code.value
-            pythonapi.PyErr_SetFromWindowsErr(error_code)
+            raise WinError(error_code)
 
     def done(self) -> bool:
         return self._op.status != AsyncStatus.STARTED
@@ -1069,10 +1069,7 @@ class FutureLike:
 
             error_code = self._op.error_code.value
 
-            try:
-                pythonapi.PyErr_SetFromWindowsErr(error_code)
-            except OSError as e:
-                return e
+            return WinError(error_code)
 
     def get_loop(self) -> asyncio.AbstractEventLoop:
         return self._loop

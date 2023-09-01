@@ -13,9 +13,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
 import pathlib
 import sys
-import os
 
 import tomli
 
@@ -122,6 +122,7 @@ autodoc_mock_imports = [
     "jnius",
     "libdispatch",
     "objc",
+    "ctypes",
 ]
 
 # -- Options for HTML output -------------------------------------------
