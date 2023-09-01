@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
+import sys
 from typing import List, Union
 from uuid import UUID
 
-from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
-    GattCharacteristic,
-    GattCharacteristicProperties,
-)
+if sys.version_info >= (3, 12):
+    from winrt.windows.devices.bluetooth.genericattributeprofile import (
+        GattCharacteristic,
+        GattCharacteristicProperties,
+    )
+else:
+    from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
+        GattCharacteristic,
+        GattCharacteristicProperties,
+    )
 
 from ..characteristic import BleakGATTCharacteristic
 from ..descriptor import BleakGATTDescriptor

@@ -22,13 +22,20 @@ classifiers = [
 "Issues" =  "https://github.com/hbldh/bleak/issues"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8,<3.13"
 async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
 typing-extensions = { version = ">=4.7.0", python = "<3.12" }
 pyobjc-core = { version = "^9.2", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = "^9.2", markers = "platform_system=='Darwin'" }
 pyobjc-framework-libdispatch = { version = "^9.2", markers = "platform_system=='Darwin'" }
-bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'" }
+bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", python = "<3.12" }
+"winrt-Windows.Devices.Bluetooth" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Enumeration" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Foundation" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Foundation.Collections" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Storage.Streams" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
 dbus-fast = { version = "^1.83.0", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
