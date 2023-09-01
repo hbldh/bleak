@@ -35,37 +35,70 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
-from bleak_winrt.windows.devices.bluetooth import (
-    BluetoothAddressType,
-    BluetoothCacheMode,
-    BluetoothError,
-    BluetoothLEDevice,
-)
-from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
-    GattCharacteristic,
-    GattCharacteristicProperties,
-    GattClientCharacteristicConfigurationDescriptorValue,
-    GattCommunicationStatus,
-    GattDescriptor,
-    GattDeviceService,
-    GattSession,
-    GattSessionStatus,
-    GattSessionStatusChangedEventArgs,
-    GattValueChangedEventArgs,
-    GattWriteOption,
-)
-from bleak_winrt.windows.devices.enumeration import (
-    DeviceInformation,
-    DevicePairingKinds,
-    DevicePairingResultStatus,
-    DeviceUnpairingResultStatus,
-)
-from bleak_winrt.windows.foundation import (
-    AsyncStatus,
-    EventRegistrationToken,
-    IAsyncOperation,
-)
-from bleak_winrt.windows.storage.streams import Buffer as WinBuffer
+if sys.version_info >= (3, 12):
+    from winrt.windows.devices.bluetooth import (
+        BluetoothAddressType,
+        BluetoothCacheMode,
+        BluetoothError,
+        BluetoothLEDevice,
+    )
+    from winrt.windows.devices.bluetooth.genericattributeprofile import (
+        GattCharacteristic,
+        GattCharacteristicProperties,
+        GattClientCharacteristicConfigurationDescriptorValue,
+        GattCommunicationStatus,
+        GattDescriptor,
+        GattDeviceService,
+        GattSession,
+        GattSessionStatus,
+        GattSessionStatusChangedEventArgs,
+        GattValueChangedEventArgs,
+        GattWriteOption,
+    )
+    from winrt.windows.devices.enumeration import (
+        DeviceInformation,
+        DevicePairingKinds,
+        DevicePairingResultStatus,
+        DeviceUnpairingResultStatus,
+    )
+    from winrt.windows.foundation import (
+        AsyncStatus,
+        EventRegistrationToken,
+        IAsyncOperation,
+    )
+    from winrt.windows.storage.streams import Buffer as WinBuffer
+else:
+    from bleak_winrt.windows.devices.bluetooth import (
+        BluetoothAddressType,
+        BluetoothCacheMode,
+        BluetoothError,
+        BluetoothLEDevice,
+    )
+    from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
+        GattCharacteristic,
+        GattCharacteristicProperties,
+        GattClientCharacteristicConfigurationDescriptorValue,
+        GattCommunicationStatus,
+        GattDescriptor,
+        GattDeviceService,
+        GattSession,
+        GattSessionStatus,
+        GattSessionStatusChangedEventArgs,
+        GattValueChangedEventArgs,
+        GattWriteOption,
+    )
+    from bleak_winrt.windows.devices.enumeration import (
+        DeviceInformation,
+        DevicePairingKinds,
+        DevicePairingResultStatus,
+        DeviceUnpairingResultStatus,
+    )
+    from bleak_winrt.windows.foundation import (
+        AsyncStatus,
+        EventRegistrationToken,
+        IAsyncOperation,
+    )
+    from bleak_winrt.windows.storage.streams import Buffer as WinBuffer
 
 from ... import BleakScanner
 from ...exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
@@ -700,7 +733,6 @@ class BleakClientWinRT(BaseBleakClient):
 
         try:
             for service in services:
-
                 result = await FutureLike(service.get_characteristics_async(*args))
 
                 if result.status == GattCommunicationStatus.ACCESS_DENIED:
