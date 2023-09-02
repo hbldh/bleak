@@ -9,9 +9,15 @@ import abc
 import asyncio
 import os
 import platform
+import sys
 import uuid
 from typing import Callable, Optional, Type, Union
 from warnings import warn
+
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
 
 from ..exc import BleakError
 from .service import BleakGATTServiceCollection
@@ -183,31 +189,27 @@ class BaseBleakClient(abc.ABC):
     @abc.abstractmethod
     async def write_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: Union[bytes, bytearray, memoryview],
-        response: bool = False,
+        characteristic: BleakGATTCharacteristic,
+        data: Buffer,
+        response: bool,
     ) -> None:
-        """Perform a write operation on the specified GATT characteristic.
+        """
+        Perform a write operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
+            characteristic: The characteristic to write to.
+            data: The data to send.
+            response: If write-with-response operation should be done.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
+            handle: The handle of the descriptor to read from.
+            data: The data to send (any bytes-like object).
 
         """
         raise NotImplementedError()

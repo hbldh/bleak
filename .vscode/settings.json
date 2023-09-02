@@ -1,0 +1,13 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        },
+      },
+      "black-formatter.importStrategy": "fromEnvironment",
+      "isort.importStrategy": "fromEnvironment",
+      "isort.args":["--profile", "black"],
+      "flake8.importStrategy": "fromEnvironment"
+}

@@ -16,6 +16,7 @@ import sys
 import uuid
 from typing import (
     TYPE_CHECKING,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Dict,
@@ -25,20 +26,25 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypedDict,
     Union,
     overload,
 )
 from warnings import warn
+from typing import Literal
+
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import Unpack
 else:
     from asyncio import timeout as async_timeout
+    from typing import Unpack
 
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
 
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type
@@ -175,7 +181,17 @@ class BleakScanner:
             FutureWarning,
             stacklevel=2,
         )
-        self._backend.register_detection_callback(callback)
+
+        try:
+            unregister = getattr(self, "_unregister_")
+        except AttributeError:
+            pass
+        else:
+            unregister()
+
+        if callback is not None:
+            unregister = self._backend.register_detection_callback(callback)
+            setattr(self, "_unregister_", unregister)
 
     async def start(self):
         """Start scanning for devices"""
@@ -204,6 +220,63 @@ class BleakScanner:
         )
         self._backend.set_scanning_filter(**kwargs)
 
+    async def advertisement_data(
+        self,
+    ) -> AsyncGenerator[Tuple[BLEDevice, AdvertisementData], None]:
+        """
+        Yields devices and associated advertising data packets as they are discovered.
+
+        .. note::
+            Ensure that scanning is started before calling this method.
+
+        Returns:
+            An async iterator that yields tuples (:class:`BLEDevice`, :class:`AdvertisementData`).
+
+        .. versionadded:: 0.21
+        """
+        devices = asyncio.Queue()
+
+        unregister_callback = self._backend.register_detection_callback(
+            lambda bd, ad: devices.put_nowait((bd, ad))
+        )
+        try:
+            while True:
+                yield await devices.get()
+        finally:
+            unregister_callback()
+
+    class ExtraArgs(TypedDict):
+        """
+        Keyword args from :class:`~bleak.BleakScanner` that can be passed to
+        other convenience methods.
+        """
+
+        service_uuids: List[str]
+        """
+        Optional list of service UUIDs to filter on. Only advertisements
+        containing this advertising data will be received. Required on
+        macOS >= 12.0, < 12.3 (unless you create an app with ``py2app``).
+        """
+        scanning_mode: Literal["active", "passive"]
+        """
+        Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
+        Passive scanning is not supported on macOS! Will raise
+        :class:`BleakError` if set to ``"passive"`` on macOS.
+        """
+        bluez: BlueZScannerArgs
+        """
+        Dictionary of arguments specific to the BlueZ backend.
+        """
+        cb: CBScannerArgs
+        """
+        Dictionary of arguments specific to the CoreBluetooth backend.
+        """
+        backend: Type[BaseBleakScanner]
+        """
+        Used to override the automatically selected backend (i.e. for a
+            custom backend).
+        """
+
     @overload
     @classmethod
     async def discover(
@@ -214,12 +287,14 @@ class BleakScanner:
     @overload
     @classmethod
     async def discover(
-        cls, timeout: float = 5.0, *, return_adv: Literal[True] = True, **kwargs
+        cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
     ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
         ...
 
     @classmethod
-    async def discover(cls, timeout=5.0, *, return_adv=False, **kwargs):
+    async def discover(
+        cls, timeout=5.0, *, return_adv=False, **kwargs: Unpack[ExtraArgs]
+    ):
         """
         Scan continuously for ``timeout`` seconds and return discovered devices.
 
@@ -293,7 +368,7 @@ class BleakScanner:
 
     @classmethod
     async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs
+        cls, device_identifier: str, timeout: float = 10.0, **kwargs: Unpack[ExtraArgs]
     ) -> Optional[BLEDevice]:
         """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
@@ -315,7 +390,7 @@ class BleakScanner:
 
     @classmethod
     async def find_device_by_name(
-        cls, name: str, timeout: float = 10.0, **kwargs
+        cls, name: str, timeout: float = 10.0, **kwargs: Unpack[ExtraArgs]
     ) -> Optional[BLEDevice]:
         """Obtain a ``BLEDevice`` for a BLE server specified by the local name in the advertising data.
 
@@ -337,7 +412,10 @@ class BleakScanner:
 
     @classmethod
     async def find_device_by_filter(
-        cls, filterfunc: AdvertisementDataFilter, timeout: float = 10.0, **kwargs
+        cls,
+        filterfunc: AdvertisementDataFilter,
+        timeout: float = 10.0,
+        **kwargs: Unpack[ExtraArgs],
     ) -> Optional[BLEDevice]:
         """Obtain a ``BLEDevice`` for a BLE server that matches a given filter function.
 
@@ -360,16 +438,12 @@ class BleakScanner:
             the timeout.
 
         """
-        found_device_queue: asyncio.Queue[BLEDevice] = asyncio.Queue()
-
-        def apply_filter(d: BLEDevice, ad: AdvertisementData):
-            if filterfunc(d, ad):
-                found_device_queue.put_nowait(d)
-
-        async with cls(detection_callback=apply_filter, **kwargs):
+        async with cls(**kwargs) as scanner:
             try:
                 async with async_timeout(timeout):
-                    return await found_device_queue.get()
+                    async for bd, ad in scanner.advertisement_data():
+                        if filterfunc(bd, ad):
+                            return bd
             except asyncio.TimeoutError:
                 return None
 
@@ -639,24 +713,67 @@ class BleakClient:
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: Union[bytes, bytearray, memoryview],
-        response: bool = False,
+        data: Buffer,
+        response: bool = None,
     ) -> None:
         """
         Perform a write operation on the specified GATT characteristic.
 
+        There are two possible kinds of writes. *Write with response* (sometimes
+        called a *Request*) will write the data then wait for a response from
+        the remote device. *Write without response* (sometimes called *Command*)
+        will queue data to be written and return immediately.
+
+        Each characteristic may support one kind or the other or both or neither.
+        Consult the device's documentation or inspect the properties of the
+        characteristic to find out which kind of writes are supported.
+
+        .. tip:: Explicit is better than implicit. Best practice is to always
+            include an explicit ``response=True`` or ``response=False``
+            when calling this method.
+
         Args:
             char_specifier:
                 The characteristic to write to, specified by either integer
-                handle, UUID or directly by the BleakGATTCharacteristic object
-                representing it.
+                handle, UUID or directly by the :class:`~bleak.backends.characteristic.BleakGATTCharacteristic`
+                object representing it. If a device has more than one characteristic
+                with the same UUID, then attempting to use the UUID wil fail and
+                a characteristic object must be used instead.
             data:
-                The data to send.
+                The data to send. When a write-with-response operation is used,
+                the length of the data is limited to 512 bytes. When a
+                write-without-response operation is used, the length of the
+                data is limited to :attr:`~bleak.backends.characteristic.BleakGATTCharacteristic.max_write_without_response_size`.
+                Any type that supports the buffer protocol can be passed.
             response:
-                If write-with-response operation should be done. Defaults to ``False``.
+                If ``True``, a write-with-response operation will be used. If
+                ``False``, a write-without-response operation will be used.
+                If omitted or ``None``, the "best" operation will be used
+                based on the reported properties of the characteristic.
 
+        .. versionchanged:: 0.21
+            The default behavior when ``response=`` is omitted was changed.
+
+        Example::
+
+            MY_CHAR_UUID = "1234"
+            ...
+            await client.write_gatt_char(MY_CHAR_UUID, b"\x00\x01\x02\x03", response=True)
         """
-        await self._backend.write_gatt_char(char_specifier, data, response)
+        if isinstance(char_specifier, BleakGATTCharacteristic):
+            characteristic = char_specifier
+        else:
+            characteristic = self.services.get_characteristic(char_specifier)
+
+        if not characteristic:
+            raise BleakError("Characteristic {char_specifier} was not found!")
+
+        if response is None:
+            # if not specified, prefer write-with-response over write-without-
+            # response if it is available since it is the more reliable write.
+            response = "write" in characteristic.properties
+
+        await self._backend.write_gatt_char(characteristic, data, response)
 
     async def start_notify(
         self,
@@ -747,9 +864,7 @@ class BleakClient:
         """
         return await self._backend.read_gatt_descriptor(handle, **kwargs)
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """
         Perform a write operation on the specified GATT descriptor.
 

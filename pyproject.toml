@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bleak"
-version = "0.20.2"
+version = "0.21.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = ["Henrik Blidh <henrik.blidh@nedomkull.com>"]
 license = "MIT"
@@ -22,25 +22,31 @@ classifiers = [
 "Issues" =  "https://github.com/hbldh/bleak/issues"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.8,<3.13"
 async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
-typing-extensions = { version = "^4.2.0", python = "<3.8" }
-pyobjc-core = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
-pyobjc-framework-CoreBluetooth = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
-pyobjc-framework-libdispatch = { version = "^9.0.1", markers = "platform_system=='Darwin'" }
-bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'" }
+typing-extensions = { version = ">=4.7.0", python = "<3.12" }
+pyobjc-core = { version = "^9.2", markers = "platform_system=='Darwin'" }
+pyobjc-framework-CoreBluetooth = { version = "^9.2", markers = "platform_system=='Darwin'" }
+pyobjc-framework-libdispatch = { version = "^9.2", markers = "platform_system=='Darwin'" }
+bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", python = "<3.12" }
+"winrt-Windows.Devices.Bluetooth" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Enumeration" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Foundation" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Foundation.Collections" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Storage.Streams" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
 dbus-fast = { version = "^1.83.0", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
-Sphinx = { version = "^5.1.1", python = ">=3.8" }
+Sphinx = "^5.1.1"
 sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.group.lint.dependencies]
 black = "^22.1.0"
-flake8 = { version = "^5.0.0", python = ">=3.8" }
+flake8 = "^5.0.0"
 
 [tool.poetry.group.test.dependencies]
-asynctest = { version = "^0.13.0",  python = "<3.8" }
 pytest = "^7.0.0"
 pytest-asyncio = "^0.19.0"
 pytest-cov = "^3.0.0 "

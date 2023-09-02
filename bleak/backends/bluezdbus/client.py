@@ -10,6 +10,11 @@ import warnings
 from typing import Callable, Dict, Optional, Set, Union, cast
 from uuid import UUID
 
+if sys.version_info < (3, 12):
+    from typing_extensions import Buffer
+else:
+    from collections.abc import Buffer
+
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
 else:
@@ -150,7 +155,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                 def on_connected_changed(connected: bool) -> None:
                     if not connected:
-                        logger.debug(f"Device disconnected ({self._device_path})")
+                        logger.debug("Device disconnected (%s)", self._device_path)
 
                         self._is_connected = False
 
@@ -340,14 +345,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Free all the allocated resource in DBus. Use this method to
         eventually cleanup all otherwise leaked resources.
         """
-        logger.debug(f"_cleanup_all({self._device_path})")
+        logger.debug("_cleanup_all(%s)", self._device_path)
 
         if self._remove_device_watcher:
             self._remove_device_watcher()
             self._remove_device_watcher = None
 
         if not self._bus:
-            logger.debug(f"already disconnected ({self._device_path})")
+            logger.debug("already disconnected (%s)", self._device_path)
             return
 
         # Try to disconnect the System Bus.
@@ -355,7 +360,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._bus.disconnect()
         except Exception as e:
             logger.error(
-                f"Attempt to disconnect system bus failed ({self._device_path}): {e}"
+                "Attempt to disconnect system bus failed (%s): %s",
+                self._device_path,
+                e,
             )
         else:
             # Critical to remove the `self._bus` object here to since it was
@@ -376,18 +383,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
-        logger.debug(f"Disconnecting ({self._device_path})")
+        logger.debug("Disconnecting ({%s})", self._device_path)
 
         if self._bus is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the D-Bus
             # connection.
-            logger.debug(f"already disconnected ({self._device_path})")
+            logger.debug("already disconnected ({%s})", self._device_path)
             return True
 
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
-            logger.debug(f"already in progress ({self._device_path})")
+            logger.debug("already in progress ({%s})", self._device_path)
             async with async_timeout(10):
                 await self._disconnecting_event.wait()
         elif self.is_connected:
@@ -804,73 +811,22 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         value = bytearray(reply.body[0])
 
-        logger.debug(
-            "Read Descriptor {0} | {1}: {2}".format(handle, descriptor.path, value)
-        )
+        logger.debug("Read Descriptor %s | %s: %s", handle, descriptor.path, value)
         return value
 
     async def write_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
-        data: Union[bytes, bytearray, memoryview],
-        response: bool = False,
+        characteristic: BleakGATTCharacteristic,
+        data: Buffer,
+        response: bool,
     ) -> None:
-        """Perform a write operation on the specified GATT characteristic.
-
-        .. note::
-
-            The version check below is for the "type" option to the
-            "Characteristic.WriteValue" method that was added to `Bluez in 5.51
-            <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit?id=fa9473bcc48417d69cc9ef81d41a72b18e34a55a>`_
-            Before that commit, ``Characteristic.WriteValue`` was only "Write with
-            response". ``Characteristic.AcquireWrite`` was `added in Bluez 5.46
-            <https://git.kernel.org/pub/scm/bluetooth/bluez.git/commit/doc/gatt-api.txt?id=f59f3dedb2c79a75e51a3a0d27e2ae06fefc603e>`_
-            which can be used to "Write without response", but for older versions
-            of Bluez, it is not possible to "Write without response".
-
-        Args:
-            char_specifier (BleakGATTCharacteristicBlueZDBus, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristicBlueZDBus object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
-        """
         if not self.is_connected:
             raise BleakError("Not connected")
-
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakError("Characteristic {0} was not found!".format(char_specifier))
-        if (
-            "write" not in characteristic.properties
-            and "write-without-response" not in characteristic.properties
-        ):
-            raise BleakError(
-                "Characteristic %s does not support write operations!"
-                % str(characteristic.uuid)
-            )
-        if not response and "write-without-response" not in characteristic.properties:
-            response = True
-            # Force response here, since the device only supports that.
-        if (
-            response
-            and "write" not in characteristic.properties
-            and "write-without-response" in characteristic.properties
-        ):
-            response = False
-            logger.warning(
-                "Characteristic %s does not support Write with response. Trying without..."
-                % str(characteristic.uuid)
-            )
 
         # See docstring for details about this handling.
         if not response and not BlueZFeatures.can_write_without_response:
             raise BleakError("Write without response requires at least BlueZ 5.46")
+
         if response or not BlueZFeatures.write_without_response_workaround_needed:
             while True:
                 assert self._bus
@@ -926,19 +882,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 os.close(fd)
 
         logger.debug(
-            "Write Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.path, data
-            )
+            "Write Characteristic %s | %s: %s",
+            characteristic.uuid,
+            characteristic.path,
+            data,
         )
 
-    async def write_gatt_descriptor(
-        self, handle: int, data: Union[bytes, bytearray, memoryview]
-    ) -> None:
+    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
-            data (bytes or bytearray): The data to send.
+            handle: The handle of the descriptor to read from.
+            data: The data to send (any bytes-like object).
 
         """
         if not self.is_connected:

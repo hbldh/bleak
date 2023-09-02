@@ -103,9 +103,9 @@ Python::
     from bleak.backends.device import BLEDevice
 
 
-    async def find_all_devices_services()
-        scanner = BleakScanner()
-        devices: Sequence[BLEDevice] = scanner.discover(timeout=5.0)
+    async def find_all_devices_services():
+        devices: Sequence[BLEDevice] = await BleakScanner.discover(timeout=5.0)
+
         for d in devices:
             async with BleakClient(d) as client:
                 print(client.services)

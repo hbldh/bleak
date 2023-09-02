@@ -5,9 +5,10 @@ import os
 import platform
 from typing import (
     Any,
-    Awaitable,
     Callable,
+    Coroutine,
     Dict,
+    Hashable,
     List,
     NamedTuple,
     Optional,
@@ -91,7 +92,7 @@ class AdvertisementData(NamedTuple):
 
 AdvertisementDataCallback = Callable[
     [BLEDevice, AdvertisementData],
-    Optional[Awaitable[None]],
+    Optional[Coroutine[Any, Any, None]],
 ]
 """
 Type alias for callback called when advertisement data is received.
@@ -134,8 +135,17 @@ class BaseBleakScanner(abc.ABC):
         service_uuids: Optional[List[str]],
     ):
         super(BaseBleakScanner, self).__init__()
-        self._callback: Optional[AdvertisementDataCallback] = None
-        self.register_detection_callback(detection_callback)
+
+        self._ad_callbacks: Dict[
+            Hashable, Callable[[BLEDevice, AdvertisementData], None]
+        ] = {}
+        """
+        List of callbacks to call when an advertisement is received.
+        """
+
+        if detection_callback is not None:
+            self.register_detection_callback(detection_callback)
+
         self._service_uuids: Optional[List[str]] = (
             [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
@@ -144,11 +154,10 @@ class BaseBleakScanner(abc.ABC):
 
     def register_detection_callback(
         self, callback: Optional[AdvertisementDataCallback]
-    ) -> None:
-        """Register a callback that is called when a device is discovered or has a property changed.
-
-        If another callback has already been registered, it will be replaced with ``callback``.
-        ``None`` can be used to remove the current callback.
+    ) -> Callable[[], None]:
+        """
+        Register a callback that is called when an advertisement event from the
+        OS is received.
 
         The ``callback`` is a function or coroutine that takes two arguments: :class:`BLEDevice`
         and :class:`AdvertisementData`.
@@ -156,15 +165,18 @@ class BaseBleakScanner(abc.ABC):
         Args:
             callback: A function, coroutine or ``None``.
 
+        Returns:
+            A method that can be called to unregister the callback.
         """
-        if callback is not None:
-            error_text = "callback must be callable with 2 parameters"
-            if not callable(callback):
-                raise TypeError(error_text)
+        error_text = "callback must be callable with 2 parameters"
 
-            handler_signature = inspect.signature(callback)
-            if len(handler_signature.parameters) != 2:
-                raise TypeError(error_text)
+        if not callable(callback):
+            raise TypeError(error_text)
+
+        handler_signature = inspect.signature(callback)
+
+        if len(handler_signature.parameters) != 2:
+            raise TypeError(error_text)
 
         if inspect.iscoroutinefunction(callback):
 
@@ -176,7 +188,26 @@ class BaseBleakScanner(abc.ABC):
         else:
             detection_callback = callback
 
-        self._callback = detection_callback
+        token = object()
+
+        self._ad_callbacks[token] = detection_callback
+
+        def remove():
+            self._ad_callbacks.pop(token, None)
+
+        return remove
+
+    def call_detection_callbacks(
+        self, device: BLEDevice, advertisement_data: AdvertisementData
+    ) -> None:
+        """
+        Calls all registered detection callbacks.
+
+        Backend implementations should call this method when an advertisement
+        event is received from the OS.
+        """
+        for callback in self._ad_callbacks.values():
+            callback(device, advertisement_data)
 
     def create_or_update_device(
         self, address: str, name: str, details: Any, adv: AdvertisementData

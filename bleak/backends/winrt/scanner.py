@@ -1,30 +1,35 @@
 import asyncio
 import logging
 import sys
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, Literal, NamedTuple, Optional
 from uuid import UUID
 
-from bleak_winrt.windows.devices.bluetooth.advertisement import (
-    BluetoothLEAdvertisementReceivedEventArgs,
-    BluetoothLEAdvertisementType,
-    BluetoothLEAdvertisementWatcher,
-    BluetoothLEAdvertisementWatcherStatus,
-    BluetoothLEScanningMode,
-)
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal
+if sys.version_info >= (3, 12):
+    from winrt.windows.devices.bluetooth.advertisement import (
+        BluetoothLEAdvertisementReceivedEventArgs,
+        BluetoothLEAdvertisementType,
+        BluetoothLEAdvertisementWatcher,
+        BluetoothLEAdvertisementWatcherStatus,
+        BluetoothLEScanningMode,
+    )
 else:
-    from typing import Literal
+    from bleak_winrt.windows.devices.bluetooth.advertisement import (
+        BluetoothLEAdvertisementReceivedEventArgs,
+        BluetoothLEAdvertisementType,
+        BluetoothLEAdvertisementWatcher,
+        BluetoothLEAdvertisementWatcherStatus,
+        BluetoothLEScanningMode,
+    )
 
 from ...assigned_numbers import AdvertisementDataType
+from ...uuids import normalize_uuid_str
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
 logger = logging.getLogger(__name__)
 
 
 def _format_bdaddr(a: int) -> str:
-    return ":".join("{:02X}".format(x) for x in a.to_bytes(6, byteorder="big"))
+    return ":".join(f"{x:02X}" for x in a.to_bytes(6, byteorder="big"))
 
 
 def _format_event_args(e: BluetoothLEAdvertisementReceivedEventArgs) -> str:
@@ -101,7 +106,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     ):
         """Callback for AdvertisementWatcher.Received"""
         # TODO: Cannot check for if sender == self.watcher in winrt?
-        logger.debug("Received {0}.".format(_format_event_args(event_args)))
+        logger.debug("Received %s.", _format_event_args(event_args))
 
         # REVISIT: if scanning filters with BluetoothSignalStrengthFilter.OutOfRangeTimeout
         # are in place, an RSSI of -127 means that the device has gone out of range and should
@@ -157,15 +162,17 @@ class BleakScannerWinRT(BaseBleakScanner):
                 AdvertisementDataType.SERVICE_DATA_UUID16
             ):
                 data = bytes(section.data)
-                service_data[
-                    f"0000{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
-                ] = data[2:]
+                service_data[normalize_uuid_str(f"{data[1]:02x}{data[0]:02x}")] = data[
+                    2:
+                ]
             for section in args.advertisement.get_sections_by_type(
                 AdvertisementDataType.SERVICE_DATA_UUID32
             ):
                 data = bytes(section.data)
                 service_data[
-                    f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}-0000-1000-8000-00805f9b34fb"
+                    normalize_uuid_str(
+                        f"{data[3]:02x}{data[2]:02x}{data[1]:02x}{data[0]:02x}"
+                    )
                 ] = data[4:]
             for section in args.advertisement.get_sections_by_type(
                 AdvertisementDataType.SERVICE_DATA_UUID128
@@ -188,9 +195,6 @@ class BleakScannerWinRT(BaseBleakScanner):
             bdaddr, local_name, raw_data, advertisement_data
         )
 
-        if self._callback is None:
-            return
-
         # On Windows, we have to fake service UUID filtering. If we were to pass
         # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
         # with the service UUIDs appropriately set, we would no longer receive
@@ -205,13 +209,13 @@ class BleakScannerWinRT(BaseBleakScanner):
                 # if there were no matching service uuids, the don't call the callback
                 return
 
-        self._callback(device, advertisement_data)
+        self.call_detection_callbacks(device, advertisement_data)
 
     def _stopped_handler(self, sender, e):
         logger.debug(
-            "{0} devices found. Watcher status: {1}.".format(
-                len(self.seen_devices), self.watcher.status
-            )
+            "%s devices found. Watcher status: %r.",
+            len(self.seen_devices),
+            sender.status,
         )
         self._stopped_event.set()
 
@@ -247,15 +251,15 @@ class BleakScannerWinRT(BaseBleakScanner):
             await self._stopped_event.wait()
         else:
             logger.debug(
-                "skipping waiting for stop because status is %s",
-                self.watcher.status.name,
+                "skipping waiting for stop because status is %r",
+                self.watcher.status,
             )
 
         try:
             self.watcher.remove_received(self._received_token)
             self.watcher.remove_stopped(self._stopped_token)
         except Exception as e:
-            logger.debug("Could not remove event handlers: {0}...".format(e))
+            logger.debug("Could not remove event handlers: %s", e)
 
         self._stopped_token = None
         self._received_token = None

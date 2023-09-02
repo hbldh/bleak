@@ -1,11 +1,5 @@
 import logging
-import sys
-from typing import Any, Dict, List, Optional
-
-if sys.version_info[:2] < (3, 8):
-    from typing_extensions import Literal, TypedDict
-else:
-    from typing import Literal, TypedDict
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 import objc
 from CoreBluetooth import CBPeripheral
@@ -29,7 +23,8 @@ class CBScannerArgs(TypedDict, total=False):
     If true, use Bluetooth address instead of UUID.
 
     .. warning:: This uses an undocumented IOBluetooth API to get the Bluetooth
-        address and may break in the future macOS releases.
+        address and may break in the future macOS releases. `It is known to not
+        work on macOS 10.15 <https://github.com/hbldh/bleak/issues/1286>`_.
     """
 
 
@@ -146,10 +141,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 advertisement_data,
             )
 
-            if not self._callback:
-                return
-
-            self._callback(device, advertisement_data)
+            self.call_detection_callbacks(device, advertisement_data)
 
         self._manager.callbacks[id(self)] = callback
         await self._manager.start_scan(self._service_uuids)

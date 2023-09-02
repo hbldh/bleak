@@ -4,7 +4,7 @@ from typing import Dict
 from uuid import UUID
 
 
-uuid16_dict = {
+uuid16_dict: Dict[int, str] = {
     0x0001: "SDP",
     0x0003: "RFCOMM",
     0x0005: "TCS-BIN",
@@ -971,7 +971,7 @@ uuid16_dict = {
     0xFFFE: "Alliance for Wireless Power (A4WP)",
 }
 
-uuid128_dict = {
+uuid128_dict: Dict[str, str] = {
     "a3c87500-8ed3-4bdf-8a39-a01bebede295": "Eddystone Configuration Service",
     "a3c87501-8ed3-4bdf-8a39-a01bebede295": "Capabilities",
     "a3c87502-8ed3-4bdf-8a39-a01bebede295": "Active Slot",
@@ -1155,13 +1155,67 @@ def normalize_uuid_str(uuid: str) -> str:
     Normaizes a UUID to the format used by Bleak.
 
     - Converted to lower case.
-    - 16-bit UUIDs are expanded to 128-bit.
+    - 16-bit and 32-bit UUIDs are expanded to 128-bit.
 
-    .. versionadded:: 0.20.0
+    Example::
+
+        # 16-bit
+        uuid1 = normalize_uuid_str("1234")
+        # uuid1 == "00001234-1000-8000-00805f9b34fb"
+
+        # 32-bit
+        uuid2 = normalize_uuid_str("12345678")
+        # uuid2 == "12345678-1000-8000-00805f9b34fb"
+
+        # 128-bit
+        uuid3 = normalize_uuid_str("12345678-1234-1234-1234567890ABC")
+        # uuid3 == "12345678-1234-1234-1234567890abc"
+
+    .. versionadded:: 0.20
+    .. versionchanged:: 0.21
+        Added support for 32-bit UUIDs.
     """
+    # See: BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part B - Section 2.5.1
     if len(uuid) == 4:
         # Bluetooth SIG registered 16-bit UUIDs
         uuid = f"0000{uuid}-0000-1000-8000-00805f9b34fb"
+    elif len(uuid) == 8:
+        # Bluetooth SIG registered 32-bit UUIDs
+        uuid = f"{uuid}-0000-1000-8000-00805f9b34fb"
 
     # let UUID class do the validation and conversion to lower case
     return str(UUID(uuid))
+
+
+def normalize_uuid_16(uuid: int) -> str:
+    """
+    Normaizes a 16-bit integer UUID to the format used by Bleak.
+
+    Returns:
+        128-bit UUID as string with the format ``"0000xxxx-1000-8000-00805f9b34fb"``.
+
+    Example::
+
+        uuid = normalize_uuid_16(0x1234)
+        # uuid == "00001234-1000-8000-00805f9b34fb"
+
+    .. versionadded:: 0.21
+    """
+    return normalize_uuid_str(f"{uuid:04X}")
+
+
+def normalize_uuid_32(uuid: int) -> str:
+    """
+    Normaizes a 32-bit integer UUID to the format used by Bleak.
+
+    Returns:
+        128-bit UUID as string with the format ``"xxxxxxxx-1000-8000-00805f9b34fb"``.
+
+    Example::
+
+        uuid = normalize_uuid_32(0x12345678)
+        # uuid == "12345678-1000-8000-00805f9b34fb"
+
+    .. versionadded:: 0.21
+    """
+    return normalize_uuid_str(f"{uuid:08X}")

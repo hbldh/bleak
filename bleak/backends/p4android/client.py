@@ -370,49 +370,10 @@ class BleakClientP4Android(BaseBleakClient):
 
     async def write_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
+        characteristic: BleakGATTCharacteristic,
         data: bytearray,
-        response: bool = False,
+        response: bool,
     ) -> None:
-        """Perform a write operation on the specified GATT characteristic.
-
-        Args:
-            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to write
-                to, specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristicP4Android object representing it.
-            data (bytes or bytearray): The data to send.
-            response (bool): If write-with-response operation should be done. Defaults to `False`.
-
-        """
-        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakError(f"Characteristic {char_specifier} was not found!")
-
-        if (
-            "write" not in characteristic.properties
-            and "write-without-response" not in characteristic.properties
-        ):
-            raise BleakError(
-                f"Characteristic {str(characteristic.uuid)} does not support write operations!"
-            )
-        if not response and "write-without-response" not in characteristic.properties:
-            response = True
-            # Force response here, since the device only supports that.
-        if (
-            response
-            and "write" not in characteristic.properties
-            and "write-without-response" in characteristic.properties
-        ):
-            response = False
-            logger.warning(
-                "Characteristic %s does not support Write with response. Trying without..."
-                % str(characteristic.uuid)
-            )
-
         if response:
             characteristic.obj.setWriteType(
                 defs.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT

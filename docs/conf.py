@@ -13,9 +13,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
 import pathlib
 import sys
-import os
 
 import tomli
 
@@ -116,12 +116,15 @@ autodoc_mock_imports = [
     "android",
     "async_timeout",
     "bleak_winrt",
+    "winrt",
     "CoreBluetooth",
     "dbus_fast",
     "Foundation",
     "jnius",
     "libdispatch",
     "objc",
+    "ctypes",
+    "typing_extensions",
 ]
 
 # -- Options for HTML output -------------------------------------------
