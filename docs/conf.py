@@ -124,6 +124,7 @@ autodoc_mock_imports = [
     "libdispatch",
     "objc",
     "ctypes",
+    "typing_extensions",
 ]
 
 # -- Options for HTML output -------------------------------------------
