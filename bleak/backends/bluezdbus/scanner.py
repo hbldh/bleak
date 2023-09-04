@@ -2,7 +2,7 @@ import logging
 from typing import Callable, Coroutine, Dict, List, Literal, Optional, TypedDict
 from warnings import warn
 
-from dbus_fast import Variant
+from dbus_fast.service import Variant
 
 from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner

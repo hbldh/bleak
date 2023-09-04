@@ -25,7 +25,9 @@ from typing import (
 )
 from weakref import WeakKeyDictionary
 
-from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
+from dbus_fast.constants import BusType, MessageType
+from dbus_fast.service import Message, Variant
+from dbus_fast.unpack import unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
 from ...exc import BleakDBusError, BleakError
