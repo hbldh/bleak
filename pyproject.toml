@@ -36,7 +36,7 @@ bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", pyth
 "winrt-Windows.Foundation" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
 "winrt-Windows.Foundation.Collections" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
 "winrt-Windows.Storage.Streams" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-dbus-fast = { version = "^1.83.0", markers = "platform_system == 'Linux'" }
+dbus-fast = { version = "^2.0.0", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = "^5.1.1"

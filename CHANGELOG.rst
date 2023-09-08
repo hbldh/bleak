@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Updated `dbus-fast` dependency to v2.0.0.
+
 `0.21.0`_ (2023-09-02)
 ======================
 
