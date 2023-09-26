@@ -21,6 +21,7 @@ Contributors
 * Kyle J. Williams <kyle@kjwill.tech>
 * Edward Betts <edward@4angle.com>
 * Robbe Gaeremynck <robbe.gaeremynck@outlook.com>
+* David Johansen <davejohansen@gmail.com>
 
 Sponsors
 --------
