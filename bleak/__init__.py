@@ -57,7 +57,7 @@ from .backends.scanner import (
     get_platform_scanner_backend_type,
 )
 from .backends.service import BleakGATTServiceCollection
-from .exc import BleakError
+from .exc import BleakCharacteristicNotFoundError, BleakError
 from .uuids import normalize_uuid_str
 
 if TYPE_CHECKING:
@@ -766,7 +766,7 @@ class BleakClient:
             characteristic = self.services.get_characteristic(char_specifier)
 
         if not characteristic:
-            raise BleakError("Characteristic {char_specifier} was not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         if response is None:
             # if not specified, prefer write-with-response over write-without-
@@ -819,7 +819,7 @@ class BleakClient:
             characteristic = char_specifier
 
         if not characteristic:
-            raise BleakError(f"Characteristic {char_specifier} not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         if inspect.iscoroutinefunction(callback):
 

@@ -24,7 +24,11 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from ... import BleakScanner
-from ...exc import BleakError, BleakDeviceNotFoundError
+from ...exc import (
+    BleakCharacteristicNotFoundError,
+    BleakDeviceNotFoundError,
+    BleakError,
+)
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -273,7 +277,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} was not found!".format(char_specifier))
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         output = await self._delegate.read_characteristic(
             characteristic.obj, use_cached=use_cached
@@ -373,7 +377,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} not found!".format(char_specifier))
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         await self._delegate.stop_notifications(characteristic.obj)
 
