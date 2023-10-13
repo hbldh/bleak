@@ -766,7 +766,7 @@ class BleakClient:
             characteristic = self.services.get_characteristic(char_specifier)
 
         if not characteristic:
-            raise BleakError("Characteristic {char_specifier} was not found!")
+            raise BleakError(f"Characteristic {char_specifier} was not found!")
 
         if response is None:
             # if not specified, prefer write-with-response over write-without-
