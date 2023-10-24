@@ -14,6 +14,10 @@ Changed
 -------
 * Updated PyObjC dependency on macOS to v10.x.
 
+Fixed
+-----
+* Fixed BlueZ version in passive scanning error message. Fixes #1433.
+
 `0.21.1`_ (2023-09-08)
 ======================
 
