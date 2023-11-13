@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 -------
 * Updated PyObjC dependency on macOS to v10.x.
+* Updated missing Bluetooth SIG characteristics and service UUIDs.
 
 Fixed
 -----
