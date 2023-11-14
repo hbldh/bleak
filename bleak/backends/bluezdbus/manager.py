@@ -521,7 +521,7 @@ class BlueZManager:
                     and reply.error_name == "org.freedesktop.DBus.Error.UnknownMethod"
                 ):
                     raise BleakError(
-                        "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled and Linux kernel >= 5.10"
+                        "passive scanning on Linux requires BlueZ >= 5.56 with --experimental enabled and Linux kernel >= 5.10"
                     )
 
                 assert_reply(reply)
