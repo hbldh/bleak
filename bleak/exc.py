@@ -18,9 +18,7 @@ class BleakCharacteristicNotFoundError(BleakError):
 
     char_specifier: Union[int, str, uuid.UUID]
 
-    def __init__(
-        self, char_specifier: Union[int, str, uuid.UUID], *args: object
-    ) -> None:
+    def __init__(self, char_specifier: Union[int, str, uuid.UUID]) -> None:
         """
         Args:
             characteristic (str): handle or UUID of the characteristic which was not found
