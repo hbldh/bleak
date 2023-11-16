@@ -23,7 +23,7 @@ class BleakCharacteristicNotFoundError(BleakError):
         Args:
             characteristic (str): handle or UUID of the characteristic which was not found
         """
-        super().__init__(f"Characteristic {char_specifier} was not found!", *args)
+        super().__init__(f"Characteristic {char_specifier} was not found!")
         self.char_specifier = char_specifier
 
 
