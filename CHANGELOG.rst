@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``BleakCharacteristicNotFoundError`` which is raised if a device does not support a characteristic.
+
 Changed
 -------
 * Updated PyObjC dependency on macOS to v10.x.

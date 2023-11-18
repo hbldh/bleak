@@ -101,7 +101,12 @@ else:
     from bleak_winrt.windows.storage.streams import Buffer as WinBuffer
 
 from ... import BleakScanner
-from ...exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
+from ...exc import (
+    PROTOCOL_ERROR_CODES,
+    BleakCharacteristicNotFoundError,
+    BleakDeviceNotFoundError,
+    BleakError,
+)
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -820,7 +825,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError(f"Characteristic {char_specifier} was not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         value = bytearray(
             _ensure_success(
@@ -1007,7 +1012,7 @@ class BleakClientWinRT(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError(f"Characteristic {char_specifier} not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         _ensure_success(
             await characteristic.obj.write_client_characteristic_configuration_descriptor_async(
