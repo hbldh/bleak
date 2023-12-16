@@ -22,7 +22,7 @@ class OrPattern(NamedTuple):
     """
     BlueZ advertisement monitor or-pattern.
 
-    https://github.com/bluez/bluez/blob/master/doc/advertisement-monitor-api.txt
+    https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst#arrayuint8-uint8-arraybyte-patterns-read-only-optional
     """
 
     start_position: int
