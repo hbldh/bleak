@@ -19,7 +19,7 @@ class BlueZDiscoveryFilters(TypedDict, total=False):
     Dictionary of arguments for the ``org.bluez.Adapter1.SetDiscoveryFilter``
     D-Bus method.
 
-    https://github.com/bluez/bluez/blob/master/doc/adapter-api.txt
+    https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst#void-setdiscoveryfilterdict-filter
     """
 
     UUIDs: List[str]
@@ -93,7 +93,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     For possible values for `filters`, see the parameters to the
     ``SetDiscoveryFilter`` method in the `BlueZ docs
-    <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
+    <https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst#void-setdiscoveryfilterdict-filter>`_
 
     Args:
         detection_callback:
@@ -201,7 +201,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         For possible values for `filters`, see the parameters to the
         ``SetDiscoveryFilter`` method in the `BlueZ docs
-        <https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/adapter-api.txt?h=5.48&id=0d1e3b9c5754022c779da129025d493a198d49cf>`_
+        <https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst#void-setdiscoveryfilterdict-filter>`_
 
         See variant types here: <https://python-dbus-next.readthedocs.io/en/latest/type-system/>
 
