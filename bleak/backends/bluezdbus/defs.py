@@ -23,7 +23,7 @@ GATT_DESCRIPTOR_INTERFACE = "org.bluez.GattDescriptor1"
 
 
 # D-Bus properties for interfaces
-# https://github.com/bluez/bluez/blob/master/doc/adapter-api.txt
+# https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst
 
 
 class Adapter1(TypedDict):
@@ -43,7 +43,7 @@ class Adapter1(TypedDict):
     ExperimentalFeatures: List[str]
 
 
-# https://github.com/bluez/bluez/blob/master/doc/advertisement-monitor-api.txt
+# https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst
 
 
 class AdvertisementMonitor1(TypedDict):
@@ -56,12 +56,15 @@ class AdvertisementMonitor1(TypedDict):
     Patterns: List[Tuple[int, int, bytes]]
 
 
+# https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitorManager.rst
+
+
 class AdvertisementMonitorManager1(TypedDict):
     SupportedMonitorTypes: List[str]
     SupportedFeatures: List[str]
 
 
-# https://github.com/bluez/bluez/blob/master/doc/battery-api.txt
+# https://github.com/bluez/bluez/blob/master/doc/org.bluez.Battery.rst
 
 
 class Battery1(TypedDict):
@@ -69,7 +72,7 @@ class Battery1(TypedDict):
     SupportedFeatures: List[str]
 
 
-# https://github.com/bluez/bluez/blob/master/doc/device-api.txt
+# https://github.com/bluez/bluez/blob/master/doc/org.bluez.Device.rst
 
 
 class Device1(TypedDict):
@@ -99,7 +102,7 @@ class Device1(TypedDict):
     AdvertisingData: Dict[int, bytes]
 
 
-# https://github.com/bluez/bluez/blob/master/doc/gatt-api.txt
+# https://github.com/bluez/bluez/blob/master/doc/org.bluez.GattService.rst
 
 
 class GattService1(TypedDict):
