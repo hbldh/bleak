@@ -245,7 +245,7 @@ class BleakScanner:
         finally:
             unregister_callback()
 
-    class ExtraArgs(TypedDict):
+    class ExtraArgs(TypedDict, total=False):
         """
         Keyword args from :class:`~bleak.BleakScanner` that can be passed to
         other convenience methods.
