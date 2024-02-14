@@ -961,6 +961,12 @@ class BlueZManager:
                         del self._descriptor_map[obj_path]
                     except KeyError:
                         pass
+
+            # Remove empty properties when all interfaces have been removed.
+            # This avoids wasting memory for people who have noisy devices
+            # with private addresses that change frequently.
+            if obj_path in self._properties and not self._properties[obj_path]:
+                del self._properties[obj_path]
         elif message.member == "PropertiesChanged":
             interface, changed, invalidated = message.body
             message_path = message.path
