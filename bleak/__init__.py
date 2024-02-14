@@ -32,6 +32,7 @@ from typing import (
 )
 from warnings import warn
 from typing import Literal
+from types import TracebackType
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -140,7 +141,7 @@ class BleakScanner:
         cb: CBScannerArgs = {},
         backend: Optional[Type[BaseBleakScanner]] = None,
         **kwargs,
-    ):
+    ) -> None:
         PlatformBleakScanner = (
             get_platform_scanner_backend_type() if backend is None else backend
         )
@@ -154,11 +155,16 @@ class BleakScanner:
             **kwargs,
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> BleakScanner:
         await self._backend.start()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         await self._backend.stop()
 
     def register_detection_callback(
@@ -193,15 +199,15 @@ class BleakScanner:
             unregister = self._backend.register_detection_callback(callback)
             setattr(self, "_unregister_", unregister)
 
-    async def start(self):
+    async def start(self) -> None:
         """Start scanning for devices"""
         await self._backend.start()
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop scanning for devices"""
         await self._backend.stop()
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """
         Set scanning filter for the BleakScanner.
 
@@ -513,7 +519,7 @@ class BleakClient:
         winrt: WinRTClientArgs = {},
         backend: Optional[Type[BaseBleakClient]] = None,
         **kwargs,
-    ):
+    ) -> None:
         PlatformBleakClient = (
             get_platform_client_backend_type() if backend is None else backend
         )
@@ -553,19 +559,24 @@ class BleakClient:
         """
         return self._backend.mtu_size
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.__class__.__name__}, {self.address}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}, {self.address}, {type(self._backend)}>"
 
     # Async Context managers
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> BleakClient:
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         await self.disconnect()
 
     # Connectivity methods
@@ -823,7 +834,7 @@ class BleakClient:
 
         if inspect.iscoroutinefunction(callback):
 
-            def wrapped_callback(data):
+            def wrapped_callback(data: bytearray) -> None:
                 task = asyncio.create_task(callback(characteristic, data))
                 _background_tasks.add(task)
                 task.add_done_callback(_background_tasks.discard)
@@ -893,7 +904,7 @@ def discover(*args, **kwargs):
     return BleakScanner.discover(*args, **kwargs)
 
 
-def cli():
+def cli() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
