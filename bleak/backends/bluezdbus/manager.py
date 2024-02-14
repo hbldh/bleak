@@ -216,6 +216,28 @@ class BlueZManager:
         if device_path not in self._properties:
             raise BleakError(f"device '{device_path.split('/')[-1]}' not found")
 
+    def _get_device_property(
+        self, device_path: str, interface: str, property_name: str
+    ) -> Any:
+        self._check_device(device_path)
+        device_properties = self._properties[device_path]
+
+        try:
+            interface_properties = device_properties[interface]
+        except KeyError:
+            raise BleakError(
+                f"Interface {interface} not found for device '{device_path}'"
+            )
+
+        try:
+            value = interface_properties[property_name]
+        except KeyError:
+            raise BleakError(
+                f"Property '{property_name}' not found for '{interface}' in '{device_path}'"
+            )
+
+        return value
+
     async def async_init(self):
         """
         Connects to the D-Bus message bus and begins monitoring signals.
@@ -711,9 +733,7 @@ class BlueZManager:
         Raises:
             BleakError: if the device is not present in BlueZ
         """
-        self._check_device(device_path)
-
-        return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
+        return self._get_device_property(device_path, defs.DEVICE_INTERFACE, "Name")
 
     def is_connected(self, device_path: str) -> bool:
         """
@@ -820,12 +840,11 @@ class BlueZManager:
         Raises:
             BleakError: if the device is not present in BlueZ
         """
-        self._check_device(device_path)
+        value = self._get_device_property(
+            device_path, defs.DEVICE_INTERFACE, property_name
+        )
 
-        if (
-            self._properties[device_path][defs.DEVICE_INTERFACE][property_name]
-            == property_value
-        ):
+        if value == property_value:
             return
 
         event = asyncio.Event()
