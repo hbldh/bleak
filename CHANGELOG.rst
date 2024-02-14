@@ -18,6 +18,7 @@ Changed
 -------
 * Updated PyObjC dependency on macOS to v10.x.
 * Updated missing Bluetooth SIG characteristics and service UUIDs.
+* Updated ``BlueZManager`` to remove empty interfaces from `_properties` during InterfacesRemoved message.
 
 Fixed
 -----
