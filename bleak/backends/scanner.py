@@ -180,7 +180,7 @@ class BaseBleakScanner(abc.ABC):
 
         if inspect.iscoroutinefunction(callback):
 
-            def detection_callback(s, d):
+            def detection_callback(s: BLEDevice, d: AdvertisementData) -> None:
                 task = asyncio.create_task(callback(s, d))
                 _background_tasks.add(task)
                 task.add_done_callback(_background_tasks.discard)
@@ -192,7 +192,7 @@ class BaseBleakScanner(abc.ABC):
 
         self._ad_callbacks[token] = detection_callback
 
-        def remove():
+        def remove() -> None:
             self._ad_callbacks.pop(token, None)
 
         return remove

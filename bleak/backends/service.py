@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import logging
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 from uuid import UUID
 
 from ..exc import BleakError
@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 class BleakGATTService(abc.ABC):
     """Interface for the Bleak representation of a GATT Service."""
 
-    def __init__(self, obj):
+    def __init__(self, obj: Any) -> None:
         self.obj = obj
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.uuid} (Handle: {self.handle}): {self.description}"
 
     @property
@@ -51,7 +51,7 @@ class BleakGATTService(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_characteristic(self, characteristic: BleakGATTCharacteristic):
+    def add_characteristic(self, characteristic: BleakGATTCharacteristic) -> None:
         """Add a :py:class:`~BleakGATTCharacteristic` to the service.
 
         Should not be used by end user, but rather by `bleak` itself.
@@ -81,7 +81,7 @@ class BleakGATTService(abc.ABC):
 class BleakGATTServiceCollection:
     """Simple data container for storing the peripheral's service complement."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__services = {}
         self.__characteristics = {}
         self.__descriptors = {}
@@ -117,7 +117,7 @@ class BleakGATTServiceCollection:
         """Returns a dictionary of integer handles mapping to BleakGATTDescriptor"""
         return self.__descriptors
 
-    def add_service(self, service: BleakGATTService):
+    def add_service(self, service: BleakGATTService) -> None:
         """Add a :py:class:`~BleakGATTService` to the service collection.
 
         Should not be used by end user, but rather by `bleak` itself.
@@ -153,7 +153,7 @@ class BleakGATTServiceCollection:
 
         return x[0] if x else None
 
-    def add_characteristic(self, characteristic: BleakGATTCharacteristic):
+    def add_characteristic(self, characteristic: BleakGATTCharacteristic) -> None:
         """Add a :py:class:`~BleakGATTCharacteristic` to the service collection.
 
         Should not be used by end user, but rather by `bleak` itself.
@@ -191,7 +191,7 @@ class BleakGATTServiceCollection:
 
         return x[0] if x else None
 
-    def add_descriptor(self, descriptor: BleakGATTDescriptor):
+    def add_descriptor(self, descriptor: BleakGATTDescriptor) -> None:
         """Add a :py:class:`~BleakGATTDescriptor` to the service collection.
 
         Should not be used by end user, but rather by `bleak` itself.
