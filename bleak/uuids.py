@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
 
-from typing import Dict
 from uuid import UUID
 
 
-uuid16_dict: Dict[int, str] = {
+uuid16_dict: dict[int, str] = {
     0x0001: "SDP",
     0x0003: "RFCOMM",
     0x0005: "TCS-BIN",
@@ -1029,7 +1028,7 @@ uuid16_dict: Dict[int, str] = {
     0xFFFE: "Alliance for Wireless Power (A4WP)",
 }
 
-uuid128_dict: Dict[str, str] = {
+uuid128_dict: dict[str, str] = {
     "a3c87500-8ed3-4bdf-8a39-a01bebede295": "Eddystone Configuration Service",
     "a3c87501-8ed3-4bdf-8a39-a01bebede295": "Capabilities",
     "a3c87502-8ed3-4bdf-8a39-a01bebede295": "Active Slot",
@@ -1067,7 +1066,7 @@ uuid128_dict: Dict[str, str] = {
     "e95d9775-251d-470a-a062-fa1922dfa9a8": "MicroBit Event Data",
     "e95d23c4-251d-470a-a062-fa1922dfa9a8": "MicroBit Client Requirements",
     "e95d5404-251d-470a-a062-fa1922dfa9a8": "MicroBit Client Events",
-    "e95d93b0-251d-470a-a062-fa1922dfa9a8": "MicroBit DFU Control Service" "",
+    "e95d93b0-251d-470a-a062-fa1922dfa9a8": "MicroBit DFU Control Service",
     "e95d93b1-251d-470a-a062-fa1922dfa9a8": "MicroBit DFU Control",
     "e95d6100-251d-470a-a062-fa1922dfa9a8": "MicroBit Temperature Service",
     "e95d1b25-251d-470a-a062-fa1922dfa9a8": "MicroBit Temperature Period",
@@ -1194,7 +1193,7 @@ def uuidstr_to_str(uuid_):
     return s
 
 
-def register_uuids(uuids_to_descriptions: Dict[str, str]) -> None:
+def register_uuids(uuids_to_descriptions: dict[str, str]) -> None:
     """Add or modify the mapping of 128-bit UUIDs for services and characteristics to descriptions.
 
     Args:
