@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 import re
 from typing import Any, Coroutine, Dict, Optional
@@ -19,7 +20,7 @@ _message_types = ["signal", "method_call", "method_return", "error"]
 
 
 class InvalidMessageTypeError(TypeError):
-    def __init__(self, type):
+    def __init__(self, type: str):
         super().__init__(f"invalid message type: {type}")
 
 
@@ -37,7 +38,7 @@ def is_message_type_valid(type: str) -> bool:
     return type in _message_types
 
 
-def assert_bus_name_valid(type: str):
+def assert_bus_name_valid(type: str) -> None:
     """Raise an error if this is not a valid message type.
 
     .. seealso:: https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-routing-match-rules
@@ -136,7 +137,7 @@ class MatchRules:
             self.args = None
 
     @staticmethod
-    def parse(rules: str):
+    def parse(rules: str) -> MatchRules:
         return MatchRules(**dict(r.split("=") for r in rules.split(",")))
 
     def __str__(self) -> str:
