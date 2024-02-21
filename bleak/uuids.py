@@ -1177,7 +1177,7 @@ uuid128_dict: Dict[str, str] = {
 }
 
 
-def uuidstr_to_str(uuid_):
+def uuidstr_to_str(uuid_: str) -> str:
     uuid_ = uuid_.lower()
     s = uuid128_dict.get(uuid_)
     if s:
