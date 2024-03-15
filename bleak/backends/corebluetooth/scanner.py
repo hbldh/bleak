@@ -131,7 +131,10 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                     self._manager.central_manager.retrieveAddressForPeripheral_(p)
                 )
                 if address_bytes is None:
-                    logger.debug("Could not get Bluetooth address for %s. Ignoring this device.", p.identifier().UUIDString())
+                    logger.debug(
+                        "Could not get Bluetooth address for %s. Ignoring this device.",
+                        p.identifier().UUIDString()
+                    )
                     return
                 address = address_bytes.hex(":").upper()
             else:
