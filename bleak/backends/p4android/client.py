@@ -429,13 +429,26 @@ class BleakClientP4Android(BaseBleakClient):
 
     async def start_notify(
         self,
-        characteristic: BleakGATTCharacteristic,
+        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
         callback: NotifyCallback,
         **kwargs,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
+
+        Args:
+            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to deactivate
+                notification/indication on, specified by either integer handle, UUID or
+                directly by the BleakGATTCharacteristicP4Android object representing it.
+
         """
+        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
+            characteristic = self.services.get_characteristic(char_specifier)
+        else:
+            characteristic = char_specifier
+        if not characteristic:
+            raise BleakCharacteristicNotFoundError(char_specifier)
+            
         self._subscriptions[characteristic.handle] = callback
 
         assert self.__gatt is not None
@@ -445,10 +458,11 @@ class BleakClientP4Android(BaseBleakClient):
                 f"Failed to enable notification for characteristic {characteristic.uuid}"
             )
 
-        await self.write_gatt_descriptor(
-            characteristic.notification_descriptor,
-            defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
-        )
+        if characteristic.notification_descriptor:
+            await self.write_gatt_descriptor(
+                characteristic.notification_descriptor,
+                defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
+            )
 
     async def stop_notify(
         self,
@@ -469,10 +483,11 @@ class BleakClientP4Android(BaseBleakClient):
         if not characteristic:
             raise BleakCharacteristicNotFoundError(char_specifier)
 
-        await self.write_gatt_descriptor(
-            characteristic.notification_descriptor,
-            defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,
-        )
+        if characteristic.notification_descriptor:
+            await self.write_gatt_descriptor(
+                characteristic.notification_descriptor,
+                defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,
+            )
 
         if not self.__gatt.setCharacteristicNotification(characteristic.obj, False):
             raise BleakError(
