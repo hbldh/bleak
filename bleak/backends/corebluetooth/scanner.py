@@ -133,7 +133,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 if address_bytes is None:
                     logger.debug(
                         "Could not get Bluetooth address for %s. Ignoring this device.",
-                        p.identifier().UUIDString()
+                        p.identifier().UUIDString(),
                     )
                 address = address_bytes.hex(":").upper()
             else:
