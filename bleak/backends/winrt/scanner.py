@@ -22,6 +22,7 @@ else:
     )
 
 from ...assigned_numbers import AdvertisementDataType
+from ...exc import BleakError
 from ...uuids import normalize_uuid_str
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
@@ -83,7 +84,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     ):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
-        self.watcher = None
+        self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
         self._advertisement_pairs: Dict[int, _RawAdvData] = {}
         self._stopped_event = None
 
@@ -220,6 +221,9 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._stopped_event.set()
 
     async def start(self) -> None:
+        if self.watcher:
+            raise BleakError("Scanner already started")
+
         # start with fresh list of discovered devices
         self.seen_devices = {}
         self._advertisement_pairs.clear()
