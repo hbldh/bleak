@@ -238,7 +238,7 @@ class BlueZManager:
 
         return value
 
-    async def async_init(self):
+    async def async_init(self) -> None:
         """
         Connects to the D-Bus message bus and begins monitoring signals.
 
@@ -552,7 +552,7 @@ class BlueZManager:
                 # won't use the monitor
                 self._bus.export(monitor_path, monitor)
 
-                async def stop():
+                async def stop() -> None:
                     # need to remove callbacks first, otherwise we get TxPower
                     # and RSSI properties removed during stop which causes
                     # incorrect advertisement data callbacks
@@ -868,7 +868,7 @@ class BlueZManager:
             if not device_callbacks:
                 del condition_callbacks[device_path]
 
-    def _parse_msg(self, message: Message):
+    def _parse_msg(self, message: Message) -> None:
         """
         Handles callbacks from dbus_fast.
         """
