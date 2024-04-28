@@ -25,6 +25,7 @@ Fixed
 * Fixed BlueZ version in passive scanning error message. Fixes #1433.
 * Fixed mypy requiring ``Unpack[ExtraArgs]`` that were intended to be optional.  Fixes #1487.
 * Fixed ``KeyError`` in BlueZ ``is_connected()`` and ``get_global_bluez_manager()`` when device is not present. Fixes #1507.
+* Fixed BlueZ ``_wait_removed`` completion on invalid object path. Fixes #1489.
 * Fixed rare unhandled exception when scanning on macOS when using ``use_bdaddr``. Fixes #1523.
 
 `0.21.1`_ (2023-09-08)
