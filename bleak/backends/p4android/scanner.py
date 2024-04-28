@@ -243,10 +243,10 @@ class BleakScannerP4Android(BaseBleakScanner):
             entry.getKey().toString(): bytes(entry.getValue())
             for entry in record.getServiceData().entrySet()
         }
-        tx_power = result.getTxPower()
+        tx_power = record.getTxPowerLevel()
 
         # change "not present" value to None to match other backends
-        if tx_power == defs.ScanResult.TX_POWER_NOT_PRESENT:
+        if tx_power == -2147483648:  # Integer#MIN_VALUE
             tx_power = None
 
         advertisement = AdvertisementData(
