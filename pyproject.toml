@@ -43,7 +43,7 @@ Sphinx = "^5.1.1"
 sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.group.lint.dependencies]
-black = "^22.1.0"
+black = ">=22.1,<25.0"
 flake8 = "^5.0.0"
 
 [tool.poetry.group.test.dependencies]
