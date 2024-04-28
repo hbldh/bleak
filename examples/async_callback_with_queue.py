@@ -9,6 +9,7 @@ that data.
 Created on 2021-02-25 by hbldh <henrik.blidh@nedomkull.com>
 
 """
+
 import argparse
 import time
 import asyncio

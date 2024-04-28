@@ -127,9 +127,9 @@ class PeripheralDelegate(NSObject):
     async def discover_descriptors(self, characteristic: CBCharacteristic) -> NSArray:
         future = self._event_loop.create_future()
 
-        self._characteristic_descriptor_discover_futures[
-            characteristic.handle()
-        ] = future
+        self._characteristic_descriptor_discover_futures[characteristic.handle()] = (
+            future
+        )
         try:
             self.peripheral.discoverDescriptorsForCharacteristic_(characteristic)
             await future

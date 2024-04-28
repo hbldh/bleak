@@ -287,15 +287,13 @@ class BleakScanner:
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[False] = False, **kwargs
-    ) -> List[BLEDevice]:
-        ...
+    ) -> List[BLEDevice]: ...
 
     @overload
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
-    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
-        ...
+    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]: ...
 
     @classmethod
     async def discover(
@@ -526,12 +524,14 @@ class BleakClient:
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,
-            disconnected_callback=None
-            if disconnected_callback is None
-            else functools.partial(disconnected_callback, self),
-            services=None
-            if services is None
-            else set(map(normalize_uuid_str, services)),
+            disconnected_callback=(
+                None
+                if disconnected_callback is None
+                else functools.partial(disconnected_callback, self)
+            ),
+            services=(
+                None if services is None else set(map(normalize_uuid_str, services))
+            ),
             timeout=timeout,
             winrt=winrt,
             **kwargs,
