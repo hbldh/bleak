@@ -188,9 +188,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     watcher
                 )
 
-                self._disconnect_monitor_event = (
-                    local_disconnect_monitor_event
-                ) = asyncio.Event()
+                self._disconnect_monitor_event = local_disconnect_monitor_event = (
+                    asyncio.Event()
+                )
 
                 try:
                     try:

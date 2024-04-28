@@ -7,7 +7,6 @@ This module contains useful assigned numbers from the Bluetooth spec.
 See <https://www.bluetooth.com/specifications/assigned-numbers/>.
 """
 
-
 from enum import IntEnum
 
 

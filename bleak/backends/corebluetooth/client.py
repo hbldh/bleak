@@ -3,6 +3,7 @@ BLE Client for CoreBluetooth on macOS
 
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
+
 import asyncio
 import logging
 import sys
@@ -325,9 +326,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await self._delegate.write_characteristic(
             characteristic.obj,
             value,
-            CBCharacteristicWriteWithResponse
-            if response
-            else CBCharacteristicWriteWithoutResponse,
+            (
+                CBCharacteristicWriteWithResponse
+                if response
+                else CBCharacteristicWriteWithoutResponse
+            ),
         )
         logger.debug(f"Write Characteristic {characteristic.uuid} : {data}")
 
