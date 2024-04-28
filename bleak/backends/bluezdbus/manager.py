@@ -812,8 +812,9 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def callback(_: str):
-            event.set()
+        def callback(o: str) -> None:
+            if o == device_path:
+                event.set()
 
         device_removed_callback_and_state = DeviceRemovedCallbackAndState(
             callback, self._properties[device_path][defs.DEVICE_INTERFACE]["Adapter"]
