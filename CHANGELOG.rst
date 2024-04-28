@@ -27,6 +27,7 @@ Fixed
 * Fixed ``KeyError`` in BlueZ ``is_connected()`` and ``get_global_bluez_manager()`` when device is not present. Fixes #1507.
 * Fixed BlueZ ``_wait_removed`` completion on invalid object path. Fixes #1489.
 * Fixed rare unhandled exception when scanning on macOS when using ``use_bdaddr``. Fixes #1523.
+* Fixed scanning silently failing on Windows when Bluetooth is off. Fixes #1535.
 
 `0.21.1`_ (2023-09-08)
 ======================

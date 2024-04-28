@@ -248,6 +248,16 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher.start()
 
+        # no events for status changes, so we have to poll :-(
+        while self.watcher.status == BluetoothLEAdvertisementWatcherStatus.CREATED:
+            await asyncio.sleep(0.01)
+
+        if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.ABORTED:
+            raise BleakError("Failed to start scanner. Is Bluetooth turned on?")
+
+        if self.watcher.status != BluetoothLEAdvertisementWatcherStatus.STARTED:
+            raise BleakError(f"Unexpected watcher status: {self.watcher.status.name}")
+
     async def stop(self) -> None:
         self.watcher.stop()
 
