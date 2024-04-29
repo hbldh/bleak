@@ -12,8 +12,7 @@ import argparse
 import asyncio
 import logging
 
-from bleak import BleakScanner, BleakClient
-
+from bleak import BleakClient, BleakScanner
 
 logger = logging.getLogger(__name__)
 

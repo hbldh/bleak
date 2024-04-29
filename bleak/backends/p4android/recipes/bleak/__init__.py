@@ -1,9 +1,9 @@
 import os
-
-from pythonforandroid.recipe import PythonRecipe
-from pythonforandroid.toolchain import shprint, info
-import sh
 from os.path import join
+
+import sh
+from pythonforandroid.recipe import PythonRecipe
+from pythonforandroid.toolchain import info, shprint
 
 
 class BleakRecipe(PythonRecipe):

@@ -3,7 +3,6 @@
 from typing import Dict
 from uuid import UUID
 
-
 uuid16_dict: Dict[int, str] = {
     0x0001: "SDP",
     0x0003: "RFCOMM",

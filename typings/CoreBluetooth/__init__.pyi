@@ -1,7 +1,7 @@
 from typing import Any, NewType, Optional, Type, TypeVar
 
-from ..libdispatch import dispatch_queue_t
 from ..Foundation import (
+    NSUUID,
     NSArray,
     NSData,
     NSDictionary,
@@ -9,8 +9,8 @@ from ..Foundation import (
     NSNumber,
     NSObject,
     NSString,
-    NSUUID,
 )
+from ..libdispatch import dispatch_queue_t
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...

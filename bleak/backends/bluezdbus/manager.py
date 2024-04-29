@@ -33,14 +33,14 @@ from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
 from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
+from .defs import Device1, GattCharacteristic1, GattDescriptor1, GattService1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
 from .utils import (
     assert_reply,
-    get_dbus_authenticator,
     device_path_from_characteristic_path,
+    get_dbus_authenticator,
 )
 
 logger = logging.getLogger(__name__)

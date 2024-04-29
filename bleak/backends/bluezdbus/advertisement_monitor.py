@@ -9,11 +9,10 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/org.bluez.Advertisem
 import logging
 from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
 
-from dbus_fast.service import ServiceInterface, dbus_property, method, PropertyAccess
+from dbus_fast.service import PropertyAccess, ServiceInterface, dbus_property, method
 
-from . import defs
 from ...assigned_numbers import AdvertisementDataType
-
+from . import defs
 
 logger = logging.getLogger(__name__)
 

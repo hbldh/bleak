@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 import uuid
+from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     AsyncGenerator,
@@ -22,6 +23,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Set,
     Tuple,
@@ -31,8 +33,6 @@ from typing import (
     overload,
 )
 from warnings import warn
-from typing import Literal
-from types import TracebackType
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -45,7 +45,6 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
     from typing import Unpack
-
 
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type

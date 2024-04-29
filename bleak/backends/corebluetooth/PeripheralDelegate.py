@@ -20,14 +20,14 @@ else:
     from asyncio import timeout as async_timeout
 
 import objc
-from Foundation import NSNumber, NSObject, NSArray, NSData, NSError, NSUUID, NSString
 from CoreBluetooth import (
+    CBCharacteristic,
+    CBCharacteristicWriteWithResponse,
+    CBDescriptor,
     CBPeripheral,
     CBService,
-    CBCharacteristic,
-    CBDescriptor,
-    CBCharacteristicWriteWithResponse,
 )
+from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject, NSString
 
 from ...exc import BleakError
 from ..client import NotifyCallback

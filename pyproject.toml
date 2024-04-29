@@ -43,8 +43,9 @@ Sphinx = "^5.1.1"
 sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.group.lint.dependencies]
-black = ">=22.1,<25.0"
+black = ">=24.3,<25.0"
 flake8 = "^5.0.0"
+isort = "^5.13.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.0.0"
@@ -54,3 +55,9 @@ pytest-cov = "^3.0.0 "
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+py_version=38
+src_paths = ["bleak", "examples", "tests", "typings"]
+extend_skip = [".buildozer"]

@@ -4,7 +4,7 @@ import contextlib
 import logging
 from typing import Iterable
 
-from bleak import BleakScanner, BleakClient
+from bleak import BleakClient, BleakScanner
 
 
 async def connect_to_device(

@@ -19,6 +19,7 @@ else:
 
 import objc
 from CoreBluetooth import (
+    CBUUID,
     CBCentralManager,
     CBManagerStatePoweredOff,
     CBManagerStatePoweredOn,
@@ -27,9 +28,9 @@ from CoreBluetooth import (
     CBManagerStateUnknown,
     CBManagerStateUnsupported,
     CBPeripheral,
-    CBUUID,
 )
 from Foundation import (
+    NSUUID,
     NSArray,
     NSDictionary,
     NSError,
@@ -38,9 +39,8 @@ from Foundation import (
     NSNumber,
     NSObject,
     NSString,
-    NSUUID,
 )
-from libdispatch import dispatch_queue_create, DISPATCH_QUEUE_SERIAL
+from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
 from ...exc import BleakError
 
