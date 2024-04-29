@@ -29,13 +29,14 @@ pyobjc-core = { version = "^10.0", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = "^10.0", markers = "platform_system=='Darwin'" }
 pyobjc-framework-libdispatch = { version = "^10.0", markers = "platform_system=='Darwin'" }
 bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", python = "<3.12" }
-"winrt-Windows.Devices.Bluetooth" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Enumeration" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Foundation" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Foundation.Collections" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Storage.Streams" = { version = "2.0.0b1", allow-prereleases = true, markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-runtime" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Devices.Enumeration" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Foundation" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Foundation.Collections" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-Windows.Storage.Streams" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
 dbus-fast = { version = ">=1.83.0, < 3", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
