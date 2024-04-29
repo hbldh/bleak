@@ -2,8 +2,9 @@
 
 """Tests for `bleak.backends.bluezdbus.utils` package."""
 
-import pytest
 import sys
+
+import pytest
 
 
 @pytest.mark.skipif(

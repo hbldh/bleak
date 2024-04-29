@@ -4,8 +4,8 @@ Example showing how to use BleakClient.mtu_size
 
 import asyncio
 
-from bleak import BleakScanner, BleakClient
-from bleak.backends.scanner import BLEDevice, AdvertisementData
+from bleak import BleakClient, BleakScanner
+from bleak.backends.scanner import AdvertisementData, BLEDevice
 
 # replace with real characteristic UUID
 CHAR_UUID = "00000000-0000-0000-0000-000000000000"

@@ -2,8 +2,9 @@
 
 import enum
 
-import bleak.exc
 from jnius import autoclass, cast
+
+import bleak.exc
 
 # caching constants avoids unnecessary extra use of the jni-python interface, which can be slow
 

@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 from uuid import UUID
 
 from ..exc import BleakError
-from ..uuids import uuidstr_to_str, normalize_uuid_str
+from ..uuids import normalize_uuid_str, uuidstr_to_str
 from .characteristic import BleakGATTCharacteristic
 from .descriptor import BleakGATTDescriptor
 

@@ -22,8 +22,8 @@ Created on 2020-01-13 by hbldh <henrik.blidh@nedomkull.com>
 
 """
 
-import sys
 import asyncio
+import sys
 
 from bleak import BleakClient
 
