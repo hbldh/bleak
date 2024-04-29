@@ -51,24 +51,21 @@ async def main(args: argparse.Namespace):
                 if "read" in char.properties:
                     try:
                         value = await client.read_gatt_char(char.uuid)
-                        logger.info(
-                            "  [Characteristic] %s (%s), Value: %r",
-                            char,
-                            ",".join(char.properties),
-                            value,
-                        )
+                        extra = f", Value: {value}"
                     except Exception as e:
-                        logger.error(
-                            "  [Characteristic] %s (%s), Error: %s",
-                            char,
-                            ",".join(char.properties),
-                            e,
-                        )
-
+                        extra = f", Error: {e}"
                 else:
-                    logger.info(
-                        "  [Characteristic] %s (%s)", char, ",".join(char.properties)
-                    )
+                    extra = ""
+
+                if "write-without-response" in char.properties:
+                    extra += f", Max write w/o rsp size: {char.max_write_without_response_size}"
+
+                logger.info(
+                    "  [Characteristic] %s (%s)%s",
+                    char,
+                    ",".join(char.properties),
+                    extra,
+                )
 
                 for descriptor in char.descriptors:
                     try:
