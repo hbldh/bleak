@@ -29,6 +29,7 @@ Fixed
 * Fixed rare unhandled exception when scanning on macOS when using ``use_bdaddr``. Fixes #1523.
 * Fixed scanning silently failing on Windows when Bluetooth is off. Fixes #1535.
 * Fixed using wrong value for ``tx_power`` in Android backend. Fixes #1532.
+* Fixed 4-character UUIDs not working on ``BleakClient.*_gatt_char`` methods. Fixes #1498.
 
 `0.21.1`_ (2023-09-08)
 ======================

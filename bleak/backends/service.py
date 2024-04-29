@@ -176,10 +176,12 @@ class BleakGATTServiceCollection:
         if isinstance(specifier, int):
             return self.characteristics.get(specifier)
 
+        uuid = normalize_uuid_str(str(specifier))
+
         # Assume uuid usage.
         x = list(
             filter(
-                lambda x: x.uuid == str(specifier).lower(),
+                lambda x: x.uuid == uuid,
                 self.characteristics.values(),
             )
         )
