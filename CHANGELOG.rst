@@ -19,6 +19,7 @@ Changed
 * Updated PyObjC dependency on macOS to v10.x.
 * Updated missing Bluetooth SIG characteristics and service UUIDs.
 * Updated ``BlueZManager`` to remove empty interfaces from `_properties` during InterfacesRemoved message.
+* Updated PyWinRT dependency to v2. Fixes #1529.
 
 Fixed
 -----
