@@ -34,6 +34,7 @@ Fixed
 * Fixed using wrong value for ``tx_power`` in Android backend. Fixes #1532.
 * Fixed 4-character UUIDs not working on ``BleakClient.*_gatt_char`` methods. Fixes #1498.
 * Fixed race condition with getting max PDU size on Windows. Fixes #1497.
+* Fixed filtering advertisement data by service UUID when multiple apps are scanning. Fixes #1534.
 
 `0.21.1`_ (2023-09-08)
 ======================
