@@ -206,6 +206,24 @@ class BaseBleakScanner(abc.ABC):
         Backend implementations should call this method when an advertisement
         event is received from the OS.
         """
+
+        # Backends will make best effort to filter out advertisements that
+        # don't match the service UUIDs, but if other apps are scanning at the
+        # same time or something like that, we may still receive advertisements
+        # that don't match. So we need to do more filtering here to get the
+        # expected behavior.
+
+        if self._service_uuids:
+            if not advertisement_data.service_uuids:
+                return
+
+            for uuid in advertisement_data.service_uuids:
+                if uuid in self._service_uuids:
+                    break
+            else:
+                # if there were no matching service uuids, the don't call the callback
+                return
+
         for callback in self._ad_callbacks.values():
             callback(device, advertisement_data)
 

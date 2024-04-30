@@ -96,6 +96,11 @@ class BleakScannerWinRT(BaseBleakScanner):
         else:
             self._scanning_mode = BluetoothLEScanningMode.ACTIVE
 
+        # Unfortunately, due to the way Windows handles filtering, we can't
+        # make use of the service_uuids filter here. If we did we would only
+        # get the advertisement data or the scan data, but not both, so would
+        # miss out on other essential data. Advanced users can pass their own
+        # filters though if they want to.
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
@@ -197,20 +202,6 @@ class BleakScannerWinRT(BaseBleakScanner):
         device = self.create_or_update_device(
             bdaddr, local_name, raw_data, advertisement_data
         )
-
-        # On Windows, we have to fake service UUID filtering. If we were to pass
-        # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
-        # with the service UUIDs appropriately set, we would no longer receive
-        # scan response data (which commonly contains the local device name).
-        # So we have to do it like this instead.
-
-        if self._service_uuids:
-            for uuid in uuids:
-                if uuid in self._service_uuids:
-                    break
-            else:
-                # if there were no matching service uuids, the don't call the callback
-                return
 
         self.call_detection_callbacks(device, advertisement_data)
 
