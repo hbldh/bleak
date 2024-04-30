@@ -55,7 +55,7 @@ class AdvertisementData(NamedTuple):
 
     tx_power: Optional[int]
     """
-    Tx Power data from the received advertising data or ``None`` if not present.
+    TX Power Level of the remote device from the received advertising data or ``None`` if not present.
 
     .. versionadded:: 0.17.0
     """
