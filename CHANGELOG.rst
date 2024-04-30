@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * Added ``BleakCharacteristicNotFoundError`` which is raised if a device does not support a characteristic.
+* Added utility function to work around ``pywin32`` setting threading model to STA on Windows.
 
 Changed
 -------
@@ -20,6 +21,7 @@ Changed
 * Updated missing Bluetooth SIG characteristics and service UUIDs.
 * Updated ``BlueZManager`` to remove empty interfaces from `_properties` during InterfacesRemoved message.
 * Updated PyWinRT dependency to v2. Fixes #1529.
+* Raise exception when trying to scan while in a single-treaded apartment (STA) on Windows. Fixes #1132.
 
 Fixed
 -----

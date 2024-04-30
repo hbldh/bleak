@@ -4,6 +4,8 @@ import sys
 from typing import Dict, List, Literal, NamedTuple, Optional
 from uuid import UUID
 
+from .util import assert_mta
+
 if sys.version_info >= (3, 12):
     from winrt.windows.devices.bluetooth.advertisement import (
         BluetoothLEAdvertisementReceivedEventArgs,
@@ -223,6 +225,10 @@ class BleakScannerWinRT(BaseBleakScanner):
     async def start(self) -> None:
         if self.watcher:
             raise BleakError("Scanner already started")
+
+        # Callbacks for WinRT async methods will never happen in STA mode if
+        # there is nothing pumping a Windows message loop.
+        assert_mta()
 
         # start with fresh list of discovered devices
         self.seen_devices = {}
