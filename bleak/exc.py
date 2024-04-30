@@ -13,7 +13,7 @@ class BleakCharacteristicNotFoundError(BleakError):
     """
     Exception which is raised if a device does not support a characteristic.
 
-    .. versionadded: 0.22.0
+    .. versionadded: 0.22
     """
 
     char_specifier: Union[int, str, uuid.UUID]
@@ -32,7 +32,7 @@ class BleakDeviceNotFoundError(BleakError):
     Exception which is raised if a device can not be found by ``connect``, ``pair`` and ``unpair``.
     This is the case if the OS Bluetooth stack has never seen this device or it was removed and forgotten.
 
-    .. versionadded: 0.19.0
+    .. versionadded: 0.19
     """
 
     identifier: str

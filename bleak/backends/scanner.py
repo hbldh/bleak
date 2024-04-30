@@ -57,14 +57,14 @@ class AdvertisementData(NamedTuple):
     """
     TX Power Level of the remote device from the received advertising data or ``None`` if not present.
 
-    .. versionadded:: 0.17.0
+    .. versionadded:: 0.17
     """
 
     rssi: int
     """
     The Radio Receive Signal Strength (RSSI) in dBm.
 
-    .. versionadded:: 0.19.0
+    .. versionadded:: 0.19
     """
 
     platform_data: Tuple
