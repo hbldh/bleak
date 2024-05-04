@@ -67,7 +67,7 @@ def assert_mta() -> None:
     Raises:
         BleakError: If the current apartment type is not MTA.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 0.22
     """
     try:
         apt_type, _ = _get_apartment_type()
@@ -92,7 +92,7 @@ def uninitialize_sta():
     It should be called as early as possible in your application after the
     offending package has been imported.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 0.22
     """
     try:
         assert_mta()
