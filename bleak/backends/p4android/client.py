@@ -11,7 +11,7 @@ from typing import Optional, Set, Union
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
-from ...exc import BleakError
+from ...exc import BleakCharacteristicNotFoundError, BleakError
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -316,9 +316,7 @@ class BleakClientP4Android(BaseBleakClient):
             characteristic = char_specifier
 
         if not characteristic:
-            raise BleakError(
-                f"Characteristic with UUID {char_specifier} could not be found!"
-            )
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readCharacteristic,
@@ -469,7 +467,7 @@ class BleakClientP4Android(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError(f"Characteristic {char_specifier} not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         await self.write_gatt_descriptor(
             characteristic.notification_descriptor,

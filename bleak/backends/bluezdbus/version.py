@@ -7,7 +7,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-async def _get_bluetoothctl_version():
+async def _get_bluetoothctl_version() -> Optional[re.Match]:
     """Get the version of bluetoothctl."""
     with contextlib.suppress(Exception):
         proc = await asyncio.create_subprocess_exec(

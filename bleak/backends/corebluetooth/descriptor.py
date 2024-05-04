@@ -4,6 +4,7 @@ Interface class for the Bleak representation of a GATT Descriptor
 Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
+
 from CoreBluetooth import CBDescriptor
 
 from ..corebluetooth.utils import cb_uuid_to_str

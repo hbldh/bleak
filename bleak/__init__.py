@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 import uuid
+from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     AsyncGenerator,
@@ -22,6 +23,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Set,
     Tuple,
@@ -31,7 +33,6 @@ from typing import (
     overload,
 )
 from warnings import warn
-from typing import Literal
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -45,7 +46,6 @@ else:
     from asyncio import timeout as async_timeout
     from typing import Unpack
 
-
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type
 from .backends.device import BLEDevice
@@ -57,7 +57,7 @@ from .backends.scanner import (
     get_platform_scanner_backend_type,
 )
 from .backends.service import BleakGATTServiceCollection
-from .exc import BleakError
+from .exc import BleakCharacteristicNotFoundError, BleakError
 from .uuids import normalize_uuid_str
 
 if TYPE_CHECKING:
@@ -121,11 +121,11 @@ class BleakScanner:
         are matching a device based on other data but want to display the local
         name to the user, be sure to wait for ``adv_data.local_name is not None``.
 
-    .. versionchanged:: 0.15.0
+    .. versionchanged:: 0.15
         ``detection_callback``, ``service_uuids`` and ``scanning_mode`` are no longer keyword-only.
         Added ``bluez`` parameter.
 
-    .. versionchanged:: 0.18.0
+    .. versionchanged:: 0.18
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakScanner`.
         Added ``backend`` parameter.
     """
@@ -140,7 +140,7 @@ class BleakScanner:
         cb: CBScannerArgs = {},
         backend: Optional[Type[BaseBleakScanner]] = None,
         **kwargs,
-    ):
+    ) -> None:
         PlatformBleakScanner = (
             get_platform_scanner_backend_type() if backend is None else backend
         )
@@ -154,11 +154,16 @@ class BleakScanner:
             **kwargs,
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> BleakScanner:
         await self._backend.start()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         await self._backend.stop()
 
     def register_detection_callback(
@@ -193,15 +198,15 @@ class BleakScanner:
             unregister = self._backend.register_detection_callback(callback)
             setattr(self, "_unregister_", unregister)
 
-    async def start(self):
+    async def start(self) -> None:
         """Start scanning for devices"""
         await self._backend.start()
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop scanning for devices"""
         await self._backend.stop()
 
-    def set_scanning_filter(self, **kwargs):
+    def set_scanning_filter(self, **kwargs) -> None:
         """
         Set scanning filter for the BleakScanner.
 
@@ -245,7 +250,7 @@ class BleakScanner:
         finally:
             unregister_callback()
 
-    class ExtraArgs(TypedDict):
+    class ExtraArgs(TypedDict, total=False):
         """
         Keyword args from :class:`~bleak.BleakScanner` that can be passed to
         other convenience methods.
@@ -281,15 +286,13 @@ class BleakScanner:
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[False] = False, **kwargs
-    ) -> List[BLEDevice]:
-        ...
+    ) -> List[BLEDevice]: ...
 
     @overload
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
-    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
-        ...
+    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]: ...
 
     @classmethod
     async def discover(
@@ -311,7 +314,7 @@ class BleakScanner:
             The value of :attr:`discovered_devices_and_advertisement_data` if
             ``return_adv`` is ``True``, otherwise the value of :attr:`discovered_devices`.
 
-        .. versionchanged:: 0.19.0
+        .. versionchanged:: 0.19
             Added ``return_adv`` parameter.
         """
         async with cls(**kwargs) as scanner:
@@ -344,7 +347,7 @@ class BleakScanner:
         ``discovered_devices_and_advertisement_data.values()`` to just get the
         values instead.
 
-        .. versionadded:: 0.19.0
+        .. versionadded:: 0.19
         """
         return self._backend.seen_devices
 
@@ -402,7 +405,7 @@ class BleakScanner:
         Returns:
             The ``BLEDevice`` sought or ``None`` if not detected.
 
-        .. versionadded:: 0.20.0
+        .. versionadded:: 0.20
         """
         return await cls.find_device_by_filter(
             lambda d, ad: ad.local_name == name,
@@ -495,10 +498,10 @@ class BleakClient:
             This is known to cause problems when trying to connect to multiple
             devices at the same time.
 
-    .. versionchanged:: 0.15.0
+    .. versionchanged:: 0.15
         ``disconnected_callback`` is no longer keyword-only. Added ``winrt`` parameter.
 
-    .. versionchanged:: 0.18.0
+    .. versionchanged:: 0.18
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakClient`.
         Added ``backend`` parameter.
     """
@@ -513,19 +516,21 @@ class BleakClient:
         winrt: WinRTClientArgs = {},
         backend: Optional[Type[BaseBleakClient]] = None,
         **kwargs,
-    ):
+    ) -> None:
         PlatformBleakClient = (
             get_platform_client_backend_type() if backend is None else backend
         )
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,
-            disconnected_callback=None
-            if disconnected_callback is None
-            else functools.partial(disconnected_callback, self),
-            services=None
-            if services is None
-            else set(map(normalize_uuid_str, services)),
+            disconnected_callback=(
+                None
+                if disconnected_callback is None
+                else functools.partial(disconnected_callback, self)
+            ),
+            services=(
+                None if services is None else set(map(normalize_uuid_str, services))
+            ),
             timeout=timeout,
             winrt=winrt,
             **kwargs,
@@ -553,19 +558,24 @@ class BleakClient:
         """
         return self._backend.mtu_size
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.__class__.__name__}, {self.address}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}, {self.address}, {type(self._backend)}>"
 
     # Async Context managers
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> BleakClient:
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         await self.disconnect()
 
     # Connectivity methods
@@ -766,7 +776,7 @@ class BleakClient:
             characteristic = self.services.get_characteristic(char_specifier)
 
         if not characteristic:
-            raise BleakError("Characteristic {char_specifier} was not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         if response is None:
             # if not specified, prefer write-with-response over write-without-
@@ -806,7 +816,7 @@ class BleakClient:
                 function or async function.
 
 
-        .. versionchanged:: 0.18.0
+        .. versionchanged:: 0.18
             The first argument of the callback is now a :class:`BleakGATTCharacteristic`
             instead of an ``int``.
         """
@@ -819,11 +829,11 @@ class BleakClient:
             characteristic = char_specifier
 
         if not characteristic:
-            raise BleakError(f"Characteristic {char_specifier} not found!")
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         if inspect.iscoroutinefunction(callback):
 
-            def wrapped_callback(data):
+            def wrapped_callback(data: bytearray) -> None:
                 task = asyncio.create_task(callback(characteristic, data))
                 _background_tasks.add(task)
                 task.add_done_callback(_background_tasks.discard)
@@ -893,7 +903,7 @@ def discover(*args, **kwargs):
     return BleakScanner.discover(*args, **kwargs)
 
 
-def cli():
+def cli() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(

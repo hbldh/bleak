@@ -3,7 +3,6 @@
 from typing import Dict
 from uuid import UUID
 
-
 uuid16_dict: Dict[int, str] = {
     0x0001: "SDP",
     0x0003: "RFCOMM",
@@ -150,9 +149,10 @@ uuid16_dict: Dict[int, str] = {
     0x183A: "Insulin Delivery",
     0x183B: "Binary Sensor",
     0x183C: "Emergency Configuration",
-    # 0x183D undefined
+    0x183D: "Authorization Control",
     0x183E: "Physical Activity Monitor",
-    # 0x183F-0x1842 undefined
+    0x183F: "Elapsed Time",
+    0x1840: "Generic Health Sensor",
     0x1843: "Audio Input Control",
     0x1844: "Volume Control",
     0x1845: "Volume Offset Control",
@@ -169,7 +169,13 @@ uuid16_dict: Dict[int, str] = {
     0x1850: "Published Audio Capabilities Service",
     0x1851: "Basic Audio Announcement Service",
     0x1852: "Broadcast Audio Announcement Service",
-    # 0x1853 to 0x26ff undefined */
+    0x1853: "Common Audio",
+    0x1854: "Hearing Access",
+    0x1855: "Telephony and Media Audio",
+    0x1856: "Public Broadcast Announcement",
+    0x1857: "Electronic Shelf Label",
+    0x1859: "Mesh Proxy Solicitation",
+    # 0x185A to 0x26ff undefined */
     # 0x2700.. GATT Units
     0x2700: "unitless",
     0x2701: "length (metre)",
@@ -617,10 +623,15 @@ uuid16_dict: Dict[int, str] = {
     0x2B2C: "BSS Response",
     0x2B2D: "Emergency ID",
     0x2B2E: "Emergency Text",
+    0x2B2F: "ACS Status",
+    0x2B30: "ACS Data In",
+    0x2B31: "ACS Data Out Notify",
+    0x2B32: "ACS Data Out Indicate",
+    0x2B33: "ACS Control Point",
     0x2B34: "Enhanced Blood Pressure Measurement",
     0x2B35: "Enhanced Intermediate Cuff Pressure",
     0x2B36: "Blood Pressure Record",
-    # 0x2B37 undefined
+    0x2B37: "Registered User",
     0x2B38: "BR-EDR Handover Data",
     0x2B39: "Bluetooth SIG Data",
     0x2B3A: "Server Supported Features",
@@ -646,6 +657,7 @@ uuid16_dict: Dict[int, str] = {
     0x2B4E: "Activity Goal",
     0x2B4F: "Sedentary Interval Notification",
     0x2B50: "Caloric Intake",
+    0x2B51: "TMAP Role",
     0x2B77: "Audio Input State",
     0x2B78: "Gain Settings Attribute",
     0x2B79: "Audio Input Type",
@@ -663,6 +675,12 @@ uuid16_dict: Dict[int, str] = {
     0x2B85: "Size Characteristic",
     0x2B86: "Lock Characteristic",
     0x2B87: "Rank Characteristic",
+    0x2B88: "Encrypted Data Key Material",
+    0x2B89: "Apparent Energy 32",
+    0x2B8A: "Apparent Power",
+    0x2B8B: "Live Health Observations",
+    0x2B8C: "CO\textsubscript{2} Concentration",
+    0x2B8D: "Cosine of the Angle",
     0x2B8E: "Device Time Feature",
     0x2B8F: "Device Time Parameters",
     0x2B90: "Device Time",
@@ -689,6 +707,7 @@ uuid16_dict: Dict[int, str] = {
     0x2BA5: "Media Control Point Opcodes Supported",
     0x2BA6: "Search Results Object ID",
     0x2BA7: "Search Control Point",
+    0x2BA8: "Energy 32",
     0x2BA9: "Media Player Icon Object Type",
     0x2BAA: "Track Segments Object Type",
     0x2BAB: "Track Object Type",
@@ -738,6 +757,44 @@ uuid16_dict: Dict[int, str] = {
     0x2BD7: "Particulate Matter - PM10 Concentration",
     0x2BD8: "Sulfur Dioxide Concentration",
     0x2BD9: "Sulfur Hexafluoride Concentration",
+    0x2BDA: "Hearing Aid Features",
+    0x2BDB: "Hearing Aid Preset Control Point",
+    0x2BDC: "Active Preset Index",
+    0x2BDD: "Stored Health Observations",
+    0x2BDE: "Fixed String 64",
+    0x2BDF: "High Temperature",
+    0x2BE0: "High Voltage",
+    0x2BE1: "Light Distribution",
+    0x2BE2: "Light Output",
+    0x2BE3: "Light Source Type",
+    0x2BE4: "Noise",
+    0x2BE5: "Relative Runtime in a Correlated Color Temperature Range",
+    0x2BE6: "Time Second 32",
+    0x2BE7: "VOC Concentration",
+    0x2BE8: "Voltage Frequency",
+    0x2BE9: "Battery Critical Status",
+    0x2BEA: "Battery Health Status",
+    0x2BEB: "Battery Health Information",
+    0x2BEC: "Battery Information",
+    0x2BED: "Battery Level Status",
+    0x2BEE: "Battery Time Status",
+    0x2BEF: "Estimated Service Date",
+    0x2BF0: "Battery Energy Status",
+    0x2BF1: "Observation Schedule Changed",
+    0x2BF2: "Current Elapsed Time",
+    0x2BF3: "Health Sensor Features",
+    0x2BF4: "GHS Control Point",
+    0x2BF5: "LE GATT Security Levels",
+    0x2BF6: "ESL Address",
+    0x2BF7: "AP Sync Key Material",
+    0x2BF8: "ESL Response Key Material",
+    0x2BF9: "ESL Current Absolute Time",
+    0x2BFA: "ESL Display Information",
+    0x2BFB: "ESL Image Information",
+    0x2BFC: "ESL Sensor Information",
+    0x2BFD: "ESL LED Information",
+    0x2BFE: "ESL Control Point",
+    0x2BFF: "UDI for Medical Devices",
     0xFE1C: "NetMedia: Inc.",
     0xFE1D: "Illuminati Instrument Corporation",
     0xFE1E: "Smart Innovations Co.: Ltd",
@@ -1101,11 +1158,7 @@ uuid128_dict: Dict[str, str] = {
     "9fa480e0-4967-4542-9390-d343dc5d04ae": "Apple Nearby Service",
     "af0badb1-5b99-43cd-917a-a77bc549e3cc": "Nearby Characteristic",
     "69d1d8f3-45e1-49a8-9821-9bbdfdaad9d9": "Control Point",
-    "9fbf120d-6301-42d9-8c58-25e699a21dbd": "Notification Source",
     "89d3502b-0f36-433a-8ef4-c502ad55f8dc": "Apple Media Service",
-    "9b3c81d8-57b1-4a8a-b8df-0e56f7ca51c2": "Remote Command",
-    "2f7cabce-808d-411f-9a0c-bb92ba96c102": "Entity Update",
-    "c6b2f38c-23ab-46d8-a6ab-a3a870bbd5d7": "Entity Attribute",
     "955a1523-0fe2-f5aa-a094-84b8d4f3e8ad": "Beacon Config",
     "a6c31337-6c07-453e-961a-d8a8a41bf368": "Candy Dispenser Service",
     "00001530-1212-efde-1523-785feabcd123": "Device Firmware Update Service",
@@ -1123,7 +1176,7 @@ uuid128_dict: Dict[str, str] = {
 }
 
 
-def uuidstr_to_str(uuid_):
+def uuidstr_to_str(uuid_: str) -> str:
     uuid_ = uuid_.lower()
     s = uuid128_dict.get(uuid_)
     if s:

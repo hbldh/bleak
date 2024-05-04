@@ -4,6 +4,8 @@ import sys
 from typing import Dict, List, Literal, NamedTuple, Optional
 from uuid import UUID
 
+from .util import assert_mta
+
 if sys.version_info >= (3, 12):
     from winrt.windows.devices.bluetooth.advertisement import (
         BluetoothLEAdvertisementReceivedEventArgs,
@@ -22,6 +24,7 @@ else:
     )
 
 from ...assigned_numbers import AdvertisementDataType
+from ...exc import BleakError
 from ...uuids import normalize_uuid_str
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
 
@@ -83,7 +86,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     ):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
-        self.watcher = None
+        self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
         self._advertisement_pairs: Dict[int, _RawAdvData] = {}
         self._stopped_event = None
 
@@ -93,6 +96,11 @@ class BleakScannerWinRT(BaseBleakScanner):
         else:
             self._scanning_mode = BluetoothLEScanningMode.ACTIVE
 
+        # Unfortunately, due to the way Windows handles filtering, we can't
+        # make use of the service_uuids filter here. If we did we would only
+        # get the advertisement data or the scan data, but not both, so would
+        # miss out on other essential data. Advanced users can pass their own
+        # filters though if they want to.
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
@@ -195,20 +203,6 @@ class BleakScannerWinRT(BaseBleakScanner):
             bdaddr, local_name, raw_data, advertisement_data
         )
 
-        # On Windows, we have to fake service UUID filtering. If we were to pass
-        # a BluetoothLEAdvertisementFilter to the BluetoothLEAdvertisementWatcher
-        # with the service UUIDs appropriately set, we would no longer receive
-        # scan response data (which commonly contains the local device name).
-        # So we have to do it like this instead.
-
-        if self._service_uuids:
-            for uuid in uuids:
-                if uuid in self._service_uuids:
-                    break
-            else:
-                # if there were no matching service uuids, the don't call the callback
-                return
-
         self.call_detection_callbacks(device, advertisement_data)
 
     def _stopped_handler(self, sender, e):
@@ -220,6 +214,13 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._stopped_event.set()
 
     async def start(self) -> None:
+        if self.watcher:
+            raise BleakError("Scanner already started")
+
+        # Callbacks for WinRT async methods will never happen in STA mode if
+        # there is nothing pumping a Windows message loop.
+        assert_mta()
+
         # start with fresh list of discovered devices
         self.seen_devices = {}
         self._advertisement_pairs.clear()
@@ -243,6 +244,16 @@ class BleakScannerWinRT(BaseBleakScanner):
             self.watcher.advertisement_filter = self._advertisement_filter
 
         self.watcher.start()
+
+        # no events for status changes, so we have to poll :-(
+        while self.watcher.status == BluetoothLEAdvertisementWatcherStatus.CREATED:
+            await asyncio.sleep(0.01)
+
+        if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.ABORTED:
+            raise BleakError("Failed to start scanner. Is Bluetooth turned on?")
+
+        if self.watcher.status != BluetoothLEAdvertisementWatcherStatus.STARTED:
+            raise BleakError(f"Unexpected watcher status: {self.watcher.status.name}")
 
     async def stop(self) -> None:
         self.watcher.stop()

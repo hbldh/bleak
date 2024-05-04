@@ -9,10 +9,11 @@ that data.
 Created on 2021-02-25 by hbldh <henrik.blidh@nedomkull.com>
 
 """
+
 import argparse
-import time
 import asyncio
 import logging
+import time
 
 from bleak import BleakClient, BleakScanner
 

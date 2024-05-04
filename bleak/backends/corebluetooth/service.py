@@ -32,7 +32,9 @@ class BleakGATTServiceCoreBluetooth(BleakGATTService):
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def add_characteristic(self, characteristic: BleakGATTCharacteristicCoreBluetooth):
+    def add_characteristic(
+        self, characteristic: BleakGATTCharacteristicCoreBluetooth
+    ) -> None:
         """Add a :py:class:`~BleakGATTCharacteristicCoreBluetooth` to the service.
 
         Should not be used by end user, but rather by `bleak` itself.

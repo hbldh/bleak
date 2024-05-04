@@ -3,6 +3,7 @@ BLE Client for CoreBluetooth on macOS
 
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
+
 import asyncio
 import logging
 import sys
@@ -24,7 +25,11 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from ... import BleakScanner
-from ...exc import BleakError, BleakDeviceNotFoundError
+from ...exc import (
+    BleakCharacteristicNotFoundError,
+    BleakDeviceNotFoundError,
+    BleakError,
+)
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -76,7 +81,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             else None
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
     async def connect(self, **kwargs) -> bool:
@@ -107,7 +112,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 self._peripheral
             )
 
-        def disconnect_callback():
+        def disconnect_callback() -> None:
             # Ensure that `get_services` retrieves services again, rather
             # than using the cached object
             self.services = None
@@ -252,7 +257,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        use_cached=False,
+        use_cached: bool = False,
         **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
@@ -273,7 +278,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} was not found!".format(char_specifier))
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         output = await self._delegate.read_characteristic(
             characteristic.obj, use_cached=use_cached
@@ -283,7 +288,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return value
 
     async def read_gatt_descriptor(
-        self, handle: int, use_cached=False, **kwargs
+        self, handle: int, use_cached: bool = False, **kwargs
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -321,9 +326,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await self._delegate.write_characteristic(
             characteristic.obj,
             value,
-            CBCharacteristicWriteWithResponse
-            if response
-            else CBCharacteristicWriteWithoutResponse,
+            (
+                CBCharacteristicWriteWithResponse
+                if response
+                else CBCharacteristicWriteWithoutResponse
+            ),
         )
         logger.debug(f"Write Characteristic {characteristic.uuid} : {data}")
 
@@ -373,7 +380,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} not found!".format(char_specifier))
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         await self._delegate.stop_notifications(characteristic.obj)
 

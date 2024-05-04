@@ -10,6 +10,35 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.22.0`_ (2024-04-04)
+======================
+
+Added
+-----
+* Added ``BleakCharacteristicNotFoundError`` which is raised if a device does not support a characteristic.
+* Added utility function to work around ``pywin32`` setting threading model to STA on Windows.
+
+Changed
+-------
+* Updated PyObjC dependency on macOS to v10.x.
+* Updated missing Bluetooth SIG characteristics and service UUIDs.
+* Updated ``BlueZManager`` to remove empty interfaces from `_properties` during InterfacesRemoved message.
+* Updated PyWinRT dependency to v2. Fixes #1529.
+* Raise exception when trying to scan while in a single-treaded apartment (STA) on Windows. Fixes #1132.
+
+Fixed
+-----
+* Fixed BlueZ version in passive scanning error message. Fixes #1433.
+* Fixed mypy requiring ``Unpack[ExtraArgs]`` that were intended to be optional.  Fixes #1487.
+* Fixed ``KeyError`` in BlueZ ``is_connected()`` and ``get_global_bluez_manager()`` when device is not present. Fixes #1507.
+* Fixed BlueZ ``_wait_removed`` completion on invalid object path. Fixes #1489.
+* Fixed rare unhandled exception when scanning on macOS when using ``use_bdaddr``. Fixes #1523.
+* Fixed scanning silently failing on Windows when Bluetooth is off. Fixes #1535.
+* Fixed using wrong value for ``tx_power`` in Android backend. Fixes #1532.
+* Fixed 4-character UUIDs not working on ``BleakClient.*_gatt_char`` methods. Fixes #1498.
+* Fixed race condition with getting max PDU size on Windows. Fixes #1497.
+* Fixed filtering advertisement data by service UUID when multiple apps are scanning. Fixes #1534.
+
 `0.21.1`_ (2023-09-08)
 ======================
 
@@ -985,7 +1014,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.21.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.0...develop
+.. _0.22.0: https://github.com/hbldh/bleak/compare/v0.21.1...v0.22.0
 .. _0.21.1: https://github.com/hbldh/bleak/compare/v0.21.0...v0.21.1
 .. _0.21.0: https://github.com/hbldh/bleak/compare/v0.20.2...v0.21.0
 .. _0.20.2: https://github.com/hbldh/bleak/compare/v0.20.1...v0.20.2

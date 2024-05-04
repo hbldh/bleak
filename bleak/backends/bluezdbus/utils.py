@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
-import re
+from typing import Optional
 
 from dbus_fast.auth import AuthExternal
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
-from ...exc import BleakError, BleakDBusError
-
-_address_regex = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
+from ...exc import BleakDBusError, BleakError
 
 
-def assert_reply(reply: Message):
+def assert_reply(reply: Message) -> None:
     """Checks that a D-Bus message is a valid reply.
 
     Raises:
@@ -23,11 +21,7 @@ def assert_reply(reply: Message):
     assert reply.message_type == MessageType.METHOD_RETURN
 
 
-def validate_address(address):
-    return _address_regex.match(address) is not None
-
-
-def extract_service_handle_from_path(path):
+def extract_service_handle_from_path(path: str) -> int:
     try:
         return int(path[-4:], 16)
     except Exception as e:
@@ -61,7 +55,7 @@ def device_path_from_characteristic_path(characteristic_path: str) -> str:
     return characteristic_path[:37]
 
 
-def get_dbus_authenticator():
+def get_dbus_authenticator() -> Optional[AuthExternal]:
     uid = None
     try:
         uid = int(os.environ.get("BLEAK_DBUS_AUTH_UID", ""))

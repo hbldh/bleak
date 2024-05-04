@@ -81,6 +81,7 @@ and your favorite text editor. And Python of course.
 
 5. When you're done making changes, check that your changes pass linting and the tests::
 
+    $ poetry run isort .
     $ poetry run black .
     $ poetry run flake8
     $ poetry run pytest

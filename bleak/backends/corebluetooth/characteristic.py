@@ -4,6 +4,7 @@ Interface class for the Bleak representation of a GATT Characteristic
 Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
+
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 

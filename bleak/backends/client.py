@@ -20,9 +20,9 @@ else:
     from collections.abc import Buffer
 
 from ..exc import BleakError
-from .service import BleakGATTServiceCollection
 from .characteristic import BleakGATTCharacteristic
 from .device import BLEDevice
+from .service import BleakGATTServiceCollection
 
 NotifyCallback = Callable[[bytearray], None]
 

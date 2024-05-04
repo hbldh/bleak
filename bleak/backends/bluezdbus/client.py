@@ -26,7 +26,12 @@ from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from ... import BleakScanner
-from ...exc import BleakDBusError, BleakError, BleakDeviceNotFoundError
+from ...exc import (
+    BleakCharacteristicNotFoundError,
+    BleakDBusError,
+    BleakDeviceNotFoundError,
+    BleakError,
+)
 from ..characteristic import BleakGATTCharacteristic
 from ..client import BaseBleakClient, NotifyCallback
 from ..device import BLEDevice
@@ -183,9 +188,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     watcher
                 )
 
-                self._disconnect_monitor_event = (
-                    local_disconnect_monitor_event
-                ) = asyncio.Event()
+                self._disconnect_monitor_event = local_disconnect_monitor_event = (
+                    asyncio.Event()
+                )
 
                 try:
                     try:
@@ -725,11 +730,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
                 return value
 
-            raise BleakError(
-                "Characteristic with UUID {0} could not be found!".format(
-                    char_specifier
-                )
-            )
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         while True:
             assert self._bus
@@ -977,7 +978,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         else:
             characteristic = char_specifier
         if not characteristic:
-            raise BleakError("Characteristic {} not found!".format(char_specifier))
+            raise BleakCharacteristicNotFoundError(char_specifier)
 
         reply = await self._bus.call(
             Message(

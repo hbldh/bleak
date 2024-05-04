@@ -89,7 +89,7 @@ class BleakGATTCharacteristic(abc.ABC):
         .. warning:: Linux quirk: For BlueZ versions < 5.62, this property
             will always return ``20``.
 
-        .. versionadded:: 0.16.0
+        .. versionadded:: 0.16
         """
         return self._max_write_without_response_size
 
@@ -107,7 +107,7 @@ class BleakGATTCharacteristic(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_descriptor(self, descriptor: BleakGATTDescriptor):
+    def add_descriptor(self, descriptor: BleakGATTDescriptor) -> None:
         """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
 
         Should not be used by end user, but rather by `bleak` itself.

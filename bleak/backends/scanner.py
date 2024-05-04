@@ -55,16 +55,16 @@ class AdvertisementData(NamedTuple):
 
     tx_power: Optional[int]
     """
-    Tx Power data from the received advertising data or ``None`` if not present.
+    TX Power Level of the remote device from the received advertising data or ``None`` if not present.
 
-    .. versionadded:: 0.17.0
+    .. versionadded:: 0.17
     """
 
     rssi: int
     """
     The Radio Receive Signal Strength (RSSI) in dBm.
 
-    .. versionadded:: 0.19.0
+    .. versionadded:: 0.19
     """
 
     platform_data: Tuple
@@ -180,7 +180,7 @@ class BaseBleakScanner(abc.ABC):
 
         if inspect.iscoroutinefunction(callback):
 
-            def detection_callback(s, d):
+            def detection_callback(s: BLEDevice, d: AdvertisementData) -> None:
                 task = asyncio.create_task(callback(s, d))
                 _background_tasks.add(task)
                 task.add_done_callback(_background_tasks.discard)
@@ -192,7 +192,7 @@ class BaseBleakScanner(abc.ABC):
 
         self._ad_callbacks[token] = detection_callback
 
-        def remove():
+        def remove() -> None:
             self._ad_callbacks.pop(token, None)
 
         return remove
@@ -206,6 +206,24 @@ class BaseBleakScanner(abc.ABC):
         Backend implementations should call this method when an advertisement
         event is received from the OS.
         """
+
+        # Backends will make best effort to filter out advertisements that
+        # don't match the service UUIDs, but if other apps are scanning at the
+        # same time or something like that, we may still receive advertisements
+        # that don't match. So we need to do more filtering here to get the
+        # expected behavior.
+
+        if self._service_uuids:
+            if not advertisement_data.service_uuids:
+                return
+
+            for uuid in advertisement_data.service_uuids:
+                if uuid in self._service_uuids:
+                    break
+            else:
+                # if there were no matching service uuids, the don't call the callback
+                return
+
         for callback in self._ad_callbacks.values():
             callback(device, advertisement_data)
 

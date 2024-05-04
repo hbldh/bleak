@@ -65,6 +65,32 @@ See `#635 <https://github.com/hbldh/bleak/issues/635>`_ and
 `#720 <https://github.com/hbldh/bleak/issues/720>`_ for more information
 including some partial workarounds if you need to support these macOS versions.
 
+------------
+Windows Bugs
+------------
+
+Not working when threading model is STA
+=======================================
+
+Packages like ``pywin32`` and it's subsidiaries have an unfortunate side effect
+of initializing the threading model to Single Threaded Apartment (STA) when
+imported. This causes async WinRT functions to never complete. because there
+isn't a message loop running. Bleak needs to run in a Multi Threaded Apartment
+(MTA) instead (this happens automatically on the first WinRT call).
+
+Bleak should detect this and raise an exception with a message similar to::
+
+    The current thread apartment type is not MTA: STA.
+
+To work around this, you can use a utility function provided by Bleak to
+uninitialize the threading model after importing an offending package::
+
+    import win32com  # this sets current thread to STA :-(
+    from bleak.backends.winrt.utils import uninitialize_sta
+
+    uninitialize_sta()  # undo the unwanted side effect
+
+
 --------------
 Enable Logging
 --------------

@@ -33,14 +33,14 @@ from ..service import BleakGATTServiceCollection
 from . import defs
 from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
 from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .defs import Device1, GattService1, GattCharacteristic1, GattDescriptor1
+from .defs import Device1, GattCharacteristic1, GattDescriptor1, GattService1
 from .descriptor import BleakGATTDescriptorBlueZDBus
 from .service import BleakGATTServiceBlueZDBus
 from .signals import MatchRules, add_match
 from .utils import (
     assert_reply,
-    get_dbus_authenticator,
     device_path_from_characteristic_path,
+    get_dbus_authenticator,
 )
 
 logger = logging.getLogger(__name__)
@@ -216,7 +216,29 @@ class BlueZManager:
         if device_path not in self._properties:
             raise BleakError(f"device '{device_path.split('/')[-1]}' not found")
 
-    async def async_init(self):
+    def _get_device_property(
+        self, device_path: str, interface: str, property_name: str
+    ) -> Any:
+        self._check_device(device_path)
+        device_properties = self._properties[device_path]
+
+        try:
+            interface_properties = device_properties[interface]
+        except KeyError:
+            raise BleakError(
+                f"Interface {interface} not found for device '{device_path}'"
+            )
+
+        try:
+            value = interface_properties[property_name]
+        except KeyError:
+            raise BleakError(
+                f"Property '{property_name}' not found for '{interface}' in '{device_path}'"
+            )
+
+        return value
+
+    async def async_init(self) -> None:
         """
         Connects to the D-Bus message bus and begins monitoring signals.
 
@@ -521,7 +543,7 @@ class BlueZManager:
                     and reply.error_name == "org.freedesktop.DBus.Error.UnknownMethod"
                 ):
                     raise BleakError(
-                        "passive scanning on Linux requires BlueZ >= 5.55 with --experimental enabled and Linux kernel >= 5.10"
+                        "passive scanning on Linux requires BlueZ >= 5.56 with --experimental enabled and Linux kernel >= 5.10"
                     )
 
                 assert_reply(reply)
@@ -530,7 +552,7 @@ class BlueZManager:
                 # won't use the monitor
                 self._bus.export(monitor_path, monitor)
 
-                async def stop():
+                async def stop() -> None:
                     # need to remove callbacks first, otherwise we get TxPower
                     # and RSSI properties removed during stop which causes
                     # incorrect advertisement data callbacks
@@ -711,9 +733,7 @@ class BlueZManager:
         Raises:
             BleakError: if the device is not present in BlueZ
         """
-        self._check_device(device_path)
-
-        return self._properties[device_path][defs.DEVICE_INTERFACE]["Name"]
+        return self._get_device_property(device_path, defs.DEVICE_INTERFACE, "Name")
 
     def is_connected(self, device_path: str) -> bool:
         """
@@ -792,8 +812,9 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def callback(_: str):
-            event.set()
+        def callback(o: str) -> None:
+            if o == device_path:
+                event.set()
 
         device_removed_callback_and_state = DeviceRemovedCallbackAndState(
             callback, self._properties[device_path][defs.DEVICE_INTERFACE]["Adapter"]
@@ -820,12 +841,11 @@ class BlueZManager:
         Raises:
             BleakError: if the device is not present in BlueZ
         """
-        self._check_device(device_path)
+        value = self._get_device_property(
+            device_path, defs.DEVICE_INTERFACE, property_name
+        )
 
-        if (
-            self._properties[device_path][defs.DEVICE_INTERFACE][property_name]
-            == property_value
-        ):
+        if value == property_value:
             return
 
         event = asyncio.Event()
@@ -848,7 +868,7 @@ class BlueZManager:
             if not device_callbacks:
                 del condition_callbacks[device_path]
 
-    def _parse_msg(self, message: Message):
+    def _parse_msg(self, message: Message) -> None:
         """
         Handles callbacks from dbus_fast.
         """
@@ -942,6 +962,12 @@ class BlueZManager:
                         del self._descriptor_map[obj_path]
                     except KeyError:
                         pass
+
+            # Remove empty properties when all interfaces have been removed.
+            # This avoids wasting memory for people who have noisy devices
+            # with private addresses that change frequently.
+            if obj_path in self._properties and not self._properties[obj_path]:
+                del self._properties[obj_path]
         elif message.member == "PropertiesChanged":
             interface, changed, invalidated = message.body
             message_path = message.path

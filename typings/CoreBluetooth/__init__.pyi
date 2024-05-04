@@ -1,7 +1,7 @@
 from typing import Any, NewType, Optional, Type, TypeVar
 
-from ..libdispatch import dispatch_queue_t
 from ..Foundation import (
+    NSUUID,
     NSArray,
     NSData,
     NSDictionary,
@@ -9,8 +9,8 @@ from ..Foundation import (
     NSNumber,
     NSObject,
     NSString,
-    NSUUID,
 )
+from ..libdispatch import dispatch_queue_t
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...
@@ -49,9 +49,6 @@ class CBCentralManager(CBManager):
     @classmethod
     def supportsFeatures(cls, features: CBCentralManagerFeature) -> bool: ...
     def delegate(self) -> Optional[CBCentralManagerDelegate]: ...
-    def registerForConnectionEventsWithOptions_(
-        self, options: NSDictionary
-    ) -> None: ...
     def registerForConnectionEventsWithOptions_(
         self, options: NSDictionary
     ) -> None: ...
@@ -202,14 +199,14 @@ class CBPeripheralDelegate:
         self, peripheral: CBPeripheral, invalidatedServices: NSArray
     ) -> None: ...
 
+class CBAttribute(NSObject):
+    def UUID(self) -> CBUUID: ...
+
 class CBService(CBAttribute):
     def peripheral(self) -> CBPeripheral: ...
     def isPrimary(self) -> bool: ...
     def characteristics(self) -> Optional[NSArray]: ...
     def includedServices(self) -> Optional[NSArray]: ...
-
-class CBAttribute(NSObject):
-    def UUID(self) -> CBUUID: ...
 
 class CBUUID(NSObject):
     @classmethod

@@ -7,6 +7,7 @@ Example showing how to scan for BLE devices using async iterator instead of call
 Created on 2023-07-07 by bojanpotocnik <info@bojanpotocnik.com>
 
 """
+
 import asyncio
 
 from bleak import BleakScanner

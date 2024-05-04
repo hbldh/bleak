@@ -3,17 +3,16 @@ Advertisement Monitor
 ---------------------
 
 This module contains types associated with the BlueZ D-Bus `advertisement
-monitor api <https://github.com/bluez/bluez/blob/master/doc/advertisement-monitor-api.txt>`.
+monitor api <https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst>`.
 """
 
 import logging
 from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
 
-from dbus_fast.service import ServiceInterface, dbus_property, method, PropertyAccess
+from dbus_fast.service import PropertyAccess, ServiceInterface, dbus_property, method
 
-from . import defs
 from ...assigned_numbers import AdvertisementDataType
-
+from . import defs
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class OrPattern(NamedTuple):
     """
     BlueZ advertisement monitor or-pattern.
 
-    https://github.com/bluez/bluez/blob/master/doc/advertisement-monitor-api.txt
+    https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst#arrayuint8-uint8-arraybyte-patterns-read-only-optional
     """
 
     start_position: int

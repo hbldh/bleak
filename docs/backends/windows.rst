@@ -19,6 +19,12 @@ Client
 API
 ---
 
+Utilities
+~~~~~~~~~
+
+.. automodule:: bleak.backends.winrt.util
+    :members:
+
 Scanner
 ~~~~~~~
 

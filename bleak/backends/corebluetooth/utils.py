@@ -1,5 +1,5 @@
-from Foundation import NSData
 from CoreBluetooth import CBUUID
+from Foundation import NSData
 
 from ...uuids import normalize_uuid_str
 

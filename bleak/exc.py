@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+import uuid
+from typing import Optional, Union
 
 
 class BleakError(Exception):
@@ -8,12 +9,30 @@ class BleakError(Exception):
     pass
 
 
+class BleakCharacteristicNotFoundError(BleakError):
+    """
+    Exception which is raised if a device does not support a characteristic.
+
+    .. versionadded: 0.22
+    """
+
+    char_specifier: Union[int, str, uuid.UUID]
+
+    def __init__(self, char_specifier: Union[int, str, uuid.UUID]) -> None:
+        """
+        Args:
+            characteristic (str): handle or UUID of the characteristic which was not found
+        """
+        super().__init__(f"Characteristic {char_specifier} was not found!")
+        self.char_specifier = char_specifier
+
+
 class BleakDeviceNotFoundError(BleakError):
     """
     Exception which is raised if a device can not be found by ``connect``, ``pair`` and ``unpair``.
     This is the case if the OS Bluetooth stack has never seen this device or it was removed and forgotten.
 
-    .. versionadded: 0.19.0
+    .. versionadded: 0.19
     """
 
     identifier: str

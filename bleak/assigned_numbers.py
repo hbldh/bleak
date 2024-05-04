@@ -7,7 +7,6 @@ This module contains useful assigned numbers from the Bluetooth spec.
 See <https://www.bluetooth.com/specifications/assigned-numbers/>.
 """
 
-
 from enum import IntEnum
 
 
@@ -17,7 +16,7 @@ class AdvertisementDataType(IntEnum):
 
     `Source <https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%20Number%20Types/Generic%20Access%20Profile.pdf>`.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.15
     """
 
     FLAGS = 0x01
