@@ -82,8 +82,25 @@ Bleak should detect this and raise an exception with a message similar to::
 
     The current thread apartment type is not MTA: STA.
 
-To work around this, you can use a utility function provided by Bleak to
-uninitialize the threading model after importing an offending package::
+To work around this, you can use one of the utility functions provided by Bleak.
+
+If your program has a graphical user interface and the UI framework *and* it is
+properly integrated with asyncio *and* Bleak is not running on a background
+thread then call ``allow_sta()`` before calling any other Bleak APis::
+
+    try:
+        from bleak.backends.winrt.util import allow_sta
+        # tell Bleak we are using a graphical user interface that has been properly
+        # configured to work with asyncio
+        allow_sta()
+    except ImportError:
+        # other OSes and older versions of Bleak will raise ImportError which we
+        # can safely ignore
+        pass
+
+The more typical case, though, is that some library has imported something like
+``pywin32`` which breaks Bleak. In this case, you can uninitialize the threading
+model like this::
 
     import win32com  # this sets current thread to STA :-(
     from bleak.backends.winrt.util import uninitialize_sta

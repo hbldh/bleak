@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``bleak.backends.winrt.util.allow_sta()`` method to allow integration
+  with graphical user interfaces on Windows. Fixes #1565.
+
 `0.22.0`_ (2024-04-04)
 ======================
 

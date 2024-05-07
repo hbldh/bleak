@@ -69,6 +69,9 @@ def assert_mta() -> None:
 
     .. versionadded:: 0.22
     """
+    if hasattr(allow_sta, "_allowed"):
+        return
+
     try:
         apt_type, _ = _get_apartment_type()
         if apt_type != _AptType.MTA:
@@ -79,6 +82,24 @@ def assert_mta() -> None:
         # All is OK if not initialized yet. WinRT will initialize it.
         if e.winerror != _CO_E_NOTINITIALIZED:
             raise
+
+
+def allow_sta():
+    """
+    Suppress check for MTA thread type and allow STA.
+
+    Bleak will hang forever if the current thread is not MTA - unless there is
+    a Windows event loop running that is properly integrated with asyncio in
+    Python.
+
+    If your program meets that condition, you must call this function do disable
+    the check for MTA. If your program doesn't have a graphical user interface
+    you probably shouldn't call this function. and use ``uninitialize_sta()``
+    instead.
+
+    .. versionadded:: unreleased
+    """
+    allow_sta._allowed = True
 
 
 def uninitialize_sta():
