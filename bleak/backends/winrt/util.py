@@ -97,7 +97,7 @@ def allow_sta():
     you probably shouldn't call this function. and use ``uninitialize_sta()``
     instead.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 0.22.1
     """
     allow_sta._allowed = True
 
