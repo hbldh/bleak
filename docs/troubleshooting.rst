@@ -86,7 +86,7 @@ To work around this, you can use a utility function provided by Bleak to
 uninitialize the threading model after importing an offending package::
 
     import win32com  # this sets current thread to STA :-(
-    from bleak.backends.winrt.utils import uninitialize_sta
+    from bleak.backends.winrt.util import uninitialize_sta
 
     uninitialize_sta()  # undo the unwanted side effect
 
