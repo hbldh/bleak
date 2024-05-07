@@ -10,7 +10,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
-`0.22.0`_ (2024-04-04)
+`0.22.1`_ (2024-05-07)
+======================
+
+Added
+-----
+* Added ``bleak.backends.winrt.util.allow_sta()`` method to allow integration
+  with graphical user interfaces on Windows. Fixes #1565.
+
+`0.22.0`_ (2024-05-04)
 ======================
 
 Added
@@ -1014,7 +1022,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.1...develop
+.. _0.22.1: https://github.com/hbldh/bleak/compare/v0.22.0...v0.22.1
 .. _0.22.0: https://github.com/hbldh/bleak/compare/v0.21.1...v0.22.0
 .. _0.21.1: https://github.com/hbldh/bleak/compare/v0.21.0...v0.21.1
 .. _0.21.0: https://github.com/hbldh/bleak/compare/v0.20.2...v0.21.0
