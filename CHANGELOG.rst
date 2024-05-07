@@ -15,7 +15,7 @@ Added
 * Added ``bleak.backends.winrt.util.allow_sta()`` method to allow integration
   with graphical user interfaces on Windows. Fixes #1565.
 
-`0.22.0`_ (2024-04-04)
+`0.22.0`_ (2024-05-04)
 ======================
 
 Added
