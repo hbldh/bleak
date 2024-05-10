@@ -218,7 +218,10 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            self._device_info = address_or_ble_device.details.adv.bluetooth_address
+            if address_or_ble_device.details.adv is not None:
+                self._device_info = address_or_ble_device.details.adv.bluetooth_address
+            else:
+                self._device_info = address_or_ble_device.details.scan.bluetooth_address
         else:
             self._device_info = None
         self._requested_services = (
@@ -293,7 +296,10 @@ class BleakClientWinRT(BaseBleakClient):
                     self.address, f"Device with address {self.address} was not found."
                 )
 
-            self._device_info = device.details.adv.bluetooth_address
+            if device.details.adv is not None:
+                self._device_info = device.details.adv.bluetooth_address
+            else:
+                self._device_info = device.details.scan.bluetooth_address
 
         logger.debug("Connecting to BLE device @ %s", self.address)
 
