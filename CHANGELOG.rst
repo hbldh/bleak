@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Retrieve the BLE address required by ``BleakClientWinRT`` from scan response if advertising is None (WinRT).
+* Changed type hint for ``adv`` attribute of ``bleak.backends.winrt.scanner._RawAdvData``.
+
 `0.22.1`_ (2024-05-07)
 ======================
 

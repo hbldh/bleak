@@ -50,7 +50,7 @@ class _RawAdvData(NamedTuple):
     advertising data like other platforms, so se have to do it ourselves.
     """
 
-    adv: BluetoothLEAdvertisementReceivedEventArgs
+    adv: Optional[BluetoothLEAdvertisementReceivedEventArgs]
     """
     The advertisement data received from the BluetoothLEAdvertisementWatcher.Received event.
     """
