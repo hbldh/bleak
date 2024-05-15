@@ -8,6 +8,109 @@ When things don't seem to be working right, here are some things to try.
 Common Mistakes
 ---------------
 
+Calling ``asyncio.run()`` more than once
+========================================
+
+Bleak requires the same asyncio run loop to be used for all of its operations.
+And it requires the loop to always be running because there are background tasks
+that need to always be running. Therefore, make sure you only call ``asyncio.run()``
+once at the start of your program. **Your program will not work correctly if you
+call it more than once.** Even if it seems like it is working, crashes and other
+problems will occur eventually.
+
+DON'T!
+
+.. code-block:: python
+
+    async def scan():
+        return await BleakScanner.find_device_by_name("My Device")
+
+    async def connect(device):
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+    # Do not wrap each function call in asyncio.run() like this!
+    device = asyncio.run(scan())
+    if not device:
+        print("Device not found")
+    else:
+        asyncio.run(connect(device))
+
+
+DO!
+
+.. code-block:: python
+
+    async def scan():
+        return await BleakScanner.find_device_by_name("My Device")
+
+    async def connect(device):
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+    # Do have one async main function that does everything.
+    async def main():
+        device = await scan()
+        if not device:
+            print("Device not found")
+            return
+
+        await connect(device)
+
+    asyncio.run(main())
+
+
+DON'T!
+
+.. code-block:: python
+
+    async def scan_and_connect():
+        device = await BleakScanner.find_device_by_name("My Device")
+        if not device:
+            print("Device not found")
+            return
+
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+
+    while True:
+        # Don't call asyncio.run() multiple times like this!
+        asyncio.run(scan_and_connect())
+        # Never use blocking sleep in an asyncio programs!
+        time.sleep(5)
+
+
+DO!
+
+.. code-block:: python
+
+    async def scan_and_connect():
+        device = await BleakScanner.find_device_by_name("My Device")
+        if not device:
+            print("Device not found")
+            return
+
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+    # Do have one async main function that does everything.
+    async def main():
+        while True:
+            await scan_and_connect()
+            # Do use asyncio.sleep() in an asyncio program.
+            await asyncio.sleep(5)
+
+    asyncio.run(main())
+
+
+Naming your script ``bleak.py``
+===============================
+
 Many people name their first script ``bleak.py``. This causes the script to
 crash with an ``ImportError`` similar to::
 
