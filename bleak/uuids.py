@@ -1214,15 +1214,15 @@ def normalize_uuid_str(uuid: str) -> str:
 
         # 16-bit
         uuid1 = normalize_uuid_str("1234")
-        # uuid1 == "00001234-1000-8000-00805f9b34fb"
+        # uuid1 == "00001234-0000-1000-8000-00805f9b34fb"
 
         # 32-bit
         uuid2 = normalize_uuid_str("12345678")
-        # uuid2 == "12345678-1000-8000-00805f9b34fb"
+        # uuid2 == "12345678-0000-1000-8000-00805f9b34fb"
 
         # 128-bit
-        uuid3 = normalize_uuid_str("12345678-1234-1234-1234567890ABC")
-        # uuid3 == "12345678-1234-1234-1234567890abc"
+        uuid3 = normalize_uuid_str("12345678-0000-1234-1234-1234567890ABC")
+        # uuid3 == "12345678-0000-1234-1234-1234567890abc"
 
     .. versionadded:: 0.20
     .. versionchanged:: 0.21
@@ -1250,7 +1250,7 @@ def normalize_uuid_16(uuid: int) -> str:
     Example::
 
         uuid = normalize_uuid_16(0x1234)
-        # uuid == "00001234-1000-8000-00805f9b34fb"
+        # uuid == "00001234-0000-1000-8000-00805f9b34fb"
 
     .. versionadded:: 0.21
     """
