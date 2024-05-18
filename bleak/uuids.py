@@ -1245,7 +1245,7 @@ def normalize_uuid_16(uuid: int) -> str:
     Normaizes a 16-bit integer UUID to the format used by Bleak.
 
     Returns:
-        128-bit UUID as string with the format ``"0000xxxx-1000-8000-00805f9b34fb"``.
+        128-bit UUID as string with the format ``"0000xxxx-0000-1000-8000-00805f9b34fb"``.
 
     Example::
 
@@ -1262,12 +1262,12 @@ def normalize_uuid_32(uuid: int) -> str:
     Normaizes a 32-bit integer UUID to the format used by Bleak.
 
     Returns:
-        128-bit UUID as string with the format ``"xxxxxxxx-1000-8000-00805f9b34fb"``.
+        128-bit UUID as string with the format ``"xxxxxxxx-0000-1000-8000-00805f9b34fb"``.
 
     Example::
 
         uuid = normalize_uuid_32(0x12345678)
-        # uuid == "12345678-1000-8000-00805f9b34fb"
+        # uuid == "12345678-0000-1000-8000-00805f9b34fb"
 
     .. versionadded:: 0.21
     """
