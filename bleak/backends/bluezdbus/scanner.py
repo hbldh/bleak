@@ -237,6 +237,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             path: The D-Bus object path of the device.
             props: The D-Bus object properties of the device.
         """
+        _service_uuids = props.get("UUIDs", [])
+
+        if not self.is_allowed_uuid(_service_uuids):
+            return
 
         # Get all the information wanted to pack in the advertisement data
         _local_name = props.get("Name")
@@ -244,7 +248,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             k: bytes(v) for k, v in props.get("ManufacturerData", {}).items()
         }
         _service_data = {k: bytes(v) for k, v in props.get("ServiceData", {}).items()}
-        _service_uuids = props.get("UUIDs", [])
 
         # Get tx power data
         tx_power = props.get("TxPower")

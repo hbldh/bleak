@@ -15,6 +15,11 @@ Changed
 * Retrieve the BLE address required by ``BleakClientWinRT`` from scan response if advertising is None (WinRT).
 * Changed type hint for ``adv`` attribute of ``bleak.backends.winrt.scanner._RawAdvData``.
 
+Fixed
+-----
+* Fixed ``discovered_devices_and_advertisement_data`` returning devices that should
+  be filtered out by service UUIDs. Fixes #1576.
+
 `0.22.1`_ (2024-05-07)
 ======================
 
