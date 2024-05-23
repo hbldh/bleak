@@ -183,7 +183,7 @@ isn't a message loop running. Bleak needs to run in a Multi Threaded Apartment
 
 Bleak should detect this and raise an exception with a message similar to::
 
-    The current thread apartment type is not MTA: STA.
+    Thread is configured for Windows GUI but callbacks are not working.
 
 To work around this, you can use one of the utility functions provided by Bleak.
 
@@ -202,7 +202,7 @@ thread then call ``allow_sta()`` before calling any other Bleak APis::
         pass
 
 The more typical case, though, is that some library has imported something like
-``pywin32`` which breaks Bleak. In this case, you can uninitialize the threading
+``win32com`` which breaks Bleak. In this case, you can uninitialize the threading
 model like this::
 
     import win32com  # this sets current thread to STA :-(
