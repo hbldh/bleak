@@ -19,6 +19,8 @@ Fixed
 -----
 * Fixed ``discovered_devices_and_advertisement_data`` returning devices that should
   be filtered out by service UUIDs. Fixes #1576.
+* Fixed a ``Descriptor None was not found!`` exception occurring in ``start_notify()`` on Android. Fixes #823
+  and #828.
 
 `0.22.1`_ (2024-05-07)
 ======================
