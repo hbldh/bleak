@@ -11,7 +11,12 @@ if not sys.platform.startswith("win"):
 
 from ctypes import windll, wintypes
 
-from bleak.backends.winrt.util import _check_hresult, assert_mta, uninitialize_sta
+from bleak.backends.winrt.util import (
+    _check_hresult,
+    allow_sta,
+    assert_mta,
+    uninitialize_sta,
+)
 from bleak.exc import BleakError
 
 # https://learn.microsoft.com/en-us/windows/win32/api/objbase/ne-objbase-coinit
@@ -45,7 +50,7 @@ async def test_assert_mta_init_mta():
 
     try:
         await assert_mta()
-        assert hasattr(assert_mta, "_allowed")
+        assert hasattr(allow_sta, "_allowed")
     finally:
         _CoUninitialize()
 
