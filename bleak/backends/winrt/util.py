@@ -100,11 +100,16 @@ async def assert_mta() -> None:
     Asserts that the current apartment type is MTA.
 
     Raises:
-        BleakError: If the current apartment type is not MTA.
+        BleakError:
+            If the current apartment type is not MTA and there is no Windows
+            message loop running.
 
     .. versionadded:: 0.22
 
     .. versionchanged:: unreleased
+
+        Function is now async and will not raise if the current apartment type
+        is STA and the Windows message loop is running.
     """
     if hasattr(allow_sta, "_allowed"):
         return
