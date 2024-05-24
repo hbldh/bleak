@@ -147,7 +147,12 @@ async def assert_mta() -> None:
             await event.wait()
     except asyncio.TimeoutError:
         raise BleakError(
-            "Thread is configured for Windows GUI but callbacks are not working. Suspect PyWin32 unwanted side effects."
+            "Thread is configured for Windows GUI but callbacks are not working."
+            + (
+                " Suspect unwanted side effects from importing 'pythoncom'."
+                if "pythoncom" in sys.modules
+                else ""
+            )
         )
     else:
         # if the windows event loop is running, we assume it is going to keep
