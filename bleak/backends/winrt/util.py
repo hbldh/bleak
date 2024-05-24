@@ -28,10 +28,7 @@ def _check_hresult(result, func, args):
 
 
 # not defined in wintypes
-if ctypes.sizeof(ctypes.c_long) == ctypes.sizeof(ctypes.c_void_p):
-    _UINT_PTR = ctypes.c_ulong
-elif ctypes.sizeof(ctypes.c_longlong) == ctypes.sizeof(ctypes.c_void_p):
-    _UINT_PTR = ctypes.c_ulonglong
+_UINT_PTR = wintypes.WPARAM
 
 # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-timerproc
 _TIMERPROC = ctypes.WINFUNCTYPE(
