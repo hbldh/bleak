@@ -126,7 +126,7 @@ async def assert_mta() -> None:
     if apt_type == _AptType.MTA:
         # if we get here, WinRT probably set the apartment type to MTA and all
         # is well, we don't need to check again
-        setattr(assert_mta, "_allowed", True)
+        setattr(allow_sta, "_allowed", True)
         return
 
     event = asyncio.Event()
@@ -157,7 +157,7 @@ async def assert_mta() -> None:
     else:
         # if the windows event loop is running, we assume it is going to keep
         # running and we don't need to check again
-        setattr(assert_mta, "_allowed", True)
+        setattr(allow_sta, "_allowed", True)
     finally:
         _KillTimer(None, timer)
 
