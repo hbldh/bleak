@@ -1,10 +1,16 @@
 import asyncio
 import ctypes
+import sys
 from ctypes import wintypes
 from enum import IntEnum
 from typing import Tuple
 
 from ...exc import BleakError
+
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
 
 
 def _check_result(result, func, args):
@@ -135,7 +141,7 @@ async def assert_mta() -> None:
     timer = _SetTimer(None, 1, 0, callback)
 
     try:
-        async with asyncio.timeout(1):
+        async with async_timeout(1):
             await event.wait()
     except asyncio.TimeoutError:
         raise BleakError(
