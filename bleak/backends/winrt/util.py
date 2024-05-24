@@ -143,7 +143,7 @@ async def assert_mta() -> None:
     timer = _SetTimer(None, 1, 0, callback)
 
     try:
-        async with async_timeout(1):
+        async with async_timeout(0.5):
             await event.wait()
     except asyncio.TimeoutError:
         raise BleakError(
