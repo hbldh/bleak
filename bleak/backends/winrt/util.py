@@ -186,7 +186,12 @@ def uninitialize_sta():
 
     .. versionadded:: 0.22
     """
+
     try:
-        assert_mta()
-    except BleakError:
+        _get_apartment_type()
+    except OSError as e:
+        # All is OK if not initialized yet. WinRT will initialize it.
+        if e.winerror == _CO_E_NOTINITIALIZED:
+            return
+    else:
         ctypes.windll.ole32.CoUninitialize()

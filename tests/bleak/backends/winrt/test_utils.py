@@ -11,7 +11,7 @@ if not sys.platform.startswith("win"):
 
 from ctypes import windll, wintypes
 
-from bleak.backends.winrt.util import _check_hresult, assert_mta
+from bleak.backends.winrt.util import _check_hresult, assert_mta, uninitialize_sta
 from bleak.exc import BleakError
 
 # https://learn.microsoft.com/en-us/windows/win32/api/objbase/ne-objbase-coinit
@@ -64,3 +64,13 @@ async def test_assert_mta_init_sta():
             await assert_mta()
     finally:
         _CoUninitialize()
+
+
+@pytest.mark.asyncio
+async def test_uninitialize_sta():
+    """Test device_path_from_characteristic_path."""
+
+    _CoInitializeEx(None, COINIT_APARTMENTTHREADED)
+    uninitialize_sta()
+
+    await assert_mta()
