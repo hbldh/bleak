@@ -35,6 +35,17 @@ _CoUninitialize.restype = None
 _CoUninitialize.argtypes = []
 
 
+@pytest.fixture(autouse=True)
+def run_around_tests():
+    # reset global state
+    try:
+        delattr(allow_sta, "_allowed")
+    except AttributeError:
+        pass
+
+    yield
+
+
 @pytest.mark.asyncio
 async def test_assert_mta_no_init():
     """Test device_path_from_characteristic_path."""
