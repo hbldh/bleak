@@ -50,7 +50,7 @@ class _RawAdvData(NamedTuple):
     advertising data like other platforms, so se have to do it ourselves.
     """
 
-    adv: BluetoothLEAdvertisementReceivedEventArgs
+    adv: Optional[BluetoothLEAdvertisementReceivedEventArgs]
     """
     The advertisement data received from the BluetoothLEAdvertisementWatcher.Received event.
     """
@@ -188,6 +188,9 @@ class BleakScannerWinRT(BaseBleakScanner):
                 data = bytes(section.data)
                 service_data[str(UUID(bytes=bytes(data[15::-1])))] = data[16:]
 
+        if not self.is_allowed_uuid(uuids):
+            return
+
         # Use the BLEDevice to populate all the fields for the advertisement data to return
         advertisement_data = AdvertisementData(
             local_name=local_name,
@@ -219,7 +222,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         # Callbacks for WinRT async methods will never happen in STA mode if
         # there is nothing pumping a Windows message loop.
-        assert_mta()
+        await assert_mta()
 
         # start with fresh list of discovered devices
         self.seen_devices = {}

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bleak"
-version = "0.22.1"
+version = "0.22.2"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = ["Henrik Blidh <henrik.blidh@nedomkull.com>"]
 license = "MIT"
@@ -49,8 +49,8 @@ flake8 = "^5.0.0"
 isort = "^5.13.2"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.0.0"
-pytest-asyncio = "^0.19.0"
+pytest = "^8.2.1"
+pytest-asyncio = "^0.23.7"
 pytest-cov = "^3.0.0 "
 
 [build-system]

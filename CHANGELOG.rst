@@ -10,6 +10,22 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.22.2`_ (2024-06-01)
+======================
+
+Changed
+-------
+* Retrieve the BLE address required by ``BleakClientWinRT`` from scan response if advertising is None (WinRT).
+* Changed type hint for ``adv`` attribute of ``bleak.backends.winrt.scanner._RawAdvData``.
+* ``BleakGATTCharacteristic.max_write_without_response_size`` is now dynamic.
+
+Fixed
+-----
+* Fixed ``discovered_devices_and_advertisement_data`` returning devices that should
+  be filtered out by service UUIDs. Fixes #1576.
+* Fixed a ``Descriptor None was not found!`` exception occurring in ``start_notify()`` on Android. Fixes #823.
+* Fixed exception raised when starting ``BleakScanner`` while running in a Windows GUI app.
+
 `0.22.1`_ (2024-05-07)
 ======================
 
@@ -44,7 +60,7 @@ Fixed
 * Fixed scanning silently failing on Windows when Bluetooth is off. Fixes #1535.
 * Fixed using wrong value for ``tx_power`` in Android backend. Fixes #1532.
 * Fixed 4-character UUIDs not working on ``BleakClient.*_gatt_char`` methods. Fixes #1498.
-* Fixed race condition with getting max PDU size on Windows. Fixes #1497.
+* Fixed race condition with getting max PDU size on Windows. Fixes #1497. [REVERTED in v0.22.2]
 * Fixed filtering advertisement data by service UUID when multiple apps are scanning. Fixes #1534.
 
 `0.21.1`_ (2023-09-08)
@@ -1022,7 +1038,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.2...develop
+.. _0.22.2: https://github.com/hbldh/bleak/compare/v0.22.1...v0.22.2
 .. _0.22.1: https://github.com/hbldh/bleak/compare/v0.22.0...v0.22.1
 .. _0.22.0: https://github.com/hbldh/bleak/compare/v0.21.1...v0.22.0
 .. _0.21.1: https://github.com/hbldh/bleak/compare/v0.21.0...v0.21.1

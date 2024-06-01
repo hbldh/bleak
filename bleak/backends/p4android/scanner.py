@@ -233,6 +233,9 @@ class BleakScannerP4Android(BaseBleakScanner):
         if service_uuids is not None:
             service_uuids = [service_uuid.toString() for service_uuid in service_uuids]
 
+        if not self.is_allowed_uuid(service_uuids):
+            return
+
         manufacturer_data = record.getManufacturerSpecificData()
         manufacturer_data = {
             manufacturer_data.keyAt(index): bytes(manufacturer_data.valueAt(index))

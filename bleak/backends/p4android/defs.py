@@ -5,6 +5,7 @@ import enum
 from jnius import autoclass, cast
 
 import bleak.exc
+from bleak.uuids import normalize_uuid_16
 
 # caching constants avoids unnecessary extra use of the jni-python interface, which can be slow
 
@@ -87,4 +88,4 @@ CHARACTERISTIC_PROPERTY_DBUS_NAMES = {
     BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE: "write-without-response",
 }
 
-CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = "2902"
+CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = normalize_uuid_16(0x2902)

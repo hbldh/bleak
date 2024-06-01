@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Callable, List, Union
 from uuid import UUID
 
 from ..characteristic import BleakGATTCharacteristic
@@ -36,7 +36,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         object_path: str,
         service_uuid: str,
         service_handle: int,
-        max_write_without_response_size: int,
+        max_write_without_response_size: Callable[[], int],
     ):
         super(BleakGATTCharacteristicBlueZDBus, self).__init__(
             obj, max_write_without_response_size

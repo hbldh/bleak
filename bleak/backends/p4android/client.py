@@ -273,7 +273,7 @@ class BleakClientP4Android(BaseBleakClient):
                     java_characteristic,
                     service.uuid,
                     service.handle,
-                    self.__mtu - 3,
+                    lambda: self.__mtu - 3,
                 )
                 services.add_characteristic(characteristic)
 

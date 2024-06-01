@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Callable, List, Union
 from uuid import UUID
 
 from ...exc import BleakError
@@ -15,7 +15,7 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
         java,
         service_uuid: str,
         service_handle: int,
-        max_write_without_response_size: int,
+        max_write_without_response_size: Callable[[], int],
     ):
         super(BleakGATTCharacteristicP4Android, self).__init__(
             java, max_write_without_response_size

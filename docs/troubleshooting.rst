@@ -8,6 +8,109 @@ When things don't seem to be working right, here are some things to try.
 Common Mistakes
 ---------------
 
+Calling ``asyncio.run()`` more than once
+========================================
+
+Bleak requires the same asyncio run loop to be used for all of its operations.
+And it requires the loop to always be running because there are background tasks
+that need to always be running. Therefore, make sure you only call ``asyncio.run()``
+once at the start of your program. **Your program will not work correctly if you
+call it more than once.** Even if it seems like it is working, crashes and other
+problems will occur eventually.
+
+DON'T!
+
+.. code-block:: python
+
+    async def scan():
+        return await BleakScanner.find_device_by_name("My Device")
+
+    async def connect(device):
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+    # Do not wrap each function call in asyncio.run() like this!
+    device = asyncio.run(scan())
+    if not device:
+        print("Device not found")
+    else:
+        asyncio.run(connect(device))
+
+
+DO!
+
+.. code-block:: python
+
+    async def scan():
+        return await BleakScanner.find_device_by_name("My Device")
+
+    async def connect(device):
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+    # Do have one async main function that does everything.
+    async def main():
+        device = await scan()
+        if not device:
+            print("Device not found")
+            return
+
+        await connect(device)
+
+    asyncio.run(main())
+
+
+DON'T!
+
+.. code-block:: python
+
+    async def scan_and_connect():
+        device = await BleakScanner.find_device_by_name("My Device")
+        if not device:
+            print("Device not found")
+            return
+
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+
+    while True:
+        # Don't call asyncio.run() multiple times like this!
+        asyncio.run(scan_and_connect())
+        # Never use blocking sleep in an asyncio programs!
+        time.sleep(5)
+
+
+DO!
+
+.. code-block:: python
+
+    async def scan_and_connect():
+        device = await BleakScanner.find_device_by_name("My Device")
+        if not device:
+            print("Device not found")
+            return
+
+        async with BleakClient(device) as client:
+            data = await client.read_gatt_char(MY_CHAR_UUID)
+            print("received:" data)
+
+    # Do have one async main function that does everything.
+    async def main():
+        while True:
+            await scan_and_connect()
+            # Do use asyncio.sleep() in an asyncio program.
+            await asyncio.sleep(5)
+
+    asyncio.run(main())
+
+
+Naming your script ``bleak.py``
+===============================
+
 Many people name their first script ``bleak.py``. This causes the script to
 crash with an ``ImportError`` similar to::
 
@@ -74,15 +177,32 @@ Not working when threading model is STA
 
 Packages like ``pywin32`` and it's subsidiaries have an unfortunate side effect
 of initializing the threading model to Single Threaded Apartment (STA) when
-imported. This causes async WinRT functions to never complete. because there
-isn't a message loop running. Bleak needs to run in a Multi Threaded Apartment
-(MTA) instead (this happens automatically on the first WinRT call).
+imported. This causes async WinRT functions to never complete if Bleak is being
+used in a console application (no Windows graphical user interface). This is
+because there isn't a Windows message loop running to handle async callbacks.
+Bleak, when used in a console application, needs to run in a Multi Threaded
+Apartment (MTA) instead (this happens automatically on the first WinRT call).
 
 Bleak should detect this and raise an exception with a message similar to::
 
-    The current thread apartment type is not MTA: STA.
+    Thread is configured for Windows GUI but callbacks are not working.
 
-To work around this, you can use one of the utility functions provided by Bleak.
+You can tell a ``pywin32`` package caused the issue by checking for
+``"pythoncom" in sys.modules``. If it is there, then likely it triggered the
+problem. You can avoid this by setting ``sys.coinit_flags = 0`` before importing
+any package that indirectly imports ``pythoncom``. This will cause ``pythoncom``
+to use the default threading model (MTA) instead of STA.
+
+Example::
+
+    import sys
+    sys.coinit_flags = 0  # 0 means MTA
+
+    import win32com  # or any other package that causes the issue
+
+
+If the issue was caused by something other than the ``pythoncom`` module, there
+are a couple of other helper functions you can try.
 
 If your program has a graphical user interface and the UI framework *and* it is
 properly integrated with asyncio *and* Bleak is not running on a background
@@ -98,14 +218,20 @@ thread then call ``allow_sta()`` before calling any other Bleak APis::
         # can safely ignore
         pass
 
-The more typical case, though, is that some library has imported something like
-``pywin32`` which breaks Bleak. In this case, you can uninitialize the threading
-model like this::
+The more typical case, though, is that some library has imported something similar
+to ``pythoncom`` with the same unwanted side effect of initializing the main
+thread of a console application to STA. In this case, you can uninitialize the
+threading model like this::
 
-    import win32com  # this sets current thread to STA :-(
-    from bleak.backends.winrt.util import uninitialize_sta
+    import naughty_module  # this sets current thread to STA :-(
 
-    uninitialize_sta()  # undo the unwanted side effect
+    try:
+        from bleak.backends.winrt.util import uninitialize_sta
+
+        uninitialize_sta()  # undo the unwanted side effect
+    except ImportError:
+        # not Windows, so no problem
+        pass
 
 
 --------------

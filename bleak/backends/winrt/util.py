@@ -1,8 +1,23 @@
+import asyncio
 import ctypes
+import sys
+from ctypes import wintypes
 from enum import IntEnum
 from typing import Tuple
 
 from ...exc import BleakError
+
+if sys.version_info < (3, 11):
+    from async_timeout import timeout as async_timeout
+else:
+    from asyncio import timeout as async_timeout
+
+
+def _check_result(result, func, args):
+    if not result:
+        raise ctypes.WinError()
+
+    return args
 
 
 def _check_hresult(result, func, args):
@@ -10,6 +25,26 @@ def _check_hresult(result, func, args):
         raise ctypes.WinError(result)
 
     return args
+
+
+# not defined in wintypes
+_UINT_PTR = wintypes.WPARAM
+
+# https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-timerproc
+_TIMERPROC = ctypes.WINFUNCTYPE(
+    None, wintypes.HWND, _UINT_PTR, wintypes.UINT, wintypes.DWORD
+)
+
+# https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-settimer
+_SetTimer = ctypes.windll.user32.SetTimer
+_SetTimer.restype = _UINT_PTR
+_SetTimer.argtypes = [wintypes.HWND, _UINT_PTR, wintypes.UINT, _TIMERPROC]
+_SetTimer.errcheck = _check_result
+
+# https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-killtimer
+_KillTimer = ctypes.windll.user32.KillTimer
+_KillTimer.restype = wintypes.BOOL
+_KillTimer.argtypes = [wintypes.HWND, wintypes.UINT]
 
 
 # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cogetapartmenttype
@@ -60,28 +95,71 @@ def _get_apartment_type() -> Tuple[_AptType, _AptQualifierType]:
     return _AptType(api_type.value), _AptQualifierType(api_type_qualifier.value)
 
 
-def assert_mta() -> None:
+async def assert_mta() -> None:
     """
     Asserts that the current apartment type is MTA.
 
     Raises:
-        BleakError: If the current apartment type is not MTA.
+        BleakError:
+            If the current apartment type is not MTA and there is no Windows
+            message loop running.
 
     .. versionadded:: 0.22
+
+    .. versionchanged:: 0.22.2
+
+        Function is now async and will not raise if the current apartment type
+        is STA and the Windows message loop is running.
     """
     if hasattr(allow_sta, "_allowed"):
         return
 
     try:
         apt_type, _ = _get_apartment_type()
-        if apt_type != _AptType.MTA:
-            raise BleakError(
-                f"The current thread apartment type is not MTA: {apt_type.name}. Beware of packages like pywin32 that may change the apartment type implicitly."
-            )
     except OSError as e:
         # All is OK if not initialized yet. WinRT will initialize it.
-        if e.winerror != _CO_E_NOTINITIALIZED:
-            raise
+        if e.winerror == _CO_E_NOTINITIALIZED:
+            return
+
+        raise
+
+    if apt_type == _AptType.MTA:
+        # if we get here, WinRT probably set the apartment type to MTA and all
+        # is well, we don't need to check again
+        setattr(allow_sta, "_allowed", True)
+        return
+
+    event = asyncio.Event()
+
+    def wait_event(*_):
+        event.set()
+
+    # have to keep a reference to the callback or it will be garbage collected
+    # before it is called
+    callback = _TIMERPROC(wait_event)
+
+    # set a timer to see if we get a callback to ensure the windows event loop
+    # is running
+    timer = _SetTimer(None, 1, 0, callback)
+
+    try:
+        async with async_timeout(0.5):
+            await event.wait()
+    except asyncio.TimeoutError:
+        raise BleakError(
+            "Thread is configured for Windows GUI but callbacks are not working."
+            + (
+                " Suspect unwanted side effects from importing 'pythoncom'."
+                if "pythoncom" in sys.modules
+                else ""
+            )
+        )
+    else:
+        # if the windows event loop is running, we assume it is going to keep
+        # running and we don't need to check again
+        setattr(allow_sta, "_allowed", True)
+    finally:
+        _KillTimer(None, timer)
 
 
 def allow_sta():
@@ -115,7 +193,12 @@ def uninitialize_sta():
 
     .. versionadded:: 0.22
     """
+
     try:
-        assert_mta()
-    except BleakError:
+        _get_apartment_type()
+    except OSError as e:
+        # All is OK if not initialized yet. WinRT will initialize it.
+        if e.winerror == _CO_E_NOTINITIALIZED:
+            return
+    else:
         ctypes.windll.ole32.CoUninitialize()

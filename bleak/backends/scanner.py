@@ -197,6 +197,42 @@ class BaseBleakScanner(abc.ABC):
 
         return remove
 
+    def is_allowed_uuid(self, service_uuids: Optional[List[str]]) -> bool:
+        """
+        Check if the advertisement data contains any of the service UUIDs
+        matching the filter. If no filter is set, this will always return
+        ``True``.
+
+        Args:
+            service_uuids: The service UUIDs from the advertisement data.
+
+        Returns:
+            ``True`` if the advertisement data should be allowed or ``False``
+             if the advertisement data should be filtered out.
+        """
+        # Backends will make best effort to filter out advertisements that
+        # don't match the service UUIDs, but if other apps are scanning at the
+        # same time or something like that, we may still receive advertisements
+        # that don't match. So we need to do more filtering here to get the
+        # expected behavior.
+
+        if not self._service_uuids:
+            # if there is no filter, everything is allowed
+            return True
+
+        if not service_uuids:
+            # if there is a filter the advertisement data doesn't contain any
+            # service UUIDs, filter it out
+            return False
+
+        for uuid in service_uuids:
+            if uuid in self._service_uuids:
+                # match was found, keep this advertisement
+                return True
+
+        # there were no matching service uuids, filter this one out
+        return False
+
     def call_detection_callbacks(
         self, device: BLEDevice, advertisement_data: AdvertisementData
     ) -> None:
@@ -206,23 +242,6 @@ class BaseBleakScanner(abc.ABC):
         Backend implementations should call this method when an advertisement
         event is received from the OS.
         """
-
-        # Backends will make best effort to filter out advertisements that
-        # don't match the service UUIDs, but if other apps are scanning at the
-        # same time or something like that, we may still receive advertisements
-        # that don't match. So we need to do more filtering here to get the
-        # expected behavior.
-
-        if self._service_uuids:
-            if not advertisement_data.service_uuids:
-                return
-
-            for uuid in advertisement_data.service_uuids:
-                if uuid in self._service_uuids:
-                    break
-            else:
-                # if there were no matching service uuids, the don't call the callback
-                return
 
         for callback in self._ad_callbacks.values():
             callback(device, advertisement_data)
