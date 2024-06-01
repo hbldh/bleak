@@ -237,7 +237,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 services.add_characteristic(
                     BleakGATTCharacteristicCoreBluetooth(
                         characteristic,
-                        self._peripheral.maximumWriteValueLengthForType_(
+                        lambda: self._peripheral.maximumWriteValueLengthForType_(
                             CBCharacteristicWriteWithoutResponse
                         ),
                     )

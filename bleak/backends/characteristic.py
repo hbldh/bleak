@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import enum
-from typing import Any, List, Union
+from typing import Any, Callable, List, Union
 from uuid import UUID
 
 from ..uuids import uuidstr_to_str
@@ -30,7 +30,7 @@ class GattCharacteristicsFlags(enum.Enum):
 class BleakGATTCharacteristic(abc.ABC):
     """Interface for the Bleak representation of a GATT Characteristic"""
 
-    def __init__(self, obj: Any, max_write_without_response_size: int):
+    def __init__(self, obj: Any, max_write_without_response_size: Callable[[], int]):
         """
         Args:
             obj:
@@ -86,12 +86,30 @@ class BleakGATTCharacteristic(abc.ABC):
         Gets the maximum size in bytes that can be used for the *data* argument
         of :meth:`BleakClient.write_gatt_char()` when ``response=False``.
 
+        In rare cases, a device may take a long time to update this value, so
+        reading this property may return the default value of ``20`` and reading
+        it again after a some time may return the expected higher value.
+
+        If you *really* need to wait for a higher value, you can do something
+        like this:
+
+        .. code-block:: python
+
+            async with asyncio.timeout(10):
+                while char.max_write_without_response_size == 20:
+                    await asyncio.sleep(0.5)
+
         .. warning:: Linux quirk: For BlueZ versions < 5.62, this property
             will always return ``20``.
 
         .. versionadded:: 0.16
         """
-        return self._max_write_without_response_size
+
+        # for backwards compatibility
+        if isinstance(self._max_write_without_response_size, int):
+            return self._max_write_without_response_size
+
+        return self._max_write_without_response_size()
 
     @property
     @abc.abstractmethod

@@ -383,8 +383,6 @@ class BleakClientWinRT(BaseBleakClient):
             )
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
-        pdu_size_event = asyncio.Event()
-
         def max_pdu_size_changed_handler(sender: GattSession, args):
             try:
                 max_pdu_size = sender.max_pdu_size
@@ -395,7 +393,6 @@ class BleakClientWinRT(BaseBleakClient):
                 return
 
             logger.debug("max_pdu_size_changed_handler: %d", max_pdu_size)
-            pdu_size_event.set()
 
         # Start a GATT Session to connect
         event = asyncio.Event()
@@ -491,29 +488,6 @@ class BleakClientWinRT(BaseBleakClient):
                             service_cache_mode=service_cache_mode,
                             cache_mode=cache_mode,
                         )
-
-                # There is a race condition where the max_pdu_size_changed event
-                # might not be received before the get_services() call completes.
-                # We could put this wait before getting services, but that would
-                # make the connection time longer. So we put it here instead and
-                # fix up the characteristics if necessary.
-                if not pdu_size_event.is_set():
-                    try:
-                        # REVISIT: Devices that don't support > default PDU size
-                        # may be punished by this timeout with a slow connection
-                        # time. We may want to consider an option to ignore this
-                        # timeout for such devices.
-                        async with async_timeout(1):
-                            await pdu_size_event.wait()
-                    except asyncio.TimeoutError:
-                        logger.debug(
-                            "max_pdu_size_changed event not received, using default"
-                        )
-
-                for char in self.services.characteristics.values():
-                    char._max_write_without_response_size = (
-                        self._session.max_pdu_size - 3
-                    )
 
                 # a connection may not be made until we request info from the
                 # device, so we have to get services before the GATT session
@@ -791,10 +765,10 @@ class BleakClientWinRT(BaseBleakClient):
                         f"Could not get GATT descriptors for characteristic {characteristic.uuid} ({characteristic.attribute_handle})",
                     )
 
-                    # NB: max_pdu_size might not be valid at this time so we
-                    # start with default size and will update later
                     new_services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(characteristic, 20)
+                        BleakGATTCharacteristicWinRT(
+                            characteristic, lambda: self._session.max_pdu_size - 3
+                        )
                     )
 
                     for descriptor in descriptors:
