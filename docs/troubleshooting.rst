@@ -177,15 +177,32 @@ Not working when threading model is STA
 
 Packages like ``pywin32`` and it's subsidiaries have an unfortunate side effect
 of initializing the threading model to Single Threaded Apartment (STA) when
-imported. This causes async WinRT functions to never complete. because there
-isn't a message loop running. Bleak needs to run in a Multi Threaded Apartment
-(MTA) instead (this happens automatically on the first WinRT call).
+imported. This causes async WinRT functions to never complete if Bleak is being
+used in a console application (no Windows graphical user interface). This is
+because there isn't a Windows message loop running to handle async callbacks.
+Bleak, when used in a console application, needs to run in a Multi Threaded
+Apartment (MTA) instead (this happens automatically on the first WinRT call).
 
 Bleak should detect this and raise an exception with a message similar to::
 
-    The current thread apartment type is not MTA: STA.
+    Thread is configured for Windows GUI but callbacks are not working.
 
-To work around this, you can use one of the utility functions provided by Bleak.
+You can tell a ``pywin32`` package caused the issue by checking for
+``"pythoncom" in sys.modules``. If it is there, then likely it triggered the
+problem. You can avoid this by setting ``sys.coinit_flags = 0`` before importing
+any package that indirectly imports ``pythoncom``. This will cause ``pythoncom``
+to use the default threading model (MTA) instead of STA.
+
+Example::
+
+    import sys
+    sys.coinit_flags = 0  # 0 means MTA
+
+    import win32com  # or any other package that causes the issue
+
+
+If the issue was caused by something other than the ``pythoncom`` module, there
+are a couple of other helper functions you can try.
 
 If your program has a graphical user interface and the UI framework *and* it is
 properly integrated with asyncio *and* Bleak is not running on a background
@@ -201,14 +218,20 @@ thread then call ``allow_sta()`` before calling any other Bleak APis::
         # can safely ignore
         pass
 
-The more typical case, though, is that some library has imported something like
-``pywin32`` which breaks Bleak. In this case, you can uninitialize the threading
-model like this::
+The more typical case, though, is that some library has imported something similar
+to ``pythoncom`` with the same unwanted side effect of initializing the main
+thread of a console application to STA. In this case, you can uninitialize the
+threading model like this::
 
-    import win32com  # this sets current thread to STA :-(
-    from bleak.backends.winrt.util import uninitialize_sta
+    import naughty_module  # this sets current thread to STA :-(
 
-    uninitialize_sta()  # undo the unwanted side effect
+    try:
+        from bleak.backends.winrt.util import uninitialize_sta
+
+        uninitialize_sta()  # undo the unwanted side effect
+    except ImportError:
+        # not Windows, so no problem
+        pass
 
 
 --------------

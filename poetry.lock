@@ -23,23 +23,6 @@ files = [
 ]
 
 [[package]]
-name = "attrs"
-version = "22.1.0"
-description = "Classes Without Boilerplate"
-optional = false
-python-versions = ">=3.5"
-files = [
-    {file = "attrs-22.1.0-py2.py3-none-any.whl", hash = "sha256:86efa402f67bf2df34f51a335487cf46b1ec130d02b8d39fd248abfd30da551c"},
-    {file = "attrs-22.1.0.tar.gz", hash = "sha256:29adc2665447e5191d0e7c568fde78b21f9672d344281d0c6e1ab085429b22b6"},
-]
-
-[package.extras]
-dev = ["cloudpickle", "coverage[toml] (>=5.0.2)", "furo", "hypothesis", "mypy (>=0.900,!=0.940)", "pre-commit", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "sphinx", "sphinx-notfound-page", "zope.interface"]
-docs = ["furo", "sphinx", "sphinx-notfound-page", "zope.interface"]
-tests = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy (>=0.900,!=0.940)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "zope.interface"]
-tests-no-zope = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy (>=0.900,!=0.940)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins"]
-
-[[package]]
 name = "Babel"
 version = "2.10.3"
 description = "Internationalization utilities"
@@ -289,6 +272,20 @@ files = [
 ]
 
 [[package]]
+name = "exceptiongroup"
+version = "1.2.1"
+description = "Backport of PEP 654 (exception groups)"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "exceptiongroup-1.2.1-py3-none-any.whl", hash = "sha256:5258b9ed329c5bbdd31a309f53cbfb0b155341807f6ff7606a1e801a891b29ad"},
+    {file = "exceptiongroup-1.2.1.tar.gz", hash = "sha256:a4785e48b045528f5bfe627b6ad554ff32def154f42372786903b7abcfe1aa16"},
+]
+
+[package.extras]
+test = ["pytest (>=6)"]
+
+[[package]]
 name = "flake8"
 version = "5.0.4"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -497,29 +494,18 @@ test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock 
 
 [[package]]
 name = "pluggy"
-version = "1.0.0"
+version = "1.5.0"
 description = "plugin and hook calling mechanisms for python"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
-    {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
+    {file = "pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669"},
+    {file = "pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1"},
 ]
 
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
-
-[[package]]
-name = "py"
-version = "1.11.0"
-description = "library with cross-python path, ini-parsing, io, code, log facilities"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-files = [
-    {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
-    {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
-]
 
 [[package]]
 name = "pycodestyle"
@@ -630,43 +616,43 @@ pyobjc-core = ">=10.0"
 
 [[package]]
 name = "pytest"
-version = "7.1.3"
+version = "8.2.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-7.1.3-py3-none-any.whl", hash = "sha256:1377bda3466d70b55e3f5cecfa55bb7cfcf219c7964629b967c37cf0bda818b7"},
-    {file = "pytest-7.1.3.tar.gz", hash = "sha256:4f365fec2dff9c1162f834d9f18af1ba13062db0c708bf7b946f8a5c76180c39"},
+    {file = "pytest-8.2.1-py3-none-any.whl", hash = "sha256:faccc5d332b8c3719f40283d0d44aa5cf101cec36f88cde9ed8f2bc0538612b1"},
+    {file = "pytest-8.2.1.tar.gz", hash = "sha256:5046e5b46d8e4cac199c373041f26be56fdb81eb4e67dc11d4e10811fc3408fd"},
 ]
 
 [package.dependencies]
-attrs = ">=19.2.0"
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
+exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=0.12,<2.0"
-py = ">=1.8.2"
-tomli = ">=1.0.0"
+pluggy = ">=1.5,<2.0"
+tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 
 [package.extras]
-testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
+dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.19.0"
+version = "0.23.7"
 description = "Pytest support for asyncio"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-asyncio-0.19.0.tar.gz", hash = "sha256:ac4ebf3b6207259750bc32f4c1d8fcd7e79739edbc67ad0c58dd150b1d072fed"},
-    {file = "pytest_asyncio-0.19.0-py3-none-any.whl", hash = "sha256:7a97e37cfe1ed296e2e84941384bdd37c376453912d397ed39293e0916f521fa"},
+    {file = "pytest_asyncio-0.23.7-py3-none-any.whl", hash = "sha256:009b48127fbe44518a547bddd25611551b0e43ccdbf1e67d12479f569832c20b"},
+    {file = "pytest_asyncio-0.23.7.tar.gz", hash = "sha256:5f5c72948f4c49e7db4f29f2521d4031f1c27f86e57b046126654083d4770268"},
 ]
 
 [package.dependencies]
-pytest = ">=6.1.0"
+pytest = ">=7.0.0,<9"
 
 [package.extras]
-testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy (>=0.931)", "pytest-trio (>=0.7.0)"]
+docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
+testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "pytest-cov"
@@ -950,7 +936,6 @@ files = [
     {file = "winrt_Windows.Devices.Bluetooth-2.0.1-cp39-cp39-win32.whl", hash = "sha256:dffff7e6801b8e69e694b36fe1d147094fb6ac29ce54fd3ca3e52ab417473cc4"},
     {file = "winrt_Windows.Devices.Bluetooth-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:62bae806ecdf3021e1ec685d5a44012657c0961ca2027eeb1c37864f53577e51"},
     {file = "winrt_Windows.Devices.Bluetooth-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:7f3b102e9b4bea1915cc922b571e0c226956c161102d228ec1788e3caf4e226d"},
-    {file = "winrt_windows_devices_bluetooth-2.0.1.tar.gz", hash = "sha256:c91b3f54bfe1ed7e1e597566b83a625d32efe397b21473668046ccb4b57f5a28"},
 ]
 
 [package.dependencies]
@@ -978,7 +963,6 @@ files = [
     {file = "winrt_Windows.Devices.Bluetooth.Advertisement-2.0.1-cp39-cp39-win32.whl", hash = "sha256:86d11fd5c055f76eefac7f6cc02450832811503b83280e26a83613afe1d17c92"},
     {file = "winrt_Windows.Devices.Bluetooth.Advertisement-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:c8495ce12fda8fce3da130664917eb199d19ca1ebf7d5ab996f5df584b5e3a1f"},
     {file = "winrt_Windows.Devices.Bluetooth.Advertisement-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:0e91160a98e5b0fffae196982b5670e678ac919a6e14eb7e9798fdcbff45f8d2"},
-    {file = "winrt_windows_devices_bluetooth_advertisement-2.0.1.tar.gz", hash = "sha256:130e6238a1897bfef98a711cdb1b02694fa0e18eb67d8fd4019a64a53685b331"},
 ]
 
 [package.dependencies]
@@ -1006,7 +990,6 @@ files = [
     {file = "winrt_Windows.Devices.Bluetooth.GenericAttributeProfile-2.0.1-cp39-cp39-win32.whl", hash = "sha256:3e2a54db384dcf05265a855a2548e2abd9b7726c8ec4b9ad06059606c5d90409"},
     {file = "winrt_Windows.Devices.Bluetooth.GenericAttributeProfile-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:2bdbb55d4bef15c762a5d5b4e27b534146ec6580075ed9cc681e75e6ff0d5a97"},
     {file = "winrt_Windows.Devices.Bluetooth.GenericAttributeProfile-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:01e74c76d4f16b4490d78c8c7509f2570c843366c1c6bf196a5b729520a31258"},
-    {file = "winrt_windows_devices_bluetooth_genericattributeprofile-2.0.1.tar.gz", hash = "sha256:69d7dabd53fbf9acdc2d206def60f5c9777416a9d6911c3420be700aaff4e492"},
 ]
 
 [package.dependencies]
@@ -1034,7 +1017,6 @@ files = [
     {file = "winrt_Windows.Devices.Enumeration-2.0.1-cp39-cp39-win32.whl", hash = "sha256:9301f5e00bd2562b063e0f6e0de6f0596b7fb3eabc443bd7e115772de6cc08f9"},
     {file = "winrt_Windows.Devices.Enumeration-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:9999d93ae9441d35c564d498bb4d6767b593254a92b7c1559058a7450a0c304e"},
     {file = "winrt_Windows.Devices.Enumeration-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:504ca45a9b90387a2f4f727dbbeefcf79beb013ac7a29081bb14c8ab13e10367"},
-    {file = "winrt_windows_devices_enumeration-2.0.1.tar.gz", hash = "sha256:ed227dd22ece253db913de24e4fc5194d9f3272e2a5959a2450ae79e81bf7949"},
 ]
 
 [package.dependencies]
@@ -1062,7 +1044,6 @@ files = [
     {file = "winrt_Windows.Foundation-2.0.1-cp39-cp39-win32.whl", hash = "sha256:7abbf10666d6da5dbfb6a47125786a05dac267731a3d38feb8faddade9bf1151"},
     {file = "winrt_Windows.Foundation-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:aab18ad12de63a353ab1847aff3216ba4e5499e328da5edcb72c8007da6bdb02"},
     {file = "winrt_Windows.Foundation-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:bde9ecfc1c75410d669ee3124a84ba101d5a8ab1911807ad227658624fc22ffb"},
-    {file = "winrt_windows_foundation-2.0.1.tar.gz", hash = "sha256:6e4da10cff652ac17740753c38ebe69565f5f970f60100106469b2e004ef312c"},
 ]
 
 [package.dependencies]
@@ -1090,7 +1071,6 @@ files = [
     {file = "winrt_Windows.Foundation.Collections-2.0.1-cp39-cp39-win32.whl", hash = "sha256:c26ab7b3342669dc09be62db5c5434e7194fb6eb1ec5b03fba1163f6b3e7b843"},
     {file = "winrt_Windows.Foundation.Collections-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:2f9bc7e28f3ade1c1f3113939dbf630bfef5e3c3018c039a404d7e4d39aae4cb"},
     {file = "winrt_Windows.Foundation.Collections-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:1f3e76f3298bec3938d94e4857c29af9776ec78112bdd09bb7794f06fd38bb13"},
-    {file = "winrt_windows_foundation_collections-2.0.1.tar.gz", hash = "sha256:7d18955f161ba27d785c8fe2ef340f338b6edd2c5226fe2b005840e2a855e708"},
 ]
 
 [package.dependencies]
@@ -1118,7 +1098,6 @@ files = [
     {file = "winrt_Windows.Storage.Streams-2.0.1-cp39-cp39-win32.whl", hash = "sha256:f6dec418ad0118c258a1b2999fc8d4fc0d9575e6353a75a242ff8cc63c9b2146"},
     {file = "winrt_Windows.Storage.Streams-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:9fbc40f600ab44a45cda47b698bd8e494e80e221446a5958c4d8d59a8d46f117"},
     {file = "winrt_Windows.Storage.Streams-2.0.1-cp39-cp39-win_arm64.whl", hash = "sha256:08059774c6d49d195ce00c3802d19364f418a6f3e42b94373621551792d2da60"},
-    {file = "winrt_windows_storage_streams-2.0.1.tar.gz", hash = "sha256:3de8351ed3a9cfcfd1d028ce97ffe90bb95744f906eef025b06e7f4431943ee6"},
 ]
 
 [package.dependencies]
@@ -1145,4 +1124,4 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.13"
-content-hash = "65f1bbdea293cf8fef2b3531e7f28b9aff5b62df6c9bbf4a290d9cdfe5f8884d"
+content-hash = "1c5a0ca2a13af74c3aecab397053176e19054a14bcbb031d89c8413acaf8a468"
