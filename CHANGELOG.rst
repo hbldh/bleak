@@ -14,7 +14,7 @@ Changed
 -------
 * Retrieve the BLE address required by ``BleakClientWinRT`` from scan response if advertising is None (WinRT).
 * Changed type hint for ``adv`` attribute of ``bleak.backends.winrt.scanner._RawAdvData``.
-* ``BleakGATTCharacteristic.max_write_without_response_size`` is is now dynamic.
+* ``BleakGATTCharacteristic.max_write_without_response_size`` is now dynamic.
 
 Fixed
 -----
