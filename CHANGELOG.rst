@@ -14,6 +14,7 @@ Changed
 -------
 * Retrieve the BLE address required by ``BleakClientWinRT`` from scan response if advertising is None (WinRT).
 * Changed type hint for ``adv`` attribute of ``bleak.backends.winrt.scanner._RawAdvData``.
+* ``BleakGATTCharacteristic.max_write_without_response_size`` is now dynamic.
 
 Fixed
 -----
@@ -56,7 +57,7 @@ Fixed
 * Fixed scanning silently failing on Windows when Bluetooth is off. Fixes #1535.
 * Fixed using wrong value for ``tx_power`` in Android backend. Fixes #1532.
 * Fixed 4-character UUIDs not working on ``BleakClient.*_gatt_char`` methods. Fixes #1498.
-* Fixed race condition with getting max PDU size on Windows. Fixes #1497.
+* Fixed race condition with getting max PDU size on Windows. Fixes #1497. [REVERTED in unreleased]
 * Fixed filtering advertisement data by service UUID when multiple apps are scanning. Fixes #1534.
 
 `0.21.1`_ (2023-09-08)

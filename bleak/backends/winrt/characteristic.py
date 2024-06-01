@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from typing import List, Union
+from typing import Callable, List, Union
 from uuid import UUID
 
 if sys.version_info >= (3, 12):
@@ -68,7 +68,11 @@ _GattCharacteristicsPropertiesMap = {
 class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the .NET backend, implemented with WinRT"""
 
-    def __init__(self, obj: GattCharacteristic, max_write_without_response_size: int):
+    def __init__(
+        self,
+        obj: GattCharacteristic,
+        max_write_without_response_size: Callable[[], int],
+    ):
         super().__init__(obj, max_write_without_response_size)
         self.__descriptors = []
         self.__props = [
