@@ -106,7 +106,7 @@ async def assert_mta() -> None:
 
     .. versionadded:: 0.22
 
-    .. versionchanged:: unreleased
+    .. versionchanged:: 0.22.2
 
         Function is now async and will not raise if the current apartment type
         is STA and the Windows message loop is running.
