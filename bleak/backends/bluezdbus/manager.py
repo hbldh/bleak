@@ -341,8 +341,7 @@ class BlueZManager:
                             desc_props["Characteristic"], set()
                         ).add(path)
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("initial properties: %s", self._properties)
+                logger.debug("initial properties: %s", self._properties)
 
             except BaseException:
                 # if setup failed, disconnect
@@ -876,14 +875,13 @@ class BlueZManager:
         if message.message_type != MessageType.SIGNAL:
             return
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                "received D-Bus signal: %s.%s (%s): %s",
-                message.interface,
-                message.member,
-                message.path,
-                message.body,
-            )
+        logger.debug(
+            "received D-Bus signal: %s.%s (%s): %s",
+            message.interface,
+            message.member,
+            message.path,
+            message.body,
+        )
 
         # type hints
         obj_path: str
