@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* In bleak.backends.winrt.util the SetTimer, KillTimer and CoGetApartmentType functions define their own prototype and don't change ctypes' global state anymore
+
 `0.22.2`_ (2024-06-01)
 ======================
 
