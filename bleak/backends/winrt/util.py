@@ -36,24 +36,43 @@ _TIMERPROC = ctypes.WINFUNCTYPE(
 )
 
 # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-settimer
-_SetTimer = ctypes.windll.user32.SetTimer
-_SetTimer.restype = _UINT_PTR
-_SetTimer.argtypes = [wintypes.HWND, _UINT_PTR, wintypes.UINT, _TIMERPROC]
+_SET_TIMER_PROTOTYPE = ctypes.WINFUNCTYPE(
+    _UINT_PTR, wintypes.HWND, _UINT_PTR, wintypes.UINT, _TIMERPROC
+)
+_SET_TIMER_PARAM_FLAGS = (
+    (1, "hwnd", None),
+    (1, "nidevent"),
+    (1, "uelapse"),
+    (1, "lptimerfunc", None),
+)
+_SetTimer = _SET_TIMER_PROTOTYPE(
+    ("SetTimer", ctypes.windll.user32), _SET_TIMER_PARAM_FLAGS
+)
 _SetTimer.errcheck = _check_result
 
 # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-killtimer
-_KillTimer = ctypes.windll.user32.KillTimer
-_KillTimer.restype = wintypes.BOOL
-_KillTimer.argtypes = [wintypes.HWND, wintypes.UINT]
-
+_KILL_TIMER_PROTOTYPE = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, _UINT_PTR)
+_KILL_TIMER_PARAM_FLAGS = (
+    (1, "hwnd", None),
+    (1, "uidevent"),
+)
+_KillTimer = _KILL_TIMER_PROTOTYPE(
+    ("KillTimer", ctypes.windll.user32), _KILL_TIMER_PARAM_FLAGS
+)
 
 # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cogetapartmenttype
-_CoGetApartmentType = ctypes.windll.ole32.CoGetApartmentType
-_CoGetApartmentType.restype = ctypes.c_int
-_CoGetApartmentType.argtypes = [
+_CO_GET_APARTMENT_TYPE_PROTOTYPE = ctypes.WINFUNCTYPE(
+    ctypes.c_int,
     ctypes.POINTER(ctypes.c_int),
     ctypes.POINTER(ctypes.c_int),
-]
+)
+_CO_GET_APARTMENT_TYPE_PARAM_FLAGS = (
+    (1, "papttype", None),
+    (1, "paptqualifier", None),
+)
+_CoGetApartmentType = _CO_GET_APARTMENT_TYPE_PROTOTYPE(
+    ("CoGetApartmentType", ctypes.windll.ole32), _CO_GET_APARTMENT_TYPE_PARAM_FLAGS
+)
 _CoGetApartmentType.errcheck = _check_hresult
 
 _CO_E_NOTINITIALIZED = -2147221008
