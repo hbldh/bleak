@@ -341,22 +341,37 @@ macOS
 On macOS, special software is required to capture and view Bluetooth traffic.
 You will need to sign up for an Apple Developer account to obtain this software.
 
-1.  Go to `<https://developer.apple.com/download/more/>`_ and download *Additional
-    Tools for Xcode ...* where ... is the Xcode version corresponding to your macOS
-    version (e.g. 12 for Big Sur, 11 for Mojave, etc.).
+1.  Starting with macOS 14.5, you will need to download and install the Bluetooth
+    logging profile from the Apple develop `Profiles and Logs`_ page. Follow the
+    instruction provided in the link, then continue with the steps below.
 
-2.  Open the disk image and in the *Hardware* folder, double-click the *PacketLogger.app*
-    to run it.
+    .. tip:: After installing the ``Bluetooth_macOS.mobileconfig`` file, the
+             profile can be found in *System Settings* under *Privacy and Security*
+             > *Others* > *Profiles*. You have to go there to actually install
+             the profile. Then reboot your computer.
 
-3.  Click the *Clear* button in the toolbar to clear the old data.
+    If you have an older version of macOS, you can skip this step.
 
-4.  Run your Python script to reproduce the problem.
+2.  Go to the Apple developer `More Downloads`_ page and download *Additional
+    Tools for Xcode ...* where ... is the Xcode version corresponding to your
+    macOS version (the XCode version is generally one higher than the macOS
+    version, e.g. XCode 15 for macOS Sonoma 14).
 
-5.  Click the *Stop* button in the toolbar to stop the capture.
+3.  Open the disk image and in the *Hardware* folder, double-click the
+    *PacketLogger.app* to run it.
+
+4.  Click the *Clear* button in the toolbar to clear the old data.
+
+5.  Run your Python script to reproduce the problem.
+
+6.  Click the *Stop* button in the toolbar to stop the capture.
 
 .. tip:: The Bluetooth traffic can be viewed in the *PacketLogger.app* or it can
          be saved to a file and viewed in `Wireshark`_.
 
+.. _Profiles and Logs: https://developer.apple.com/bug-reporting/profiles-and-logs/?name=bluetooth&platform=macos
+
+.. _More Downloads: https://developer.apple.com/download/all/?q=additional%20tools%20for%20xcode
 
 Linux
 =====
