@@ -15,7 +15,6 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    Iterable,
     List,
     MutableMapping,
     NamedTuple,
@@ -926,7 +925,7 @@ class BlueZManager:
                 # devices that only advertise once and then go to sleep for a while.
                 elif interface == defs.DEVICE_INTERFACE:
                     self._run_advertisement_callbacks(
-                        obj_path, cast(Device1, unpacked_props), unpacked_props.keys()
+                        obj_path, cast(Device1, unpacked_props)
                     )
         elif message.member == "InterfacesRemoved":
             obj_path, interfaces = message.body
@@ -1003,7 +1002,7 @@ class BlueZManager:
                     device_path = message_path
 
                     self._run_advertisement_callbacks(
-                        device_path, cast(Device1, self_interface), changed.keys()
+                        device_path, cast(Device1, self_interface)
                     )
 
                     # handle device condition watchers
@@ -1035,9 +1034,7 @@ class BlueZManager:
                                     message_path, new_value
                                 )
 
-    def _run_advertisement_callbacks(
-        self, device_path: str, device: Device1, changed: Iterable[str]
-    ) -> None:
+    def _run_advertisement_callbacks(self, device_path: str, device: Device1) -> None:
         """
         Runs any registered advertisement callbacks.
 
