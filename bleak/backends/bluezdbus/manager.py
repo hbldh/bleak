@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import logging
 import os
+from collections import defaultdict
 from typing import (
     Any,
     Callable,
@@ -52,22 +53,6 @@ Args:
     arg0: The D-Bus object path of the device.
     arg1: The D-Bus properties of the device object.
 """
-
-
-class CallbackAndState(NamedTuple):
-    """
-    Encapsulates an :data:`AdvertisementCallback` and some state.
-    """
-
-    callback: AdvertisementCallback
-    """
-    The callback.
-    """
-
-    adapter_path: str
-    """
-    The D-Bus object path of the adapter associated with the callback.
-    """
 
 
 DevicePropertiesChangedCallback = Callable[[Optional[Any]], None]
@@ -193,7 +178,9 @@ class BlueZManager:
         # map of characteristic d-bus object paths to set of descriptor d-bus object paths
         self._descriptor_map: Dict[str, Set[str]] = {}
 
-        self._advertisement_callbacks: List[CallbackAndState] = []
+        self._advertisement_callbacks: defaultdict[str, List[AdvertisementCallback]] = (
+            defaultdict(list)
+        )
         self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
         self._condition_callbacks: Dict[str, Set[DeviceConditionCallback]] = {}
@@ -403,8 +390,7 @@ class BlueZManager:
             # error message.
             self._check_adapter(adapter_path)
 
-            callback_and_state = CallbackAndState(advertisement_callback, adapter_path)
-            self._advertisement_callbacks.append(callback_and_state)
+            self._advertisement_callbacks[adapter_path].append(advertisement_callback)
 
             device_removed_callback_and_state = DeviceRemovedCallbackAndState(
                 device_removed_callback, adapter_path
@@ -440,7 +426,9 @@ class BlueZManager:
                     # need to remove callbacks first, otherwise we get TxPower
                     # and RSSI properties removed during stop which causes
                     # incorrect advertisement data callbacks
-                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._advertisement_callbacks[adapter_path].remove(
+                        advertisement_callback
+                    )
                     self._device_removed_callbacks.remove(
                         device_removed_callback_and_state
                     )
@@ -477,7 +465,9 @@ class BlueZManager:
                 return stop
             except BaseException:
                 # if starting scanning failed, don't leak the callbacks
-                self._advertisement_callbacks.remove(callback_and_state)
+                self._advertisement_callbacks[adapter_path].remove(
+                    advertisement_callback
+                )
                 self._device_removed_callbacks.remove(device_removed_callback_and_state)
                 raise
 
@@ -511,8 +501,7 @@ class BlueZManager:
             # error message.
             self._check_adapter(adapter_path)
 
-            callback_and_state = CallbackAndState(advertisement_callback, adapter_path)
-            self._advertisement_callbacks.append(callback_and_state)
+            self._advertisement_callbacks[adapter_path].append(advertisement_callback)
 
             device_removed_callback_and_state = DeviceRemovedCallbackAndState(
                 device_removed_callback, adapter_path
@@ -555,7 +544,9 @@ class BlueZManager:
                     # need to remove callbacks first, otherwise we get TxPower
                     # and RSSI properties removed during stop which causes
                     # incorrect advertisement data callbacks
-                    self._advertisement_callbacks.remove(callback_and_state)
+                    self._advertisement_callbacks[adapter_path].remove(
+                        advertisement_callback
+                    )
                     self._device_removed_callbacks.remove(
                         device_removed_callback_and_state
                     )
@@ -579,7 +570,9 @@ class BlueZManager:
 
             except BaseException:
                 # if starting scanning failed, don't leak the callbacks
-                self._advertisement_callbacks.remove(callback_and_state)
+                self._advertisement_callbacks[adapter_path].remove(
+                    advertisement_callback
+                )
                 self._device_removed_callbacks.remove(device_removed_callback_and_state)
                 raise
 
@@ -1041,13 +1034,9 @@ class BlueZManager:
         Args:
             device_path: The D-Bus object path of the remote device.
             device: The current D-Bus properties of the device.
-            changed: A list of properties that have changed since the last call.
         """
-        for callback, adapter_path in self._advertisement_callbacks:
-            # filter messages from other adapters
-            if adapter_path != device["Adapter"]:
-                continue
-
+        adapter_path = device["Adapter"]
+        for callback in self._advertisement_callbacks[adapter_path]:
             callback(device_path, device.copy())
 
 

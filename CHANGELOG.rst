@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 -------
 * In bleak.backends.winrt.util the SetTimer, KillTimer and CoGetApartmentType functions define their own prototype and don't change ctypes' global state anymore
+* Improved performance of BlueZ backend when there are many adapters.
 
 `0.22.2`_ (2024-06-01)
 ======================
