@@ -11,9 +11,9 @@ jobs:
         name: "Format and lint"
         runs-on: ubuntu-latest
         steps:
-            -   uses: actions/checkout@v3
+            -   uses: actions/checkout@v4
             -   name: Set up Python
-                uses: actions/setup-python@v4
+                uses: actions/setup-python@v5
             -   name: Install development dependencies
                 run: pipx run poetry install --only docs,lint
             -   name: Check import sort with isort
