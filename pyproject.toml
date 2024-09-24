@@ -22,10 +22,10 @@ classifiers = [
 "Issues" =  "https://github.com/hbldh/bleak/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.13"
+python = ">=3.8,<3.14"
 async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
 typing-extensions = { version = ">=4.7.0", python = "<3.12" }
-pyobjc-core = { version = "^10.0", markers = "platform_system=='Darwin'" }
+pyobjc-core = { version = "^10.3", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = "^10.0", markers = "platform_system=='Darwin'" }
 pyobjc-framework-libdispatch = { version = "^10.0", markers = "platform_system=='Darwin'" }
 bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", python = "<3.12" }
