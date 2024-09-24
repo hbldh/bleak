@@ -14,6 +14,7 @@ Changed
 -------
 * In bleak.backends.winrt.util the SetTimer, KillTimer and CoGetApartmentType functions define their own prototype and don't change ctypes' global state anymore
 * Improved performance of BlueZ backend when there are many adapters.
+* Added support for Python 3.13.
 
 `0.22.2`_ (2024-06-01)
 ======================
