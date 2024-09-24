@@ -562,58 +562,62 @@ files = [
 
 [[package]]
 name = "pyobjc-framework-cocoa"
-version = "10.0"
+version = "10.3.1"
 description = "Wrappers for the Cocoa frameworks on macOS"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pyobjc-framework-Cocoa-10.0.tar.gz", hash = "sha256:723421eff4f59e4ca9a9bb8ec6dafbc0f778141236fa85a49fdd86732d58a74c"},
-    {file = "pyobjc_framework_Cocoa-10.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:80c22a8fc7f085746d9cd222adeca8fe6790e3e6ad7eed5fc70b32aa87c10adb"},
-    {file = "pyobjc_framework_Cocoa-10.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:0187cba228976a45f41116c74aab079b64bacb3ffc3c886a4bd8e472bf9be581"},
-    {file = "pyobjc_framework_Cocoa-10.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:a81dabdc40268591e3196087388e680c6570fed1b521df9b04733cb3ece0414e"},
-    {file = "pyobjc_framework_Cocoa-10.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:0a23db9ab99e338e1d8a268d873cc15408f78cec9946308393ca2241820c18b8"},
-    {file = "pyobjc_framework_Cocoa-10.0-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:a3c66fe56a5156a818fbf056c589f8140a5fdb1dcb1f1075cb34d3755474d900"},
-    {file = "pyobjc_framework_Cocoa-10.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:bf9020e85ead569021b15272dcd90207aab6c754093f520b11d4210a2efbdd06"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:4cb4f8491ab4d9b59f5187e42383f819f7a46306a4fa25b84f126776305291d1"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:5f31021f4f8fdf873b57a97ee1f3c1620dbe285e0b4eaed73dd0005eb72fd773"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:11b4e0bad4bbb44a4edda128612f03cdeab38644bbf174de0c13129715497296"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:de5e62e5ccf2871a94acf3bf79646b20ea893cc9db78afa8d1fe1b0d0f7cbdb0"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:6c5af24610ab639bd1f521ce4500484b40787f898f691b7a23da3339e6bc8b90"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:a7151186bb7805deea434fae9a4423335e6371d105f29e73cc2036c6779a9dbc"},
+    {file = "pyobjc_framework_Cocoa-10.3.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:743d2a1ac08027fd09eab65814c79002a1d0421d7c0074ffd1217b6560889744"},
+    {file = "pyobjc_framework_cocoa-10.3.1.tar.gz", hash = "sha256:1cf20714daaa986b488fb62d69713049f635c9d41a60c8da97d835710445281a"},
 ]
 
 [package.dependencies]
-pyobjc-core = ">=10.0"
+pyobjc-core = ">=10.3.1"
 
 [[package]]
 name = "pyobjc-framework-corebluetooth"
-version = "10.0"
+version = "10.3.1"
 description = "Wrappers for the framework CoreBluetooth on macOS"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pyobjc-framework-CoreBluetooth-10.0.tar.gz", hash = "sha256:dddc9020cd2ca008c7037c61026641fff5d91a608b9e3bda51d4ba6afbb04e3c"},
-    {file = "pyobjc_framework_CoreBluetooth-10.0-cp36-abi3-macosx_10_9_universal2.whl", hash = "sha256:5dc85f0acea4ec8fb59ed91f89e677133b0e5efab21fe14694328ddcdbdc22c1"},
-    {file = "pyobjc_framework_CoreBluetooth-10.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:155b2f9814970a07c602286ce19d3d3c3a812951a62b9f19aaa80475f9b49f05"},
-    {file = "pyobjc_framework_CoreBluetooth-10.0-cp36-abi3-macosx_11_0_universal2.whl", hash = "sha256:119c4747dcc8a1b9980b8bac4f2ffd90a3950b048b9fbf03e70656eaaaefe7d4"},
+    {file = "pyobjc_framework_CoreBluetooth-10.3.1-cp36-abi3-macosx_10_13_universal2.whl", hash = "sha256:c89ee6fba0ed359c46b4908a7d01f88f133be025bd534cbbf4fb9c183e62fc97"},
+    {file = "pyobjc_framework_CoreBluetooth-10.3.1-cp36-abi3-macosx_10_9_universal2.whl", hash = "sha256:2f261a386aa6906f9d4601d35ff71a13315dbca1a0698bf1f1ecfe3971de4648"},
+    {file = "pyobjc_framework_CoreBluetooth-10.3.1-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:5211df0da2e8be511d9a54a48505dd7af0c4d04546fe2027dd723801d633c6ba"},
+    {file = "pyobjc_framework_CoreBluetooth-10.3.1-cp36-abi3-macosx_11_0_universal2.whl", hash = "sha256:b8becd4e406be289a2d423611d3ad40730532a1f6728effb2200e68c9c04c3e8"},
+    {file = "pyobjc_framework_corebluetooth-10.3.1.tar.gz", hash = "sha256:dc5d326ab5541b8b68e7e920aa8363851e779cb8c33842f6cfeef4674cc62f94"},
 ]
 
 [package.dependencies]
-pyobjc-core = ">=10.0"
-pyobjc-framework-Cocoa = ">=10.0"
+pyobjc-core = ">=10.3.1"
+pyobjc-framework-Cocoa = ">=10.3.1"
 
 [[package]]
 name = "pyobjc-framework-libdispatch"
-version = "10.0"
+version = "10.3.1"
 description = "Wrappers for libdispatch on macOS"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pyobjc-framework-libdispatch-10.0.tar.gz", hash = "sha256:228adf364c895d2a0e8b08bd06f7a23cfbd8e82e9ea6cfdba73bdee0651a4e1f"},
-    {file = "pyobjc_framework_libdispatch-10.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:67fe10a671117fe7e8c35b7eaf8914084fbd0c64f3d635a1147782e3408dbc40"},
-    {file = "pyobjc_framework_libdispatch-10.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:386d53ffd2389c2494a806e3bad2d709ef5d597d1500cb643a817464c20ab8f8"},
-    {file = "pyobjc_framework_libdispatch-10.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:d2fbd247ebac8fa57bb0d7a2c4e769118c995bfd81bfc7f189a8ebe297399776"},
-    {file = "pyobjc_framework_libdispatch-10.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:66dc959837b898bdb83a85ed34c2c368d0d38aaed9883c3769d4d1ca1aad23d7"},
-    {file = "pyobjc_framework_libdispatch-10.0-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:c4a1e13172617916b894246b03579814f4e8151f2600403f4a799e4d4c7a032e"},
-    {file = "pyobjc_framework_libdispatch-10.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:a55a33fc71e385ff7a8c9f1d29276f44dc0f7ff5b0597d2fd769620438058152"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5543aea8acd53fb02bcf962b003a2a9c2bdacf28dc290c31a3d2de7543ef8392"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:3e0db3138aae333f0b87b42586bc016430a76638af169aab9cef6afee4e5f887"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:b209dbc9338cd87e053ede4d782b8c445bcc0b9a3d0365a6ffa1f9cd5143c301"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:a74e62314376dc2d34bc5d4a86cedaf5795786178ebccd0553c58e8fa73400a3"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:8e8fb27ac86d48605eb2107ac408ed8de281751df81f5430fe66c8228d7626b8"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:0a7a19afef70c98b3b527fb2c9adb025444bcb50f65c8d7b949f1efb51bde577"},
+    {file = "pyobjc_framework_libdispatch-10.3.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:109044cddecb3332cbb75f14819cd01b98aacfefe91204c776b491eccc58a112"},
+    {file = "pyobjc_framework_libdispatch-10.3.1.tar.gz", hash = "sha256:f5c3475498cb32f54d75e21952670e4a32c8517fb2db2e90869f634edc942446"},
 ]
 
 [package.dependencies]
-pyobjc-core = ">=10.0"
+pyobjc-core = ">=10.3.1"
+pyobjc-framework-Cocoa = ">=10.3.1"
 
 [[package]]
 name = "pytest"
@@ -1156,4 +1160,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.14"
-content-hash = "a9ea43323e8266bfd181f8b3748413bbc8eafd843bda6f8daaaae286579b3bbd"
+content-hash = "d6a83c8e26778000e1189a9497dbc4adba6b439c489b4ee59be66a412d68aac2"
