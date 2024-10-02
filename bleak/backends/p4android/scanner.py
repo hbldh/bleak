@@ -12,7 +12,6 @@ else:
     from asyncio import timeout as async_timeout
 
 from android.broadcast import BroadcastReceiver
-from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
 from ...exc import BleakError
@@ -72,30 +71,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         if self.__javascanner is None:
             if self.__callback is None:
                 self.__callback = _PythonScanCallback(self, loop)
-
-            permission_acknowledged = loop.create_future()
-
-            def handle_permissions(permissions, grantResults):
-                if any(grantResults):
-                    loop.call_soon_threadsafe(
-                        permission_acknowledged.set_result, grantResults
-                    )
-                else:
-                    loop.call_soon_threadsafe(
-                        permission_acknowledged.set_exception(
-                            BleakError("User denied access to " + str(permissions))
-                        )
-                    )
-
-            request_permissions(
-                [
-                    Permission.ACCESS_FINE_LOCATION,
-                    Permission.ACCESS_COARSE_LOCATION,
-                    "android.permission.ACCESS_BACKGROUND_LOCATION",
-                ],
-                handle_permissions,
-            )
-            await permission_acknowledged
 
             self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
             if self.__adapter is None:
