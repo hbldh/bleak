@@ -325,6 +325,15 @@ class BleakScanner:
 
         return scanner.discovered_devices
 
+    async def request_permissions(self, **kwargs) -> None:
+        """
+        Request permissions for the BleakScanner.
+
+        Args:
+            **kwargs: Additional arguments to be passed to the :class:`BleakScanner` backend.
+        """
+        await self._backend.request_permissions(**kwargs)
+
     @property
     def discovered_devices(self) -> List[BLEDevice]:
         """
