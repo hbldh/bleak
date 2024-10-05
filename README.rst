@@ -2,11 +2,9 @@
 bleak
 =====
 
-.. figure:: https://raw.githubusercontent.com/hbldh/bleak/master/Bleak_logo.png
+.. image:: https://raw.githubusercontent.com/hbldh/bleak/master/Bleak_logo2.png
     :target: https://github.com/hbldh/bleak
     :alt: Bleak Logo
-    :scale: 50%
-
 
 .. image:: https://github.com/hbldh/bleak/workflows/Build%20and%20Test/badge.svg
     :target: https://github.com/hbldh/bleak/actions?query=workflow%3A%22Build+and+Test%22
