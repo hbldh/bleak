@@ -41,7 +41,9 @@ class ExampleApp(App):
         while self.running:
             try:
                 self.line("scanning")
-                scanned_devices = await bleak.BleakScanner.discover(1)
+                scanner = bleak.BleakScanner()
+                await scanner.request_permissions()
+                scanned_devices = scanner.discover(1)
                 self.line("scanned", True)
 
                 if len(scanned_devices) == 0:

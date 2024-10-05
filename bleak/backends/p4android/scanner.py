@@ -13,7 +13,7 @@ else:
 
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
-from jnius import cast, java_method
+from jnius import cast, java_method, autoclass
 
 from ...exc import BleakError
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
@@ -61,6 +61,41 @@ class BleakScannerP4Android(BaseBleakScanner):
     def __del__(self) -> None:
         self.__stop()
 
+    async def request_permissions(self, **kwargs) -> None:
+        loop = asyncio.get_running_loop()
+        permission_acknowledged = loop.create_future()
+        def handle_permissions(permissions, grantResults):
+            if any(grantResults):
+                loop.call_soon_threadsafe(
+                    permission_acknowledged.set_result, grantResults
+                )
+            else:
+                loop.call_soon_threadsafe(
+                    permission_acknowledged.set_exception(
+                        BleakError("User denied access to " + str(permissions))
+                    )
+                )
+        if not kwargs.get("permissions"):
+            permissions = [
+                Permission.ACCESS_FINE_LOCATION,
+                Permission.ACCESS_COARSE_LOCATION,
+                Permission.ACCESS_BACKGROUND_LOCATION,
+            ]
+            VERSION = autoclass('android.os.Build$VERSION')
+            if VERSION.SDK_INT >= 31:
+                permissions.extend([
+                    Permission.BLUETOOTH_SCAN,
+                    Permission.BLUETOOTH_CONNECT,
+                ])
+        else:
+            permissions = kwargs.get("permissions")
+
+        request_permissions(
+                permissions,
+                handle_permissions,
+            )
+        await permission_acknowledged
+
     async def start(self) -> None:
         if BleakScannerP4Android.__scanner is not None:
             raise BleakError("A BleakScanner is already scanning on this adapter.")
@@ -72,30 +107,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         if self.__javascanner is None:
             if self.__callback is None:
                 self.__callback = _PythonScanCallback(self, loop)
-
-            permission_acknowledged = loop.create_future()
-
-            def handle_permissions(permissions, grantResults):
-                if any(grantResults):
-                    loop.call_soon_threadsafe(
-                        permission_acknowledged.set_result, grantResults
-                    )
-                else:
-                    loop.call_soon_threadsafe(
-                        permission_acknowledged.set_exception(
-                            BleakError("User denied access to " + str(permissions))
-                        )
-                    )
-
-            request_permissions(
-                [
-                    Permission.ACCESS_FINE_LOCATION,
-                    Permission.ACCESS_COARSE_LOCATION,
-                    "android.permission.ACCESS_BACKGROUND_LOCATION",
-                ],
-                handle_permissions,
-            )
-            await permission_acknowledged
 
             self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
             if self.__adapter is None:
