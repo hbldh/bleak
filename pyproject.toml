@@ -42,6 +42,7 @@ dbus-fast = { version = ">=1.83.0, < 3", markers = "platform_system == 'Linux'" 
 [tool.poetry.group.docs.dependencies]
 Sphinx = "^5.1.1"
 sphinx-rtd-theme = "^1.0.0"
+tomli = "^2.0.1"
 
 [tool.poetry.group.lint.dependencies]
 black = ">=24.3,<25.0"
