@@ -1,10 +1,6 @@
 =====
-bleak
+Bleak
 =====
-
-.. image:: https://raw.githubusercontent.com/hbldh/bleak/master/Bleak_logo2.png
-    :target: https://github.com/hbldh/bleak
-    :alt: Bleak Logo
 
 .. image:: https://github.com/hbldh/bleak/workflows/Build%20and%20Test/badge.svg
     :target: https://github.com/hbldh/bleak/actions?query=workflow%3A%22Build+and+Test%22
@@ -23,6 +19,12 @@ bleak
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
+
+.. container::
+
+    .. image:: Bleak_logo2.png
+        :target: https://github.com/hbldh/bleak
+        :alt: Bleak Logo
 
 Bleak is an acronym for Bluetooth Low Energy platform Agnostic Klient.
 
