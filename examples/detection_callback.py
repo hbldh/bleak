@@ -30,9 +30,8 @@ async def main(args: argparse.Namespace):
 
     while True:
         logger.info("(re)starting scanner")
-        await scanner.start()
-        await asyncio.sleep(5.0)
-        await scanner.stop()
+        async with scanner:
+            await asyncio.sleep(5.0)
 
 
 if __name__ == "__main__":

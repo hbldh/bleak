@@ -10,6 +10,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`0.22.3`_ (2024-10-05)
+======================
+
+Changed
+-------
+* Don't change ctypes' global state ``bleak.backends.winrt.util``.
+* Improved performance of BlueZ backend when there are many adapters.
+* Added support for Python 3.13.
+
 `0.22.2`_ (2024-06-01)
 ======================
 
@@ -1038,7 +1047,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.2...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v0.22.3...develop
+.. _0.22.3: https://github.com/hbldh/bleak/compare/v0.22.2...v0.22.3
 .. _0.22.2: https://github.com/hbldh/bleak/compare/v0.22.1...v0.22.2
 .. _0.22.1: https://github.com/hbldh/bleak/compare/v0.22.0...v0.22.1
 .. _0.22.0: https://github.com/hbldh/bleak/compare/v0.21.1...v0.22.0

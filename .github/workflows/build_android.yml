@@ -7,11 +7,11 @@ jobs:
         name: "Build Android"
         runs-on: ubuntu-22.04
         steps:
-            -   uses: actions/checkout@v3
+            -   uses: actions/checkout@v4
             -   name: Install dependencies
                 run: pip install buildozer cython
             -   name: Cache buildozer files
-                uses: actions/cache@v3
+                uses: actions/cache@v4
                 id: buildozer-cache
                 with:
                     path: |

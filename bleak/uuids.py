@@ -1066,7 +1066,7 @@ uuid128_dict: Dict[str, str] = {
     "e95d9775-251d-470a-a062-fa1922dfa9a8": "MicroBit Event Data",
     "e95d23c4-251d-470a-a062-fa1922dfa9a8": "MicroBit Client Requirements",
     "e95d5404-251d-470a-a062-fa1922dfa9a8": "MicroBit Client Events",
-    "e95d93b0-251d-470a-a062-fa1922dfa9a8": "MicroBit DFU Control Service" "",
+    "e95d93b0-251d-470a-a062-fa1922dfa9a8": "MicroBit DFU Control Service",
     "e95d93b1-251d-470a-a062-fa1922dfa9a8": "MicroBit DFU Control",
     "e95d6100-251d-470a-a062-fa1922dfa9a8": "MicroBit Temperature Service",
     "e95d1b25-251d-470a-a062-fa1922dfa9a8": "MicroBit Temperature Period",
