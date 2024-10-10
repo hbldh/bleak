@@ -768,7 +768,7 @@ class BleakClient:
 
             MY_CHAR_UUID = "1234"
             ...
-            await client.write_gatt_char(MY_CHAR_UUID, b"\x00\x01\x02\x03", response=True)
+            await client.write_gatt_char(MY_CHAR_UUID, b"\\x00\\x01\\x02\\x03", response=True)
         """
         if isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = char_specifier
