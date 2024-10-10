@@ -726,7 +726,7 @@ class BleakClient:
         data: Buffer,
         response: bool = None,
     ) -> None:
-        """
+        r"""
         Perform a write operation on the specified GATT characteristic.
 
         There are two possible kinds of writes. *Write with response* (sometimes
