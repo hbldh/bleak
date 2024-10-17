@@ -3,10 +3,14 @@
 import asyncio
 import logging
 import warnings
+from typing import List, Optional
 
+from android.permissions import Permission
+from android.permissions import request_permissions as request_android_permissions
 from jnius import PythonJavaClass
 
 from ...exc import BleakError
+from . import defs
 
 logger = logging.getLogger(__name__)
 
@@ -92,3 +96,34 @@ class AsyncJavaCallbacks(PythonJavaClass):
                 else:
                     # send it on the event thread
                     raise exception
+
+async def request_permissions(permissions: Optional[List[str]] = None) -> None:
+    loop = asyncio.get_running_loop()
+    permission_acknowledged = loop.create_future()
+    def handle_permissions(permissions, grantResults):
+        if any(grantResults):
+            loop.call_soon_threadsafe(
+                permission_acknowledged.set_result, grantResults
+            )
+        else:
+            loop.call_soon_threadsafe(
+                permission_acknowledged.set_exception(
+                    BleakError("User denied access to " + str(permissions))
+                )
+            )
+    if permissions is None:
+        permissions = [
+            Permission.ACCESS_FINE_LOCATION,
+            Permission.ACCESS_COARSE_LOCATION,
+            Permission.ACCESS_BACKGROUND_LOCATION,
+        ]
+        if defs.VERSION.SDK_INT >= 31:
+            permissions.extend([
+                Permission.BLUETOOTH_SCAN,
+                Permission.BLUETOOTH_CONNECT,
+            ])
+    request_android_permissions(
+            permissions,
+            handle_permissions,
+        )
+    await permission_acknowledged
