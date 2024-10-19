@@ -125,10 +125,10 @@ Linux Bugs
 Occasional "Not connected" errors on Raspberry Pi
 =================================================
 
-If you are using a Raspberry Pi and are seeing occasional "Not connected" errors,
-also manifesting as HCI error 0x3e and BlueZ error "Software caused connection abort",
-when trying to connect to a device, it may be due to wifi interference on the chip
-level.
+If you are using the built in WiFi/Bluetooth module on a Raspberry Pi and and are seeing occasional
+"Not connected" errors, also manifesting as HCI error 0x3e and BlueZ error "Software caused
+connection abort", when trying to connect to a device, it may be due to wifi interference on
+the chip level.
 
 As a test the wifi interface can be disabled using either
 
