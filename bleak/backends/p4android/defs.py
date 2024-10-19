@@ -36,6 +36,7 @@ PythonBluetoothGattCallback = autoclass(
     BLEAK_JNI_NAMESPACE + ".PythonBluetoothGattCallback"
 )
 
+VERSION = autoclass('android.os.Build$VERSION')
 
 class ScanFailed(enum.IntEnum):
     ALREADY_STARTED = ScanCallback.SCAN_FAILED_ALREADY_STARTED

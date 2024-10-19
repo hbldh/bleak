@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import bleak
 from kivy.app import App
@@ -38,6 +39,9 @@ class ExampleApp(App):
         self.running = False
 
     async def example(self):
+        if os.environ.get("P4A_BOOTSTRAP") is not None:
+            from bleak.backends.p4android.utils import request_permissions
+            await request_permissions()
         while self.running:
             try:
                 self.line("scanning")
