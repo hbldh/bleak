@@ -98,6 +98,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: Dict[str, NotifyCallback] = {}
+        self._kwargs = kwargs
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -179,7 +180,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     callback = self._notification_callbacks.get(char_path)
 
                     if callback:
-                        callback(bytearray(value))
+                        callback(bytearray(value), **self._kwargs)
 
                 watcher = manager.add_device_watcher(
                     self._device_path, on_connected_changed, on_value_changed
