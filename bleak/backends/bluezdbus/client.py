@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 import warnings
+from contextlib import AsyncExitStack
 from typing import Callable, Dict, Optional, Set, Union, cast
 from uuid import UUID
 
@@ -148,7 +149,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         manager = await get_global_bluez_manager()
 
-        async with async_timeout(timeout):
+        async with async_timeout(timeout), AsyncExitStack() as stack:
             while True:
                 # Each BLE connection session needs a new D-Bus connection to avoid a
                 # BlueZ quirk where notifications are automatically enabled on reconnect.
@@ -157,6 +158,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     negotiate_unix_fd=True,
                     auth=get_dbus_authenticator(),
                 ).connect()
+
+                stack.callback(self._cleanup_all)
 
                 def on_connected_changed(connected: bool) -> None:
                     if not connected:
@@ -192,127 +195,117 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     asyncio.Event()
                 )
 
-                try:
-                    try:
-                        #
-                        # The BlueZ backend does not disconnect devices when the
-                        # application closes or crashes. This can cause problems
-                        # when trying to reconnect to the same device. To work
-                        # around this, we check if the device is already connected.
-                        #
-                        # For additional details see https://github.com/bluez/bluez/issues/89
-                        #
-                        if manager.is_connected(self._device_path):
-                            logger.debug(
-                                'skipping calling "Connect" since %s is already connected',
-                                self._device_path,
-                            )
-                        else:
-                            logger.debug(
-                                "Connecting to BlueZ path %s", self._device_path
-                            )
-                            reply = await self._bus.call(
+                # this effectively cancels the disconnect monitor in case the event
+                # was not triggered by a D-Bus callback
+                stack.callback(local_disconnect_monitor_event.set)
+
+                async def disconnect_device() -> None:
+                    # Calling Disconnect cancels any pending connect request. Also,
+                    # if connection was successful but get_services() raises (e.g.
+                    # because task was cancelled), then we still need to disconnect
+                    # before passing on the exception.
+                    if self._bus:
+                        # If disconnected callback already fired, this will be a no-op
+                        # since self._bus will be None and the _cleanup_all call will
+                        # have already disconnected.
+                        try:
+                            disconnect_reply = await self._bus.call(
                                 Message(
                                     destination=defs.BLUEZ_SERVICE,
                                     interface=defs.DEVICE_INTERFACE,
                                     path=self._device_path,
-                                    member="Connect",
+                                    member="Disconnect",
                                 )
                             )
-
-                            assert reply is not None
-
-                            if reply.message_type == MessageType.ERROR:
-                                # This error is often caused by RF interference
-                                # from other Bluetooth or Wi-Fi devices. In many
-                                # cases, retrying will connect successfully.
-                                # Note: this error was added in BlueZ 6.62.
-                                if (
-                                    reply.error_name == "org.bluez.Error.Failed"
-                                    and reply.body
-                                    and reply.body[0] == "le-connection-abort-by-local"
-                                ):
-                                    logger.debug(
-                                        "retry due to le-connection-abort-by-local"
-                                    )
-
-                                    # When this error occurs, BlueZ actually
-                                    # connected so we get "Connected" property changes
-                                    # that we need to wait for before attempting
-                                    # to connect again.
-                                    await local_disconnect_monitor_event.wait()
-
-                                    # Jump way back to the `while True:`` to retry.
-                                    continue
-
-                                if reply.error_name == ErrorType.UNKNOWN_OBJECT.value:
-                                    raise BleakDeviceNotFoundError(
-                                        self.address,
-                                        f"Device with address {self.address} was not found. It may have been removed from BlueZ when scanning stopped.",
-                                    )
-
-                            assert_reply(reply)
-
-                        self._is_connected = True
-
-                        # Create a task that runs until the device is disconnected.
-                        task = asyncio.create_task(
-                            self._disconnect_monitor(
-                                self._bus,
-                                self._device_path,
-                                local_disconnect_monitor_event,
-                            )
-                        )
-                        _background_tasks.add(task)
-                        task.add_done_callback(_background_tasks.discard)
-
-                        #
-                        # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
-                        # is True.
-                        #
-                        await self.get_services(
-                            dangerous_use_bleak_cache=dangerous_use_bleak_cache
-                        )
-
-                        return True
-                    except BaseException:
-                        # Calling Disconnect cancels any pending connect request. Also,
-                        # if connection was successful but get_services() raises (e.g.
-                        # because task was cancelled), the we still need to disconnect
-                        # before passing on the exception.
-                        if self._bus:
-                            # If disconnected callback already fired, this will be a no-op
-                            # since self._bus will be None and the _cleanup_all call will
-                            # have already disconnected.
                             try:
-                                reply = await self._bus.call(
-                                    Message(
-                                        destination=defs.BLUEZ_SERVICE,
-                                        interface=defs.DEVICE_INTERFACE,
-                                        path=self._device_path,
-                                        member="Disconnect",
-                                    )
-                                )
-                                try:
-                                    assert_reply(reply)
-                                except BleakDBusError as e:
-                                    # if the object no longer exists, then we know we
-                                    # are disconnected for sure, so don't need to log a
-                                    # warning about it
-                                    if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
-                                        raise
-                            except Exception as e:
-                                logger.warning(
-                                    f"Failed to cancel connection ({self._device_path}): {e}"
-                                )
+                                assert_reply(disconnect_reply)
+                            except BleakDBusError as e:
+                                # if the object no longer exists, then we know we
+                                # are disconnected for sure, so don't need to log a
+                                # warning about it
+                                if e.dbus_error != ErrorType.UNKNOWN_OBJECT.value:
+                                    raise
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to cancel connection ({self._device_path}): {e}"
+                            )
 
-                        raise
-                except BaseException:
-                    # this effectively cancels the disconnect monitor in case the event
-                    # was not triggered by a D-Bus callback
-                    local_disconnect_monitor_event.set()
-                    self._cleanup_all()
-                    raise
+                stack.push_async_callback(disconnect_device)
+
+                # The BlueZ backend does not disconnect devices when the
+                # application closes or crashes. This can cause problems
+                # when trying to reconnect to the same device. To work
+                # around this, we check if the device is already connected.
+                #
+                # For additional details see https://github.com/bluez/bluez/issues/89
+                if manager.is_connected(self._device_path):
+                    logger.debug(
+                        'skipping calling "Connect" since %s is already connected',
+                        self._device_path,
+                    )
+                else:
+                    logger.debug("Connecting to BlueZ path %s", self._device_path)
+                    reply = await self._bus.call(
+                        Message(
+                            destination=defs.BLUEZ_SERVICE,
+                            interface=defs.DEVICE_INTERFACE,
+                            path=self._device_path,
+                            member="Connect",
+                        )
+                    )
+
+                    assert reply is not None
+
+                    if reply.message_type == MessageType.ERROR:
+                        # This error is often caused by RF interference
+                        # from other Bluetooth or Wi-Fi devices. In many
+                        # cases, retrying will connect successfully.
+                        # Note: this error was added in BlueZ 6.62.
+                        if (
+                            reply.error_name == "org.bluez.Error.Failed"
+                            and reply.body
+                            and reply.body[0] == "le-connection-abort-by-local"
+                        ):
+                            logger.debug("retry due to le-connection-abort-by-local")
+
+                            # When this error occurs, BlueZ actually
+                            # connected so we get "Connected" property changes
+                            # that we need to wait for before attempting
+                            # to connect again.
+                            await local_disconnect_monitor_event.wait()
+
+                            # Jump way back to the `while True:`` to retry.
+                            continue
+
+                        if reply.error_name == ErrorType.UNKNOWN_OBJECT.value:
+                            raise BleakDeviceNotFoundError(
+                                self.address,
+                                f"Device with address {self.address} was not found. It may have been removed from BlueZ when scanning stopped.",
+                            )
+
+                    assert_reply(reply)
+
+                self._is_connected = True
+
+                # Create a task that runs until the device is disconnected.
+                task = asyncio.create_task(
+                    self._disconnect_monitor(
+                        self._bus,
+                        self._device_path,
+                        local_disconnect_monitor_event,
+                    )
+                )
+                _background_tasks.add(task)
+                task.add_done_callback(_background_tasks.discard)
+
+                # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
+                # is True.
+                await self.get_services(
+                    dangerous_use_bleak_cache=dangerous_use_bleak_cache
+                )
+
+                stack.pop_all()
+                return True
 
     @staticmethod
     async def _disconnect_monitor(
