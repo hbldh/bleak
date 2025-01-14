@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled.
+
 `0.22.3`_ (2024-10-05)
 ======================
 
