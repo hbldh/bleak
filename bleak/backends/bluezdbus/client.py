@@ -436,6 +436,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean regarding success of pairing.
 
         """
+        if self._bus is None:
+            self._bus = await MessageBus(
+                bus_type=BusType.SYSTEM, negotiate_unix_fd=True
+            ).connect()
+
         # See if it is already paired.
         reply = await self._bus.call(
             Message(
