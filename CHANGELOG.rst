@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* made response argument of class BleakClient explicitly optional
+
 `0.22.3`_ (2024-10-05)
 ======================
 
