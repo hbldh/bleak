@@ -191,7 +191,7 @@ class BaseBleakClient(abc.ABC):
         self,
         characteristic: BleakGATTCharacteristic,
         data: Buffer,
-        response: bool,
+        response: Optional[bool],
     ) -> None:
         """
         Perform a write operation on the specified GATT characteristic.

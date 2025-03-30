@@ -819,7 +819,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         data: Buffer,
-        response: bool,
+        response: Optional[bool],
     ) -> None:
         if not self.is_connected:
             raise BleakError("Not connected")

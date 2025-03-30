@@ -370,7 +370,7 @@ class BleakClientP4Android(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         data: bytearray,
-        response: bool,
+        response: Optional[bool],
     ) -> None:
         if response:
             characteristic.obj.setWriteType(
