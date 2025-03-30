@@ -1,7 +1,7 @@
 Android backend
 ===============
 
-For an example of building an android bluetooth app, see 
+For an example of building an android bluetooth app, see
 `the example folder <https://github.com/hbldh/bleak/tree/develop/examples/kivy>`_
 and its accompanying README file.
 
