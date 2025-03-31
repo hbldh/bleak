@@ -758,8 +758,8 @@ class BleakClient:
             response:
                 If ``True``, a write-with-response operation will be used. If
                 ``False``, a write-without-response operation will be used.
-                For legacy reasons, if omitted or ``None`` the "write with response" operation
-                will be used, if allowed by the characteristic, since it is the more reliable write.
+                If omitted or ``None``, the "best" operation will be used
+                based on the reported properties of the characteristic.
 
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
