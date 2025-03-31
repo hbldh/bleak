@@ -320,7 +320,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         data: Buffer,
-        response: Optional[bool],
+        response: bool,
     ) -> None:
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         await self._delegate.write_characteristic(

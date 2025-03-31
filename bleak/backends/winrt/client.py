@@ -888,7 +888,7 @@ class BleakClientWinRT(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         data: Buffer,
-        response: Optional[bool],
+        response: bool,
     ) -> None:
         if not self.is_connected:
             raise BleakError("Not connected")
