@@ -12,7 +12,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Changed
 -------
-* made response argument of class BleakClient explicitly optional
+* Made `response` argument of class `BleakClient.write_gatt_char()` explicitly optional. #1730
+* Deprecated omitting the `response` argument.
 
 `0.22.3`_ (2024-10-05)
 ======================
