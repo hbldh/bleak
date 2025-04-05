@@ -63,7 +63,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         *,
         cb: CBScannerArgs,
-        **kwargs
+        **kwargs,
     ):
         super(BleakScannerCoreBluetooth, self).__init__(
             detection_callback, service_uuids
