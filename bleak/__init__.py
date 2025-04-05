@@ -738,10 +738,6 @@ class BleakClient:
         Consult the device's documentation or inspect the properties of the
         characteristic to find out which kind of writes are supported.
 
-        .. tip:: Explicit is better than implicit. Best practice is to always
-            include an explicit ``response=True`` or ``response=False``
-            when calling this method.
-
         Args:
             char_specifier:
                 The characteristic to write to, specified by either integer
@@ -758,11 +754,14 @@ class BleakClient:
             response:
                 If ``True``, a write-with-response operation will be used. If
                 ``False``, a write-without-response operation will be used.
-                If omitted or ``None``, the "best" operation will be used
-                based on the reported properties of the characteristic.
+                Omitting the argument is deprecated and may raise a warning.
 
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
+
+        .. versionchanged:: unreleased
+            Omitting the ``response=`` argument is deprecated and may be required
+            in a future release.
 
         Example::
 
