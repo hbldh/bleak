@@ -5,7 +5,7 @@ description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dynamic = ["classifiers", "dependencies"]
 
 [project.urls]
@@ -26,21 +26,20 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.14"
 async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
 typing-extensions = { version = ">=4.7.0", python = "<3.12" }
 pyobjc-core = { version = "^10.3", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = "^10.3", markers = "platform_system=='Darwin'" }
 pyobjc-framework-libdispatch = { version = "^10.3", markers = "platform_system=='Darwin'" }
 bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", python = "<3.12" }
-"winrt-runtime" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Enumeration" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Foundation" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Foundation.Collections" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Storage.Streams" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
+"winrt-runtime" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Devices.Bluetooth" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Devices.Enumeration" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Foundation" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Foundation.Collections" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
+"winrt-Windows.Storage.Streams" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12,<3.14" }
 dbus-fast = { version = ">=1.83.0, < 3", markers = "platform_system == 'Linux'" }
 
 [tool.poetry.group.docs.dependencies]
