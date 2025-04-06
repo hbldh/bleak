@@ -232,47 +232,58 @@ toml = ["tomli"]
 
 [[package]]
 name = "dbus-fast"
-version = "2.0.0"
+version = "2.44.1"
 description = "A faster version of dbus-next"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.9"
 groups = ["main"]
 markers = "platform_system == \"Linux\""
 files = [
-    {file = "dbus_fast-2.0.0-cp310-cp310-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:558748ce71696af21414b44119c4cf9d8aca1f3d7ebb493a9f4723e95dd71da1"},
-    {file = "dbus_fast-2.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5404cbd9c50075f18aa1e412c354fd4c8ab8d4b824599ded1302231acc30990e"},
-    {file = "dbus_fast-2.0.0-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:804004c552b271d9dc5709934ebeeeefce763fe3081f793ea163518fd1848092"},
-    {file = "dbus_fast-2.0.0-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:6030b22985caa030a5f873dfa8aee556506cdcb47ffdae85cf250ce2b360a11f"},
-    {file = "dbus_fast-2.0.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:cfeddf01c8e57be89cec50d0b978a8307e1ad8402bce162b58467931e9ad6596"},
-    {file = "dbus_fast-2.0.0-cp311-cp311-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:ec7ddb797f1c92a3089de444bb422aa749f845affae44527310d322b0c48ea65"},
-    {file = "dbus_fast-2.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eea7a2730bf7490cf50950ddf0872a5cc61c6e557bf92320f15178e7c9e9aff9"},
-    {file = "dbus_fast-2.0.0-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:7a72d03edae8269476aa6af11744871281f6e1b0b6d8f065ef98047c03ffa464"},
-    {file = "dbus_fast-2.0.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:34c418b322f47be0313535505915df0fd5cff9ffd899d0be87edf2830cc1d339"},
-    {file = "dbus_fast-2.0.0-cp312-cp312-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:9a7005db366adf01e871a8071437218fe27fe067554c44ca3d4b389769dbbc76"},
-    {file = "dbus_fast-2.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ef8a64d5e853b0accc379dc4c6bf1b395227834adc705fa78d3417f2e09cdac2"},
-    {file = "dbus_fast-2.0.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:1aa133f0a70ad83ad8dfcde6ac8684e3492404c8ccc0080695855e4c2973f355"},
-    {file = "dbus_fast-2.0.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:45057e9f6984ad3298c6ce4526022ce432ca44a78ff05547bac20028e9290129"},
-    {file = "dbus_fast-2.0.0-cp37-cp37m-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:3dc584fe6c87aa4db3b4d938795f4d70bdadaaffa8ca4967c4a68f1151f36243"},
-    {file = "dbus_fast-2.0.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3cb7027302584377c97bf6441d4ca3d35300cc3d0b49b407165eee20796d2f04"},
-    {file = "dbus_fast-2.0.0-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:855f8c76cb227fc1745bf43f40899898be19ea2dc8b120e86c55f26eac07e541"},
-    {file = "dbus_fast-2.0.0-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:a73cf139c7c5014620186fec64d749ea566656ad4a78e4854bceff999acdb916"},
-    {file = "dbus_fast-2.0.0-cp38-cp38-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:2ebe6975fc24455b672e59c4a26476f3e5e9d25350ffc7941127cf3ce23df79e"},
-    {file = "dbus_fast-2.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:77fe92d8588f18fcfeb5773fb8f541d1ea0064347e95a12cfe7f2d0913f4d3e9"},
-    {file = "dbus_fast-2.0.0-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:cc21cd1adf3aa3be205f2ee027d0d3d5b73a809de59c48027d87434309dfddde"},
-    {file = "dbus_fast-2.0.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:a4db0946a8b7129a573b9fc01b70107f51db2fbeb8aba8409d75edf59e525b6e"},
-    {file = "dbus_fast-2.0.0-cp39-cp39-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:83af9ed1479e733ff1d5bcedde1d689d02ff746ef587bc3e9aa243b7a464a0c3"},
-    {file = "dbus_fast-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2f5c93343b580be44caa83271331e45aee0ce329461f132a1be581679cddf6c5"},
-    {file = "dbus_fast-2.0.0-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:7779a91aa5e1b0811658d672ae36d0a66aa1d2e693a113713ef1f4e769913e67"},
-    {file = "dbus_fast-2.0.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:3a0d5c6e9b874bf2ab509d9c5116f1d0067fbf48e72689c9eecca2de0939ec67"},
-    {file = "dbus_fast-2.0.0-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:4ed0dce64aa6ecf0076524942184cc7ca50166c67930eb0467989ca5d5c4cfa1"},
-    {file = "dbus_fast-2.0.0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e515ed03adc94a76caf12ce93bf53539ae8b9e2960d0fc329e258249a0767a15"},
-    {file = "dbus_fast-2.0.0-pp37-pypy37_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:4efb676f5c577853ea1b45ac88fa6c799504b651138926e8714e7e2b40b848c7"},
-    {file = "dbus_fast-2.0.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:29d7b559d780fc19b5250b8358e43c557227e36bacb27c3cae40c44d24589b5e"},
-    {file = "dbus_fast-2.0.0-pp38-pypy38_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:683fbd87f76099fa767a01c7e6a98f0214a8746f4a83aee6b57adec23ae2948f"},
-    {file = "dbus_fast-2.0.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8df17f12c8d32e0cd0f32ff9691b9dcc1fb6024750de62f23c1c571256cbe87d"},
-    {file = "dbus_fast-2.0.0-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:1bb1d8c582f53c0051b9f8ffaceb1b01e0e3fb2acd5a80a70c3a4b21488fe4da"},
-    {file = "dbus_fast-2.0.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a3552250763864f285899c1ef0153a58bf0e1fe5644e7dc43772132890300cbd"},
-    {file = "dbus_fast-2.0.0.tar.gz", hash = "sha256:bb8bfdc01d50be88598f58bab2e1dea72b0730e026b3c39260dbf8f6c64b88bd"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c78a004ba43aeaf203a19169d2b4be238375905645999da30cb0da730df80cf2"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:65a634286651398f3f1326e8200fc54289d52c2c00249d29cacfc691660a5da1"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:0c4a128f8b29941307fc5722f37a1bb87ddcf733188d917ab374d9da0c6e1ce7"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:adaf459fbce22a63d3578f3ec782c6978edf975eb06d71fb5b7a690496cf6bbe"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:de871cf722c436bdcceb96b2a3af7084e1fa468f7916ae278ec8ec49a6fa7eef"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:b40863de172031bcc02f54c6f05cccb0b882dc2e1b09e11314a8ccf38c558760"},
+    {file = "dbus_fast-2.44.1-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:8b7ae16555df6b56d3befcc51e036779ef47c0e954fdb9fb0821ac25212aefe9"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:a220a28e88062a2548f0c6da9eb15fb7e3af70eae56729fc3795ce3e3fba057d"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4ec5db912bd4cfeadf7134163d6dde684271cd44cf26e3b4720107f3de406623"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:6ad99f626837753b39a39e09facd2091ee4851ee1eb6ebec5fa9a9a231734254"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f7aa157f689a114bfb5367c55884d35e25d57cf25202a6590ce05010f929e7df"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:f961d8bcad80359f24c0156b3094f58a87d583d56139ee50922fe5894b6797cf"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:1f38fb5c31846c3ada8fc2b693d8d19953d376a9ea21079e3686e93faa1f8a0f"},
+    {file = "dbus_fast-2.44.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:35e3cde53cc9180ce95c6c84a1e8d1ded429031e4a0a182606e8d22cf57d3294"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f3f30fb09f1ea13658fb4316511e27d6b94f8363b16f2d093efe73e6e289b740"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3dd0f8d41f6ab9d4a782c116470bc319d690f9b50c97b6debc6d1fef08e4615a"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:9d6e386658343db380b9e4e81b3bf4e3c17135dbb5889173b1f2582b675b9a8c"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3bd27563c11219b6fde7a5458141d860d8445c2defb036bab360d1f9bf1dfae0"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:0272784aceac821dd63c8187a8860179061a850269617ff5c5bd25ca37bf9307"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:eed613a909a45f0e0a415c88b373024f007a9be56b1316812ed616d69a3b9161"},
+    {file = "dbus_fast-2.44.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:0d4288f2cba4f8309dcfd9f4392e0f4f2b5be6c796dfdb0c5e03228b1ab649b1"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:50a9a4c6921f4b7446717fb4869750f54b561ce486b25b36550cb2a910c988d9"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:89dc5db158bf9838979f732acc39e0e1ecd7e3295a09fa8adb93b09c097615a4"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:f11878c0c089d278861e48c02db8002496c2233b0f605b5630ef61f0b7fb0ea3"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:afd81f483b3ffb71e88478cfabccc1fab8d7154fccb1c661bfafcff9b0cfd996"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-manylinux_2_36_x86_64.whl", hash = "sha256:ad499de96a991287232749c98a59f2436ed260f6fd9ad4cb3b04a4b1bbbef148"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:36c44286b11e83977cd29f9551b66b446bb6890dff04585852d975aa3a038ca2"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:89f2f6eccbb0e464b90e5a8741deb9d6a91873eeb41a8c7b963962b39eb1e0cd"},
+    {file = "dbus_fast-2.44.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:bb74a227b071e1a7c517bf3a3e4a5a0a2660620084162e74f15010075534c9d5"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5e3719399e687359b0ef66af1b720661dd4f12059db1c4f506e678569a2256b4"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:806450623ef3f8df846524da7e448edc8174261a01cfd5dfda92e3df89c0de10"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:55ad499b7ef08cb76fce9c9fdcdd6589d2ebfc7e53b3d261d8f40c6d97a8d901"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:55d717865219ec2ae9977b6d067c05261cdc3ef6205c687c8bb92b3437886e58"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:39d4cc61e491e11912f76d70cc1c47387ab4f2e5b71f34bfa13eb11aa6026268"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:9b3b10151f1140f7b6dd47a89fc37edd05d6213be0a1748eadba82fc144c05c2"},
+    {file = "dbus_fast-2.44.1-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:33772c223f5cef1bacc298e83dc04b27b3a47065b245fde766fcc126e761dca7"},
+    {file = "dbus_fast-2.44.1-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:80e3f42f982af45bcfa0ff23e808f3aa54a45fe4bf43aadd3beb5ace816fba76"},
+    {file = "dbus_fast-2.44.1-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f29a81d86c9ce3020a5df8c1e5557edaa00e1e00c9804ec874d46c99d967a686"},
+    {file = "dbus_fast-2.44.1-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:5dec134715457601c0fa8df3040a56d319de1a152464ae4d4bfc53bbb5c02e04"},
+    {file = "dbus_fast-2.44.1-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux_2_5_x86_64.manylinux1_x86_64.manylinux2014_x86_64.whl", hash = "sha256:893509b516f2f24b4e3f09a6b1f3a30f856cf237cd773cdc505ea7ab4fa3c863"},
+    {file = "dbus_fast-2.44.1-pp39-pypy39_pp73-macosx_11_0_arm64.whl", hash = "sha256:db81275d708774f6a17c89f2e063398c0deb358c4d22b663a3dd99861f6683a4"},
+    {file = "dbus_fast-2.44.1-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:161a3e6fc8783c30c9feb072e09604d96ec0c465b06bd35b6acc1a0316bd2a27"},
+    {file = "dbus_fast-2.44.1-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:67febe6454e714d85a532bd84969001ed948bbaf1699a7e1e4c6abb5508c9522"},
+    {file = "dbus_fast-2.44.1-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux_2_5_x86_64.manylinux1_x86_64.manylinux2014_x86_64.whl", hash = "sha256:890f0fc046d5db66524ddedeca8c14b65739fbbf32d6488175c07428362bf250"},
+    {file = "dbus_fast-2.44.1.tar.gz", hash = "sha256:b027e96c39ed5622bb54d811dcdbbe9d9d6edec3454808a85a1ceb1867d9e25c"},
 ]
 
 [[package]]
@@ -969,7 +980,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_runtime-2.2.0-cp310-cp310-win32.whl", hash = "sha256:ab034330d6b64ce93683bdc14d4f3f83dfafbf1f72b45893505f7d684e5e7fe1"},
     {file = "winrt_runtime-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:ad9927a1838dea47ceb2d773c0269242bcee7cb5379ed801547788ab435da502"},
@@ -996,7 +1007,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Devices.Bluetooth-2.2.0-cp310-cp310-win32.whl", hash = "sha256:f3ced50ded44f74ac901d05f99cdd0bdf78e3a939a42d3cd80c33e510b4b8569"},
     {file = "winrt_Windows.Devices.Bluetooth-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:241a8f0ab06f6178d2e5757e7bc1f6c37e00e65ab6858ae676a1723a6445fa92"},
@@ -1029,7 +1040,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Devices.Bluetooth.Advertisement-2.2.0-cp310-cp310-win32.whl", hash = "sha256:3d5fddffd5f6eeafebe1bcbaa096b8962c28c9236490f6f887ac2ed3ee4ed62c"},
     {file = "winrt_Windows.Devices.Bluetooth.Advertisement-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:f1cb5a835dc3574b0c47a613fa49eeeccdd9aa5801d43d7b7606ad5ce3614a54"},
@@ -1062,7 +1073,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Devices.Bluetooth.GenericAttributeProfile-2.2.0-cp310-cp310-win32.whl", hash = "sha256:1472f89b9d6527137e1c58dfb46f22faf2753c477a9d4f85f789b3266ad282a9"},
     {file = "winrt_Windows.Devices.Bluetooth.GenericAttributeProfile-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:e25702f1aa6d4ecdf335805a50048e70ee2206499cfd7ed4fbe1a92358bdcc16"},
@@ -1095,7 +1106,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Devices.Enumeration-2.2.0-cp310-cp310-win32.whl", hash = "sha256:69e87ba0ae5c31f60bc07d0558d91af96213d8b8b2b1be0ccf3e5824cab466ef"},
     {file = "winrt_Windows.Devices.Enumeration-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:e6993d5305ff750c5c51f57253935458996fb45c049891f2fb00772cc6ece6b3"},
@@ -1128,7 +1139,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Foundation-2.2.0-cp310-cp310-win32.whl", hash = "sha256:cb86bbf04f72d983e4ae13db0a48784638b36214bb2c44809f39686ef3314354"},
     {file = "winrt_Windows.Foundation-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:2dbd0957216c07db4b91a144a0ffa7c8892cc668b19ca15b78067255445741b2"},
@@ -1161,7 +1172,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Foundation.Collections-2.2.0-cp310-cp310-win32.whl", hash = "sha256:92a031fca53910c8bce683391888ba3427db178fc47653310de16fb7e9131e9d"},
     {file = "winrt_Windows.Foundation.Collections-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:a71925d738a443cf27522f34ced84730f1b325f69ccdd0145580e6078d4481c5"},
@@ -1194,7 +1205,7 @@ description = "Python projection of Windows Runtime (WinRT) APIs"
 optional = false
 python-versions = "<3.14,>=3.9"
 groups = ["main"]
-markers = "platform_system == \"Windows\" and python_version >= \"3.12\""
+markers = "python_version >= \"3.12\" and python_version < \"3.14\" and platform_system == \"Windows\""
 files = [
     {file = "winrt_Windows.Storage.Streams-2.2.0-cp310-cp310-win32.whl", hash = "sha256:e888ae08f1245f8b6d53783487581fc664683bb29778f2acca6bafb6a78bcc22"},
     {file = "winrt_Windows.Storage.Streams-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:9213576d566398657142372aa34354b9f7b8ce0581cff308c7afbc0d908368a1"},
@@ -1239,5 +1250,5 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.8.1,<3.14"
-content-hash = "df5ce1a0eb642e7888c72088de8f126757cb0bf90d9fd1308e9ce49a8a8c48ae"
+python-versions = ">=3.9"
+content-hash = "2b2afea463fbe43d8a500356c80886fe22e1c49247e1b4c4078b67f0bbc869b9"

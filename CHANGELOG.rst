@@ -17,6 +17,10 @@ Changed
 * Updatd Poetry build system version to ``>=2.0``.
 * Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled.
 
+Removed
+-------
+* Removed support for Python 3.8. The minimum supported version is now Python 3.9.
+
 `0.22.3`_ (2024-10-05)
 ======================
 
