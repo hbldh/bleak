@@ -14,6 +14,7 @@ from ctypes import WinError
 from typing import (
     Any,
     Dict,
+    Generic,
     List,
     Literal,
     Optional,
@@ -21,6 +22,7 @@ from typing import (
     Sequence,
     Set,
     TypedDict,
+    TypeVar,
     Union,
     cast,
 )
@@ -35,70 +37,40 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
-if sys.version_info >= (3, 12):
-    from winrt.windows.devices.bluetooth import (
-        BluetoothAddressType,
-        BluetoothCacheMode,
-        BluetoothError,
-        BluetoothLEDevice,
-    )
-    from winrt.windows.devices.bluetooth.genericattributeprofile import (
-        GattCharacteristic,
-        GattCharacteristicProperties,
-        GattClientCharacteristicConfigurationDescriptorValue,
-        GattCommunicationStatus,
-        GattDescriptor,
-        GattDeviceService,
-        GattSession,
-        GattSessionStatus,
-        GattSessionStatusChangedEventArgs,
-        GattValueChangedEventArgs,
-        GattWriteOption,
-    )
-    from winrt.windows.devices.enumeration import (
-        DeviceInformation,
-        DevicePairingKinds,
-        DevicePairingResultStatus,
-        DeviceUnpairingResultStatus,
-    )
-    from winrt.windows.foundation import (
-        AsyncStatus,
-        EventRegistrationToken,
-        IAsyncOperation,
-    )
-    from winrt.windows.storage.streams import Buffer as WinBuffer
-else:
-    from bleak_winrt.windows.devices.bluetooth import (
-        BluetoothAddressType,
-        BluetoothCacheMode,
-        BluetoothError,
-        BluetoothLEDevice,
-    )
-    from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
-        GattCharacteristic,
-        GattCharacteristicProperties,
-        GattClientCharacteristicConfigurationDescriptorValue,
-        GattCommunicationStatus,
-        GattDescriptor,
-        GattDeviceService,
-        GattSession,
-        GattSessionStatus,
-        GattSessionStatusChangedEventArgs,
-        GattValueChangedEventArgs,
-        GattWriteOption,
-    )
-    from bleak_winrt.windows.devices.enumeration import (
-        DeviceInformation,
-        DevicePairingKinds,
-        DevicePairingResultStatus,
-        DeviceUnpairingResultStatus,
-    )
-    from bleak_winrt.windows.foundation import (
-        AsyncStatus,
-        EventRegistrationToken,
-        IAsyncOperation,
-    )
-    from bleak_winrt.windows.storage.streams import Buffer as WinBuffer
+from winrt.windows.devices.bluetooth import (
+    BluetoothAddressType,
+    BluetoothCacheMode,
+    BluetoothError,
+    BluetoothLEDevice,
+)
+from winrt.windows.devices.bluetooth.genericattributeprofile import (
+    GattCharacteristic,
+    GattCharacteristicProperties,
+    GattClientCharacteristicConfigurationDescriptorValue,
+    GattCommunicationStatus,
+    GattDescriptor,
+    GattDeviceService,
+    GattSession,
+    GattSessionStatus,
+    GattSessionStatusChangedEventArgs,
+    GattValueChangedEventArgs,
+    GattWriteOption,
+)
+from winrt.windows.devices.enumeration import (
+    DeviceInformation,
+    DeviceInformationCustomPairing,
+    DevicePairingKinds,
+    DevicePairingProtectionLevel,
+    DevicePairingRequestedEventArgs,
+    DevicePairingResultStatus,
+    DeviceUnpairingResultStatus,
+)
+from winrt.windows.foundation import (
+    AsyncStatus,
+    EventRegistrationToken,
+    IAsyncOperation,
+)
+from winrt.windows.storage.streams import Buffer as WinBuffer
 
 from ... import BleakScanner
 from ...exc import (
@@ -120,8 +92,10 @@ logger = logging.getLogger(__name__)
 
 
 class _Result(Protocol):
-    status: GattCommunicationStatus
-    protocol_error: int
+    @property
+    def status(self) -> GattCommunicationStatus: ...
+    @property
+    def protocol_error(self) -> Optional[int]: ...
 
 
 def _address_to_int(address: str) -> int:
@@ -156,6 +130,7 @@ def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
         return None if attr is None else getattr(result, attr)
 
     if status == GattCommunicationStatus.PROTOCOL_ERROR:
+        assert result.protocol_error is not None
         err = PROTOCOL_ERROR_CODES.get(result.protocol_error, "Unknown")
         raise BleakError(
             f"{fail_msg}: Protocol Error 0x{result.protocol_error:02X}: {err}"
@@ -229,8 +204,8 @@ class BleakClientWinRT(BaseBleakClient):
         self._services_changed_events: List[asyncio.Event] = []
         self._session_active_events: List[asyncio.Event] = []
         self._session_closed_events: List[asyncio.Event] = []
-        self._session: GattSession = None
-        self._notification_callbacks: Dict[int, NotifyCallback] = {}
+        self._session: Optional[GattSession] = None
+        self._notification_callbacks: Dict[int, EventRegistrationToken] = {}
 
         if "address_type" in kwargs:
             warnings.warn(
@@ -513,10 +488,15 @@ class BleakClientWinRT(BaseBleakClient):
 
         """
         logger.debug("Disconnecting from BLE device...")
+
+        assert self.services
+
         # Remove notifications.
         for handle, event_handler_token in list(self._notification_callbacks.items()):
             char = self.services.get_characteristic(handle)
-            char.obj.remove_value_changed(event_handler_token)
+            assert char
+            gatt_char = cast(GattCharacteristic, char.obj)
+            gatt_char.remove_value_changed(event_handler_token)
         self._notification_callbacks.clear()
 
         # Dispose all service components that we have requested and created.
@@ -572,7 +552,9 @@ class BleakClientWinRT(BaseBleakClient):
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
 
-    async def pair(self, protection_level: int = None, **kwargs) -> bool:
+    async def pair(
+        self, protection_level: Optional[DevicePairingProtectionLevel] = None, **kwargs
+    ) -> bool:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -587,6 +569,8 @@ class BleakClientWinRT(BaseBleakClient):
             Boolean regarding success of pairing.
 
         """
+        assert self._requester
+
         # New local device information object created since the object from the requester isn't updated
         device_information = await DeviceInformation.create_from_id_async(
             self._requester.device_information.id
@@ -599,14 +583,19 @@ class BleakClientWinRT(BaseBleakClient):
             ceremony = DevicePairingKinds.CONFIRM_ONLY
             custom_pairing = device_information.pairing.custom
 
-            def handler(sender, args):
+            def handler(
+                sender: DeviceInformationCustomPairing,
+                args: DevicePairingRequestedEventArgs,
+            ):
                 args.accept()
 
             pairing_requested_token = custom_pairing.add_pairing_requested(handler)
             try:
-                if protection_level:
-                    pairing_result = await custom_pairing.pair_async(
-                        ceremony, protection_level
+                if protection_level is not None:
+                    pairing_result = (
+                        await custom_pairing.pair_with_protection_level_async(
+                            ceremony, protection_level
+                        )
                     )
                 else:
                     pairing_result = await custom_pairing.pair_async(ceremony)
@@ -687,37 +676,22 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         new_services = BleakGATTServiceCollection()
-
-        # Each of the get_serv/char/desc_async() methods has two forms, one
-        # with no args and one with a cache_mode argument
-        srv_args = []
-        args = []
-
-        # If the os-specific use_cached_services arg was given when BleakClient
-        # was created, the we use the second form with explicit cache mode.
-        # Otherwise we use the first form with no explicit cache mode which
-        # allows the OS Bluetooth stack to decide what is best.
-
-        if service_cache_mode is not None:
-            srv_args.append(service_cache_mode)
-
-        if cache_mode is not None:
-            args.append(cache_mode)
-
-        def dispose_on_cancel(future):
-            if future._cancel_requested and future._result is not None:
-                logger.debug("disposing services object because of cancel")
-                for service in future._result:
-                    service.close()
-
         services: Sequence[GattDeviceService]
 
+        assert self._requester
+
         if self._requested_services is None:
-            future = FutureLike(self._requester.get_gatt_services_async(*srv_args))
-            future.add_done_callback(dispose_on_cancel)
+            if service_cache_mode is not None:
+                result = await FutureLike(
+                    self._requester.get_gatt_services_with_cache_mode_async(
+                        service_cache_mode
+                    )
+                )
+            else:
+                result = await FutureLike(self._requester.get_gatt_services_async())
 
             services = _ensure_success(
-                await FutureLike(self._requester.get_gatt_services_async(*srv_args)),
+                result,
                 "services",
                 "Could not get GATT services",
             )
@@ -726,13 +700,20 @@ class BleakClientWinRT(BaseBleakClient):
             # REVISIT: should properly dispose services on cancel or protect from cancellation
 
             for s in self._requested_services:
+                if service_cache_mode is not None:
+                    result = await FutureLike(
+                        self._requester.get_gatt_services_for_uuid_with_cache_mode_async(
+                            s, service_cache_mode
+                        )
+                    )
+                else:
+                    result = await FutureLike(
+                        self._requester.get_gatt_services_for_uuid_async(s)
+                    )
+
                 services.extend(
                     _ensure_success(
-                        await FutureLike(
-                            self._requester.get_gatt_services_for_uuid_async(
-                                s, *srv_args
-                            )
-                        ),
+                        result,
                         "services",
                         "Could not get GATT services",
                     )
@@ -740,7 +721,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         try:
             for service in services:
-                result = await FutureLike(service.get_characteristics_async(*args))
+                if cache_mode is not None:
+                    result = await FutureLike(
+                        service.get_characteristics_with_cache_mode_async(cache_mode)
+                    )
+                else:
+                    result = await FutureLike(service.get_characteristics_async())
 
                 if result.status == GattCommunicationStatus.ACCESS_DENIED:
                     # Windows does not allow access to services "owned" by the
@@ -759,8 +745,19 @@ class BleakClientWinRT(BaseBleakClient):
                 new_services.add_service(BleakGATTServiceWinRT(service))
 
                 for characteristic in characteristics:
+                    if cache_mode is not None:
+                        result = await FutureLike(
+                            characteristic.get_descriptors_with_cache_mode_async(
+                                cache_mode
+                            )
+                        )
+                    else:
+                        result = await FutureLike(
+                            characteristic.get_descriptors_async()
+                        )
+
                     descriptors: Sequence[GattDescriptor] = _ensure_success(
-                        await FutureLike(characteristic.get_descriptors_async(*args)),
+                        result,
                         "descriptors",
                         f"Could not get GATT descriptors for characteristic {characteristic.uuid} ({characteristic.attribute_handle})",
                     )
@@ -820,6 +817,8 @@ class BleakClientWinRT(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        assert self.services
+
         use_cached = kwargs.get("use_cached", False)
 
         if not isinstance(char_specifier, BleakGATTCharacteristic):
@@ -829,9 +828,11 @@ class BleakClientWinRT(BaseBleakClient):
         if not characteristic:
             raise BleakCharacteristicNotFoundError(char_specifier)
 
+        gatt_char = cast(GattCharacteristic, characteristic.obj)
+
         value = bytearray(
             _ensure_success(
-                await characteristic.obj.read_value_async(
+                await gatt_char.read_value_with_cache_mode_async(
                     BluetoothCacheMode.CACHED
                     if use_cached
                     else BluetoothCacheMode.UNCACHED
@@ -862,15 +863,19 @@ class BleakClientWinRT(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        assert self.services
+
         use_cached = kwargs.get("use_cached", False)
 
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError(f"Descriptor with handle {handle} was not found!")
 
+        gatt_desc = cast(GattDescriptor, descriptor.obj)
+
         value = bytearray(
             _ensure_success(
-                await descriptor.obj.read_value_async(
+                await gatt_desc.read_value_with_cache_mode_async(
                     BluetoothCacheMode.CACHED
                     if use_cached
                     else BluetoothCacheMode.UNCACHED
@@ -893,17 +898,23 @@ class BleakClientWinRT(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        response = (
-            GattWriteOption.WRITE_WITH_RESPONSE
-            if response
-            else GattWriteOption.WRITE_WITHOUT_RESPONSE
-        )
         buf = WinBuffer(len(data))
         buf.length = buf.capacity
+
         with memoryview(buf) as mv:
             mv[:] = data
+
+        gatt_char = cast(GattCharacteristic, characteristic.obj)
+
         _ensure_success(
-            await characteristic.obj.write_value_with_result_async(buf, response),
+            await gatt_char.write_value_with_result_and_option_async(
+                buf,
+                (
+                    GattWriteOption.WRITE_WITH_RESPONSE
+                    if response
+                    else GattWriteOption.WRITE_WITHOUT_RESPONSE
+                ),
+            ),
             None,
             f"Could not write value {data} to characteristic {characteristic.handle:04X}",
         )
@@ -919,16 +930,22 @@ class BleakClientWinRT(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        assert self.services
+
         descriptor = self.services.get_descriptor(handle)
         if not descriptor:
             raise BleakError(f"Descriptor with handle {handle} was not found!")
 
         buf = WinBuffer(len(data))
         buf.length = buf.capacity
+
         with memoryview(buf) as mv:
             mv[:] = data
+
+        gatt_desc = cast(GattDescriptor, descriptor.obj)
+
         _ensure_success(
-            await descriptor.obj.write_value_with_result_async(buf),
+            await gatt_desc.write_value_with_result_async(buf),
             None,
             f"Could not write value {data!r} to descriptor {handle:04X}",
         )
@@ -978,7 +995,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         try:
             _ensure_success(
-                await winrt_char.write_client_characteristic_configuration_descriptor_async(
+                await winrt_char.write_client_characteristic_configuration_descriptor_with_result_async(
                     cccd
                 ),
                 None,
@@ -1009,6 +1026,8 @@ class BleakClientWinRT(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        assert self.services
+
         if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
@@ -1016,8 +1035,10 @@ class BleakClientWinRT(BaseBleakClient):
         if not characteristic:
             raise BleakCharacteristicNotFoundError(char_specifier)
 
+        gatt_char = cast(GattCharacteristic, characteristic.obj)
+
         _ensure_success(
-            await characteristic.obj.write_client_characteristic_configuration_descriptor_async(
+            await gatt_char.write_client_characteristic_configuration_descriptor_with_result_async(
                 GattClientCharacteristicConfigurationDescriptorValue.NONE
             ),
             None,
@@ -1025,10 +1046,13 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         event_handler_token = self._notification_callbacks.pop(characteristic.handle)
-        characteristic.obj.remove_value_changed(event_handler_token)
+        gatt_char.remove_value_changed(event_handler_token)
 
 
-class FutureLike:
+T = TypeVar("T")
+
+
+class FutureLike(Generic[T]):
     """
     Wraps a WinRT IAsyncOperation in a "future-like" object so that it can
     be passed to Python APIs.
@@ -1038,7 +1062,7 @@ class FutureLike:
 
     _asyncio_future_blocking = False
 
-    def __init__(self, op: IAsyncOperation) -> None:
+    def __init__(self, op: IAsyncOperation[T]) -> None:
         self._op = op
         self._callbacks = []
         self._loop = asyncio.get_running_loop()
@@ -1058,13 +1082,15 @@ class FutureLike:
 
         op.completed = call_callbacks_threadsafe
 
-    def result(self) -> Any:
+    def result(self) -> T:
         if self._op.status == AsyncStatus.STARTED:
             raise asyncio.InvalidStateError
 
         if self._op.status == AsyncStatus.COMPLETED:
             if self._cancel_requested:
                 raise asyncio.CancelledError
+
+            assert self._result
 
             return self._result
 
