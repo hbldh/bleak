@@ -755,6 +755,11 @@ class BleakClient:
                 If ``True``, a write-with-response operation will be used. If
                 ``False``, a write-without-response operation will be used.
                 Omitting the argument is deprecated and may raise a warning.
+                If this arg is omitted, the default behavior is to check the
+                characteristic properties to see if the "write" property is
+                present. If it is, a write-with-response operation will be
+                used. Note: some devices may incorrectly report or omit the
+                property, which is why an explicit argument is encouraged.
 
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
