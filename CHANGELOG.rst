@@ -18,6 +18,10 @@ Changed
 * Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled.
 * Updated ``winrt`` backend to use PyWinRT >= 3.1.
 
+Fixed
+-----
+* Fixed possible ``KeyError`` when getting services in BlueZ backend. Fixes #1435.
+
 Removed
 -------
 * Removed support for Python 3.8. The minimum supported version is now Python 3.9.
