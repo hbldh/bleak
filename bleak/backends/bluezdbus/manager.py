@@ -945,6 +945,13 @@ class BlueZManager:
                         if obj_path.startswith(adapter_path):
                             callback(obj_path)
                 elif interface == defs.GATT_SERVICE_INTERFACE:
+                    device_path = obj_path[: obj_path.rfind("/")]
+
+                    try:
+                        self._service_map[device_path].remove(obj_path)
+                    except KeyError:
+                        pass
+
                     try:
                         del self._characteristic_map[obj_path]
                     except KeyError:
