@@ -1,14 +1,6 @@
-import sys
 from typing import List
 
-if sys.version_info >= (3, 12):
-    from winrt.windows.devices.bluetooth.genericattributeprofile import (
-        GattDeviceService,
-    )
-else:
-    from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
-        GattDeviceService,
-    )
+from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 
 from ..service import BleakGATTService
 from ..winrt.characteristic import BleakGATTCharacteristicWinRT

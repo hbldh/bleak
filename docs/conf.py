@@ -115,7 +115,6 @@ pygments_style = "sphinx"
 autodoc_mock_imports = [
     "android",
     "async_timeout",
-    "bleak_winrt",
     "winrt",
     "CoreBluetooth",
     "dbus_fast",

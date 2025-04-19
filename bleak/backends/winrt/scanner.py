@@ -1,32 +1,22 @@
 import asyncio
 import logging
-import sys
 from typing import Dict, List, Literal, NamedTuple, Optional
 from uuid import UUID
 
-from .util import assert_mta
-
-if sys.version_info >= (3, 12):
-    from winrt.windows.devices.bluetooth.advertisement import (
-        BluetoothLEAdvertisementReceivedEventArgs,
-        BluetoothLEAdvertisementType,
-        BluetoothLEAdvertisementWatcher,
-        BluetoothLEAdvertisementWatcherStatus,
-        BluetoothLEScanningMode,
-    )
-else:
-    from bleak_winrt.windows.devices.bluetooth.advertisement import (
-        BluetoothLEAdvertisementReceivedEventArgs,
-        BluetoothLEAdvertisementType,
-        BluetoothLEAdvertisementWatcher,
-        BluetoothLEAdvertisementWatcherStatus,
-        BluetoothLEScanningMode,
-    )
+from winrt.windows.devices.bluetooth.advertisement import (
+    BluetoothLEAdvertisementReceivedEventArgs,
+    BluetoothLEAdvertisementType,
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEAdvertisementWatcherStatus,
+    BluetoothLEScanningMode,
+)
+from winrt.windows.foundation import EventRegistrationToken
 
 from ...assigned_numbers import AdvertisementDataType
 from ...exc import BleakError
 from ...uuids import normalize_uuid_str
 from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
+from .util import assert_mta
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +77,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
-        self._advertisement_pairs: Dict[int, _RawAdvData] = {}
-        self._stopped_event = None
+        self._advertisement_pairs: Dict[str, _RawAdvData] = {}
+        self._stopped_event: Optional[asyncio.Event] = None
 
         # case insensitivity is for backwards compatibility on Windows only
         if scanning_mode.lower() == "passive":
@@ -104,8 +94,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
-        self._received_token = None
-        self._stopped_token = None
+        self._received_token: Optional[EventRegistrationToken] = None
+        self._stopped_token: Optional[EventRegistrationToken] = None
 
     def _received_handler(
         self,
@@ -144,6 +134,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         tx_power = None
 
         for args in filter(lambda d: d is not None, raw_data):
+            assert args
+
             for u in args.advertisement.service_uuids:
                 uuids.append(str(u))
 
@@ -155,8 +147,8 @@ class BleakScannerWinRT(BaseBleakScanner):
                 local_name = args.advertisement.local_name
 
             try:
-                if args.transmit_power_level_in_d_bm is not None:
-                    tx_power = args.transmit_power_level_in_d_bm
+                if args.transmit_power_level_in_dbm is not None:
+                    tx_power = args.transmit_power_level_in_dbm
             except AttributeError:
                 # the transmit_power_level_in_d_bm property was introduce in
                 # Windows build 19041 so we have a fallback for older versions
@@ -198,7 +190,7 @@ class BleakScannerWinRT(BaseBleakScanner):
             service_data=service_data,
             service_uuids=uuids,
             tx_power=tx_power,
-            rssi=event_args.raw_signal_strength_in_d_bm,
+            rssi=event_args.raw_signal_strength_in_dbm,
             platform_data=(sender, raw_data),
         )
 
@@ -259,6 +251,11 @@ class BleakScannerWinRT(BaseBleakScanner):
             raise BleakError(f"Unexpected watcher status: {self.watcher.status.name}")
 
     async def stop(self) -> None:
+        assert self.watcher
+        assert self._stopped_event
+        assert self._received_token
+        assert self._stopped_token
+
         self.watcher.stop()
 
         if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.STOPPING:

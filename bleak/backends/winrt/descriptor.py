@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys
 
-if sys.version_info >= (3, 12):
-    from winrt.windows.devices.bluetooth.genericattributeprofile import GattDescriptor
-else:
-    from bleak_winrt.windows.devices.bluetooth.genericattributeprofile import (
-        GattDescriptor,
-    )
+from winrt.windows.devices.bluetooth.genericattributeprofile import GattDescriptor
 
 from ..descriptor import BleakGATTDescriptor
 
