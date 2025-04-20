@@ -583,49 +583,51 @@ class BleakClientWinRT(BaseBleakClient):
         device_information = await DeviceInformation.create_from_id_async(
             self._requester.device_information.id
         )
-        if (
-            device_information.pairing.can_pair
-            and not device_information.pairing.is_paired
+
+        if not device_information.pairing.can_pair:
+            logging.debug("Device does not support pairing. Skipping pairing.")
+            return False
+
+        if device_information.pairing.is_paired:
+            logging.debug("Device is already paired. Skipping pairing.")
+            return True
+
+        # Currently only supporting Just Works solutions...
+        ceremony = DevicePairingKinds.CONFIRM_ONLY
+        custom_pairing = device_information.pairing.custom
+
+        def handler(
+            sender: DeviceInformationCustomPairing,
+            args: DevicePairingRequestedEventArgs,
         ):
-            # Currently only supporting Just Works solutions...
-            ceremony = DevicePairingKinds.CONFIRM_ONLY
-            custom_pairing = device_information.pairing.custom
+            args.accept()
 
-            def handler(
-                sender: DeviceInformationCustomPairing,
-                args: DevicePairingRequestedEventArgs,
-            ):
-                args.accept()
+        pairing_requested_token = custom_pairing.add_pairing_requested(handler)
 
-            pairing_requested_token = custom_pairing.add_pairing_requested(handler)
-            try:
-                if protection_level is not None:
-                    pairing_result = (
-                        await custom_pairing.pair_with_protection_level_async(
-                            ceremony, protection_level
-                        )
-                    )
-                else:
-                    pairing_result = await custom_pairing.pair_async(ceremony)
-
-            except Exception as e:
-                raise BleakError("Failure trying to pair with device!") from e
-            finally:
-                custom_pairing.remove_pairing_requested(pairing_requested_token)
-
-            if pairing_result.status not in (
-                DevicePairingResultStatus.PAIRED,
-                DevicePairingResultStatus.ALREADY_PAIRED,
-            ):
-                raise BleakError(f"Could not pair with device: {pairing_result.status}")
-            else:
-                logger.info(
-                    "Paired to device with protection level %r.",
-                    pairing_result.protection_level_used,
+        try:
+            if protection_level is not None:
+                pairing_result = await custom_pairing.pair_with_protection_level_async(
+                    ceremony, protection_level
                 )
-                return True
-        else:
-            return device_information.pairing.is_paired
+            else:
+                pairing_result = await custom_pairing.pair_async(ceremony)
+
+        except Exception as e:
+            raise BleakError("Failure trying to pair with device!") from e
+        finally:
+            custom_pairing.remove_pairing_requested(pairing_requested_token)
+
+        if pairing_result.status not in (
+            DevicePairingResultStatus.PAIRED,
+            DevicePairingResultStatus.ALREADY_PAIRED,
+        ):
+            raise BleakError(f"Could not pair with device: {pairing_result.status}")
+
+        logger.debug(
+            "Paired to device with protection level %r.",
+            pairing_result.protection_level_used,
+        )
+        return True
 
     async def unpair(self) -> bool:
         """Attempts to unpair from the device.
