@@ -12,6 +12,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Fixed
 -----
 
+Added
+-----
+* Added ``pair`` parameter to ``BleakClient()`` constructor to allow pairing before connecting. Fixes #309.
+
 Changed
 -------
 * Made `response` argument of class ``BleakClient.write_gatt_char()`` explicitly optional. #1730

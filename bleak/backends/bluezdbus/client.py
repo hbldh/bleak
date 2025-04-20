@@ -105,7 +105,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self, dangerous_use_bleak_cache: bool = False, **kwargs) -> bool:
+    async def connect(
+        self, pair: bool, dangerous_use_bleak_cache: bool = False, **kwargs
+    ) -> bool:
         """Connect to the specified GATT server.
 
         Keyword Args:
@@ -246,14 +248,49 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         )
                     else:
                         logger.debug("Connecting to BlueZ path %s", self._device_path)
-                        reply = await self._bus.call(
-                            Message(
-                                destination=defs.BLUEZ_SERVICE,
-                                interface=defs.DEVICE_INTERFACE,
-                                path=self._device_path,
-                                member="Connect",
+
+                        # Calling pair will fail if we are already paired, so
+                        # in that case we just call Connect.
+                        if pair and not manager.is_paired(self._device_path):
+                            # Trust means device is authorized
+                            reply = await self._bus.call(
+                                Message(
+                                    destination=defs.BLUEZ_SERVICE,
+                                    path=self._device_path,
+                                    interface=defs.PROPERTIES_INTERFACE,
+                                    member="Set",
+                                    signature="ssv",
+                                    body=[
+                                        defs.DEVICE_INTERFACE,
+                                        "Trusted",
+                                        Variant("b", True),
+                                    ],
+                                )
                             )
-                        )
+                            assert_reply(reply)
+
+                            # REVIST: This leaves "Trusted" property set if we
+                            # fail later. Probably not a big deal since we were
+                            # going to trust it anyway.
+
+                            # Pairing means device is authenticated
+                            reply = await self._bus.call(
+                                Message(
+                                    destination=defs.BLUEZ_SERVICE,
+                                    interface=defs.DEVICE_INTERFACE,
+                                    path=self._device_path,
+                                    member="Pair",
+                                )
+                            )
+                        else:
+                            reply = await self._bus.call(
+                                Message(
+                                    destination=defs.BLUEZ_SERVICE,
+                                    interface=defs.DEVICE_INTERFACE,
+                                    path=self._device_path,
+                                    member="Connect",
+                                )
+                            )
 
                         assert reply is not None
 

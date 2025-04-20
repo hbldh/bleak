@@ -742,6 +742,21 @@ class BlueZManager:
         except KeyError:
             return False
 
+    def is_paired(self, device_path: str) -> bool:
+        """
+        Gets the value of the "Paired" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value or ``False`` if the device does not exist in BlueZ.
+        """
+        try:
+            return self._properties[device_path][defs.DEVICE_INTERFACE]["Paired"]
+        except KeyError:
+            return False
+
     async def _wait_for_services_discovery(self, device_path: str) -> None:
         """
         Waits for the device services to be discovered.

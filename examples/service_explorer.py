@@ -18,7 +18,16 @@ from bleak import BleakClient, BleakScanner
 logger = logging.getLogger(__name__)
 
 
-async def main(args: argparse.Namespace):
+class Args(argparse.Namespace):
+    name: str
+    address: str
+    macos_use_bdaddr: bool
+    services: list[str]
+    pair: bool
+    debug: bool
+
+
+async def main(args: Args):
     logger.info("starting scan...")
 
     if args.address:
@@ -40,6 +49,7 @@ async def main(args: argparse.Namespace):
 
     async with BleakClient(
         device,
+        pair=args.pair,
         services=args.services,
     ) as client:
         logger.info("connected")
@@ -109,13 +119,19 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--pair",
+        action="store_true",
+        help="pair with the device before connecting if not already paired",
+    )
+
+    parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
         help="sets the log level to debug",
     )
 
-    args = parser.parse_args()
+    args: Args = parser.parse_args()
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

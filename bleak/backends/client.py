@@ -78,8 +78,15 @@ class BaseBleakClient(abc.ABC):
         self._disconnected_callback = callback
 
     @abc.abstractmethod
-    async def connect(self, **kwargs) -> bool:
+    async def connect(self, pair: bool, **kwargs) -> bool:
         """Connect to the specified GATT server.
+
+        Args:
+            pair (bool): If the client should attempt to pair with the
+            peripheral before connecting if it is not already paired.
+
+            Backends that can't implement this should make an appropriate
+            log message and ignore the parameter.
 
         Returns:
             Boolean representing connection status.
