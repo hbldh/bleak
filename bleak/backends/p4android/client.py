@@ -57,13 +57,16 @@ class BleakClientP4Android(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self, **kwargs) -> bool:
+    async def connect(self, pair: bool, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
         Returns:
             Boolean representing connection status.
 
         """
+        if pair:
+            logger.warning("Pairing during connect is not implemented on Android")
+
         loop = asyncio.get_running_loop()
 
         self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()

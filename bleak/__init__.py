@@ -477,6 +477,13 @@ class BleakClient:
         timeout:
             Timeout in seconds passed to the implicit ``discover`` call when
             ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 10.0.
+        pair:
+            Attempt to pair with the the device before connecting, if it is not
+            already paired. This has no effect on macOS since pairing is initiated
+            automatically when accessing a characteristic that requires authentication.
+            In rare cases, on other platforms, it might be necessary to pair the
+            device first in order to be able to even enumerate the services during
+            the connection process.
         winrt:
             Dictionary of WinRT/Windows platform-specific options.
         backend:
@@ -504,6 +511,9 @@ class BleakClient:
     .. versionchanged:: 0.18
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakClient`.
         Added ``backend`` parameter.
+
+    .. versionchanged:: unreleased
+        Added ``pair`` parameter.
     """
 
     def __init__(
@@ -513,6 +523,7 @@ class BleakClient:
         services: Optional[Iterable[str]] = None,
         *,
         timeout: float = 10.0,
+        pair: bool = False,
         winrt: WinRTClientArgs = {},
         backend: Optional[Type[BaseBleakClient]] = None,
         **kwargs,
@@ -535,6 +546,7 @@ class BleakClient:
             winrt=winrt,
             **kwargs,
         )
+        self._pair_before_connect = pair
 
     # device info
 
@@ -612,7 +624,7 @@ class BleakClient:
             Always returns ``True`` for backwards compatibility.
 
         """
-        return await self._backend.connect(**kwargs)
+        return await self._backend.connect(self._pair_before_connect, **kwargs)
 
     async def disconnect(self) -> bool:
         """Disconnect from the specified GATT server.

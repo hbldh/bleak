@@ -2,6 +2,8 @@
 BleakClient class
 =================
 
+.. currentmodule:: bleak
+
 .. autoclass:: bleak.BleakClient
 
 ----------------------------
@@ -101,6 +103,10 @@ On some devices, some characteristics may require authentication in order to
 read or write the characteristic. In this case pairing/bonding the device is
 required.
 
+.. tip:: If you need to pair the device *before* connecting, pass ``pair=True``
+    to the :class:`BleakClient` constructor. Then pairing will happen during
+    the connection process and you do not need to call the :meth:`pair <BleakClient.pair>`
+    method explicitly.
 
 .. automethod:: bleak.BleakClient.pair
 .. automethod:: bleak.BleakClient.unpair

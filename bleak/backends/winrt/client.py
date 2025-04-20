@@ -253,7 +253,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
         return requester
 
-    async def connect(self, **kwargs) -> bool:
+    async def connect(self, pair: bool, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
         Keyword Args:
@@ -285,6 +285,9 @@ class BleakClientWinRT(BaseBleakClient):
         loop = asyncio.get_running_loop()
 
         self._requester = await self._create_requester(self._device_info)
+
+        if pair:
+            await self.pair(**kwargs)
 
         def handle_services_changed():
             if not self._services_changed_events:
@@ -393,6 +396,13 @@ class BleakClientWinRT(BaseBleakClient):
                     session_status_changed_event_handler
                 )
             )
+
+            # If the session is already active, we need to set the event since
+            # the session_status_changed event won't fire. This happens, e.g.,
+            # when pairing before connecting which causes the device to already
+            # be connected.
+            if self._session.session_status == GattSessionStatus.ACTIVE:
+                event.set()
 
             self._max_pdu_size_changed_token = self._session.add_max_pdu_size_changed(
                 max_pdu_size_changed_handler
