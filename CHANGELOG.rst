@@ -24,6 +24,7 @@ Fixed
 -----
 * Fixed possible ``KeyError`` when getting services in BlueZ backend. Fixes #1435.
 * Fix D-Bus connection leak when connecting to a device fails in BlueZ backend. Fixes #1698.
+* Fixed possible deadlock when connecting on WinRT backend when device is already connected.
 
 Removed
 -------
