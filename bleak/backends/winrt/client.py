@@ -232,16 +232,19 @@ class BleakClientWinRT(BaseBleakClient):
     # Connectivity methods
 
     async def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
-        args = [
-            bluetooth_address,
-        ]
         if self._address_type is not None:
-            args.append(
-                BluetoothAddressType.PUBLIC
-                if self._address_type == "public"
-                else BluetoothAddressType.RANDOM
+            requester = await BluetoothLEDevice.from_bluetooth_address_with_bluetooth_address_type_async(
+                bluetooth_address,
+                (
+                    BluetoothAddressType.PUBLIC
+                    if self._address_type == "public"
+                    else BluetoothAddressType.RANDOM
+                ),
             )
-        requester = await BluetoothLEDevice.from_bluetooth_address_async(*args)
+        else:
+            requester = await BluetoothLEDevice.from_bluetooth_address_async(
+                bluetooth_address
+            )
 
         # https://github.com/microsoft/Windows-universal-samples/issues/1089#issuecomment-487586755
         if requester is None:
