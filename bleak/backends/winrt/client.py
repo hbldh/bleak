@@ -472,10 +472,11 @@ class BleakClientWinRT(BaseBleakClient):
                             cache_mode=cache_mode,
                         )
 
-                # a connection may not be made until we request info from the
-                # device, so we have to get services before the GATT session
-                # is set to active
-                await event.wait()
+                    # a connection may not be made until we request info from the
+                    # device, so we have to get services before the GATT session
+                    # is set to active
+                    await event.wait()
+
                 is_connect_complete = True
             finally:
                 self._services_changed_events.remove(services_changed_event)
