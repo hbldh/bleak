@@ -85,7 +85,7 @@ from ..device import BLEDevice
 from ..service import BleakGATTServiceCollection
 from .characteristic import BleakGATTCharacteristicWinRT
 from .descriptor import BleakGATTDescriptorWinRT
-from .scanner import BleakScannerWinRT
+from .scanner import BleakScannerWinRT, _RawAdvData
 from .service import BleakGATTServiceWinRT
 
 logger = logging.getLogger(__name__)
@@ -193,10 +193,13 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            data = address_or_ble_device.details
-            self._device_info = (data.adv or data.scan).bluetooth_address
+            data: _RawAdvData = address_or_ble_device.details
+            args = data.adv or data.scan
+            assert args
+            self._device_info = args.bluetooth_address
         else:
             self._device_info = None
+
         self._requested_services = (
             [uuid.UUID(s) for s in services] if services else None
         )
@@ -269,8 +272,10 @@ class BleakClientWinRT(BaseBleakClient):
                     self.address, f"Device with address {self.address} was not found."
                 )
 
-            data = device.details
-            self._device_info = (data.adv or data.scan).bluetooth_address
+            data: _RawAdvData = device.details
+            args = data.adv or data.scan
+            assert args
+            self._device_info = args.bluetooth_address
 
         logger.debug("Connecting to BLE device @ %s", self.address)
 
