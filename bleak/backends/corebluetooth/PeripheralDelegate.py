@@ -295,7 +295,7 @@ class PeripheralDelegate(NSObject):
         future = self._service_characteristic_discovered_futures.get(
             service.startHandle()
         )
-        if not future:
+        if not future or future.done():
             logger.debug(
                 f"Unexpected event didDiscoverCharacteristicsForService for {service.startHandle()}"
             )
@@ -331,7 +331,7 @@ class PeripheralDelegate(NSObject):
         future = self._characteristic_descriptor_discover_futures.get(
             characteristic.handle()
         )
-        if not future:
+        if not future or future.done():
             logger.warning(
                 f"Unexpected event didDiscoverDescriptorsForCharacteristic for {characteristic.handle()}"
             )
@@ -373,7 +373,7 @@ class PeripheralDelegate(NSObject):
 
         # If there is no pending read request, then this must be a notification
         # (the same delegate callback is used by both).
-        if not future:
+        if not future or future.done():
             if error is None:
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
 
@@ -412,7 +412,7 @@ class PeripheralDelegate(NSObject):
         error: Optional[NSError],
     ) -> None:
         future = self._descriptor_read_futures.get(descriptor.handle())
-        if not future:
+        if not future or future.done():
             logger.warning("Unexpected event didUpdateValueForDescriptor")
             return
         if error is not None:
@@ -447,7 +447,7 @@ class PeripheralDelegate(NSObject):
         error: Optional[NSError],
     ) -> None:
         future = self._characteristic_write_futures.get(characteristic.handle(), None)
-        if not future:
+        if not future or future.done():
             return  # event only expected on write with response
         if error is not None:
             exception = BleakError(
@@ -480,7 +480,7 @@ class PeripheralDelegate(NSObject):
         error: Optional[NSError],
     ) -> None:
         future = self._descriptor_write_futures.get(descriptor.handle())
-        if not future:
+        if not future or future.done():
             logger.warning("Unexpected event didWriteValueForDescriptor")
             return
         if error is not None:
@@ -515,7 +515,7 @@ class PeripheralDelegate(NSObject):
     ) -> None:
         c_handle = characteristic.handle()
         future = self._characteristic_notify_change_futures.get(c_handle)
-        if not future:
+        if not future or future.done():
             logger.warning(
                 "Unexpected event didUpdateNotificationStateForCharacteristic"
             )
@@ -549,7 +549,7 @@ class PeripheralDelegate(NSObject):
     ) -> None:
         future = self._read_rssi_futures.get(peripheral.identifier(), None)
 
-        if not future:
+        if not future or future.done():
             logger.warning("Unexpected event did_read_rssi")
             return
 
