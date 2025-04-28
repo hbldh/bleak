@@ -31,7 +31,7 @@ from ...exc import (
     BleakError,
 )
 from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
+from ..client import BaseBleakClient, NotifyCallback, NotifyCheckCallback
 from ..device import BLEDevice
 from ..service import BleakGATTServiceCollection
 from .CentralManagerDelegate import CentralManagerDelegate
@@ -354,6 +354,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
+        check_callback: NotifyCheckCallback,
         **kwargs,
     ) -> None:
         """
@@ -361,7 +362,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         assert self._delegate is not None
 
-        await self._delegate.start_notifications(characteristic.obj, callback)
+        await self._delegate.start_notifications(characteristic.obj, callback, check_callback)
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
