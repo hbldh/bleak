@@ -9,9 +9,6 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 `Unreleased`_
 =============
-Fixed
------
-* Fixed possible ``InvalidStateError`` when doing a read after a notify (OSX).
 
 Changed
 -------
@@ -20,6 +17,7 @@ Changed
 * Updated Poetry build system version to ``>=2.0``.
 * Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled.
 * Updated ``winrt`` backend to use PyWinRT >= 3.1.
+* Added `notification_discriminator` parameter to start_notify on CoreBluetooth backend
 
 Fixed
 -----
