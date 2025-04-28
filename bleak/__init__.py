@@ -801,7 +801,6 @@ class BleakClient:
         callback: Callable[
             [BleakGATTCharacteristic, bytearray], Union[None, Awaitable[None]]
         ],
-        check_callback: NotifyCheckCallback = None,
         **kwargs,
     ) -> None:
         """
@@ -852,7 +851,7 @@ class BleakClient:
         else:
             wrapped_callback = functools.partial(callback, characteristic)
 
-        await self._backend.start_notify(characteristic, wrapped_callback, check_callback, **kwargs)
+        await self._backend.start_notify(characteristic, wrapped_callback, **kwargs)
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]

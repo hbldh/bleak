@@ -25,7 +25,7 @@ from .device import BLEDevice
 from .service import BleakGATTServiceCollection
 
 NotifyCallback = Callable[[bytearray], None]
-NotifyCheckCallback = Callable[[bytearray], bool]
+
 
 class BaseBleakClient(abc.ABC):
     """The Client Interface for Bleak Backend implementations to implement.
@@ -219,7 +219,6 @@ class BaseBleakClient(abc.ABC):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        check_callback: NotifyCheckCallback = None,
         **kwargs,
     ) -> None:
         """
