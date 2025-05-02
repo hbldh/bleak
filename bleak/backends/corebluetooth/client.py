@@ -354,7 +354,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        cb: Optional[Dict[str, Any]] = None,
+        *,
+        cb: Dict[str, Any] = {},
         **kwargs,
     ) -> None:
         """
@@ -365,7 +366,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await self._delegate.start_notifications(
             characteristic.obj,
             callback,
-            cb.get("notification_discriminator") if cb else None,
+            cb.get("notification_discriminator"),
         )
 
     async def stop_notify(
