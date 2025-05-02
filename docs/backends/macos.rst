@@ -39,9 +39,10 @@ This can cause confusion in cases where a device may send a notification message
 as a signal that the characteristic needs to be read again.
 
 Bleak has can accept a ``notification_discriminator`` callback in the ``cb`` dict parameter that is
-passed to the start_notify function that can differentiate between these types of data.
+passed to the :method:`BleakClient.start_notify` method that can differentiate between these types of data.
 
 .. code-block:: python
+
     event = asyncio.Event()
 
     async def notification_handler(char, data):

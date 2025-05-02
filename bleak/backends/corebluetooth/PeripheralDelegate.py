@@ -383,17 +383,17 @@ class PeripheralDelegate(NSObject):
         future = self._characteristic_read_futures.get(c_handle)
 
         # If error is set, then we know this was a read response.
-        # Otherwise, we can't tell if this is a read response or notification.
+        # Otherwise, if there is a pending read request, we can't tell if this is a read response or notification.
         # If the user provided a notification discriminator, we can use that to
         # identify if this callback is due to a notification by analyzing the value.
-        # If not, and there is no future, we assume it is a notification but can't know for sure.
+        # If not, and there is a future (pending read request), we assume it is a read response but can't know for sure.
         if not error:
             notification_discriminator = (
                 self._characteristic_notification_discriminators.get(c_handle)
             )
-            if (
+            if not future or (
                 notification_discriminator and notification_discriminator(bytes(value))
-            ) or not future:
+            ):
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
 
                 if notify_callback:
