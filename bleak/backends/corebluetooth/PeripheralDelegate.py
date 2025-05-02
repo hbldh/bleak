@@ -221,7 +221,7 @@ class PeripheralDelegate(NSObject):
         self,
         characteristic: CBCharacteristic,
         callback: NotifyCallback,
-        notification_discriminator: Optional[Callable[[bytearray], bool] ]= None,
+        notification_discriminator: Optional[Callable[[bytearray], bool]] = None,
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
@@ -380,29 +380,28 @@ class PeripheralDelegate(NSObject):
     ) -> None:
         c_handle = characteristic.handle()
 
+        future = self._characteristic_read_futures.get(c_handle)
+
+        # If error is set, then we know this was a read response.
+        # Otherwise, we can't tell if this is a read response or notification.
+        # If the user provided a notification discriminator, we can use that to
+        # identify if this callback is due to a notification by analyzing the value.
+        # If not, and there is no future, we assume it is a notification but can't know for sure.
         if not error:
             notification_discriminator = (
                 self._characteristic_notification_discriminators.get(c_handle)
             )
-            if notification_discriminator and notification_discriminator(
-                bytearray(value)
-            ):
+            if (
+                notification_discriminator and notification_discriminator(bytes(value))
+            ) or not future:
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
 
                 if notify_callback:
                     notify_callback(bytearray(value))
                 return
 
-        future = self._characteristic_read_futures.get(c_handle)
-
-        # If there is no pending read request, then this must be a notification
-        # (the same delegate callback is used by both).
         if not future:
-            if error is None:
-                notify_callback = self._characteristic_notify_callbacks.get(c_handle)
-
-                if notify_callback:
-                    notify_callback(bytearray(value))
+            logger.warning("Unexpected event didUpdateValueForCharacteristic")
             return
 
         if error is not None:
