@@ -401,7 +401,9 @@ class PeripheralDelegate(NSObject):
                 return
 
         if not future:
-            logger.warning("Unexpected event didUpdateValueForCharacteristic")
+            logger.warning(
+                f"Unexpected event didUpdateValueForCharacteristic for {characteristic.handle()} with value: {bytes(value)} and error: {error}"
+            )
             return
 
         if error is not None:
