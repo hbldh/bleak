@@ -221,7 +221,7 @@ class PeripheralDelegate(NSObject):
         self,
         characteristic: CBCharacteristic,
         callback: NotifyCallback,
-        notification_discriminator: Callable[[bytearray], bool] = None,
+        notification_discriminator: Optional[Callable[[bytearray], bool] ]= None,
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
