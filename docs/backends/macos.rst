@@ -72,13 +72,13 @@ API
 ---
 
 Scanner
-~~~~~~~
+^^^^^^^
 
 .. automodule:: bleak.backends.corebluetooth.scanner
     :members:
 
 Client
-~~~~~~
+^^^^^^
 
 .. automodule:: bleak.backends.corebluetooth.client
     :members:
