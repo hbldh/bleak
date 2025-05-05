@@ -52,7 +52,7 @@ def device_path_from_characteristic_path(characteristic_path: str) -> str:
         A D-Bus object path of the device.
     """
     # /org/bluez/hci1/dev_FA_23_9D_AA_45_46/service000c/char000d
-    return characteristic_path[:37]
+    return characteristic_path[:-21]
 
 
 def get_dbus_authenticator() -> Optional[AuthExternal]:
