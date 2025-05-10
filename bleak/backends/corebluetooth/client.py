@@ -8,7 +8,7 @@ import asyncio
 import logging
 import sys
 import uuid
-from typing import Optional, Set, Union
+from typing import Any, Dict, Optional, Set, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -354,6 +354,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
+        *,
+        cb: Dict[str, Any] = {},
         **kwargs,
     ) -> None:
         """
@@ -361,7 +363,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         assert self._delegate is not None
 
-        await self._delegate.start_notifications(characteristic.obj, callback)
+        await self._delegate.start_notifications(
+            characteristic.obj,
+            callback,
+            cb.get("notification_discriminator"),
+        )
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]

@@ -12,7 +12,7 @@ import asyncio
 import itertools
 import logging
 import sys
-from typing import Any, Dict, Iterable, NewType, Optional
+from typing import Any, Callable, Dict, Iterable, NewType, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -71,6 +71,9 @@ class PeripheralDelegate(NSObject):
 
         self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
         self._characteristic_notify_callbacks: Dict[int, NotifyCallback] = {}
+        self._characteristic_notification_discriminators: Dict[
+            int, Callable[[bytearray], bool]
+        ] = {}
 
         self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
 
@@ -153,6 +156,7 @@ class PeripheralDelegate(NSObject):
         future = self._event_loop.create_future()
 
         self._characteristic_read_futures[characteristic.handle()] = future
+
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
             async with async_timeout(timeout):
@@ -214,13 +218,19 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     async def start_notifications(
-        self, characteristic: CBCharacteristic, callback: NotifyCallback
+        self,
+        characteristic: CBCharacteristic,
+        callback: NotifyCallback,
+        notification_discriminator: Optional[Callable[[bytes], bool]] = None,
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
             raise ValueError("Characteristic notifications already started")
 
         self._characteristic_notify_callbacks[c_handle] = callback
+        self._characteristic_notification_discriminators[c_handle] = (
+            notification_discriminator
+        )
 
         future = self._event_loop.create_future()
 
@@ -247,6 +257,7 @@ class PeripheralDelegate(NSObject):
             del self._characteristic_notify_change_futures[c_handle]
 
         self._characteristic_notify_callbacks.pop(c_handle)
+        self._characteristic_notification_discriminators.pop(c_handle)
 
     @objc.python_method
     async def read_rssi(self) -> NSNumber:
@@ -371,14 +382,31 @@ class PeripheralDelegate(NSObject):
 
         future = self._characteristic_read_futures.get(c_handle)
 
-        # If there is no pending read request, then this must be a notification
-        # (the same delegate callback is used by both).
-        if not future:
-            if error is None:
+        # If error is set, then we know this was a read response.
+        # Otherwise, if there is a pending read request, we can't tell if this is a read response or notification.
+        # If the user provided a notification discriminator, we can use that to
+        # identify if this callback is due to a notification by analyzing the value.
+        # If not, and there is a future (pending read request), we assume it is a read response but can't know for sure.
+        if not error:
+            notification_discriminator = (
+                self._characteristic_notification_discriminators.get(c_handle)
+            )
+            if not future or (
+                notification_discriminator and notification_discriminator(bytes(value))
+            ):
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
 
                 if notify_callback:
                     notify_callback(bytearray(value))
+                    return
+
+        if not future:
+            logger.warning(
+                "Unexpected event didUpdateValueForCharacteristic for 0x%04x with value: %r and error: %r",
+                c_handle,
+                value,
+                error,
+            )
             return
 
         if error is not None:
