@@ -403,7 +403,9 @@ class PeripheralDelegate(NSObject):
         if not future:
             logger.warning(
                 "Unexpected event didUpdateValueForCharacteristic for 0x%04x with value: %r and error: %r",
-                c_handle, value, error
+                c_handle,
+                value,
+                error,
             )
             return
 
