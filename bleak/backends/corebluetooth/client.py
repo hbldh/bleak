@@ -8,7 +8,7 @@ import asyncio
 import logging
 import sys
 import uuid
-from typing import Any, Dict, Optional, Set, Union
+from typing import Optional, Set, TypedDict, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -37,12 +37,27 @@ from ..service import BleakGATTServiceCollection
 from .CentralManagerDelegate import CentralManagerDelegate
 from .characteristic import BleakGATTCharacteristicCoreBluetooth
 from .descriptor import BleakGATTDescriptorCoreBluetooth
-from .PeripheralDelegate import PeripheralDelegate
+from .PeripheralDelegate import NotificationDiscriminator, PeripheralDelegate
 from .scanner import BleakScannerCoreBluetooth
 from .service import BleakGATTServiceCoreBluetooth
 from .utils import cb_uuid_to_str
 
 logger = logging.getLogger(__name__)
+
+
+class CBStartNotifyArgs(TypedDict, total=False):
+    """CoreBluetooth backend-specific dictionary of arguments for the
+    :meth:`bleak.BleakClient.start_notify` method.
+    """
+
+    notification_discriminator: Optional[NotificationDiscriminator]
+    """
+    A function that takes a single argument of a characteristic value
+    and returns ``True`` if the value is from a notification or
+    ``False`` if the value is from a read response.
+
+    .. seealso:: :ref:`cb-notification-discriminator` for more info.
+    """
 
 
 class BleakClientCoreBluetooth(BaseBleakClient):
@@ -358,7 +373,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
         *,
-        cb: Dict[str, Any] = {},
+        cb: CBStartNotifyArgs,
         **kwargs,
     ) -> None:
         """

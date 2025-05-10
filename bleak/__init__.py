@@ -62,6 +62,7 @@ from .uuids import normalize_uuid_str
 
 if TYPE_CHECKING:
     from .backends.bluezdbus.scanner import BlueZScannerArgs
+    from .backends.corebluetooth.client import CBStartNotifyArgs
     from .backends.corebluetooth.scanner import CBScannerArgs
     from .backends.winrt.client import WinRTClientArgs
 
@@ -813,6 +814,8 @@ class BleakClient:
         callback: Callable[
             [BleakGATTCharacteristic, bytearray], Union[None, Awaitable[None]]
         ],
+        *,
+        cb: CBStartNotifyArgs = {},
         **kwargs,
     ) -> None:
         """
@@ -836,11 +839,15 @@ class BleakClient:
             callback:
                 The function to be called on notification. Can be regular
                 function or async function.
+            cb:
+                CoreBluetooth specific arguments.
 
 
         .. versionchanged:: 0.18
             The first argument of the callback is now a :class:`BleakGATTCharacteristic`
             instead of an ``int``.
+        .. versionchanged:: unreleased
+            Added the ``cb`` parameter.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
@@ -863,7 +870,9 @@ class BleakClient:
         else:
             wrapped_callback = functools.partial(callback, characteristic)
 
-        await self._backend.start_notify(characteristic, wrapped_callback, **kwargs)
+        await self._backend.start_notify(
+            characteristic, wrapped_callback, cb=cb, **kwargs
+        )
 
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
