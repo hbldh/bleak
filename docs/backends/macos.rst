@@ -32,6 +32,14 @@ Pairing
 There is no pairing functionality implemented in macOS right now, since it does not seem
 to be any explicit pairing methods in CoreBluetooth.
 
+Instead, macOS will prompt the user the first time a characteristic that requires
+authorization/authentication is accessed. This means that a GATT read or write
+operation could block for a long time waiting for the user to responsed. So
+timeouts should be set accordingly.
+
+Calling the :meth:`bleak.BleakClient.pair` method will raise a ``NotImplementedError``
+on macOS. But setting ``pair=True`` in :class:`bleak.BleakClient` will be silently ignored.
+
 .. _cb-notification-discriminator:
 
 Notifications
