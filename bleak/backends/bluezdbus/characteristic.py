@@ -6,26 +6,6 @@ from ..descriptor import BleakGATTDescriptor
 from .defs import GattCharacteristic1
 from .utils import extract_service_handle_from_path
 
-_GattCharacteristicsFlagsEnum = {
-    0x0001: "broadcast",
-    0x0002: "read",
-    0x0004: "write-without-response",
-    0x0008: "write",
-    0x0010: "notify",
-    0x0020: "indicate",
-    0x0040: "authenticated-signed-writes",
-    0x0080: "extended-properties",
-    0x0100: "reliable-write",
-    0x0200: "writable-auxiliaries",
-    # "encrypt-read"
-    # "encrypt-write"
-    # "encrypt-authenticated-read"
-    # "encrypt-authenticated-write"
-    # "secure-read" #(Server only)
-    # "secure-write" #(Server only)
-    # "authorize"
-}
-
 
 class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
     """GATT Characteristic implementation for the BlueZ DBus backend"""
