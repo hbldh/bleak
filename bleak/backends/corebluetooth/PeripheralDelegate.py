@@ -221,7 +221,7 @@ class PeripheralDelegate(NSObject):
         self,
         characteristic: CBCharacteristic,
         callback: NotifyCallback,
-        notification_discriminator: Optional[Callable[[bytearray], bool]] = None,
+        notification_discriminator: Optional[Callable[[bytes], bool]] = None,
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
@@ -398,11 +398,12 @@ class PeripheralDelegate(NSObject):
 
                 if notify_callback:
                     notify_callback(bytearray(value))
-                return
+                    return
 
         if not future:
             logger.warning(
-                f"Unexpected event didUpdateValueForCharacteristic for {characteristic.handle()} with value: {bytes(value)} and error: {error}"
+                "Unexpected event didUpdateValueForCharacteristic for 0x%04x with value: %r and error: %r",
+                c_handle, value, error
             )
             return
 
