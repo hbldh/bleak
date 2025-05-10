@@ -35,6 +35,9 @@ from ..client import NotifyCallback
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
+NotificationDiscriminator = Callable[[bytes], bool]
+
 CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
 CBCharacteristicWriteType = NewType("CBCharacteristicWriteType", int)
@@ -72,7 +75,7 @@ class PeripheralDelegate(NSObject):
         self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
         self._characteristic_notify_callbacks: Dict[int, NotifyCallback] = {}
         self._characteristic_notification_discriminators: Dict[
-            int, Callable[[bytearray], bool]
+            int, Optional[NotificationDiscriminator]
         ] = {}
 
         self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
@@ -221,7 +224,7 @@ class PeripheralDelegate(NSObject):
         self,
         characteristic: CBCharacteristic,
         callback: NotifyCallback,
-        notification_discriminator: Optional[Callable[[bytes], bool]] = None,
+        notification_discriminator: Optional[NotificationDiscriminator] = None,
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
