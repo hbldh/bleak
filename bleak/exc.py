@@ -171,7 +171,7 @@ PROTOCOL_ERROR_CODES = {
     0x0C: "Insufficient Encryption Key Size",
     0x0D: "Invalid Attribute Value Length",
     0x0E: "Unlikely Error",
-    0x0F: "Insufficient Authentication",
+    0x0F: "Insufficient Encryption",
     0x10: "Unsupported Group Type",
     0x11: "Insufficient Resource",
     0x12: "Database Out Of Sync",
