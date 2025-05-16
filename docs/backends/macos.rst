@@ -48,7 +48,7 @@ CoreBluetooth does not differentiate between data from a notification and data f
 This can cause confusion in cases where a device may send a notification message on a characteristic
 as a signal that the characteristic needs to be read again.
 
-Bleak has can accept a ``notification_discriminator`` callback in the ``cb`` dict parameter that is
+Bleak can accept a ``notification_discriminator`` callback in the ``cb`` dict parameter that is
 passed to the :meth:`bleak.BleakClient.start_notify` method that can differentiate between these types of data.
 
 .. code-block:: python
