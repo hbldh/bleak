@@ -777,10 +777,6 @@ class BleakClient:
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
 
-        .. versionchanged:: unreleased
-            Omitting the ``response=`` argument is deprecated and may be required
-            in a future release.
-
         Example::
 
             MY_CHAR_UUID = "1234"
@@ -796,14 +792,10 @@ class BleakClient:
             raise BleakCharacteristicNotFoundError(char_specifier)
 
         if response is None:
-            # if not specified, prefer write-with-response over write-without-
+            # If not specified, prefer write-with-response over write-without-
             # response if it is available since it is the more reliable write.
-            warn(
-                "Omitting the response argument is not recommended."
-                "Legacy usage may be not allowed in the future.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            # This assumes that the peripheral correctly reports the
+            # characteristic properties, so doesn't work in some cases.
             response = "write" in characteristic.properties
 
         await self._backend.write_gatt_char(characteristic, data, response)
