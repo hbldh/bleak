@@ -552,7 +552,7 @@ class BleakClientWinRT(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        return self._DeprecatedIsConnectedReturn(
+        return (
             False
             if self._session is None
             else self._session.session_status == GattSessionStatus.ACTIVE

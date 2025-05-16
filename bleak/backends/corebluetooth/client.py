@@ -173,7 +173,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     @property
     def is_connected(self) -> bool:
         """Checks for current active connection"""
-        return self._DeprecatedIsConnectedReturn(
+        return (
             False
             if self._peripheral is None
             else self._peripheral.state() == CBPeripheralStateConnected
