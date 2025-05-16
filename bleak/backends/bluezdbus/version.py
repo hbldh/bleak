@@ -25,10 +25,6 @@ class BlueZFeatures:
 
     checked_bluez_version = False
     supported_version = True
-    can_write_without_response = True
-    write_without_response_workaround_needed = False
-    hides_battery_characteristic = True
-    hides_device_name_characteristic = True
     _check_bluez_event: Optional[asyncio.Event] = None
 
     @classmethod
@@ -43,19 +39,13 @@ class BlueZFeatures:
         version_output = await _get_bluetoothctl_version()
         if version_output:
             major, minor = tuple(map(int, version_output.groups()))
-            cls.supported_version = major == 5 and minor >= 34
-            cls.can_write_without_response = major == 5 and minor >= 46
-            cls.write_without_response_workaround_needed = not (
-                major == 5 and minor >= 51
-            )
-            cls.hides_battery_characteristic = major == 5 and minor >= 48 and minor < 55
-            cls.hides_device_name_characteristic = major == 5 and minor >= 48
+            cls.supported_version = major == 5 and minor >= 55
         else:
             # Its possible they may be running inside a container where
             # bluetoothctl is not available and they only have access to the
             # BlueZ D-Bus API.
             logging.warning(
-                "Could not determine BlueZ version, bluetoothctl not available, assuming 5.51+"
+                "Could not determine BlueZ version, bluetoothctl not available, assuming 5.55+"
             )
 
         cls._check_bluez_event.set()
