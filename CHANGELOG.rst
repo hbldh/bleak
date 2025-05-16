@@ -35,6 +35,7 @@ Removed
 -------
 * Removed support for Python 3.8. The minimum supported version is now Python 3.9.
 * Removed deprecated parameters and methods.
+* Removed support for macOS < 10.13.
 
 `0.22.3`_ (2024-10-05)
 ======================

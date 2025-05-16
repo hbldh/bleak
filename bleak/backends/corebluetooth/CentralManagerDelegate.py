@@ -93,25 +93,22 @@ class CentralManagerDelegate(NSObject):
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
 
-        # isScanning property was added in 10.13
-        if objc.macos_available(10, 13):
-            self.central_manager.addObserver_forKeyPath_options_context_(
-                self, "isScanning", NSKeyValueObservingOptionNew, 0
-            )
-            self._did_start_scanning_event: Optional[asyncio.Event] = None
-            self._did_stop_scanning_event: Optional[asyncio.Event] = None
+        self.central_manager.addObserver_forKeyPath_options_context_(
+            self, "isScanning", NSKeyValueObservingOptionNew, 0
+        )
+        self._did_start_scanning_event: Optional[asyncio.Event] = None
+        self._did_stop_scanning_event: Optional[asyncio.Event] = None
 
         return self
 
     def __del__(self) -> None:
-        if objc.macos_available(10, 13):
-            try:
-                self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
-            except IndexError:
-                # If self.init() raised an exception before calling
-                # addObserver_forKeyPath_options_context_, attempting
-                # to remove the observer will fail with IndexError
-                pass
+        try:
+            self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
+        except IndexError:
+            # If self.init() raised an exception before calling
+            # addObserver_forKeyPath_options_context_, attempting
+            # to remove the observer will fail with IndexError
+            pass
 
     # User defined functions
 
@@ -129,29 +126,19 @@ class CentralManagerDelegate(NSObject):
             service_uuids, None
         )
 
-        # The `isScanning` property was added in macOS 10.13, so before that
-        # just waiting some will have to do.
-        if objc.macos_available(10, 13):
-            event = asyncio.Event()
-            self._did_start_scanning_event = event
-            if not self.central_manager.isScanning():
-                await event.wait()
-        else:
-            await asyncio.sleep(0.1)
+        event = asyncio.Event()
+        self._did_start_scanning_event = event
+        if not self.central_manager.isScanning():
+            await event.wait()
 
     @objc.python_method
     async def stop_scan(self) -> None:
         self.central_manager.stopScan()
 
-        # The `isScanning` property was added in macOS 10.13, so before that
-        # just waiting some will have to do.
-        if objc.macos_available(10, 13):
-            event = asyncio.Event()
-            self._did_stop_scanning_event = event
-            if self.central_manager.isScanning():
-                await event.wait()
-        else:
-            await asyncio.sleep(0.1)
+        event = asyncio.Event()
+        self._did_stop_scanning_event = event
+        if self.central_manager.isScanning():
+            await event.wait()
 
     @objc.python_method
     async def connect(

@@ -590,7 +590,16 @@ class PeripheralDelegate(NSObject):
         else:
             future.set_result(rssi)
 
-    # peripheral_didReadRSSI_error_ method is added dynamically later
+    def peripheral_didReadRSSI_error_(
+        self: PeripheralDelegate,
+        peripheral: CBPeripheral,
+        rssi: NSNumber,
+        error: Optional[NSError],
+    ) -> None:
+        logger.debug("peripheral_didReadRSSI_error_")
+        self._event_loop.call_soon_threadsafe(
+            self.did_read_rssi, peripheral, rssi, error
+        )
 
     # Bleak currently doesn't use the callbacks below other than for debug logging
 
@@ -619,42 +628,3 @@ class PeripheralDelegate(NSObject):
         self._event_loop.call_soon_threadsafe(
             self.did_modify_services, peripheral, invalidatedServices
         )
-
-
-# peripheralDidUpdateRSSI:error: was deprecated and replaced with
-# peripheral:didReadRSSI:error: in macOS 10.13
-if objc.macos_available(10, 13):
-
-    def peripheral_didReadRSSI_error_(
-        self: PeripheralDelegate,
-        peripheral: CBPeripheral,
-        rssi: NSNumber,
-        error: Optional[NSError],
-    ) -> None:
-        logger.debug("peripheral_didReadRSSI_error_")
-        self._event_loop.call_soon_threadsafe(
-            self.did_read_rssi, peripheral, rssi, error
-        )
-
-    objc.classAddMethod(
-        PeripheralDelegate,
-        b"peripheral:didReadRSSI:error:",
-        peripheral_didReadRSSI_error_,
-    )
-
-
-else:
-
-    def peripheralDidUpdateRSSI_error_(
-        self: PeripheralDelegate, peripheral: CBPeripheral, error: Optional[NSError]
-    ) -> None:
-        logger.debug("peripheralDidUpdateRSSI_error_")
-        self._event_loop.call_soon_threadsafe(
-            self.did_read_rssi, peripheral, peripheral.RSSI(), error
-        )
-
-    objc.classAddMethod(
-        PeripheralDelegate,
-        b"peripheralDidUpdateRSSI:error:",
-        peripheralDidUpdateRSSI_error_,
-    )
