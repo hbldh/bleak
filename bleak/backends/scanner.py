@@ -262,26 +262,12 @@ class BaseBleakScanner(abc.ABC):
             The updated device.
         """
 
-        # for backwards compatibility, see https://github.com/hbldh/bleak/issues/1025
-        metadata = dict(
-            uuids=adv.service_uuids,
-            manufacturer_data=adv.manufacturer_data,
-        )
-
         try:
             device, _ = self.seen_devices[address]
 
             device.name = name
-            device._rssi = adv.rssi
-            device._metadata = metadata
         except KeyError:
-            device = BLEDevice(
-                address,
-                name,
-                details,
-                adv.rssi,
-                **metadata,
-            )
+            device = BLEDevice(address, name, details)
 
         self.seen_devices[address] = (device, adv)
 
