@@ -16,8 +16,7 @@ Added
 
 Changed
 -------
-* Made `response` argument of class ``BleakClient.write_gatt_char()`` explicitly optional. #1730
-* Deprecated omitting the ``response`` argument.
+* Made `response` argument of class ``BleakClient.write_gatt_char()`` explicitly optional. Fixes #1730.
 * Updated Poetry build system version to ``>=2.0``.
 * Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled.
 * Updated ``winrt`` backend to use PyWinRT >= 3.1.
