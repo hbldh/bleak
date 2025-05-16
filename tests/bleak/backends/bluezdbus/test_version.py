@@ -11,22 +11,15 @@ from bleak.backends.bluezdbus.version import BlueZFeatures
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "version,can_write_without_response,write_without_response_workaround_needed,hides_battery_characteristic,hides_device_name_characteristic",
+    "version",
     [
-        (b"bluetoothctl: 5.34", False, False, False, False),
-        (b"bluetoothctl: 5.46", True, False, False, False),
-        (b"bluetoothctl: 5.48", True, False, True, True),
-        (b"bluetoothctl: 5.51", True, True, True, True),
-        (b"bluetoothctl: 5.63", True, True, False, True),
-        (b"", True, True, False, True),
+        (b"bluetoothctl: 5.51"),
+        (b"bluetoothctl: 5.63"),
+        (b""),
     ],
 )
 async def test_bluez_version(
     version,
-    can_write_without_response,
-    write_without_response_workaround_needed,
-    hides_battery_characteristic,
-    hides_device_name_characteristic,
 ):
     """Test we can determine supported feature from bluetoothctl."""
     mock_proc = Mock(
@@ -39,16 +32,6 @@ async def test_bluez_version(
         BlueZFeatures._check_bluez_event = None
         await BlueZFeatures.check_bluez_version()
     assert BlueZFeatures.checked_bluez_version is True
-    assert BlueZFeatures.can_write_without_response == can_write_without_response
-    assert (
-        not BlueZFeatures.write_without_response_workaround_needed
-        == write_without_response_workaround_needed
-    )
-    assert BlueZFeatures.hides_battery_characteristic == hides_battery_characteristic
-    assert (
-        BlueZFeatures.hides_device_name_characteristic
-        == hides_device_name_characteristic
-    )
 
 
 @pytest.mark.asyncio

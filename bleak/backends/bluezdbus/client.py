@@ -126,7 +126,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not BlueZFeatures.checked_bluez_version:
             await BlueZFeatures.check_bluez_version()
         if not BlueZFeatures.supported_version:
-            raise BleakError("Bleak requires BlueZ >= 5.43.")
+            raise BleakError("Bleak requires BlueZ >= 5.55.")
         # A Discover must have been run before connecting to any devices.
         # Find the desired device before trying to connect.
         timeout = kwargs.get("timeout", self._timeout)
@@ -688,35 +688,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             characteristic = char_specifier
 
         if not characteristic:
-            # Special handling for BlueZ >= 5.48, where Battery Service (0000180f-0000-1000-8000-00805f9b34fb:)
-            # has been moved to interface org.bluez.Battery1 instead of as a regular service.
-            if (
-                str(char_specifier) == "00002a19-0000-1000-8000-00805f9b34fb"
-                and BlueZFeatures.hides_battery_characteristic
-            ):
-                reply = await self._bus.call(
-                    Message(
-                        destination=defs.BLUEZ_SERVICE,
-                        path=self._device_path,
-                        interface=defs.PROPERTIES_INTERFACE,
-                        member="GetAll",
-                        signature="s",
-                        body=[defs.BATTERY_INTERFACE],
-                    )
-                )
-                assert_reply(reply)
-                # Simulate regular characteristics read to be consistent over all platforms.
-                value = bytearray([reply.body[0]["Percentage"].value])
-                logger.debug(
-                    "Read Battery Level {0} | {1}: {2}".format(
-                        char_specifier, self._device_path, value
-                    )
-                )
-                return value
-            if (
-                str(char_specifier) == "00002a00-0000-1000-8000-00805f9b34fb"
-                and BlueZFeatures.hides_device_name_characteristic
-            ):
+            if str(char_specifier) == "00002a00-0000-1000-8000-00805f9b34fb":
                 # Simulate regular characteristics read to be consistent over all platforms.
                 manager = await get_global_bluez_manager()
                 value = bytearray(manager.get_device_name(self._device_path).encode())
@@ -821,63 +793,34 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        # See docstring for details about this handling.
-        if not response and not BlueZFeatures.can_write_without_response:
-            raise BleakError("Write without response requires at least BlueZ 5.46")
+        while True:
+            assert self._bus
 
-        if response or not BlueZFeatures.write_without_response_workaround_needed:
-            while True:
-                assert self._bus
-
-                reply = await self._bus.call(
-                    Message(
-                        destination=defs.BLUEZ_SERVICE,
-                        path=characteristic.path,
-                        interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                        member="WriteValue",
-                        signature="aya{sv}",
-                        body=[
-                            bytes(data),
-                            {
-                                "type": Variant(
-                                    "s", "request" if response else "command"
-                                )
-                            },
-                        ],
-                    )
-                )
-
-                assert reply
-
-                if reply.error_name == "org.bluez.Error.InProgress":
-                    logger.debug("retrying characteristic WriteValue due to InProgress")
-                    # Avoid calling in a tight loop. There is no dbus signal to
-                    # indicate ready, so unfortunately, we have to poll.
-                    await asyncio.sleep(0.01)
-                    continue
-
-                assert_reply(reply)
-                break
-        else:
-            # Older versions of BlueZ don't have the "type" option, so we have
-            # to write the hard way. This isn't the most efficient way of doing
-            # things, but it works.
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
                     path=characteristic.path,
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                    member="AcquireWrite",
-                    signature="a{sv}",
-                    body=[{}],
+                    member="WriteValue",
+                    signature="aya{sv}",
+                    body=[
+                        bytes(data),
+                        {"type": Variant("s", "request" if response else "command")},
+                    ],
                 )
             )
+
+            assert reply
+
+            if reply.error_name == "org.bluez.Error.InProgress":
+                logger.debug("retrying characteristic WriteValue due to InProgress")
+                # Avoid calling in a tight loop. There is no dbus signal to
+                # indicate ready, so unfortunately, we have to poll.
+                await asyncio.sleep(0.01)
+                continue
+
             assert_reply(reply)
-            fd = reply.unix_fds[0]
-            try:
-                os.write(fd, data)
-            finally:
-                os.close(fd)
+            break
 
         logger.debug(
             "Write Characteristic %s | %s: %s",
