@@ -111,10 +111,3 @@ required.
 .. automethod:: bleak.BleakClient.pair
 .. automethod:: bleak.BleakClient.unpair
 
-
-----------
-Deprecated
-----------
-
-.. automethod:: bleak.BleakClient.set_disconnected_callback
-.. automethod:: bleak.BleakClient.get_services

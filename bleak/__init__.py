@@ -32,7 +32,6 @@ from typing import (
     Union,
     overload,
 )
-from warnings import warn
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -167,38 +166,6 @@ class BleakScanner:
     ) -> None:
         await self._backend.stop()
 
-    def register_detection_callback(
-        self, callback: Optional[AdvertisementDataCallback]
-    ) -> None:
-        """
-        Register a callback that is called when a device is discovered or has a property changed.
-
-        .. deprecated:: 0.17.0
-            This method will be removed in a future version of Bleak. Pass
-            the callback directly to the :class:`BleakScanner` constructor instead.
-
-        Args:
-            callback: A function, coroutine or ``None``.
-
-
-        """
-        warn(
-            "This method will be removed in a future version of Bleak. Use the detection_callback of the BleakScanner constructor instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-
-        try:
-            unregister = getattr(self, "_unregister_")
-        except AttributeError:
-            pass
-        else:
-            unregister()
-
-        if callback is not None:
-            unregister = self._backend.register_detection_callback(callback)
-            setattr(self, "_unregister_", unregister)
-
     async def start(self) -> None:
         """Start scanning for devices"""
         await self._backend.start()
@@ -206,25 +173,6 @@ class BleakScanner:
     async def stop(self) -> None:
         """Stop scanning for devices"""
         await self._backend.stop()
-
-    def set_scanning_filter(self, **kwargs) -> None:
-        """
-        Set scanning filter for the BleakScanner.
-
-        .. deprecated:: 0.17.0
-            This method will be removed in a future version of Bleak. Pass
-            arguments directly to the :class:`BleakScanner` constructor instead.
-
-        Args:
-            **kwargs: The filter details.
-
-        """
-        warn(
-            "This method will be removed in a future version of Bleak. Use BleakScanner constructor args instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        self._backend.set_scanning_filter(**kwargs)
 
     async def advertisement_data(
         self,
@@ -351,24 +299,6 @@ class BleakScanner:
         .. versionadded:: 0.19
         """
         return self._backend.seen_devices
-
-    async def get_discovered_devices(self) -> List[BLEDevice]:
-        """Gets the devices registered by the BleakScanner.
-
-        .. deprecated:: 0.11.0
-            This method will be removed in a future version of Bleak. Use the
-            :attr:`.discovered_devices` property instead.
-
-        Returns:
-            A list of the devices that the scanner has discovered during the scanning.
-
-        """
-        warn(
-            "This method will be removed in a future version of Bleak. Use the `discovered_devices` property instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.discovered_devices
 
     @classmethod
     async def find_device_by_address(
@@ -593,28 +523,6 @@ class BleakClient:
 
     # Connectivity methods
 
-    def set_disconnected_callback(
-        self, callback: Optional[Callable[[BleakClient], None]], **kwargs
-    ) -> None:
-        """Set the disconnect callback.
-
-        .. deprecated:: 0.17.0
-            This method will be removed in a future version of Bleak.
-            Pass the callback to the :class:`BleakClient` constructor instead.
-
-        Args:
-            callback: callback to be called on disconnection.
-
-        """
-        warn(
-            "This method will be removed future version, pass the callback to the BleakClient constructor instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        self._backend.set_disconnected_callback(
-            None if callback is None else functools.partial(callback, self), **kwargs
-        )
-
     async def connect(self, **kwargs) -> bool:
         """Connect to the specified GATT server.
 
@@ -677,24 +585,6 @@ class BleakClient:
         return self._backend.is_connected
 
     # GATT services methods
-
-    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
-        """Get all services registered for this GATT server.
-
-        .. deprecated:: 0.17.0
-            This method will be removed in a future version of Bleak.
-            Use the :attr:`services` property instead.
-
-        Returns:
-           A :class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
-
-        """
-        warn(
-            "This method will be removed future version, use the services property instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return await self._backend.get_services(**kwargs)
 
     @property
     def services(self) -> BleakGATTServiceCollection:
@@ -911,21 +801,6 @@ class BleakClient:
         await self._backend.write_gatt_descriptor(handle, data)
 
 
-# for backward compatibility
-def discover(*args, **kwargs):
-    """
-    .. deprecated:: 0.17.0
-        This method will be removed in a future version of Bleak.
-        Use :meth:`BleakScanner.discover` instead.
-    """
-    warn(
-        "The discover function will removed in a future version, use BleakScanner.discover instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-    return BleakScanner.discover(*args, **kwargs)
-
-
 def cli() -> None:
     import argparse
 
@@ -938,7 +813,9 @@ def cli() -> None:
     )
     args = parser.parse_args()
 
-    out = asyncio.run(discover(adapter=args.adapter, timeout=float(args.timeout)))
+    out = asyncio.run(
+        BleakScanner.discover(adapter=args.adapter, timeout=float(args.timeout))
+    )
     for o in out:
         print(str(o))
 

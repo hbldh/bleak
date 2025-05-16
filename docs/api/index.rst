@@ -45,10 +45,3 @@ Utilities
 
 .. automodule:: bleak.uuids
     :members:
-
-Deprecated
-----------
-
-.. module:: bleak
-
-.. autofunction:: bleak.discover
