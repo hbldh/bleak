@@ -107,14 +107,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     async def connect(
         self, pair: bool, dangerous_use_bleak_cache: bool = False, **kwargs
-    ) -> bool:
+    ) -> None:
         """Connect to the specified GATT server.
 
         Keyword Args:
             timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
-        Returns:
-            Boolean representing connection status.
 
         Raises:
             BleakError: If the device is already connected or if the device could not be found.
@@ -345,7 +342,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
 
                     stack.pop_all()
-                    return True
 
     @staticmethod
     async def _disconnect_monitor(
@@ -411,11 +407,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # Reset all stored services.
             self.services = None
 
-    async def disconnect(self) -> bool:
+    async def disconnect(self) -> None:
         """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing if device is disconnected.
 
         Raises:
             BleakDBusError: If there was a D-Bus error
@@ -428,7 +421,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # we have already called disconnect and closed the D-Bus
             # connection.
             logger.debug("already disconnected ({%s})", self._device_path)
-            return True
+            return
 
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
@@ -457,17 +450,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
-        return True
-
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(self, *args, **kwargs) -> None:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
-
-        Returns:
-            Boolean regarding success of pairing.
-
         """
         # See if it is already paired.
         reply = await self._bus.call(
@@ -483,7 +470,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert_reply(reply)
         if reply.body[0].value:
             logger.debug("BLE device @ %s is already paired", self.address)
-            return True
+            return
 
         # Set device as trusted.
         reply = await self._bus.call(
@@ -510,27 +497,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert_reply(reply)
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.PROPERTIES_INTERFACE,
-                member="Get",
-                signature="ss",
-                body=[defs.DEVICE_INTERFACE, "Paired"],
-            )
-        )
-        assert_reply(reply)
-
-        return reply.body[0].value
-
-    async def unpair(self) -> bool:
-        """Unpair with the peripheral.
-
-        Returns:
-            Boolean regarding success of unpairing.
-
-        """
+    async def unpair(self) -> None:
+        """Unpair with the peripheral."""
         adapter_path = await self._get_adapter_path()
         device_path = await self._get_device_path()
         manager = await get_global_bluez_manager()
@@ -569,8 +537,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     self.address, f"Device with address {self.address} was not found."
                 ) from e
             raise
-
-        return True
 
     @property
     def is_connected(self) -> bool:

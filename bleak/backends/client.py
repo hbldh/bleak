@@ -76,7 +76,7 @@ class BaseBleakClient(abc.ABC):
         self._disconnected_callback = callback
 
     @abc.abstractmethod
-    async def connect(self, pair: bool, **kwargs) -> bool:
+    async def connect(self, pair: bool, **kwargs) -> None:
         """Connect to the specified GATT server.
 
         Args:
@@ -85,30 +85,21 @@ class BaseBleakClient(abc.ABC):
 
             Backends that can't implement this should make an appropriate
             log message and ignore the parameter.
-
-        Returns:
-            Boolean representing connection status.
-
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def disconnect(self) -> bool:
-        """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing connection status.
-
-        """
+    async def disconnect(self) -> None:
+        """Disconnect from the specified GATT server."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(self, *args, **kwargs) -> None:
         """Pair with the peripheral."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def unpair(self) -> bool:
+    async def unpair(self) -> None:
         """Unpair with the peripheral."""
         raise NotImplementedError()
 
