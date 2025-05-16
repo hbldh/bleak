@@ -580,9 +580,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Boolean representing connection status.
 
         """
-        return self._DeprecatedIsConnectedReturn(
-            False if self._bus is None else self._is_connected
-        )
+        return False if self._bus is None else self._is_connected
 
     async def _acquire_mtu(self) -> None:
         """Acquires the MTU for this device by calling the "AcquireWrite" or
