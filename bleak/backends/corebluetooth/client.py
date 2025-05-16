@@ -99,15 +99,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     def __str__(self) -> str:
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
-    async def connect(self, pair: bool, **kwargs) -> bool:
+    async def connect(self, pair: bool, **kwargs) -> None:
         """Connect to a specified Peripheral
 
         Keyword Args:
             timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
-        Returns:
-            Boolean representing connection status.
-
         """
         if pair:
             logger.debug("Explicit pairing is not available in CoreBluetooth.")
@@ -156,19 +152,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # Now get services
         await self.get_services()
 
-        return True
-
-    async def disconnect(self) -> bool:
+    async def disconnect(self) -> None:
         """Disconnect from the peripheral device"""
         if (
             self._peripheral is None
             or self._peripheral.state() != CBPeripheralStateConnected
         ):
-            return True
+            return
 
         await self._central_manager_delegate.disconnect(self._peripheral)
-
-        return True
 
     @property
     def is_connected(self) -> bool:
@@ -192,32 +184,31 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             + 3
         )
 
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(self, *args, **kwargs) -> None:
         """Attempt to pair with a peripheral.
 
-        .. note::
-
-            This is not available on macOS since there is not explicit method to do a pairing, Instead the docs
-            state that it "auto-pairs" when trying to read a characteristic that requires encryption, something
-            Bleak cannot do apparently.
+        Raises:
+            NotImplementedError:
+                This is not available on macOS since there is not explicit API
+                to do a pairing. Instead, the docs state that it "auto-pairs",
+                when trying to read a characteristic that requires encryption.
 
         Reference:
 
             - `Apple Docs <https://developer.apple.com/library/archive/documentation/NetworkingInternetWeb/Conceptual/CoreBluetooth_concepts/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral/BestPracticesForSettingUpYourIOSDeviceAsAPeripheral.html#//apple_ref/doc/uid/TP40013257-CH5-SW1>`_
             - `Stack Overflow post #1 <https://stackoverflow.com/questions/25254932/can-you-pair-a-bluetooth-le-device-in-an-ios-app>`_
             - `Stack Overflow post #2 <https://stackoverflow.com/questions/47546690/ios-bluetooth-pairing-request-dialog-can-i-know-the-users-choice>`_
-
-        Returns:
-            Boolean regarding success of pairing.
-
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
-    async def unpair(self) -> bool:
+    async def unpair(self) -> None:
         """
+        Remove pairing information for a peripheral.
 
-        Returns:
-
+        Raises:
+            NotImplementedError:
+                This is not available on macOS since there is not explicit API
+                to do a pairing.
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 

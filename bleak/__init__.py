@@ -523,28 +523,26 @@ class BleakClient:
 
     # Connectivity methods
 
-    async def connect(self, **kwargs) -> bool:
+    async def connect(self, **kwargs) -> None:
         """Connect to the specified GATT server.
 
         Args:
             **kwargs: For backwards compatibility - should not be used.
 
-        Returns:
-            Always returns ``True`` for backwards compatibility.
-
+        .. versionchanged:: unreleased
+            No longer returns ``True``. Instead, the return type is ``None``.
         """
-        return await self._backend.connect(self._pair_before_connect, **kwargs)
+        await self._backend.connect(self._pair_before_connect, **kwargs)
 
-    async def disconnect(self) -> bool:
+    async def disconnect(self) -> None:
         """Disconnect from the specified GATT server.
 
-        Returns:
-            Always returns ``True`` for backwards compatibility.
-
+        .. versionchanged:: unreleased
+            No longer returns ``True``. Instead, the return type is ``None``.
         """
-        return await self._backend.disconnect()
+        await self._backend.disconnect()
 
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(self, *args, **kwargs) -> None:
         """
         Pair with the specified GATT server.
 
@@ -553,13 +551,12 @@ class BleakClient:
         that a characteristic that requires authentication is read or written.
         This method may have backend-specific additional keyword arguments.
 
-        Returns:
-            Always returns ``True`` for backwards compatibility.
-
+        .. versionchanged:: unreleased
+            No longer returns ``True``. Instead, the return type is ``None``.
         """
-        return await self._backend.pair(*args, **kwargs)
+        await self._backend.pair(*args, **kwargs)
 
-    async def unpair(self) -> bool:
+    async def unpair(self) -> None:
         """
         Unpair from the specified GATT server.
 
@@ -568,10 +565,10 @@ class BleakClient:
         This method is only available on Windows and Linux and will raise an
         exception on other platforms.
 
-        Returns:
-            Always returns ``True`` for backwards compatibility.
+        .. versionchanged:: unreleased
+            No longer returns ``True``. Instead, the return type is ``None``.
         """
-        return await self._backend.unpair()
+        await self._backend.unpair()
 
     @property
     def is_connected(self) -> bool:

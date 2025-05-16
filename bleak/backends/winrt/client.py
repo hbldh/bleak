@@ -245,15 +245,11 @@ class BleakClientWinRT(BaseBleakClient):
             )
         return requester
 
-    async def connect(self, pair: bool, **kwargs) -> bool:
+    async def connect(self, pair: bool, **kwargs) -> None:
         """Connect to the specified GATT server.
 
         Keyword Args:
             timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
-        Returns:
-            Boolean representing connection status.
-
         """
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
@@ -489,15 +485,8 @@ class BleakClientWinRT(BaseBleakClient):
         finally:
             self._session_active_events.remove(event)
 
-        return True
-
-    async def disconnect(self) -> bool:
-        """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing if device is disconnected.
-
-        """
+    async def disconnect(self) -> None:
+        """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
 
         assert self.services
@@ -542,8 +531,6 @@ class BleakClientWinRT(BaseBleakClient):
             finally:
                 self._session_closed_events.remove(event)
 
-        return True
-
     @property
     def is_connected(self) -> bool:
         """Check connection status between this client and the server.
@@ -565,7 +552,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     async def pair(
         self, protection_level: Optional[DevicePairingProtectionLevel] = None, **kwargs
-    ) -> bool:
+    ) -> None:
         """Attempts to pair with the device.
 
         Keyword Args:
@@ -575,10 +562,6 @@ class BleakClientWinRT(BaseBleakClient):
                 2. Encryption - Pair the device using encryption.
                 3. EncryptionAndAuthentication - Pair the device using
                    encryption and authentication. (This will not work in Bleak...)
-
-        Returns:
-            Boolean regarding success of pairing.
-
         """
         assert self._requester
 
@@ -588,12 +571,11 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         if not device_information.pairing.can_pair:
-            logging.debug("Device does not support pairing. Skipping pairing.")
-            return False
+            raise BleakError("Device does not support pairing")
 
         if device_information.pairing.is_paired:
             logging.debug("Device is already paired. Skipping pairing.")
-            return True
+            return
 
         # Currently only supporting Just Works solutions...
         ceremony = DevicePairingKinds.CONFIRM_ONLY
@@ -630,16 +612,11 @@ class BleakClientWinRT(BaseBleakClient):
             "Paired to device with protection level %r.",
             pairing_result.protection_level_used,
         )
-        return True
 
-    async def unpair(self) -> bool:
+    async def unpair(self) -> None:
         """Attempts to unpair from the device.
 
         N.B. unpairing also leads to disconnection in the Windows backend.
-
-        Returns:
-            Boolean on whether the unparing was successful.
-
         """
         device = await self._create_requester(
             self._device_info
@@ -659,8 +636,6 @@ class BleakClientWinRT(BaseBleakClient):
             logger.info("Unpaired with device.")
         finally:
             device.close()
-
-        return True
 
     # GATT services methods
 

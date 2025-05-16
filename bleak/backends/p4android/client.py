@@ -57,13 +57,8 @@ class BleakClientP4Android(BaseBleakClient):
 
     # Connectivity methods
 
-    async def connect(self, pair: bool, **kwargs) -> bool:
-        """Connect to the specified GATT server.
-
-        Returns:
-            Boolean representing connection status.
-
-        """
+    async def connect(self, pair: bool, **kwargs) -> None:
+        """Connect to the specified GATT server."""
         if pair:
             logger.warning("Pairing during connect is not implemented on Android")
 
@@ -125,22 +120,15 @@ class BleakClientP4Android(BaseBleakClient):
                 pass
             raise
 
-        return True
-
-    async def disconnect(self) -> bool:
-        """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing if device is disconnected.
-
-        """
+    async def disconnect(self) -> None:
+        """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
         if self.__gatt is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the gatt
             # connection.
             logger.debug("already disconnected")
-            return True
+            return
 
         # Try to disconnect the actual device/peripheral
         try:
@@ -162,17 +150,11 @@ class BleakClientP4Android(BaseBleakClient):
         # Reset all stored services.
         self.services = None
 
-        return True
-
-    async def pair(self, *args, **kwargs) -> bool:
+    async def pair(self, *args, **kwargs) -> None:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
-
-        Returns:
-            Boolean regarding success of pairing.
-
         """
         loop = asyncio.get_running_loop()
 
@@ -204,28 +186,22 @@ class BleakClientP4Android(BaseBleakClient):
             # See if it is already paired.
             bond_state = self.__device.getBondState()
             if bond_state == defs.BluetoothDevice.BOND_BONDED:
-                return True
+                return
             elif bond_state == defs.BluetoothDevice.BOND_NONE:
                 logger.debug(f"Pairing to BLE device @ {self.address}")
                 if not self.__device.createBond():
                     raise BleakError(
                         f"Could not initiate bonding with device @ {self.address}"
                     )
-            return await bondedFuture
+            await bondedFuture
         finally:
             await receiver.stop()
 
-    async def unpair(self) -> bool:
-        """Unpair with the peripheral.
-
-        Returns:
-            Boolean regarding success of unpairing.
-
-        """
+    async def unpair(self) -> None:
+        """Unpair with the peripheral."""
         warnings.warn(
             "Unpairing is seemingly unavailable in the Android API at the moment."
         )
-        return False
 
     @property
     def is_connected(self) -> bool:

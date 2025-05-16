@@ -21,6 +21,7 @@ Changed
 * Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled.
 * Updated ``winrt`` backend to use PyWinRT >= 3.1.
 * Added ``notification_discriminator`` parameter to start_notify on CoreBluetooth backend
+* Changed return type of ``connect()``, ``disconnect()``, ``pair()`` and ``unpair()`` methods to ``None``.
 
 Fixed
 -----
