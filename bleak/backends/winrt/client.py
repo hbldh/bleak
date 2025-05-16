@@ -9,7 +9,6 @@ import asyncio
 import logging
 import sys
 import uuid
-import warnings
 from ctypes import WinError
 from typing import (
     Any,
@@ -210,16 +209,9 @@ class BleakClientWinRT(BaseBleakClient):
         self._session: Optional[GattSession] = None
         self._notification_callbacks: Dict[int, EventRegistrationToken] = {}
 
-        if "address_type" in kwargs:
-            warnings.warn(
-                "The address_type keyword arg will in a future version be moved into the win dict input instead.",
-                PendingDeprecationWarning,
-                stacklevel=2,
-            )
-
         # os-specific options
         self._use_cached_services = winrt.get("use_cached_services")
-        self._address_type = winrt.get("address_type", kwargs.get("address_type"))
+        self._address_type = winrt.get("address_type")
         self._retry_on_services_changed = False
 
         self._session_services_changed_token: Optional[EventRegistrationToken] = None

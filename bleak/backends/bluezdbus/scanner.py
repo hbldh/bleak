@@ -1,6 +1,5 @@
 import logging
 from typing import Callable, Coroutine, Dict, List, Literal, Optional, TypedDict
-from warnings import warn
 
 from dbus_fast import Variant
 
@@ -140,16 +139,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if self._service_uuids:
             self._filters["UUIDs"] = Variant("as", self._service_uuids)
 
-        filters = kwargs.get("filters")
-
-        if filters is None:
-            filters = bluez.get("filters")
-        else:
-            warn(
-                "the 'filters' kwarg is deprecated, use 'bluez' kwarg instead",
-                FutureWarning,
-                stacklevel=2,
-            )
+        filters = bluez.get("filters")
 
         if filters is not None:
             self.set_scanning_filter(filters=filters)
