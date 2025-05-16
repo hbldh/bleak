@@ -31,6 +31,7 @@ Fixed
 * Fix D-Bus connection leak when connecting to a device fails in BlueZ backend. Fixes #1698.
 * Fixed possible deadlock when connecting on WinRT backend when device is already connected.
 * Fixed getting notifications from devices connected to BLE adapters with index >9 (hci10, hci11, ...)
+* Fixed ATT error code 15 description to "Insufficient Encryption". Merged #1746.
 
 Removed
 -------
