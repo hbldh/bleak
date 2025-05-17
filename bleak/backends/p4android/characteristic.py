@@ -1,4 +1,4 @@
-from typing import Callable, List, Union
+from typing import Callable, Union
 from uuid import UUID
 
 from ...exc import BleakError
@@ -54,12 +54,12 @@ class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):
         return self.__uuid
 
     @property
-    def properties(self) -> List[str]:
+    def properties(self) -> list[str]:
         """Properties of this characteristic"""
         return self.__properties
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptor]:
+    def descriptors(self) -> list[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 

@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import enum
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, Union
 from uuid import UUID
 
 from ..uuids import uuidstr_to_str
@@ -76,7 +76,7 @@ class BleakGATTCharacteristic(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def properties(self) -> List[str]:
+    def properties(self) -> list[str]:
         """Properties of this characteristic"""
         raise NotImplementedError()
 
@@ -113,7 +113,7 @@ class BleakGATTCharacteristic(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def descriptors(self) -> List[BleakGATTDescriptor]:
+    def descriptors(self) -> list[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         raise NotImplementedError()
 

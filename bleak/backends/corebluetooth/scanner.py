@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Literal, Optional, TypedDict
+from typing import Any, Dict, Literal, Optional, TypedDict
 
 import objc
 from CoreBluetooth import CBPeripheral
@@ -59,7 +59,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[List[str]],
+        service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
         *,
         cb: CBScannerArgs,

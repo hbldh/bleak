@@ -14,7 +14,6 @@ from typing import (
     Any,
     Dict,
     Generic,
-    List,
     Literal,
     Optional,
     Protocol,
@@ -203,9 +202,9 @@ class BleakClientWinRT(BaseBleakClient):
             [uuid.UUID(s) for s in services] if services else None
         )
         self._requester: Optional[BluetoothLEDevice] = None
-        self._services_changed_events: List[asyncio.Event] = []
-        self._session_active_events: List[asyncio.Event] = []
-        self._session_closed_events: List[asyncio.Event] = []
+        self._services_changed_events: list[asyncio.Event] = []
+        self._session_active_events: list[asyncio.Event] = []
+        self._session_closed_events: list[asyncio.Event] = []
         self._session: Optional[GattSession] = None
         self._notification_callbacks: Dict[int, EventRegistrationToken] = {}
 

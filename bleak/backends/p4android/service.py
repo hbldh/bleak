@@ -1,5 +1,3 @@
-from typing import List
-
 from ..service import BleakGATTService
 from .characteristic import BleakGATTCharacteristicP4Android
 
@@ -24,7 +22,7 @@ class BleakGATTServiceP4Android(BleakGATTService):
         return self.__handle
 
     @property
-    def characteristics(self) -> List[BleakGATTCharacteristicP4Android]:
+    def characteristics(self) -> list[BleakGATTCharacteristicP4Android]:
         """List of characteristics for this service"""
         return self.__characteristics
 

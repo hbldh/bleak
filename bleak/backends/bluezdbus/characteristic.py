@@ -1,4 +1,4 @@
-from typing import Callable, List, Union
+from typing import Callable, Union
 from uuid import UUID
 
 from ..characteristic import BleakGATTCharacteristic
@@ -48,7 +48,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.obj.get("UUID")
 
     @property
-    def properties(self) -> List[str]:
+    def properties(self) -> list[str]:
         """Properties of this characteristic
 
         Returns the characteristics `Flags` present in the DBus API.
@@ -56,7 +56,7 @@ class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):
         return self.obj["Flags"]
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptor]:
+    def descriptors(self) -> list[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 

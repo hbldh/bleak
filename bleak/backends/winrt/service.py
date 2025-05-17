@@ -1,5 +1,3 @@
-from typing import List
-
 from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 
 from ..service import BleakGATTService
@@ -22,7 +20,7 @@ class BleakGATTServiceWinRT(BleakGATTService):
         return self.obj.attribute_handle
 
     @property
-    def characteristics(self) -> List[BleakGATTCharacteristicWinRT]:
+    def characteristics(self) -> list[BleakGATTCharacteristicWinRT]:
         """List of characteristics for this service"""
         return self.__characteristics
 

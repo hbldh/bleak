@@ -22,7 +22,6 @@ from typing import (
     Callable,
     Dict,
     Iterable,
-    List,
     Literal,
     Optional,
     Set,
@@ -133,7 +132,7 @@ class BleakScanner:
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[List[str]] = None,
+        service_uuids: Optional[list[str]] = None,
         scanning_mode: Literal["active", "passive"] = "active",
         *,
         bluez: BlueZScannerArgs = {},
@@ -205,7 +204,7 @@ class BleakScanner:
         other convenience methods.
         """
 
-        service_uuids: List[str]
+        service_uuids: list[str]
         """
         Optional list of service UUIDs to filter on. Only advertisements
         containing this advertising data will be received. Required on
@@ -235,7 +234,7 @@ class BleakScanner:
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[False] = False, **kwargs
-    ) -> List[BLEDevice]: ...
+    ) -> list[BLEDevice]: ...
 
     @overload
     @classmethod
@@ -275,7 +274,7 @@ class BleakScanner:
         return scanner.discovered_devices
 
     @property
-    def discovered_devices(self) -> List[BLEDevice]:
+    def discovered_devices(self) -> list[BLEDevice]:
         """
         Gets list of the devices that the scanner has discovered during the scanning.
 

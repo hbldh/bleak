@@ -16,7 +16,6 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    List,
     MutableMapping,
     NamedTuple,
     Optional,
@@ -178,10 +177,10 @@ class BlueZManager:
         # map of characteristic d-bus object paths to set of descriptor d-bus object paths
         self._descriptor_map: Dict[str, Set[str]] = {}
 
-        self._advertisement_callbacks: defaultdict[str, List[AdvertisementCallback]] = (
+        self._advertisement_callbacks: defaultdict[str, list[AdvertisementCallback]] = (
             defaultdict(list)
         )
-        self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
+        self._device_removed_callbacks: list[DeviceRemovedCallbackAndState] = []
         self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
         self._condition_callbacks: Dict[str, Set[DeviceConditionCallback]] = {}
         self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
@@ -474,7 +473,7 @@ class BlueZManager:
     async def passive_scan(
         self,
         adapter_path: str,
-        filters: List[OrPatternLike],
+        filters: list[OrPatternLike],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
     ) -> Callable[[], Coroutine]:
@@ -895,10 +894,10 @@ class BlueZManager:
         # type hints
         obj_path: str
         interfaces_and_props: Dict[str, Dict[str, Variant]]
-        interfaces: List[str]
+        interfaces: list[str]
         interface: str
         changed: Dict[str, Variant]
-        invalidated: List[str]
+        invalidated: list[str]
 
         if message.member == "InterfacesAdded":
             obj_path, interfaces_and_props = message.body
