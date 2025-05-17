@@ -46,6 +46,7 @@ Changed
 * Don't change ctypes' global state ``bleak.backends.winrt.util``.
 * Improved performance of BlueZ backend when there are many adapters.
 * Added support for Python 3.13.
+* **BREAKING CHANGE** Android backend do not request permissions in background. ``request_permissions()`` has to be called explicitly.
 
 `0.22.2`_ (2024-06-01)
 ======================
