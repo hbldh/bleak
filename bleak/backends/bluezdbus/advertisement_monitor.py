@@ -6,6 +6,13 @@ This module contains types associated with the BlueZ D-Bus `advertisement
 monitor api <https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst>`.
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import logging
 from collections.abc import Iterable
 from typing import NamedTuple, Union, no_type_check

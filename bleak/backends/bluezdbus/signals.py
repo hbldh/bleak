@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import re
-from collections.abc import Coroutine
 from typing import Any, Optional
 
 from dbus_fast.aio.message_bus import MessageBus

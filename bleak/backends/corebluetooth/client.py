@@ -4,9 +4,15 @@ BLE Client for CoreBluetooth on macOS
 Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
+
 import asyncio
 import logging
-import sys
 import uuid
 from typing import Optional, TypedDict, Union
 

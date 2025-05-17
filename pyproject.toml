@@ -68,3 +68,7 @@ profile = "black"
 py_version=38
 src_paths = ["bleak", "examples", "tests", "typings"]
 extend_skip = [".buildozer"]
+
+[tool.mypy]
+python_version = "3.9"
+disable_error_code = ["import-not-found"]

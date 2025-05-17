@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "win32":
+        assert False, "This backend is only available on Windows"
 
 from winrt.windows.devices.bluetooth.genericattributeprofile import GattDescriptor
 

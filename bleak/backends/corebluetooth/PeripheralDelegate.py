@@ -8,10 +8,16 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 
 from __future__ import annotations
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
+
 import asyncio
 import itertools
 import logging
-import sys
 from collections.abc import Callable, Iterable
 from typing import Any, NewType, Optional
 
