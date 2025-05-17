@@ -8,7 +8,7 @@ import os
 import sys
 import warnings
 from contextlib import AsyncExitStack
-from typing import Callable, Dict, Optional, Set, Union, cast
+from typing import Callable, Optional, Set, Union, cast
 from uuid import UUID
 
 if sys.version_info < (3, 12):
@@ -98,7 +98,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to ensure device gets disconnected if event loop crashes
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
-        self._notification_callbacks: Dict[str, NotifyCallback] = {}
+        self._notification_callbacks: dict[str, NotifyCallback] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None

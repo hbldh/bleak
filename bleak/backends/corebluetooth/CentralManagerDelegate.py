@@ -10,7 +10,7 @@ import asyncio
 import logging
 import sys
 import threading
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -64,13 +64,13 @@ class CentralManagerDelegate(NSObject):
             return None
 
         self.event_loop = asyncio.get_running_loop()
-        self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
+        self._connect_futures: dict[NSUUID, asyncio.Future] = {}
 
-        self.callbacks: Dict[
-            int, Callable[[CBPeripheral, Dict[str, Any], int], None]
+        self.callbacks: dict[
+            int, Callable[[CBPeripheral, dict[str, Any], int], None]
         ] = {}
-        self._disconnect_callbacks: Dict[NSUUID, DisconnectCallback] = {}
-        self._disconnect_futures: Dict[NSUUID, asyncio.Future] = {}
+        self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
+        self._disconnect_futures: dict[NSUUID, asyncio.Future] = {}
 
         self._did_update_state_event = threading.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(

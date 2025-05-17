@@ -20,7 +20,6 @@ from typing import (
     AsyncGenerator,
     Awaitable,
     Callable,
-    Dict,
     Iterable,
     Literal,
     Optional,
@@ -239,7 +238,7 @@ class BleakScanner:
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
-    ) -> Dict[str, tuple[BLEDevice, AdvertisementData]]: ...
+    ) -> dict[str, tuple[BLEDevice, AdvertisementData]]: ...
 
     @classmethod
     async def discover(
@@ -284,7 +283,7 @@ class BleakScanner:
     @property
     def discovered_devices_and_advertisement_data(
         self,
-    ) -> Dict[str, tuple[BLEDevice, AdvertisementData]]:
+    ) -> dict[str, tuple[BLEDevice, AdvertisementData]]:
         """
         Gets a map of device address to tuples of devices and the most recently
         received advertisement data for that device.
