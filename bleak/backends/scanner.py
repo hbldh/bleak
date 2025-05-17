@@ -3,7 +3,7 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional, Tuple, Type
+from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional, Type
 
 from ..exc import BleakError
 from .device import BLEDevice
@@ -55,7 +55,7 @@ class AdvertisementData(NamedTuple):
     .. versionadded:: 0.19
     """
 
-    platform_data: Tuple
+    platform_data: tuple[Any, ...]
     """
     Tuple of platform specific data.
 
