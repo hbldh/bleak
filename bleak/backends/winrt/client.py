@@ -17,7 +17,6 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
-    Set,
     TypedDict,
     TypeVar,
     Union,
@@ -181,7 +180,7 @@ class BleakClientWinRT(BaseBleakClient):
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[Set[str]] = None,
+        services: Optional[set[str]] = None,
         *,
         winrt: WinRTClientArgs,
         **kwargs,

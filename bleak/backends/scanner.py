@@ -3,22 +3,13 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    Hashable,
-    NamedTuple,
-    Optional,
-    Set,
-    Type,
-)
+from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional, Type
 
 from ..exc import BleakError
 from .device import BLEDevice
 
 # prevent tasks from being garbage collected
-_background_tasks: Set[asyncio.Task] = set()
+_background_tasks = set[asyncio.Task]()
 
 
 class AdvertisementData(NamedTuple):
