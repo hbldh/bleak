@@ -10,7 +10,7 @@ import os
 import platform
 import sys
 import uuid
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -221,7 +221,7 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
 
-def get_platform_client_backend_type() -> Type[BaseBleakClient]:
+def get_platform_client_backend_type() -> type[BaseBleakClient]:
     """
     Gets the platform-specific :class:`BaseBleakClient` type.
     """

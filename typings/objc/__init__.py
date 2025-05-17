@@ -1,11 +1,11 @@
-from typing import Optional, Type, TypeVar
+from typing import Optional, TypeVar
 
 from Foundation import NSObject
 
 T = TypeVar("T")
 
 
-def super(cls: Type[T], self: T) -> T: ...
+def super(cls: type[T], self: T) -> T: ...
 
 
 def macos_available(major: int, minor: int, patch: int = 0) -> bool: ...

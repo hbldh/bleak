@@ -19,16 +19,16 @@ TCBCentralManager = TypeVar("TCBCentralManager", bound=CBCentralManager)
 
 class CBCentralManager(CBManager):
     @classmethod
-    def init(cls: Type[TCBCentralManager]) -> Optional[TCBCentralManager]: ...
+    def init(cls: type[TCBCentralManager]) -> Optional[TCBCentralManager]: ...
     @classmethod
     def initWithDelegate_queue_(
-        cls: Type[TCBCentralManager],
+        cls: type[TCBCentralManager],
         delegate: CBCentralManagerDelegate,
         queue: dispatch_queue_t,
     ) -> Optional[TCBCentralManager]: ...
     @classmethod
     def initWithDelegate_queue_options_(
-        cls: Type[TCBCentralManager],
+        cls: type[TCBCentralManager],
         delegate: CBCentralManagerDelegate,
         queue: dispatch_queue_t,
         options: NSDictionary,

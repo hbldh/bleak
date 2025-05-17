@@ -1,10 +1,10 @@
-from typing import NewType, Optional, Sequence, Type, TypeVar
+from typing import NewType, Optional, Sequence, TypeVar
 
 TNSObject = TypeVar("TNSObject", bound=NSObject)
 
 class NSObject:
     @classmethod
-    def alloc(cls: Type[TNSObject]) -> TNSObject: ...
+    def alloc(cls: type[TNSObject]) -> TNSObject: ...
     def init(self: TNSObject) -> Optional[TNSObject]: ...
     def addObserver_forKeyPath_options_context_(
         self,
