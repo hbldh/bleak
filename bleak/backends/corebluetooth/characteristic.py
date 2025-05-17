@@ -5,6 +5,13 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
+
 from collections.abc import Callable
 from enum import Enum
 from typing import Optional, Union

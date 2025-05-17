@@ -1,3 +1,10 @@
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "android":
+        assert False, "This backend is only available on Android"
+
 from ..service import BleakGATTService
 from .characteristic import BleakGATTCharacteristicP4Android
 

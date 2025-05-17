@@ -2,10 +2,16 @@
 """
 BLE Client for BlueZ on Linux
 """
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import asyncio
 import logging
 import os
-import sys
 import warnings
 from collections.abc import Callable
 from contextlib import AsyncExitStack

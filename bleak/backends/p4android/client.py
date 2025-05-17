@@ -2,6 +2,13 @@
 """
 BLE Client for python-for-android
 """
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "android":
+        assert False, "This backend is only available on Android"
+
 import asyncio
 import logging
 import uuid

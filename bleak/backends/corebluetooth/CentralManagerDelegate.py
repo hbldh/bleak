@@ -6,9 +6,15 @@ Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
+
 import asyncio
 import logging
-import sys
 import threading
 from collections.abc import Callable
 from typing import Any, Optional

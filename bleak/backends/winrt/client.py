@@ -4,10 +4,15 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "win32":
+        assert False, "This backend is only available on Windows"
 
 import asyncio
 import logging
-import sys
 import uuid
 from ctypes import WinError
 from typing import (

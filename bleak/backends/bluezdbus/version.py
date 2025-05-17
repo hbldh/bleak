@@ -1,3 +1,10 @@
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import asyncio
 import contextlib
 import logging

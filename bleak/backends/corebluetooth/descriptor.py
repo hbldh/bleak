@@ -5,6 +5,13 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
+
 from CoreBluetooth import CBDescriptor
 
 from ..corebluetooth.utils import cb_uuid_to_str
