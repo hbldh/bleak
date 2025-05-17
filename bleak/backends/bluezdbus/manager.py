@@ -11,16 +11,7 @@ import contextlib
 import logging
 import os
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    MutableMapping,
-    NamedTuple,
-    Optional,
-    Set,
-    cast,
-)
+from typing import Any, Callable, Coroutine, MutableMapping, NamedTuple, Optional, cast
 from weakref import WeakKeyDictionary
 
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
@@ -164,24 +155,24 @@ class BlueZManager:
         self._properties: dict[str, dict[str, dict[str, Any]]] = {}
 
         # set of available adapters for quick lookup
-        self._adapters: Set[str] = set()
+        self._adapters = set[str]()
 
         # The BlueZ APIs only maps children to parents, so we need to keep maps
         # to quickly find the children of a parent D-Bus object.
 
         # map of device d-bus object paths to set of service d-bus object paths
-        self._service_map: dict[str, Set[str]] = {}
+        self._service_map: dict[str, set[str]] = {}
         # map of service d-bus object paths to set of characteristic d-bus object paths
-        self._characteristic_map: dict[str, Set[str]] = {}
+        self._characteristic_map: dict[str, set[str]] = {}
         # map of characteristic d-bus object paths to set of descriptor d-bus object paths
-        self._descriptor_map: dict[str, Set[str]] = {}
+        self._descriptor_map: dict[str, set[str]] = {}
 
         self._advertisement_callbacks: defaultdict[str, list[AdvertisementCallback]] = (
             defaultdict(list)
         )
         self._device_removed_callbacks: list[DeviceRemovedCallbackAndState] = []
-        self._device_watchers: dict[str, Set[DeviceWatcher]] = {}
-        self._condition_callbacks: dict[str, Set[DeviceConditionCallback]] = {}
+        self._device_watchers: dict[str, set[DeviceWatcher]] = {}
+        self._condition_callbacks: dict[str, set[DeviceConditionCallback]] = {}
         self._services_cache: dict[str, BleakGATTServiceCollection] = {}
 
     def _check_adapter(self, adapter_path: str) -> None:
@@ -623,7 +614,7 @@ class BlueZManager:
             del self._device_watchers[device_path]
 
     async def get_services(
-        self, device_path: str, use_cached: bool, requested_services: Optional[Set[str]]
+        self, device_path: str, use_cached: bool, requested_services: Optional[set[str]]
     ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.

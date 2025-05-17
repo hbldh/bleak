@@ -8,7 +8,7 @@ import asyncio
 import logging
 import sys
 import uuid
-from typing import Optional, Set, TypedDict, Union
+from typing import Optional, TypedDict, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -75,7 +75,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[Set[str]] = None,
+        services: Optional[set[str]] = None,
         **kwargs,
     ):
         super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)

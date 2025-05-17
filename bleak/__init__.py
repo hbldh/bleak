@@ -23,7 +23,6 @@ from typing import (
     Iterable,
     Literal,
     Optional,
-    Set,
     Type,
     TypedDict,
     Union,
@@ -75,7 +74,7 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 
 
 # prevent tasks from being garbage collected
-_background_tasks: Set[asyncio.Task] = set()
+_background_tasks = set[asyncio.Task]()
 
 
 class BleakScanner:

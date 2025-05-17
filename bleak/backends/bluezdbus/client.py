@@ -8,7 +8,7 @@ import os
 import sys
 import warnings
 from contextlib import AsyncExitStack
-from typing import Callable, Optional, Set, Union, cast
+from typing import Callable, Optional, Union, cast
 from uuid import UUID
 
 if sys.version_info < (3, 12):
@@ -47,7 +47,7 @@ from .version import BlueZFeatures
 logger = logging.getLogger(__name__)
 
 # prevent tasks from being garbage collected
-_background_tasks: Set[asyncio.Task] = set()
+_background_tasks = set[asyncio.Task]()
 
 
 class BleakClientBlueZDBus(BaseBleakClient):
@@ -70,7 +70,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[Set[str]] = None,
+        services: Optional[set[str]] = None,
         **kwargs,
     ):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)

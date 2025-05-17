@@ -6,7 +6,7 @@ import asyncio
 import logging
 import uuid
 import warnings
-from typing import Optional, Set, Union
+from typing import Optional, Union
 
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
@@ -38,7 +38,7 @@ class BleakClientP4Android(BaseBleakClient):
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[Set[uuid.UUID]],
+        services: Optional[set[uuid.UUID]],
         **kwargs,
     ):
         super(BleakClientP4Android, self).__init__(address_or_ble_device, **kwargs)
