@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import logging
-from typing import Any, Dict, Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union
 from uuid import UUID
 
 from ..exc import BleakError
@@ -103,17 +103,17 @@ class BleakGATTServiceCollection:
         return iter(self.services.values())
 
     @property
-    def services(self) -> Dict[int, BleakGATTService]:
+    def services(self) -> dict[int, BleakGATTService]:
         """Returns dictionary of handles mapping to BleakGATTService"""
         return self.__services
 
     @property
-    def characteristics(self) -> Dict[int, BleakGATTCharacteristic]:
+    def characteristics(self) -> dict[int, BleakGATTCharacteristic]:
         """Returns dictionary of handles mapping to BleakGATTCharacteristic"""
         return self.__characteristics
 
     @property
-    def descriptors(self) -> Dict[int, BleakGATTDescriptor]:
+    def descriptors(self) -> dict[int, BleakGATTDescriptor]:
         """Returns a dictionary of integer handles mapping to BleakGATTDescriptor"""
         return self.__descriptors
 

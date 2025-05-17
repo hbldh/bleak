@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Literal, Optional, TypedDict
+from typing import Any, Literal, Optional, TypedDict
 
 import objc
 from CoreBluetooth import CBPeripheral
@@ -90,7 +90,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def start(self) -> None:
         self.seen_devices = {}
 
-        def callback(p: CBPeripheral, a: Dict[str, Any], r: int) -> None:
+        def callback(p: CBPeripheral, a: dict[str, Any], r: int) -> None:
 
             service_uuids = [
                 cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])

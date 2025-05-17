@@ -12,7 +12,7 @@ import asyncio
 import itertools
 import logging
 import sys
-from typing import Any, Callable, Dict, Iterable, NewType, Optional
+from typing import Any, Callable, Iterable, NewType, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -63,22 +63,22 @@ class PeripheralDelegate(NSObject):
         self._event_loop = asyncio.get_running_loop()
         self._services_discovered_future = self._event_loop.create_future()
 
-        self._service_characteristic_discovered_futures: Dict[int, asyncio.Future] = {}
-        self._characteristic_descriptor_discover_futures: Dict[int, asyncio.Future] = {}
+        self._service_characteristic_discovered_futures: dict[int, asyncio.Future] = {}
+        self._characteristic_descriptor_discover_futures: dict[int, asyncio.Future] = {}
 
-        self._characteristic_read_futures: Dict[int, asyncio.Future] = {}
-        self._characteristic_write_futures: Dict[int, asyncio.Future] = {}
+        self._characteristic_read_futures: dict[int, asyncio.Future] = {}
+        self._characteristic_write_futures: dict[int, asyncio.Future] = {}
 
-        self._descriptor_read_futures: Dict[int, asyncio.Future] = {}
-        self._descriptor_write_futures: Dict[int, asyncio.Future] = {}
+        self._descriptor_read_futures: dict[int, asyncio.Future] = {}
+        self._descriptor_write_futures: dict[int, asyncio.Future] = {}
 
-        self._characteristic_notify_change_futures: Dict[int, asyncio.Future] = {}
-        self._characteristic_notify_callbacks: Dict[int, NotifyCallback] = {}
-        self._characteristic_notification_discriminators: Dict[
+        self._characteristic_notify_change_futures: dict[int, asyncio.Future] = {}
+        self._characteristic_notify_callbacks: dict[int, NotifyCallback] = {}
+        self._characteristic_notification_discriminators: dict[
             int, Optional[NotificationDiscriminator]
         ] = {}
 
-        self._read_rssi_futures: Dict[NSUUID, asyncio.Future] = {}
+        self._read_rssi_futures: dict[NSUUID, asyncio.Future] = {}
 
         return self
 

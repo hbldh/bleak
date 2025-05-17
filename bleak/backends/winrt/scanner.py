@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, Literal, NamedTuple, Optional
+from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
 from winrt.windows.devices.bluetooth.advertisement import (
@@ -77,7 +77,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
-        self._advertisement_pairs: Dict[str, _RawAdvData] = {}
+        self._advertisement_pairs: dict[str, _RawAdvData] = {}
         self._stopped_event: Optional[asyncio.Event] = None
 
         # case insensitivity is for backwards compatibility on Windows only

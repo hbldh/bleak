@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Coroutine,
-    Dict,
     Hashable,
     NamedTuple,
     Optional,
@@ -33,7 +32,7 @@ class AdvertisementData(NamedTuple):
     The local name of the device or ``None`` if not included in advertising data.
     """
 
-    manufacturer_data: Dict[int, bytes]
+    manufacturer_data: dict[int, bytes]
     """
     Dictionary of manufacturer data in bytes from the received advertisement data or empty dict if not present.
 
@@ -42,7 +41,7 @@ class AdvertisementData(NamedTuple):
     https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers/
     """
 
-    service_data: Dict[str, bytes]
+    service_data: dict[str, bytes]
     """
     Dictionary of service data from the received advertisement data or empty dict if not present.
     """
@@ -121,7 +120,7 @@ class BaseBleakScanner(abc.ABC):
             containing this advertising data will be received.
     """
 
-    seen_devices: Dict[str, tuple[BLEDevice, AdvertisementData]]
+    seen_devices: dict[str, tuple[BLEDevice, AdvertisementData]]
     """
     Map of device identifier to BLEDevice and most recent advertisement data.
 
@@ -135,7 +134,7 @@ class BaseBleakScanner(abc.ABC):
     ):
         super(BaseBleakScanner, self).__init__()
 
-        self._ad_callbacks: Dict[
+        self._ad_callbacks: dict[
             Hashable, Callable[[BLEDevice, AdvertisementData], None]
         ] = {}
         """

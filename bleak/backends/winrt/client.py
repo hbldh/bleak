@@ -12,7 +12,6 @@ import uuid
 from ctypes import WinError
 from typing import (
     Any,
-    Dict,
     Generic,
     Literal,
     Optional,
@@ -206,7 +205,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._session_active_events: list[asyncio.Event] = []
         self._session_closed_events: list[asyncio.Event] = []
         self._session: Optional[GattSession] = None
-        self._notification_callbacks: Dict[int, EventRegistrationToken] = {}
+        self._notification_callbacks: dict[int, EventRegistrationToken] = {}
 
         # os-specific options
         self._use_cached_services = winrt.get("use_cached_services")

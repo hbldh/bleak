@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Coroutine, Dict, Optional
+from typing import Any, Coroutine, Optional
 
 from dbus_fast.aio.message_bus import MessageBus
 from dbus_fast.errors import InvalidObjectPathError
@@ -132,7 +132,7 @@ class MatchRules:
                     assert_object_path_valid(v[:-1] if v.endswith("/") else v)
                 else:
                     raise ValueError("kwargs must be in the form 'arg0' or 'arg0path'")
-            self.args: Dict[str, str] = kwargs
+            self.args: dict[str, str] = kwargs
         else:
             self.args = None
 

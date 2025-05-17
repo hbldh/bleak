@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict
 from uuid import UUID
 
-uuid16_dict: Dict[int, str] = {
+uuid16_dict: dict[int, str] = {
     0x0001: "SDP",
     0x0003: "RFCOMM",
     0x0005: "TCS-BIN",
@@ -1028,7 +1027,7 @@ uuid16_dict: Dict[int, str] = {
     0xFFFE: "Alliance for Wireless Power (A4WP)",
 }
 
-uuid128_dict: Dict[str, str] = {
+uuid128_dict: dict[str, str] = {
     "a3c87500-8ed3-4bdf-8a39-a01bebede295": "Eddystone Configuration Service",
     "a3c87501-8ed3-4bdf-8a39-a01bebede295": "Capabilities",
     "a3c87502-8ed3-4bdf-8a39-a01bebede295": "Active Slot",
@@ -1193,7 +1192,7 @@ def uuidstr_to_str(uuid_: str) -> str:
     return s
 
 
-def register_uuids(uuids_to_descriptions: Dict[str, str]) -> None:
+def register_uuids(uuids_to_descriptions: dict[str, str]) -> None:
     """Add or modify the mapping of 128-bit UUIDs for services and characteristics to descriptions.
 
     Args:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict, Literal, TypedDict
+from typing import Literal, TypedDict
 
 # DBus Interfaces
 OBJECT_MANAGER_INTERFACE = "org.freedesktop.DBus.ObjectManager"
@@ -95,11 +95,11 @@ class Device1(TypedDict):
     Modalias: str
     RSSI: int
     TxPower: int
-    ManufacturerData: Dict[int, bytes]
-    ServiceData: Dict[str, bytes]
+    ManufacturerData: dict[int, bytes]
+    ServiceData: dict[str, bytes]
     ServicesResolved: bool
     AdvertisingFlags: bytes
-    AdvertisingData: Dict[int, bytes]
+    AdvertisingData: dict[int, bytes]
 
 
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.GattService.rst

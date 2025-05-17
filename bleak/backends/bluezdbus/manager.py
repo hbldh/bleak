@@ -15,7 +15,6 @@ from typing import (
     Any,
     Callable,
     Coroutine,
-    Dict,
     MutableMapping,
     NamedTuple,
     Optional,
@@ -162,7 +161,7 @@ class BlueZManager:
         self._bus_lock = asyncio.Lock()
 
         # dict of object path: dict of interface name: dict of property name: property value
-        self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        self._properties: dict[str, dict[str, dict[str, Any]]] = {}
 
         # set of available adapters for quick lookup
         self._adapters: Set[str] = set()
@@ -171,19 +170,19 @@ class BlueZManager:
         # to quickly find the children of a parent D-Bus object.
 
         # map of device d-bus object paths to set of service d-bus object paths
-        self._service_map: Dict[str, Set[str]] = {}
+        self._service_map: dict[str, Set[str]] = {}
         # map of service d-bus object paths to set of characteristic d-bus object paths
-        self._characteristic_map: Dict[str, Set[str]] = {}
+        self._characteristic_map: dict[str, Set[str]] = {}
         # map of characteristic d-bus object paths to set of descriptor d-bus object paths
-        self._descriptor_map: Dict[str, Set[str]] = {}
+        self._descriptor_map: dict[str, Set[str]] = {}
 
         self._advertisement_callbacks: defaultdict[str, list[AdvertisementCallback]] = (
             defaultdict(list)
         )
         self._device_removed_callbacks: list[DeviceRemovedCallbackAndState] = []
-        self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
-        self._condition_callbacks: Dict[str, Set[DeviceConditionCallback]] = {}
-        self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
+        self._device_watchers: dict[str, Set[DeviceWatcher]] = {}
+        self._condition_callbacks: dict[str, Set[DeviceConditionCallback]] = {}
+        self._services_cache: dict[str, BleakGATTServiceCollection] = {}
 
     def _check_adapter(self, adapter_path: str) -> None:
         """
@@ -362,7 +361,7 @@ class BlueZManager:
     async def active_scan(
         self,
         adapter_path: str,
-        filters: Dict[str, Variant],
+        filters: dict[str, Variant],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
     ) -> Callable[[], Coroutine]:
@@ -893,10 +892,10 @@ class BlueZManager:
 
         # type hints
         obj_path: str
-        interfaces_and_props: Dict[str, Dict[str, Variant]]
+        interfaces_and_props: dict[str, dict[str, Variant]]
         interfaces: list[str]
         interface: str
-        changed: Dict[str, Variant]
+        changed: dict[str, Variant]
         invalidated: list[str]
 
         if message.member == "InterfacesAdded":

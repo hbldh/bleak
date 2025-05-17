@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Coroutine, Dict, Literal, Optional, TypedDict
+from typing import Callable, Coroutine, Literal, Optional, TypedDict
 
 from dbus_fast import Variant
 
@@ -131,7 +131,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         # Discovery filters
 
-        self._filters: Dict[str, Variant] = {}
+        self._filters: dict[str, Variant] = {}
 
         self._filters["Transport"] = Variant("s", "le")
         self._filters["DuplicateData"] = Variant("b", False)
