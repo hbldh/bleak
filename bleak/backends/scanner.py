@@ -12,7 +12,6 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
-    Tuple,
     Type,
 )
 
@@ -66,7 +65,7 @@ class AdvertisementData(NamedTuple):
     .. versionadded:: 0.19
     """
 
-    platform_data: Tuple
+    platform_data: tuple[Any, ...]
     """
     Tuple of platform specific data.
 
@@ -121,7 +120,7 @@ class BaseBleakScanner(abc.ABC):
             containing this advertising data will be received.
     """
 
-    seen_devices: Dict[str, Tuple[BLEDevice, AdvertisementData]]
+    seen_devices: Dict[str, tuple[BLEDevice, AdvertisementData]]
     """
     Map of device identifier to BLEDevice and most recent advertisement data.
 

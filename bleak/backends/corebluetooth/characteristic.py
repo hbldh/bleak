@@ -6,7 +6,7 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 from enum import Enum
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Callable, Dict, Optional, Union
 
 from CoreBluetooth import CBCharacteristic
 
@@ -29,7 +29,7 @@ class CBCharacteristicProperties(Enum):
     INDICATE_ENCRYPTION_REQUIRED = 0x200
 
 
-_GattCharacteristicsPropertiesEnum: Dict[Optional[int], Tuple[str, str]] = {
+_GattCharacteristicsPropertiesEnum: Dict[Optional[int], tuple[str, str]] = {
     None: ("None", "The characteristic doesn’t have any properties that apply"),
     1: ("Broadcast".lower(), "The characteristic supports broadcasting"),
     2: ("Read".lower(), "The characteristic is readable"),
