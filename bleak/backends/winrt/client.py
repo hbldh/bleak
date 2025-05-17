@@ -1058,7 +1058,7 @@ class FutureLike(Generic[T]):
             for c in self._callbacks:
                 c(self)
 
-        def call_callbacks_threadsafe(op: IAsyncOperation, status: AsyncStatus):
+        def call_callbacks_threadsafe(op: IAsyncOperation[T], status: AsyncStatus):
             if status == AsyncStatus.COMPLETED:
                 # have to get result on this thread, otherwise it may not return correct value
                 self._result = op.get_results()

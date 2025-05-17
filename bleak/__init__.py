@@ -63,7 +63,7 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task]()
+_background_tasks = set[asyncio.Task[None]]()
 
 
 class BleakScanner:
@@ -173,7 +173,7 @@ class BleakScanner:
 
         .. versionadded:: 0.21
         """
-        devices = asyncio.Queue()
+        devices = asyncio.Queue[tuple[BLEDevice, AdvertisementData]]()
 
         unregister_callback = self._backend.register_detection_callback(
             lambda bd, ad: devices.put_nowait((bd, ad))

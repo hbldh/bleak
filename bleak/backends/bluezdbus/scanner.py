@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable, Coroutine
-from typing import Literal, Optional, TypedDict
+from typing import Any, Literal, Optional, TypedDict
 
 from dbus_fast import Variant
 
@@ -128,7 +128,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
         # callback from manager for stopping scanning if it has been started
-        self._stop: Optional[Callable[[], Coroutine]] = None
+        self._stop: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
 
         # Discovery filters
 

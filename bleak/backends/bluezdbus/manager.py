@@ -356,7 +356,7 @@ class BlueZManager:
         filters: dict[str, Variant],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
-    ) -> Callable[[], Coroutine]:
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
         """
         Configures the advertisement data filters and starts scanning.
 
@@ -467,7 +467,7 @@ class BlueZManager:
         filters: list[OrPatternLike],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
-    ) -> Callable[[], Coroutine]:
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
         """
         Configures the advertisement data filters and starts scanning.
 

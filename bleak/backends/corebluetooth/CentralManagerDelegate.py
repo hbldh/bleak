@@ -65,13 +65,13 @@ class CentralManagerDelegate(NSObject):
             return None
 
         self.event_loop = asyncio.get_running_loop()
-        self._connect_futures: dict[NSUUID, asyncio.Future] = {}
+        self._connect_futures: dict[NSUUID, asyncio.Future[bool]] = {}
 
         self.callbacks: dict[
             int, Callable[[CBPeripheral, dict[str, Any], int], None]
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
-        self._disconnect_futures: dict[NSUUID, asyncio.Future] = {}
+        self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
 
         self._did_update_state_event = threading.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(

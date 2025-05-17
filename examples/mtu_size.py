@@ -12,7 +12,7 @@ CHAR_UUID = "00000000-0000-0000-0000-000000000000"
 
 
 async def main():
-    queue = asyncio.Queue()
+    queue = asyncio.Queue[BLEDevice]()
 
     def callback(device: BLEDevice, adv: AdvertisementData) -> None:
         # can use advertising data to filter here

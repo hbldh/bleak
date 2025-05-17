@@ -48,7 +48,7 @@ from .version import BlueZFeatures
 logger = logging.getLogger(__name__)
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task]()
+_background_tasks = set[asyncio.Task[None]]()
 
 
 class BleakClientBlueZDBus(BaseBleakClient):
@@ -91,7 +91,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # D-Bus message bus
         self._bus: Optional[MessageBus] = None
         # tracks device watcher subscription
-        self._remove_device_watcher: Optional[Callable] = None
+        self._remove_device_watcher: Optional[Callable[[], None]] = None
         # private backing for is_connected property
         self._is_connected = False
         # indicates disconnect request in progress when not None

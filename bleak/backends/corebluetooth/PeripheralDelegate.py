@@ -64,27 +64,31 @@ class PeripheralDelegate(NSObject):
         self._event_loop = asyncio.get_running_loop()
         self._services_discovered_future = self._event_loop.create_future()
 
-        self._service_characteristic_discovered_futures: dict[int, asyncio.Future] = {}
-        self._characteristic_descriptor_discover_futures: dict[int, asyncio.Future] = {}
+        self._service_characteristic_discovered_futures: dict[
+            int, asyncio.Future[NSArray]
+        ] = {}
+        self._characteristic_descriptor_discover_futures: dict[
+            int, asyncio.Future[None]
+        ] = {}
 
-        self._characteristic_read_futures: dict[int, asyncio.Future] = {}
-        self._characteristic_write_futures: dict[int, asyncio.Future] = {}
+        self._characteristic_read_futures: dict[int, asyncio.Future[NSData]] = {}
+        self._characteristic_write_futures: dict[int, asyncio.Future[None]] = {}
 
-        self._descriptor_read_futures: dict[int, asyncio.Future] = {}
-        self._descriptor_write_futures: dict[int, asyncio.Future] = {}
+        self._descriptor_read_futures: dict[int, asyncio.Future[NSObject]] = {}
+        self._descriptor_write_futures: dict[int, asyncio.Future[None]] = {}
 
-        self._characteristic_notify_change_futures: dict[int, asyncio.Future] = {}
+        self._characteristic_notify_change_futures: dict[int, asyncio.Future[None]] = {}
         self._characteristic_notify_callbacks: dict[int, NotifyCallback] = {}
         self._characteristic_notification_discriminators: dict[
             int, Optional[NotificationDiscriminator]
         ] = {}
 
-        self._read_rssi_futures: dict[NSUUID, asyncio.Future] = {}
+        self._read_rssi_futures: dict[NSUUID, asyncio.Future[NSNumber]] = {}
 
         return self
 
     @objc.python_method
-    def futures(self) -> Iterable[asyncio.Future]:
+    def futures(self) -> Iterable[asyncio.Future[Any]]:
         """
         Gets all futures for this delegate.
 

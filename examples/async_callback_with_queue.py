@@ -14,6 +14,7 @@ import argparse
 import asyncio
 import logging
 import time
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 
@@ -24,7 +25,9 @@ class DeviceNotFoundError(Exception):
     pass
 
 
-async def run_ble_client(args: argparse.Namespace, queue: asyncio.Queue):
+async def run_ble_client(
+    args: argparse.Namespace, queue: asyncio.Queue[tuple[float, Optional[bytearray]]]
+):
     logger.info("starting scan...")
 
     if args.address:
@@ -44,7 +47,7 @@ async def run_ble_client(args: argparse.Namespace, queue: asyncio.Queue):
 
     logger.info("connecting to device...")
 
-    async def callback_handler(_, data):
+    async def callback_handler(_, data: bytearray) -> None:
         await queue.put((time.time(), data))
 
     async with BleakClient(device) as client:
@@ -58,7 +61,7 @@ async def run_ble_client(args: argparse.Namespace, queue: asyncio.Queue):
     logger.info("disconnected")
 
 
-async def run_queue_consumer(queue: asyncio.Queue):
+async def run_queue_consumer(queue: asyncio.Queue[tuple[float, Optional[bytearray]]]):
     logger.info("Starting queue consumer")
 
     while True:
@@ -74,7 +77,7 @@ async def run_queue_consumer(queue: asyncio.Queue):
 
 
 async def main(args: argparse.Namespace):
-    queue = asyncio.Queue()
+    queue = asyncio.Queue[tuple[float, Optional[bytearray]]]()
     client_task = run_ble_client(args, queue)
     consumer_task = run_queue_consumer(queue)
 
