@@ -10,7 +10,8 @@ import logging
 from collections.abc import Iterable
 from typing import NamedTuple, Union, no_type_check
 
-from dbus_fast.service import PropertyAccess, ServiceInterface, dbus_property, method
+from dbus_fast import PropertyAccess
+from dbus_fast.service import ServiceInterface, dbus_property, method
 
 from ...assigned_numbers import AdvertisementDataType
 from . import defs
