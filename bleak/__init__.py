@@ -16,7 +16,7 @@ import sys
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import TYPE_CHECKING, Literal, Optional, TypedDict, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -124,7 +124,7 @@ class BleakScanner:
         bluez: BlueZScannerArgs = {},
         cb: CBScannerArgs = {},
         backend: Optional[type[BaseBleakScanner]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         PlatformBleakScanner = (
             get_platform_scanner_backend_type() if backend is None else backend
@@ -219,18 +219,30 @@ class BleakScanner:
     @overload
     @classmethod
     async def discover(
-        cls, timeout: float = 5.0, *, return_adv: Literal[False] = False, **kwargs
+        cls,
+        timeout: float = 5.0,
+        *,
+        return_adv: Literal[False] = False,
+        **kwargs: Unpack[ExtraArgs],
     ) -> list[BLEDevice]: ...
 
     @overload
     @classmethod
     async def discover(
-        cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
+        cls,
+        timeout: float = 5.0,
+        *,
+        return_adv: Literal[True],
+        **kwargs: Unpack[ExtraArgs],
     ) -> dict[str, tuple[BLEDevice, AdvertisementData]]: ...
 
     @classmethod
     async def discover(
-        cls, timeout=5.0, *, return_adv=False, **kwargs: Unpack[ExtraArgs]
+        cls,
+        timeout: float = 5.0,
+        *,
+        return_adv: bool = False,
+        **kwargs: Unpack[ExtraArgs],
     ):
         """
         Scan continuously for ``timeout`` seconds and return discovered devices.
@@ -442,7 +454,7 @@ class BleakClient:
         pair: bool = False,
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         PlatformBleakClient = (
             get_platform_client_backend_type() if backend is None else backend
@@ -508,7 +520,7 @@ class BleakClient:
 
     # Connectivity methods
 
-    async def connect(self, **kwargs) -> None:
+    async def connect(self, **kwargs: Any) -> None:
         """Connect to the specified GATT server.
 
         Args:
@@ -527,7 +539,7 @@ class BleakClient:
         """
         await self._backend.disconnect()
 
-    async def pair(self, *args, **kwargs) -> None:
+    async def pair(self, *args: Any, **kwargs: Any) -> None:
         """
         Pair with the specified GATT server.
 
@@ -588,7 +600,7 @@ class BleakClient:
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs,
+        **kwargs: Any,
     ) -> bytearray:
         """
         Perform read operation on the specified GATT characteristic.
@@ -680,7 +692,7 @@ class BleakClient:
         ],
         *,
         cb: CBStartNotifyArgs = {},
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
@@ -756,7 +768,7 @@ class BleakClient:
         """
         await self._backend.stop_notify(char_specifier)
 
-    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """
         Perform read operation on the specified GATT descriptor.
 

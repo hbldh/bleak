@@ -70,7 +70,7 @@ class MatchRules:
         path_namespace: Optional[str] = None,
         destination: Optional[str] = None,
         arg0namespace: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         assert_bus_name_valid(type)
         self.type: str = type

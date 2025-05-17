@@ -183,7 +183,7 @@ class BleakClientWinRT(BaseBleakClient):
         services: Optional[set[str]] = None,
         *,
         winrt: WinRTClientArgs,
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakClientWinRT, self).__init__(address_or_ble_device, **kwargs)
 
@@ -242,7 +242,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
         return requester
 
-    async def connect(self, pair: bool, **kwargs) -> None:
+    async def connect(self, pair: bool, **kwargs: Any) -> None:
         """Connect to the specified GATT server.
 
         Keyword Args:
@@ -548,7 +548,9 @@ class BleakClientWinRT(BaseBleakClient):
         return self._session.max_pdu_size
 
     async def pair(
-        self, protection_level: Optional[DevicePairingProtectionLevel] = None, **kwargs
+        self,
+        protection_level: Optional[DevicePairingProtectionLevel] = None,
+        **kwargs: Any,
     ) -> None:
         """Attempts to pair with the device.
 
@@ -641,7 +643,7 @@ class BleakClientWinRT(BaseBleakClient):
         *,
         service_cache_mode: Optional[BluetoothCacheMode] = None,
         cache_mode: Optional[BluetoothCacheMode] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
@@ -782,7 +784,7 @@ class BleakClientWinRT(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -831,7 +833,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         return value
 
-    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
@@ -941,7 +943,7 @@ class BleakClientWinRT(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.

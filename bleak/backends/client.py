@@ -11,7 +11,7 @@ import platform
 import sys
 import uuid
 from collections.abc import Callable
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -41,7 +41,7 @@ class BaseBleakClient(abc.ABC):
             argument, which will be this client object.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs):
+    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs: Any):
         if isinstance(address_or_ble_device, BLEDevice):
             self.address = address_or_ble_device.address
         else:
@@ -63,7 +63,7 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Optional[Callable[[], None]], **kwargs
+        self, callback: Optional[Callable[[], None]], **kwargs: Any
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.
@@ -77,7 +77,7 @@ class BaseBleakClient(abc.ABC):
         self._disconnected_callback = callback
 
     @abc.abstractmethod
-    async def connect(self, pair: bool, **kwargs) -> None:
+    async def connect(self, pair: bool, **kwargs: Any) -> None:
         """Connect to the specified GATT server.
 
         Args:
@@ -95,7 +95,7 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def pair(self, *args, **kwargs) -> None:
+    async def pair(self, *args: Any, **kwargs: Any) -> None:
         """Pair with the peripheral."""
         raise NotImplementedError()
 
@@ -118,7 +118,7 @@ class BaseBleakClient(abc.ABC):
     # GATT services methods
 
     @abc.abstractmethod
-    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
+    async def get_services(self, **kwargs: Any) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:
@@ -133,7 +133,7 @@ class BaseBleakClient(abc.ABC):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -149,7 +149,7 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
@@ -194,7 +194,7 @@ class BaseBleakClient(abc.ABC):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.

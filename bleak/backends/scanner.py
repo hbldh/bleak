@@ -273,7 +273,7 @@ class BaseBleakScanner(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_scanning_filter(self, **kwargs) -> None:
+    def set_scanning_filter(self, **kwargs: Any) -> None:
         """Set scanning filter for the BleakScanner.
 
         Args:

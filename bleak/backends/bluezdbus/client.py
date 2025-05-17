@@ -9,7 +9,7 @@ import sys
 import warnings
 from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Optional, Union, cast
+from typing import Any, Optional, Union, cast
 from uuid import UUID
 
 if sys.version_info < (3, 12):
@@ -72,7 +72,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
@@ -107,7 +107,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # Connectivity methods
 
     async def connect(
-        self, pair: bool, dangerous_use_bleak_cache: bool = False, **kwargs
+        self, pair: bool, dangerous_use_bleak_cache: bool = False, **kwargs: Any
     ) -> None:
         """Connect to the specified GATT server.
 
@@ -451,7 +451,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
-    async def pair(self, *args, **kwargs) -> None:
+    async def pair(self, *args: Any, **kwargs: Any) -> None:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
@@ -637,7 +637,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     # GATT services methods
 
     async def get_services(
-        self, dangerous_use_bleak_cache: bool = False, **kwargs
+        self, dangerous_use_bleak_cache: bool = False, **kwargs: Any
     ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
@@ -667,7 +667,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
-        **kwargs,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -737,7 +737,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return value
 
-    async def read_gatt_descriptor(self, handle: int, **kwargs) -> bytearray:
+    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
@@ -878,7 +878,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.

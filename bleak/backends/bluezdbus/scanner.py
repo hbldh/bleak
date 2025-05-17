@@ -118,7 +118,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         *,
         bluez: BlueZScannerArgs,
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
 
@@ -187,7 +187,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
             await stop()
 
-    def set_scanning_filter(self, **kwargs) -> None:
+    def set_scanning_filter(self, **kwargs: Any) -> None:
         """Sets OS level scanning filters for the BleakScanner.
 
         For possible values for `filters`, see the parameters to the
