@@ -14,19 +14,9 @@ import logging
 import os
 import sys
 import uuid
+from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    AsyncGenerator,
-    Awaitable,
-    Callable,
-    Iterable,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Literal, Optional, TypedDict, Union, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer

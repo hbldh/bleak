@@ -7,8 +7,9 @@ import logging
 import os
 import sys
 import warnings
+from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Callable, Optional, Union, cast
+from typing import Optional, Union, cast
 from uuid import UUID
 
 if sys.version_info < (3, 12):

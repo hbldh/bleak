@@ -5,8 +5,9 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 
 """
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 from CoreBluetooth import CBCharacteristic
 

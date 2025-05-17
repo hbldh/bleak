@@ -3,7 +3,8 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional
+from collections.abc import Callable, Coroutine, Hashable
+from typing import Any, NamedTuple, Optional
 
 from ..exc import BleakError
 from .device import BLEDevice

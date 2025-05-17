@@ -12,7 +12,8 @@ import asyncio
 import itertools
 import logging
 import sys
-from typing import Any, Callable, Iterable, NewType, Optional
+from collections.abc import Callable, Iterable
+from typing import Any, NewType, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout

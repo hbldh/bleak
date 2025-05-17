@@ -7,7 +7,8 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import logging
-from typing import Any, Iterator, Optional, Union
+from collections.abc import Iterator
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from ..exc import BleakError

@@ -1,4 +1,5 @@
-from typing import Callable, Union
+from collections.abc import Callable
+from typing import Union
 from uuid import UUID
 
 from ..characteristic import BleakGATTCharacteristic
