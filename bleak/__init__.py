@@ -16,7 +16,16 @@ import sys
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+    overload,
+)
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -25,10 +34,10 @@ else:
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
-    from typing_extensions import Unpack
+    from typing_extensions import Never, Unpack, assert_never
 else:
     from asyncio import timeout as async_timeout
-    from typing import Unpack
+    from typing import Never, Unpack, assert_never
 
 from .backends.characteristic import BleakGATTCharacteristic
 from .backends.client import BaseBleakClient, get_platform_client_backend_type
@@ -375,6 +384,7 @@ class BleakScanner:
                     async for bd, ad in scanner.advertisement_data():
                         if filterfunc(bd, ad):
                             return bd
+                    assert_never(cast(Never, "advertisement_data() should never stop"))
             except asyncio.TimeoutError:
                 return None
 
