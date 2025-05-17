@@ -7,7 +7,7 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/org.bluez.Advertisem
 """
 
 import logging
-from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
+from typing import Iterable, NamedTuple, Union, no_type_check
 
 from dbus_fast.service import PropertyAccess, ServiceInterface, dbus_property, method
 
@@ -30,7 +30,7 @@ class OrPattern(NamedTuple):
 
 
 # Windows has a similar structure, so we allow generic tuple for cross-platform compatibility
-OrPatternLike = Union[OrPattern, Tuple[int, AdvertisementDataType, bytes]]
+OrPatternLike = Union[OrPattern, tuple[int, AdvertisementDataType, bytes]]
 
 
 class AdvertisementMonitor(ServiceInterface):

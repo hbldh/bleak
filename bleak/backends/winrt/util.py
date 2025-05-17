@@ -3,7 +3,6 @@ import ctypes
 import sys
 from ctypes import wintypes
 from enum import IntEnum
-from typing import Tuple
 
 from ...exc import BleakError
 
@@ -99,7 +98,7 @@ class _AptQualifierType(IntEnum):
     RESERVED_1 = 7
 
 
-def _get_apartment_type() -> Tuple[_AptType, _AptQualifierType]:
+def _get_apartment_type() -> tuple[_AptType, _AptQualifierType]:
     """
     Calls CoGetApartmentType to get the current apartment type and qualifier.
 

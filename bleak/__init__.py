@@ -25,7 +25,6 @@ from typing import (
     Literal,
     Optional,
     Set,
-    Tuple,
     Type,
     TypedDict,
     Union,
@@ -175,7 +174,7 @@ class BleakScanner:
 
     async def advertisement_data(
         self,
-    ) -> AsyncGenerator[Tuple[BLEDevice, AdvertisementData], None]:
+    ) -> AsyncGenerator[tuple[BLEDevice, AdvertisementData], None]:
         """
         Yields devices and associated advertising data packets as they are discovered.
 
@@ -240,7 +239,7 @@ class BleakScanner:
     @classmethod
     async def discover(
         cls, timeout: float = 5.0, *, return_adv: Literal[True], **kwargs
-    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]: ...
+    ) -> Dict[str, tuple[BLEDevice, AdvertisementData]]: ...
 
     @classmethod
     async def discover(
@@ -285,7 +284,7 @@ class BleakScanner:
     @property
     def discovered_devices_and_advertisement_data(
         self,
-    ) -> Dict[str, Tuple[BLEDevice, AdvertisementData]]:
+    ) -> Dict[str, tuple[BLEDevice, AdvertisementData]]:
         """
         Gets a map of device address to tuples of devices and the most recently
         received advertisement data for that device.

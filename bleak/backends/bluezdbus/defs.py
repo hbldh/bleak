@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict, Literal, Tuple, TypedDict
+from typing import Dict, Literal, TypedDict
 
 # DBus Interfaces
 OBJECT_MANAGER_INTERFACE = "org.freedesktop.DBus.ObjectManager"
@@ -53,7 +53,7 @@ class AdvertisementMonitor1(TypedDict):
     RSSILowTimeout: int
     RSSIHighTimeout: int
     RSSISamplingPeriod: int
-    Patterns: list[Tuple[int, int, bytes]]
+    Patterns: list[tuple[int, int, bytes]]
 
 
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitorManager.rst
