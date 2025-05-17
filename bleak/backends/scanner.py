@@ -3,7 +3,7 @@ import asyncio
 import inspect
 import os
 import platform
-from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional, Type
+from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional
 
 from ..exc import BleakError
 from .device import BLEDevice
@@ -282,7 +282,7 @@ class BaseBleakScanner(abc.ABC):
         raise NotImplementedError()
 
 
-def get_platform_scanner_backend_type() -> Type[BaseBleakScanner]:
+def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """

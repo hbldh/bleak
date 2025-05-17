@@ -23,7 +23,6 @@ from typing import (
     Iterable,
     Literal,
     Optional,
-    Type,
     TypedDict,
     Union,
     overload,
@@ -134,7 +133,7 @@ class BleakScanner:
         *,
         bluez: BlueZScannerArgs = {},
         cb: CBScannerArgs = {},
-        backend: Optional[Type[BaseBleakScanner]] = None,
+        backend: Optional[type[BaseBleakScanner]] = None,
         **kwargs,
     ) -> None:
         PlatformBleakScanner = (
@@ -156,7 +155,7 @@ class BleakScanner:
 
     async def __aexit__(
         self,
-        exc_type: Type[BaseException],
+        exc_type: type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
     ) -> None:
@@ -221,7 +220,7 @@ class BleakScanner:
         """
         Dictionary of arguments specific to the CoreBluetooth backend.
         """
-        backend: Type[BaseBleakScanner]
+        backend: type[BaseBleakScanner]
         """
         Used to override the automatically selected backend (i.e. for a
             custom backend).
@@ -452,7 +451,7 @@ class BleakClient:
         timeout: float = 10.0,
         pair: bool = False,
         winrt: WinRTClientArgs = {},
-        backend: Optional[Type[BaseBleakClient]] = None,
+        backend: Optional[type[BaseBleakClient]] = None,
         **kwargs,
     ) -> None:
         PlatformBleakClient = (
@@ -511,7 +510,7 @@ class BleakClient:
 
     async def __aexit__(
         self,
-        exc_type: Type[BaseException],
+        exc_type: type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
     ) -> None:
