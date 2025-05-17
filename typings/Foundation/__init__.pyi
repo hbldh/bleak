@@ -1,4 +1,5 @@
-from typing import NewType, Optional, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import NewType, Optional, TypeVar
 
 TNSObject = TypeVar("TNSObject", bound=NSObject)
 

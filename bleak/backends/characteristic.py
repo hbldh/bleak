@@ -7,7 +7,8 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import enum
-from typing import Any, Callable, Union
+from collections.abc import Callable
+from typing import Any, Union
 from uuid import UUID
 
 from ..uuids import uuidstr_to_str

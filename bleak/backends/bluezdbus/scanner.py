@@ -1,5 +1,6 @@
 import logging
-from typing import Callable, Coroutine, Literal, Optional, TypedDict
+from collections.abc import Callable, Coroutine
+from typing import Literal, Optional, TypedDict
 
 from dbus_fast import Variant
 

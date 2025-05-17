@@ -10,7 +10,8 @@ import os
 import platform
 import sys
 import uuid
-from typing import Callable, Optional, Union
+from collections.abc import Callable
+from typing import Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer

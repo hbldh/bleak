@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Coroutine, Optional
+from collections.abc import Coroutine
+from typing import Any, Optional
 
 from dbus_fast.aio.message_bus import MessageBus
 from dbus_fast.errors import InvalidObjectPathError

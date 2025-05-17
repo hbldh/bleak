@@ -7,7 +7,8 @@ monitor api <https://github.com/bluez/bluez/blob/master/doc/org.bluez.Advertisem
 """
 
 import logging
-from typing import Iterable, NamedTuple, Union, no_type_check
+from collections.abc import Iterable
+from typing import NamedTuple, Union, no_type_check
 
 from dbus_fast.service import PropertyAccess, ServiceInterface, dbus_property, method
 
