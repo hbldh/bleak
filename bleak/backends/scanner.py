@@ -9,7 +9,6 @@ from typing import (
     Coroutine,
     Dict,
     Hashable,
-    List,
     NamedTuple,
     Optional,
     Set,
@@ -48,7 +47,7 @@ class AdvertisementData(NamedTuple):
     Dictionary of service data from the received advertisement data or empty dict if not present.
     """
 
-    service_uuids: List[str]
+    service_uuids: list[str]
     """
     List of service UUIDs from the received advertisement data or empty list if not present.
     """
@@ -75,7 +74,7 @@ class AdvertisementData(NamedTuple):
     """
 
     def __repr__(self) -> str:
-        kwargs = []
+        kwargs: list[str] = []
         if self.local_name:
             kwargs.append(f"local_name={repr(self.local_name)}")
         if self.manufacturer_data:
@@ -132,7 +131,7 @@ class BaseBleakScanner(abc.ABC):
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[List[str]],
+        service_uuids: Optional[list[str]],
     ):
         super(BaseBleakScanner, self).__init__()
 
@@ -146,7 +145,7 @@ class BaseBleakScanner(abc.ABC):
         if detection_callback is not None:
             self.register_detection_callback(detection_callback)
 
-        self._service_uuids: Optional[List[str]] = (
+        self._service_uuids: Optional[list[str]] = (
             [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
 
@@ -197,7 +196,7 @@ class BaseBleakScanner(abc.ABC):
 
         return remove
 
-    def is_allowed_uuid(self, service_uuids: Optional[List[str]]) -> bool:
+    def is_allowed_uuid(self, service_uuids: Optional[list[str]]) -> bool:
         """
         Check if the advertisement data contains any of the service UUIDs
         matching the filter. If no filter is set, this will always return

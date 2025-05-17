@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Callable, List, Union
+from typing import Callable, Union
 from uuid import UUID
 
 from winrt.windows.devices.bluetooth.genericattributeprofile import (
@@ -104,12 +104,12 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         )
 
     @property
-    def properties(self) -> List[str]:
+    def properties(self) -> list[str]:
         """Properties of this characteristic"""
         return self.__props
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptor]:
+    def descriptors(self) -> list[BleakGATTDescriptor]:
         """List of descriptors for this characteristic"""
         return self.__descriptors
 

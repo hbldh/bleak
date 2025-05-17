@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict, List, Literal, Tuple, TypedDict
+from typing import Dict, Literal, Tuple, TypedDict
 
 # DBus Interfaces
 OBJECT_MANAGER_INTERFACE = "org.freedesktop.DBus.ObjectManager"
@@ -37,10 +37,10 @@ class Adapter1(TypedDict):
     PairableTimeout: int
     DiscoverableTimeout: int
     Discovering: int
-    UUIDs: List[str]
+    UUIDs: list[str]
     Modalias: str
-    Roles: List[str]
-    ExperimentalFeatures: List[str]
+    Roles: list[str]
+    ExperimentalFeatures: list[str]
 
 
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst
@@ -53,23 +53,23 @@ class AdvertisementMonitor1(TypedDict):
     RSSILowTimeout: int
     RSSIHighTimeout: int
     RSSISamplingPeriod: int
-    Patterns: List[Tuple[int, int, bytes]]
+    Patterns: list[Tuple[int, int, bytes]]
 
 
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitorManager.rst
 
 
 class AdvertisementMonitorManager1(TypedDict):
-    SupportedMonitorTypes: List[str]
-    SupportedFeatures: List[str]
+    SupportedMonitorTypes: list[str]
+    SupportedFeatures: list[str]
 
 
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.Battery.rst
 
 
 class Battery1(TypedDict):
-    SupportedMonitorTypes: List[str]
-    SupportedFeatures: List[str]
+    SupportedMonitorTypes: list[str]
+    SupportedFeatures: list[str]
 
 
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.Device.rst
@@ -82,7 +82,7 @@ class Device1(TypedDict):
     Icon: str
     Class: int
     Appearance: int
-    UUIDs: List[str]
+    UUIDs: list[str]
     Paired: bool
     Bonded: bool
     Connected: bool
@@ -109,7 +109,7 @@ class GattService1(TypedDict):
     UUID: str
     Primary: bool
     Device: str
-    Includes: List[str]
+    Includes: list[str]
     # Handle is server-only and not available in Bleak
 
 
@@ -120,7 +120,7 @@ class GattCharacteristic1(TypedDict):
     WriteAcquired: bool
     NotifyAcquired: bool
     Notifying: bool
-    Flags: List[
+    Flags: list[
         Literal[
             "broadcast",
             "read",
@@ -151,7 +151,7 @@ class GattDescriptor1(TypedDict):
     UUID: str
     Characteristic: str
     Value: bytes
-    Flags: List[
+    Flags: list[
         Literal[
             "read",
             "write",

@@ -10,7 +10,7 @@ import asyncio
 import logging
 import sys
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -113,7 +113,7 @@ class CentralManagerDelegate(NSObject):
     # User defined functions
 
     @objc.python_method
-    async def start_scan(self, service_uuids: Optional[List[str]]) -> None:
+    async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
         service_uuids = (
             NSArray.alloc().initWithArray_(
                 list(map(CBUUID.UUIDWithString_, service_uuids))

@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from ..service import BleakGATTService
 from .characteristic import BleakGATTCharacteristicBlueZDBus
@@ -25,7 +25,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         return self.__handle
 
     @property
-    def characteristics(self) -> List[BleakGATTCharacteristicBlueZDBus]:
+    def characteristics(self) -> list[BleakGATTCharacteristicBlueZDBus]:
         """List of characteristics for this service"""
         return self.__characteristics
 

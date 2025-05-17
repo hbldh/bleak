@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import abc
 import logging
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, Optional, Union
 from uuid import UUID
 
 from ..exc import BleakError
@@ -46,7 +46,7 @@ class BleakGATTService(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def characteristics(self) -> List[BleakGATTCharacteristic]:
+    def characteristics(self) -> list[BleakGATTCharacteristic]:
         """List of characteristics for this service"""
         raise NotImplementedError()
 

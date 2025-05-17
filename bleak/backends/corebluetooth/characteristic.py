@@ -6,7 +6,7 @@ Created on 2019-06-28 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 
 from CoreBluetooth import CBCharacteristic
 
@@ -63,9 +63,9 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         self, obj: CBCharacteristic, max_write_without_response_size: Callable[[], int]
     ):
         super().__init__(obj, max_write_without_response_size)
-        self.__descriptors: List[BleakGATTDescriptorCoreBluetooth] = []
+        self.__descriptors: list[BleakGATTDescriptorCoreBluetooth] = []
         # self.__props = obj.properties()
-        self.__props: List[str] = [
+        self.__props: list[str] = [
             _GattCharacteristicsPropertiesEnum[v][0]
             for v in [2**n for n in range(10)]
             if (self.obj.properties() & v)
@@ -92,12 +92,12 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         return self._uuid
 
     @property
-    def properties(self) -> List[str]:
+    def properties(self) -> list[str]:
         """Properties of this characteristic"""
         return self.__props
 
     @property
-    def descriptors(self) -> List[BleakGATTDescriptor]:
+    def descriptors(self) -> list[BleakGATTDescriptor]:
         """List of descriptors for this service"""
         return self.__descriptors
 

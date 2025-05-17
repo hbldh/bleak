@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, List, Literal, NamedTuple, Optional
+from typing import Dict, Literal, NamedTuple, Optional
 from uuid import UUID
 
 from winrt.windows.devices.bluetooth.advertisement import (
@@ -70,7 +70,7 @@ class BleakScannerWinRT(BaseBleakScanner):
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[List[str]],
+        service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
         **kwargs,
     ):

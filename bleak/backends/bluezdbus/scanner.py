@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Coroutine, Dict, List, Literal, Optional, TypedDict
+from typing import Callable, Coroutine, Dict, Literal, Optional, TypedDict
 
 from dbus_fast import Variant
 
@@ -21,7 +21,7 @@ class BlueZDiscoveryFilters(TypedDict, total=False):
     https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst#void-setdiscoveryfilterdict-filter
     """
 
-    UUIDs: List[str]
+    UUIDs: list[str]
     """
     Filter by service UUIDs, empty means match _any_ UUID.
 
@@ -79,7 +79,7 @@ class BlueZScannerArgs(TypedDict, total=False):
     Only used for active scanning.
     """
 
-    or_patterns: List[OrPatternLike]
+    or_patterns: list[OrPatternLike]
     """
     Or patterns to pass to the AdvertisementMonitor1 D-Bus interface.
 
@@ -113,7 +113,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[List[str]],
+        service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
         *,
         bluez: BlueZScannerArgs,
