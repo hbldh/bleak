@@ -134,7 +134,7 @@ class BleakGATTCharacteristicWinRT(BleakGATTCharacteristic):
         except StopIteration:
             return None
 
-    def add_descriptor(self, descriptor: BleakGATTDescriptor):
+    def add_descriptor(self, descriptor: BleakGATTDescriptor) -> None:
         """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
 
         Should not be used by end user, but rather by `bleak` itself.

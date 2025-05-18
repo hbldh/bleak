@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     if sys.platform != "win32":
@@ -15,6 +15,7 @@ from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementType,
     BluetoothLEAdvertisementWatcher,
     BluetoothLEAdvertisementWatcherStatus,
+    BluetoothLEAdvertisementWatcherStoppedEventArgs,
     BluetoothLEScanningMode,
 )
 from winrt.windows.foundation import EventRegistrationToken
@@ -79,7 +80,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
@@ -134,7 +135,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self._advertisement_pairs[bdaddr] = raw_data
 
-        uuids = []
+        uuids: list[str] = []
         mfg_data = {}
         service_data = {}
         local_name = None
@@ -207,12 +208,17 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.call_detection_callbacks(device, advertisement_data)
 
-    def _stopped_handler(self, sender, e):
+    def _stopped_handler(
+        self,
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    ) -> None:
         logger.debug(
             "%s devices found. Watcher status: %r.",
             len(self.seen_devices),
             sender.status,
         )
+        assert self._stopped_event
         self._stopped_event.set()
 
     async def start(self) -> None:
@@ -233,12 +239,21 @@ class BleakScannerWinRT(BaseBleakScanner):
         event_loop = asyncio.get_running_loop()
         self._stopped_event = asyncio.Event()
 
-        self._received_token = self.watcher.add_received(
-            lambda s, e: event_loop.call_soon_threadsafe(self._received_handler, s, e)
-        )
-        self._stopped_token = self.watcher.add_stopped(
-            lambda s, e: event_loop.call_soon_threadsafe(self._stopped_handler, s, e)
-        )
+        def on_received(
+            sender: BluetoothLEAdvertisementWatcher,
+            args: BluetoothLEAdvertisementReceivedEventArgs,
+        ) -> None:
+            event_loop.call_soon_threadsafe(self._received_handler, sender, args)
+
+        self._received_token = self.watcher.add_received(on_received)
+
+        def on_stopped(
+            sender: BluetoothLEAdvertisementWatcher,
+            args: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+        ) -> None:
+            event_loop.call_soon_threadsafe(self._stopped_handler, sender, args)
+
+        self._stopped_token = self.watcher.add_stopped(on_stopped)
 
         if self._signal_strength_filter is not None:
             self.watcher.signal_strength_filter = self._signal_strength_filter
@@ -284,7 +299,7 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher = None
 
-    def set_scanning_filter(self, **kwargs) -> None:
+    def set_scanning_filter(self, **kwargs: Any) -> None:
         """Set a scanning filter for the BleakScanner.
 
         Keyword Args:

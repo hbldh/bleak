@@ -18,14 +18,14 @@ else:
     from asyncio import timeout as async_timeout
 
 
-def _check_result(result, func, args):
+def _check_result(result: int, func, args):
     if not result:
         raise ctypes.WinError()
 
     return args
 
 
-def _check_hresult(result, func, args):
+def _check_hresult(result: int, func, args):
     if result:
         raise ctypes.WinError(result)
 
