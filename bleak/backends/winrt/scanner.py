@@ -10,6 +10,11 @@ import logging
 from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
+
 from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
@@ -225,6 +230,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         assert self._stopped_event
         self._stopped_event.set()
 
+    @override
     async def start(self) -> None:
         if self.watcher:
             raise BleakError("Scanner already started")
@@ -276,6 +282,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         if self.watcher.status != BluetoothLEAdvertisementWatcherStatus.STARTED:
             raise BleakError(f"Unexpected watcher status: {self.watcher.status.name}")
 
+    @override
     async def stop(self) -> None:
         assert self.watcher
         assert self._stopped_event

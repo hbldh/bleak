@@ -9,6 +9,11 @@ import logging
 from collections.abc import Callable, Coroutine
 from typing import Any, Literal, Optional
 
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
+
 from dbus_fast import Variant
 
 from bleak.args.bluez import BlueZScannerArgs
@@ -92,6 +97,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if self._scanning_mode == "passive" and not self._or_patterns:
             raise BleakError("passive scanning mode requires bluez or_patterns")
 
+    @override
     async def start(self) -> None:
         manager = await get_global_bluez_manager()
 
@@ -117,6 +123,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self._handle_device_removed,
             )
 
+    @override
     async def stop(self) -> None:
         if self._stop:
             # avoid reentrancy
