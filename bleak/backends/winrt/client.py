@@ -20,9 +20,10 @@ from ctypes import WinError
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer, override
 else:
     from collections.abc import Buffer
+    from typing import override
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -217,6 +218,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
         return requester
 
+    @override
     async def connect(self, pair: bool, **kwargs: Any) -> None:
         """Connect to the specified GATT server.
 
@@ -457,6 +459,7 @@ class BleakClientWinRT(BaseBleakClient):
         finally:
             self._session_active_events.remove(event)
 
+    @override
     async def disconnect(self) -> None:
         """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
@@ -504,6 +507,7 @@ class BleakClientWinRT(BaseBleakClient):
                 self._session_closed_events.remove(event)
 
     @property
+    @override
     def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
@@ -518,10 +522,12 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
     @property
+    @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
 
+    @override
     async def pair(
         self,
         protection_level: Optional[DevicePairingProtectionLevel] = None,
@@ -587,6 +593,7 @@ class BleakClientWinRT(BaseBleakClient):
             pairing_result.protection_level_used,
         )
 
+    @override
     async def unpair(self) -> None:
         """Attempts to unpair from the device.
 
@@ -756,6 +763,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     # I/O methods
 
+    @override
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
@@ -808,6 +816,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         return value
 
+    @override
     async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -851,6 +860,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         return value
 
+    @override
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -881,6 +891,7 @@ class BleakClientWinRT(BaseBleakClient):
             f"Could not write value {data} to characteristic {characteristic.handle:04X}",
         )
 
+    @override
     async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
@@ -914,6 +925,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         logger.debug("Write Descriptor %04X : %s", handle, data)
 
+    @override
     async def start_notify(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -974,6 +986,7 @@ class BleakClientWinRT(BaseBleakClient):
 
             raise
 
+    @override
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
     ) -> None:

@@ -17,9 +17,10 @@ import uuid
 from typing import Optional, Union
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer, override
 else:
     from collections.abc import Buffer
+    from typing import override
 
 from CoreBluetooth import (
     CBUUID,
@@ -93,6 +94,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     def __str__(self) -> str:
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
+    @override
     async def connect(self, pair: bool, **kwargs) -> None:
         """Connect to a specified Peripheral
 
@@ -146,6 +148,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # Now get services
         await self._get_services()
 
+    @override
     async def disconnect(self) -> None:
         """Disconnect from the peripheral device"""
         if (
@@ -157,6 +160,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await self._central_manager_delegate.disconnect(self._peripheral)
 
     @property
+    @override
     def is_connected(self) -> bool:
         """Checks for current active connection"""
         return (
@@ -166,6 +170,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
     @property
+    @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         # Use type CBCharacteristicWriteWithoutResponse to get maximum write
@@ -178,6 +183,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             + 3
         )
 
+    @override
     async def pair(self, *args, **kwargs) -> None:
         """Attempt to pair with a peripheral.
 
@@ -195,6 +201,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
+    @override
     async def unpair(self) -> None:
         """
         Remove pairing information for a peripheral.
@@ -257,6 +264,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self.services = services
         return self.services
 
+    @override
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
@@ -290,6 +298,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         logger.debug("Read Characteristic {0} : {1}".format(characteristic.uuid, value))
         return value
 
+    @override
     async def read_gatt_descriptor(
         self, handle: int, use_cached: bool = False, **kwargs
     ) -> bytearray:
@@ -319,6 +328,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         logger.debug("Read Descriptor {0} : {1}".format(handle, value))
         return value
 
+    @override
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -337,6 +347,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
         logger.debug(f"Write Characteristic {characteristic.uuid} : {data}")
 
+    @override
     async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
@@ -353,6 +364,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await self._delegate.write_descriptor(descriptor.obj, value)
         logger.debug("Write Descriptor {0} : {1}".format(handle, data))
 
+    @override
     async def start_notify(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -372,6 +384,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             cb.get("notification_discriminator"),
         )
 
+    @override
     async def stop_notify(
         self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
     ) -> None:
