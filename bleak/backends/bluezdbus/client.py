@@ -224,6 +224,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                         member="Disconnect",
                                     )
                                 )
+                                assert disconnect_reply
                                 try:
                                     assert_reply(disconnect_reply)
                                 except BleakDBusError as e:
@@ -271,6 +272,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                     ],
                                 )
                             )
+                            assert reply
                             assert_reply(reply)
 
                             # REVIST: This leaves "Trusted" property set if we
@@ -295,8 +297,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                     member="Connect",
                                 )
                             )
-
-                        assert reply is not None
+                        assert reply
 
                         if reply.message_type == MessageType.ERROR:
                             # This error is often caused by RF interference
@@ -447,6 +448,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         member="Disconnect",
                     )
                 )
+                assert reply
                 assert_reply(reply)
                 async with async_timeout(10):
                     await self._disconnecting_event.wait()
@@ -463,6 +465,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
         """
+        assert self._bus
         # See if it is already paired.
         reply = await self._bus.call(
             Message(
@@ -474,6 +477,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Paired"],
             )
         )
+        assert reply
         assert_reply(reply)
         if reply.body[0].value:
             logger.debug("BLE device @ %s is already paired", self.address)
@@ -490,6 +494,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
             )
         )
+        assert reply
         assert_reply(reply)
 
         logger.debug("Pairing to BLE device @ %s", self.address)
@@ -502,6 +507,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
+        assert reply
         assert_reply(reply)
 
     async def unpair(self) -> None:
@@ -526,6 +532,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._device_info = None
         self._is_connected = False
 
+        assert manager._bus
+
         try:
             reply = await manager._bus.call(
                 Message(
@@ -537,6 +545,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     body=[device_path],
                 )
             )
+            assert reply
             assert_reply(reply)
         except BleakDBusError as e:
             if e.dbus_error == "org.bluez.Error.DoesNotExist":
@@ -582,6 +591,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 if "notify" in c.properties
             )
 
+        assert self._bus
+
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
@@ -592,6 +603,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[{}],
             )
         )
+        assert reply
         assert_reply(reply)
 
         # we aren't actually using the write or notify, we just want the MTU
@@ -903,6 +915,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="StartNotify",
             )
         )
+        assert reply
         assert_reply(reply)
 
     async def stop_notify(
@@ -935,6 +948,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="StopNotify",
             )
         )
+        assert reply
         assert_reply(reply)
 
         self._notification_callbacks.pop(characteristic.path, None)

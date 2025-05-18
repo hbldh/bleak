@@ -155,7 +155,7 @@ class BlueZManager:
     Use :func:`bleak.backends.bluezdbus.get_global_bluez_manager` to get the global instance.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._bus: Optional[MessageBus] = None
         self._bus_lock = asyncio.Lock()
 
@@ -244,6 +244,7 @@ class BlueZManager:
                 # Add signal listeners
 
                 bus.add_message_handler(self._parse_msg)
+                reply: Optional[Message]
 
                 rules = MatchRules(
                     interface=defs.OBJECT_MANAGER_INTERFACE,
@@ -280,6 +281,7 @@ class BlueZManager:
                         interface=defs.OBJECT_MANAGER_INTERFACE,
                     )
                 )
+                assert reply
                 assert_reply(reply)
 
                 # dictionaries are cleared in case AddInterfaces was received first
@@ -382,6 +384,8 @@ class BlueZManager:
             BleakError: if the adapter is not present in BlueZ
         """
         async with self._bus_lock:
+            assert self._bus
+
             # If the adapter doesn't exist, then the message calls below would
             # fail with "method not found". This provides a more informative
             # error message.
@@ -406,6 +410,7 @@ class BlueZManager:
                         body=[filters],
                     )
                 )
+                assert reply
                 assert_reply(reply)
 
                 # Start scanning
@@ -417,6 +422,7 @@ class BlueZManager:
                         member="StartDiscovery",
                     )
                 )
+                assert reply
                 assert_reply(reply)
 
                 async def stop() -> None:
@@ -431,6 +437,8 @@ class BlueZManager:
                     )
 
                     async with self._bus_lock:
+                        assert self._bus
+
                         reply = await self._bus.call(
                             Message(
                                 destination=defs.BLUEZ_SERVICE,
@@ -439,6 +447,7 @@ class BlueZManager:
                                 member="StopDiscovery",
                             )
                         )
+                        assert reply
 
                         try:
                             assert_reply(reply)
@@ -457,6 +466,7 @@ class BlueZManager:
                                     body=[{}],
                                 )
                             )
+                            assert reply
                             assert_reply(reply)
 
                 return stop
@@ -493,6 +503,8 @@ class BlueZManager:
             BleakError: if the adapter is not present in BlueZ
         """
         async with self._bus_lock:
+            assert self._bus
+
             # If the adapter doesn't exist, then the message calls below would
             # fail with "method not found". This provides a more informative
             # error message.
@@ -522,6 +534,7 @@ class BlueZManager:
                         body=[monitor_path],
                     )
                 )
+                assert reply
 
                 if (
                     reply.message_type == MessageType.ERROR
@@ -549,6 +562,8 @@ class BlueZManager:
                     )
 
                     async with self._bus_lock:
+                        assert self._bus
+
                         self._bus.unexport(monitor_path, monitor)
 
                         reply = await self._bus.call(
@@ -561,6 +576,7 @@ class BlueZManager:
                                 body=[monitor_path],
                             )
                         )
+                        assert reply
                         assert_reply(reply)
 
                 return stop
@@ -985,7 +1001,7 @@ class BlueZManager:
             assert message_path is not None
 
             try:
-                self_interface = self._properties[message.path][interface]
+                self_interface = self._properties[message_path][interface]
             except KeyError:
                 # This can happen during initialization. The "PropertiesChanged"
                 # handler is attached before "GetManagedObjects" is called
@@ -1020,10 +1036,10 @@ class BlueZManager:
                     # handle device condition watchers
                     callbacks = self._condition_callbacks.get(device_path)
                     if callbacks:
-                        for callback in callbacks:
-                            name = callback.property_name
+                        for item in callbacks:
+                            name = item.property_name
                             if name in changed:
-                                callback.callback(self_interface.get(name))
+                                item.callback(self_interface.get(name))
 
                     # handle device connection change watchers
                     if "Connected" in changed:
