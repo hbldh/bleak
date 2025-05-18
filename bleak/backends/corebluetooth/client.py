@@ -39,11 +39,11 @@ from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDe
 from bleak.backends.corebluetooth.characteristic import (
     BleakGATTCharacteristicCoreBluetooth,
 )
-from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import (
@@ -247,24 +247,25 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 logger.debug(
                     "Retrieving descriptors for characteristic {}".format(cUUID)
                 )
-                descriptors = await self._delegate.discover_descriptors(characteristic)
 
-                services.add_characteristic(
-                    BleakGATTCharacteristicCoreBluetooth(
-                        characteristic,
-                        lambda: self._peripheral.maximumWriteValueLengthForType_(
-                            CBCharacteristicWriteWithoutResponse
-                        ),
-                    )
+                char = BleakGATTCharacteristicCoreBluetooth(
+                    characteristic,
+                    lambda: self._peripheral.maximumWriteValueLengthForType_(
+                        CBCharacteristicWriteWithoutResponse
+                    ),
                 )
+                services.add_characteristic(char)
+
+                descriptors = await self._delegate.discover_descriptors(characteristic)
                 for descriptor in descriptors:
-                    services.add_descriptor(
-                        BleakGATTDescriptorCoreBluetooth(
-                            descriptor,
-                            cb_uuid_to_str(characteristic.UUID()),
-                            int(characteristic.handle()),
-                        )
+                    desc = BleakGATTDescriptor(
+                        descriptor,
+                        int(descriptor.handle()),
+                        cb_uuid_to_str(descriptor.UUID()),
+                        char,
                     )
+                    services.add_descriptor(desc)
+
         logger.debug("Services resolved for %s", str(self))
         self.services = services
         return self.services
