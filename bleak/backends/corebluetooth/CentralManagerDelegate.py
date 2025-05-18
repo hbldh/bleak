@@ -21,8 +21,10 @@ from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import Self
 else:
     from asyncio import timeout as async_timeout
+    from typing import Self
 
 import objc
 from CoreBluetooth import (
@@ -43,9 +45,7 @@ from Foundation import (
     NSError,
     NSKeyValueChangeNewKey,
     NSKeyValueObservingOptionNew,
-    NSNumber,
     NSObject,
-    NSString,
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
@@ -63,7 +63,7 @@ class CentralManagerDelegate(NSObject):
 
     ___pyobjc_protocols__ = [CBCentralManagerDelegate]
 
-    def init(self) -> Optional["CentralManagerDelegate"]:
+    def init(self: Self) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(CentralManagerDelegate, self).init()
 
@@ -74,7 +74,8 @@ class CentralManagerDelegate(NSObject):
         self._connect_futures: dict[NSUUID, asyncio.Future[bool]] = {}
 
         self.callbacks: dict[
-            int, Callable[[CBPeripheral, dict[str, Any], int], None]
+            int,
+            Callable[[CBPeripheral, NSDictionary, int], None],
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
@@ -121,16 +122,16 @@ class CentralManagerDelegate(NSObject):
 
     @objc.python_method
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
-        service_uuids = (
-            NSArray.alloc().initWithArray_(
-                list(map(CBUUID.UUIDWithString_, service_uuids))
-            )
+        _service_uuids = (
+            NSArray[CBUUID]
+            .alloc()
+            .initWithArray_(list(map(CBUUID.UUIDWithString_, service_uuids)))
             if service_uuids
             else None
         )
 
         self.central_manager.scanForPeripheralsWithServices_options_(
-            service_uuids, None
+            _service_uuids, None
         )
 
         event = asyncio.Event()
@@ -201,7 +202,7 @@ class CentralManagerDelegate(NSObject):
                 self._did_stop_scanning_event.set()
 
     def observeValueForKeyPath_ofObject_change_context_(
-        self, keyPath: NSString, object: Any, change: NSDictionary, context: int
+        self, keyPath: str, object: Any, change: NSDictionary, context: int
     ) -> None:
         logger.debug("'%s' changed", keyPath)
 
@@ -236,7 +237,7 @@ class CentralManagerDelegate(NSObject):
         central: CBCentralManager,
         peripheral: CBPeripheral,
         advertisementData: NSDictionary,
-        RSSI: NSNumber,
+        RSSI: int,
     ) -> None:
         # Note: this function might be called several times for same device.
         # This can happen for instance when an active scan is done, and the
@@ -272,7 +273,7 @@ class CentralManagerDelegate(NSObject):
         central: CBCentralManager,
         peripheral: CBPeripheral,
         advertisementData: NSDictionary,
-        RSSI: NSNumber,
+        RSSI: int,
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
         self.event_loop.call_soon_threadsafe(
