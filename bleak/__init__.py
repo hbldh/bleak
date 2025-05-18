@@ -129,11 +129,11 @@ class BleakScanner:
         self._backend = PlatformBleakScanner(
             detection_callback,
             service_uuids,
-            scanning_mode,
+            scanning_mode,  # type: ignore
             bluez=bluez,
             cb=cb,
             **kwargs,
-        )
+        )  # type: ignore
 
     async def __aenter__(self) -> Self:
         await self._backend.start()
