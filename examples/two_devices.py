@@ -8,6 +8,16 @@ from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 
+class Args(argparse.Namespace):
+    device1: str
+    uuid1: str
+    device2: str
+    uuid2: str
+    by_address: bool
+    macos_use_bdaddr: bool
+    debug: bool
+
+
 async def connect_to_device(
     lock: asyncio.Lock,
     by_address: bool,
@@ -144,7 +154,7 @@ if __name__ == "__main__":
         help="sets the log level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

@@ -12,6 +12,7 @@ Created on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 import argparse
 import asyncio
 import logging
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 
@@ -19,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class Args(argparse.Namespace):
-    name: str
-    address: str
+    name: Optional[str]
+    address: Optional[str]
     macos_use_bdaddr: bool
     services: list[str]
     pair: bool
@@ -37,13 +38,15 @@ async def main(args: Args):
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             return
-    else:
+    elif args.name:
         device = await BleakScanner.find_device_by_name(
             args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
             return
+    else:
+        raise ValueError("Either --name or --address must be provided")
 
     logger.info("connecting to device...")
 

@@ -12,6 +12,7 @@ Updated on 2019-07-03 by hbldh <henrik.blidh@gmail.com>
 import argparse
 import asyncio
 import logging
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -19,12 +20,20 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 logger = logging.getLogger(__name__)
 
 
+class Args(argparse.Namespace):
+    name: Optional[str]
+    address: Optional[str]
+    macos_use_bdaddr: bool
+    characteristic: str
+    debug: bool
+
+
 def notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray):
     """Simple notification handler which prints the data received."""
     logger.info("%s: %r", characteristic.description, data)
 
 
-async def main(args: argparse.Namespace):
+async def main(args: Args):
     logger.info("starting scan...")
 
     if args.address:
@@ -34,13 +43,15 @@ async def main(args: argparse.Namespace):
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             return
-    else:
+    elif args.name:
         device = await BleakScanner.find_device_by_name(
             args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
             return
+    else:
+        raise ValueError("Either --name or --address must be provided")
 
     logger.info("connecting to device...")
 
@@ -87,7 +98,7 @@ if __name__ == "__main__":
         help="sets the log level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
