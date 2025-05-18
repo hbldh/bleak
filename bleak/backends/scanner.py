@@ -272,16 +272,6 @@ class BaseBleakScanner(abc.ABC):
         """Stop scanning for devices"""
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def set_scanning_filter(self, **kwargs: Any) -> None:
-        """Set scanning filter for the BleakScanner.
-
-        Args:
-            **kwargs: The filter details. This will differ a lot between backend implementations.
-
-        """
-        raise NotImplementedError()
-
 
 def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     """
