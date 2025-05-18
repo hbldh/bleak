@@ -15,6 +15,11 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
+
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
@@ -69,6 +74,7 @@ class BleakScannerP4Android(BaseBleakScanner):
     def __del__(self) -> None:
         self.__stop()
 
+    @override
     async def start(self) -> None:
         if BleakScannerP4Android.__scanner is not None:
             raise BleakError("A BleakScanner is already scanning on this adapter.")
@@ -225,6 +231,7 @@ class BleakScannerP4Android(BaseBleakScanner):
         else:
             logger.debug("BTLE scan already stopped")
 
+    @override
     async def stop(self) -> None:
         self.__stop()
 

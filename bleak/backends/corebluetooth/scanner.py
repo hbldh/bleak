@@ -8,6 +8,11 @@ if TYPE_CHECKING:
 import logging
 from typing import Any, Literal, Optional
 
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
+
 import objc
 from CoreBluetooth import CBPeripheral
 from Foundation import NSBundle
@@ -84,6 +89,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                     "macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received"
                 )
 
+    @override
     async def start(self) -> None:
         self.seen_devices = {}
 
@@ -151,6 +157,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager.callbacks[id(self)] = callback
         await self._manager.start_scan(self._service_uuids)
 
+    @override
     async def stop(self) -> None:
         await self._manager.stop_scan()
         self._manager.callbacks.pop(id(self), None)
