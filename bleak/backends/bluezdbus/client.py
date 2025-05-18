@@ -352,6 +352,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
 
                     stack.pop_all()
+                    return
 
     @staticmethod
     async def _disconnect_monitor(
