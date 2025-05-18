@@ -55,7 +55,7 @@ async def connect_to_device(
 
                 if by_address:
                     device = await BleakScanner.find_device_by_address(
-                        name_or_address, cb=dict(use_bdaddr=macos_use_bdaddr)
+                        name_or_address, cb={"use_bdaddr": macos_use_bdaddr}
                     )
                 else:
                     device = await BleakScanner.find_device_by_name(name_or_address)

@@ -25,7 +25,7 @@ async def main(args: Args):
     devices = await BleakScanner.discover(
         return_adv=True,
         service_uuids=args.services,
-        cb=dict(use_bdaddr=args.macos_use_bdaddr),
+        cb={"use_bdaddr": args.macos_use_bdaddr},
     )
 
     for d, a in devices.values():

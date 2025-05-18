@@ -67,7 +67,7 @@ passed to the :meth:`bleak.BleakClient.start_notify` method that can differentia
     await client.start_notify(
         char,
         notification_handler,
-        cb=dict(notification_discriminator=notification_check_handler),
+        cb={"notification_discriminator": notification_check_handler},
     )
 
     while True:
