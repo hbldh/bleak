@@ -71,9 +71,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__javascanner = None
         self.__callback = None
 
-    def __del__(self) -> None:
-        self.__stop()
-
     @override
     async def start(self) -> None:
         if BleakScannerP4Android.__scanner is not None:
@@ -222,7 +219,8 @@ class BleakScannerP4Android(BaseBleakScanner):
 
                 return await self.start()
 
-    def __stop(self) -> None:
+    @override
+    async def stop(self) -> None:
         if self.__javascanner is not None:
             logger.debug("Stopping BTLE scan")
             self.__javascanner.stopScan(self.__callback.java)
@@ -230,10 +228,6 @@ class BleakScannerP4Android(BaseBleakScanner):
             self.__javascanner = None
         else:
             logger.debug("BTLE scan already stopped")
-
-    @override
-    async def stop(self) -> None:
-        self.__stop()
 
     def _handle_scan_result(self, result) -> None:
         native_device = result.getDevice()
