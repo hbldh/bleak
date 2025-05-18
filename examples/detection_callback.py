@@ -26,7 +26,9 @@ class Args(argparse.Namespace):
 
 
 def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
-    logger.info("%s: %r", device.address, advertisement_data)
+    logger.info(
+        "addr: %s, name: %s, %r", device.address, device.name, advertisement_data
+    )
 
 
 async def main(args: Args):
