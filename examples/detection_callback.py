@@ -31,7 +31,7 @@ def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
 
 async def main(args: Args):
     scanner = BleakScanner(
-        simple_callback, args.services, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        simple_callback, args.services, cb={"use_bdaddr": args.macos_use_bdaddr}
     )
 
     while True:

@@ -30,14 +30,14 @@ async def main(args: Args):
 
     if args.address:
         device = await BleakScanner.find_device_by_address(
-            args.address, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+            args.address, cb={"use_bdaddr": args.macos_use_bdaddr}
         )
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             return
     elif args.name:
         device = await BleakScanner.find_device_by_name(
-            args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+            args.name, cb={"use_bdaddr": args.macos_use_bdaddr}
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
