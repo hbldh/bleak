@@ -37,7 +37,6 @@ from bleak.backends.bluezdbus.defs import (
     GattDescriptor1,
     GattService1,
 )
-from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
 from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import (
@@ -45,6 +44,7 @@ from bleak.backends.bluezdbus.utils import (
     device_path_from_characteristic_path,
     get_dbus_authenticator,
 )
+from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakError
 
@@ -720,11 +720,11 @@ class BlueZManager:
                         self._properties[desc_path][defs.GATT_DESCRIPTOR_INTERFACE],
                     )
 
-                    desc = BleakGATTDescriptorBlueZDBus(
-                        desc_props,
-                        desc_path,
-                        char.uuid,
-                        char.handle,
+                    desc = BleakGATTDescriptor(
+                        (desc_path, desc_props),
+                        int(desc_path[-4:], 16),
+                        desc_props["UUID"],
+                        char,
                     )
 
                     services.add_descriptor(desc)

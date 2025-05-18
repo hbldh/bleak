@@ -788,7 +788,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=descriptor.path,
+                    path=descriptor.obj[0],
                     interface=defs.GATT_DESCRIPTOR_INTERFACE,
                     member="ReadValue",
                     signature="a{sv}",
@@ -810,7 +810,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         value = bytearray(reply.body[0])
 
-        logger.debug("Read Descriptor %s | %s: %s", handle, descriptor.path, value)
+        logger.debug("Read Descriptor %s | %s: %s", handle, descriptor.obj[0], value)
         return value
 
     @override
@@ -882,7 +882,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=descriptor.path,
+                    path=descriptor.obj[0],
                     interface=defs.GATT_DESCRIPTOR_INTERFACE,
                     member="WriteValue",
                     signature="aya{sv}",
@@ -902,7 +902,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             assert_reply(reply)
             break
 
-        logger.debug("Write Descriptor %s | %s: %s", handle, descriptor.path, data)
+        logger.debug("Write Descriptor %s | %s: %s", handle, descriptor.obj[0], data)
 
     @override
     async def start_notify(

@@ -19,7 +19,6 @@ from typing import Optional, Union
 from CoreBluetooth import CBCharacteristic
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.descriptor import BleakGATTDescriptor
 
@@ -71,7 +70,7 @@ class BleakGATTCharacteristicCoreBluetooth(BleakGATTCharacteristic):
         self, obj: CBCharacteristic, max_write_without_response_size: Callable[[], int]
     ):
         super().__init__(obj, max_write_without_response_size)
-        self.__descriptors: list[BleakGATTDescriptorCoreBluetooth] = []
+        self.__descriptors: list[BleakGATTDescriptor] = []
         # self.__props = obj.properties()
         self.__props: list[str] = [
             _GattCharacteristicsPropertiesEnum[v][0]

@@ -5,10 +5,16 @@ Interface class for the Bleak representation of a GATT Descriptor
 Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-import abc
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from bleak.uuids import normalize_uuid_16
+
+# avoid circular import
+if TYPE_CHECKING:
+    from bleak.backends.characteristic import BleakGATTCharacteristic
+
 
 _descriptor_descriptions = {
     normalize_uuid_16(0x2905): [
@@ -104,38 +110,46 @@ _descriptor_descriptions = {
 }
 
 
-class BleakGATTDescriptor(abc.ABC):
-    """Interface for the Bleak representation of a GATT Descriptor"""
+class BleakGATTDescriptor:
+    """The Bleak representation of a GATT Descriptor"""
 
-    def __init__(self, obj: Any):
+    def __init__(
+        self, obj: Any, handle: int, uuid: str, characteristic: BleakGATTCharacteristic
+    ):
+        """
+        Args:
+            obj: The backend-specific object for the descriptor.
+            handle: The handle of the descriptor.
+            uuid: The UUID of the descriptor.
+            characteristic: The characteristic that this descriptor belongs to.
+        """
         self.obj = obj
+        self._handle = handle
+        self._uuid = uuid
+        self._characteristic = characteristic
 
     def __str__(self):
         return f"{self.uuid} (Handle: {self.handle}): {self.description}"
 
     @property
-    @abc.abstractmethod
     def characteristic_uuid(self) -> str:
         """UUID for the characteristic that this descriptor belongs to"""
-        raise NotImplementedError()
+        return self._characteristic.uuid
 
     @property
-    @abc.abstractmethod
     def characteristic_handle(self) -> int:
         """handle for the characteristic that this descriptor belongs to"""
-        raise NotImplementedError()
+        return self._characteristic.handle
 
     @property
-    @abc.abstractmethod
     def uuid(self) -> str:
         """UUID for this descriptor"""
-        raise NotImplementedError()
+        return self._uuid
 
     @property
-    @abc.abstractmethod
     def handle(self) -> int:
         """Integer handle for this descriptor"""
-        raise NotImplementedError()
+        return self._handle
 
     @property
     def description(self) -> str:

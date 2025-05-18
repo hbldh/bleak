@@ -5,8 +5,6 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import sys
-from collections.abc import Callable
-from contextvars import Context
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -16,6 +14,8 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
+from collections.abc import Callable
+from contextvars import Context
 from ctypes import WinError
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
 
@@ -72,10 +72,10 @@ from bleak import BleakScanner
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
-from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.backends.winrt.service import BleakGATTServiceWinRT
 from bleak.exc import (
@@ -731,20 +731,20 @@ class BleakClientWinRT(BaseBleakClient):
                         f"Could not get GATT descriptors for characteristic {characteristic.uuid} ({characteristic.attribute_handle})",
                     )
 
-                    new_services.add_characteristic(
-                        BleakGATTCharacteristicWinRT(
-                            characteristic, lambda: self._session.max_pdu_size - 3
-                        )
+                    char = BleakGATTCharacteristicWinRT(
+                        characteristic, lambda: self._session.max_pdu_size - 3
                     )
 
+                    new_services.add_characteristic(char)
+
                     for descriptor in descriptors:
-                        new_services.add_descriptor(
-                            BleakGATTDescriptorWinRT(
-                                descriptor,
-                                str(characteristic.uuid),
-                                characteristic.attribute_handle,
-                            )
+                        desc = BleakGATTDescriptor(
+                            descriptor,
+                            descriptor.attribute_handle,
+                            str(descriptor.uuid),
+                            char,
                         )
+                        new_services.add_descriptor(desc)
 
             return new_services
         except BaseException:

@@ -25,10 +25,10 @@ from jnius import java_method
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.p4android import defs, utils
 from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
-from bleak.backends.p4android.descriptor import BleakGATTDescriptorP4Android
 from bleak.backends.p4android.service import BleakGATTServiceP4Android
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
@@ -273,11 +273,11 @@ class BleakClientP4Android(BaseBleakClient):
                     java_characteristic.getDescriptors()
                 ):
 
-                    descriptor = BleakGATTDescriptorP4Android(
+                    descriptor = BleakGATTDescriptor(
                         java_descriptor,
-                        characteristic.uuid,
-                        characteristic.handle,
-                        descriptor_index,
+                        characteristic.handle + 1 + descriptor_index,
+                        self.obj.getUuid().toString(),
+                        characteristic,
                     )
                     services.add_descriptor(descriptor)
 
@@ -325,21 +325,21 @@ class BleakClientP4Android(BaseBleakClient):
     @override
     async def read_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
+        desc_specifier: Union[BleakGATTDescriptor, str, uuid.UUID],
         **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
-            desc_specifier (BleakGATTDescriptorP4Android, str or UUID): The descriptor to read from,
+            desc_specifier (BleakGATTDescriptor, str or UUID): The descriptor to read from,
                 specified by either UUID or directly by the
-                BleakGATTDescriptorP4Android object representing it.
+                BleakGATTDescriptor object representing it.
 
         Returns:
             (bytearray) The read data.
 
         """
-        if not isinstance(desc_specifier, BleakGATTDescriptorP4Android):
+        if not isinstance(desc_specifier, BleakGATTDescriptor):
             descriptor = self.services.get_descriptor(desc_specifier)
         else:
             descriptor = desc_specifier
@@ -391,19 +391,19 @@ class BleakClientP4Android(BaseBleakClient):
     @override
     async def write_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
+        desc_specifier: Union[BleakGATTDescriptor, str, uuid.UUID],
         data: bytearray,
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            desc_specifier (BleakGATTDescriptorP4Android, str or UUID): The descriptor to write
+            desc_specifier (BleakGATTDescriptor, str or UUID): The descriptor to write
                 to, specified by either UUID or directly by the
-                BleakGATTDescriptorP4Android object representing it.
+                BleakGATTDescriptor object representing it.
             data (bytes or bytearray): The data to send.
 
         """
-        if not isinstance(desc_specifier, BleakGATTDescriptorP4Android):
+        if not isinstance(desc_specifier, BleakGATTDescriptor):
             descriptor = self.services.get_descriptor(desc_specifier)
         else:
             descriptor = desc_specifier
