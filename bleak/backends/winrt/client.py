@@ -402,7 +402,7 @@ class BleakClientWinRT(BaseBleakClient):
                             )
 
                             get_services_task = asyncio.create_task(
-                                self.get_services(
+                                self._get_services(
                                     service_cache_mode=service_cache_mode,
                                     cache_mode=cache_mode,
                                 )
@@ -437,7 +437,7 @@ class BleakClientWinRT(BaseBleakClient):
                             except asyncio.CancelledError:
                                 pass
                     else:
-                        self.services = await self.get_services(
+                        self.services = await self._get_services(
                             service_cache_mode=service_cache_mode,
                             cache_mode=cache_mode,
                         )
@@ -613,7 +613,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(
+    async def _get_services(
         self,
         *,
         service_cache_mode: Optional[BluetoothCacheMode] = None,

@@ -208,7 +208,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     async def disconnect_device() -> None:
                         # Calling Disconnect cancels any pending connect request. Also,
-                        # if connection was successful but get_services() raises (e.g.
+                        # if connection was successful but _get_services() raises (e.g.
                         # because task was cancelled), then we still need to disconnect
                         # before passing on the exception.
                         if self._bus:
@@ -345,7 +345,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     # We will try to use the cache if it exists and `dangerous_use_bleak_cache`
                     # is True.
-                    await self.get_services(
+                    await self._get_services(
                         dangerous_use_bleak_cache=dangerous_use_bleak_cache
                     )
 
@@ -654,7 +654,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(
+    async def _get_services(
         self, dangerous_use_bleak_cache: bool = False, **kwargs: Any
     ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
