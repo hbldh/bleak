@@ -6,8 +6,8 @@ import platform
 from collections.abc import Callable, Coroutine, Hashable
 from typing import Any, NamedTuple, Optional
 
-from ..exc import BleakError
-from .device import BLEDevice
+from bleak.backends.device import BLEDevice
+from bleak.exc import BleakError
 
 # prevent tasks from being garbage collected
 _background_tasks = set[asyncio.Task[None]]()

@@ -9,10 +9,10 @@ from collections.abc import Callable
 from typing import Union
 from uuid import UUID
 
-from ..characteristic import BleakGATTCharacteristic
-from ..descriptor import BleakGATTDescriptor
-from .defs import GattCharacteristic1
-from .utils import extract_service_handle_from_path
+from bleak.backends.bluezdbus.defs import GattCharacteristic1
+from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
 class BleakGATTCharacteristicBlueZDBus(BleakGATTCharacteristic):

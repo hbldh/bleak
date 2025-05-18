@@ -11,7 +11,7 @@ import warnings
 
 from jnius import PythonJavaClass
 
-from ...exc import BleakError
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 

@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 from CoreBluetooth import CBDescriptor
 
-from ..corebluetooth.utils import cb_uuid_to_str
-from ..descriptor import BleakGATTDescriptor
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
 class BleakGATTDescriptorCoreBluetooth(BleakGATTDescriptor):

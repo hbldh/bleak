@@ -12,7 +12,7 @@ from dbus_fast.auth import AuthExternal
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
-from ...exc import BleakDBusError, BleakError
+from bleak.exc import BleakDBusError, BleakError
 
 
 def assert_reply(reply: Message) -> None:

@@ -36,8 +36,8 @@ from CoreBluetooth import (
 )
 from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject, NSString
 
-from ...exc import BleakError
-from ..client import NotifyCallback
+from bleak.backends.client import NotifyCallback
+from bleak.exc import BleakError
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

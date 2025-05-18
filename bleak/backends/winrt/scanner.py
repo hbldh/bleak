@@ -20,11 +20,15 @@ from winrt.windows.devices.bluetooth.advertisement import (
 )
 from winrt.windows.foundation import EventRegistrationToken
 
-from ...assigned_numbers import AdvertisementDataType
-from ...exc import BleakError
-from ...uuids import normalize_uuid_str
-from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
-from .util import assert_mta
+from bleak.assigned_numbers import AdvertisementDataType
+from bleak.backends.scanner import (
+    AdvertisementData,
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+)
+from bleak.backends.winrt.util import assert_mta
+from bleak.exc import BleakError
+from bleak.uuids import normalize_uuid_str
 
 logger = logging.getLogger(__name__)
 

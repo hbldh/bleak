@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     if sys.platform != "android":
         assert False, "This backend is only available on Android"
 
-from ..descriptor import BleakGATTDescriptor
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
 class BleakGATTDescriptorP4Android(BleakGATTDescriptor):

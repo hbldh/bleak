@@ -11,8 +11,8 @@ from collections.abc import Callable
 from typing import Any, Union
 from uuid import UUID
 
-from ..uuids import uuidstr_to_str
-from .descriptor import BleakGATTDescriptor
+from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.uuids import uuidstr_to_str
 
 
 class GattCharacteristicsFlags(enum.Enum):

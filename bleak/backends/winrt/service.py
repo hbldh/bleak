@@ -7,8 +7,8 @@ if TYPE_CHECKING:
 
 from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 
-from ..service import BleakGATTService
-from ..winrt.characteristic import BleakGATTCharacteristicWinRT
+from bleak.backends.service import BleakGATTService
+from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
 
 
 class BleakGATTServiceWinRT(BleakGATTService):

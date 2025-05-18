@@ -18,10 +18,10 @@ if sys.version_info < (3, 12):
 else:
     from collections.abc import Buffer
 
-from ..exc import BleakError
-from .characteristic import BleakGATTCharacteristic
-from .device import BLEDevice
-from .service import BleakGATTServiceCollection
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.device import BLEDevice
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import BleakError
 
 NotifyCallback = Callable[[bytearray], None]
 

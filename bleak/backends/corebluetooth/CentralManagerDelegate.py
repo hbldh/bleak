@@ -49,7 +49,7 @@ from Foundation import (
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
-from ...exc import BleakError
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")

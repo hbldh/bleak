@@ -8,7 +8,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 import abc
 from typing import Any
 
-from ..uuids import normalize_uuid_16
+from bleak.uuids import normalize_uuid_16
 
 _descriptor_descriptions = {
     normalize_uuid_16(0x2905): [

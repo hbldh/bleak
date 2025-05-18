@@ -78,21 +78,21 @@ from winrt.windows.foundation import (
 )
 from winrt.windows.storage.streams import Buffer as WinBuffer
 
-from ... import BleakScanner
-from ...exc import (
+from bleak import BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.device import BLEDevice
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
+from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
+from bleak.backends.winrt.scanner import BleakScannerWinRT, _RawAdvData
+from bleak.backends.winrt.service import BleakGATTServiceWinRT
+from bleak.exc import (
     PROTOCOL_ERROR_CODES,
     BleakCharacteristicNotFoundError,
     BleakDeviceNotFoundError,
     BleakError,
 )
-from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
-from ..device import BLEDevice
-from ..service import BleakGATTServiceCollection
-from .characteristic import BleakGATTCharacteristicWinRT
-from .descriptor import BleakGATTDescriptorWinRT
-from .scanner import BleakScannerWinRT, _RawAdvData
-from .service import BleakGATTServiceWinRT
 
 logger = logging.getLogger(__name__)
 

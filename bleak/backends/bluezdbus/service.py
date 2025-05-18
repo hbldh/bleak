@@ -7,9 +7,9 @@ if TYPE_CHECKING:
 
 from typing import Any
 
-from ..service import BleakGATTService
-from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .utils import extract_service_handle_from_path
+from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
+from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
+from bleak.backends.service import BleakGATTService
 
 
 class BleakGATTServiceBlueZDBus(BleakGATTService):

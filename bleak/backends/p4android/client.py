@@ -18,15 +18,15 @@ from typing import Optional, Union
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
-from ...exc import BleakCharacteristicNotFoundError, BleakError
-from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
-from ..device import BLEDevice
-from ..service import BleakGATTServiceCollection
-from . import defs, utils
-from .characteristic import BleakGATTCharacteristicP4Android
-from .descriptor import BleakGATTDescriptorP4Android
-from .service import BleakGATTServiceP4Android
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.device import BLEDevice
+from bleak.backends.p4android import defs, utils
+from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
+from bleak.backends.p4android.descriptor import BleakGATTDescriptorP4Android
+from bleak.backends.p4android.service import BleakGATTServiceP4Android
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 
 logger = logging.getLogger(__name__)
 

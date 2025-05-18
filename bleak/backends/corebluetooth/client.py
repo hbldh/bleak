@@ -30,23 +30,28 @@ from CoreBluetooth import (
 )
 from Foundation import NSArray, NSData
 
-from ... import BleakScanner
-from ...exc import (
+from bleak import BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
+from bleak.backends.corebluetooth.characteristic import (
+    BleakGATTCharacteristicCoreBluetooth,
+)
+from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
+from bleak.backends.corebluetooth.PeripheralDelegate import (
+    NotificationDiscriminator,
+    PeripheralDelegate,
+)
+from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
+from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.device import BLEDevice
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import (
     BleakCharacteristicNotFoundError,
     BleakDeviceNotFoundError,
     BleakError,
 )
-from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
-from ..device import BLEDevice
-from ..service import BleakGATTServiceCollection
-from .CentralManagerDelegate import CentralManagerDelegate
-from .characteristic import BleakGATTCharacteristicCoreBluetooth
-from .descriptor import BleakGATTDescriptorCoreBluetooth
-from .PeripheralDelegate import NotificationDiscriminator, PeripheralDelegate
-from .scanner import BleakScannerCoreBluetooth
-from .service import BleakGATTServiceCoreBluetooth
-from .utils import cb_uuid_to_str
 
 logger = logging.getLogger(__name__)
 

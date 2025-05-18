@@ -20,8 +20,8 @@ from typing import NamedTuple, Union, no_type_check
 from dbus_fast import PropertyAccess
 from dbus_fast.service import ServiceInterface, dbus_property, method
 
-from ...assigned_numbers import AdvertisementDataType
-from . import defs
+from bleak.assigned_numbers import AdvertisementDataType
+from bleak.backends.bluezdbus import defs
 
 logger = logging.getLogger(__name__)
 

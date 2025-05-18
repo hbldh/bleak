@@ -66,7 +66,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.isort]
 profile = "black"
 py_version=38
-src_paths = ["bleak", "examples", "tests", "typings"]
+src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer"]
 
 [tool.mypy]
