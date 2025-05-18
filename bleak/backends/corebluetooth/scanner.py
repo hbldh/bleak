@@ -15,7 +15,7 @@ else:
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle
+from Foundation import NSBundle, NSDictionary
 
 from bleak.args.corebluetooth import CBScannerArgs
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -65,7 +65,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         *,
         cb: CBScannerArgs,
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakScannerCoreBluetooth, self).__init__(
             detection_callback, service_uuids
@@ -76,7 +76,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         if scanning_mode == "passive":
             raise BleakError("macOS does not support passive scanning")
 
-        self._manager = CentralManagerDelegate.alloc().init()
+        manager = CentralManagerDelegate.alloc().init()
+        assert manager
+        self._manager = manager
         self._timeout: float = kwargs.get("timeout", 5.0)
         if (
             objc.macos_available(12, 0)
@@ -93,7 +95,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def start(self) -> None:
         self.seen_devices = {}
 
-        def callback(p: CBPeripheral, a: dict[str, Any], r: int) -> None:
+        def callback(p: CBPeripheral, a: NSDictionary, r: int) -> None:
 
             service_uuids = [
                 cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
@@ -110,7 +112,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             # Process manufacturer data into a more friendly format
             manufacturer_binary_data = a.get("kCBAdvDataManufacturerData")
-            manufacturer_data = {}
+            manufacturer_data: dict[int, bytes] = {}
             if manufacturer_binary_data:
                 manufacturer_id = int.from_bytes(
                     manufacturer_binary_data[0:2], byteorder="little"
@@ -133,7 +135,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
-                address_bytes: bytes = (
+                address_bytes: Optional[bytes] = (
                     self._manager.central_manager.retrieveAddressForPeripheral_(p)
                 )
                 if address_bytes is None:
@@ -161,9 +163,3 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
     async def stop(self) -> None:
         await self._manager.stop_scan()
         self._manager.callbacks.pop(id(self), None)
-
-    # macOS specific methods
-
-    @property
-    def is_scanning(self):
-        return self._manager.isScanning_

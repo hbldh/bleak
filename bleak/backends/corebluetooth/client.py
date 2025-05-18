@@ -5,7 +5,7 @@ Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -71,7 +71,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
 
@@ -86,7 +86,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             ) = address_or_ble_device.details
 
         self._requested_services = (
-            NSArray.alloc().initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
+            NSArray[CBUUID]
+            .alloc()
+            .initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
             if services
             else None
         )
@@ -95,7 +97,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return "BleakClientCoreBluetooth ({})".format(self.address)
 
     @override
-    async def connect(self, pair: bool, **kwargs) -> None:
+    async def connect(self, pair: bool, **kwargs: Any) -> None:
         """Connect to a specified Peripheral
 
         Keyword Args:
@@ -157,6 +159,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         ):
             return
 
+        assert self._central_manager_delegate
         await self._central_manager_delegate.disconnect(self._peripheral)
 
     @property
@@ -176,6 +179,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         # Use type CBCharacteristicWriteWithoutResponse to get maximum write
         # value length based on the negotiated ATT MTU size. Add the ATT header
         # length (+3) to get the actual ATT MTU size.
+        assert self._peripheral
         return (
             self._peripheral.maximumWriteValueLengthForType_(
                 CBCharacteristicWriteWithoutResponse
@@ -184,7 +188,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
     @override
-    async def pair(self, *args, **kwargs) -> None:
+    async def pair(self, *args: Any, **kwargs: Any) -> None:
         """Attempt to pair with a peripheral.
 
         Raises:
@@ -213,7 +217,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
-    async def _get_services(self, **kwargs) -> BleakGATTServiceCollection:
+    async def _get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:
@@ -226,6 +230,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         services = BleakGATTServiceCollection()
 
         logger.debug("Retrieving services...")
+        assert self._delegate
         cb_services = await self._delegate.discover_services(self._requested_services)
 
         for service in cb_services:
@@ -269,7 +274,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         use_cached: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -291,6 +296,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakCharacteristicNotFoundError(char_specifier)
 
+        assert self._delegate
         output = await self._delegate.read_characteristic(
             characteristic.obj, use_cached=use_cached
         )
@@ -300,7 +306,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, handle: int, use_cached: bool = False, **kwargs
+        self, handle: int, use_cached: bool = False, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -316,6 +322,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor {} was not found!".format(handle))
 
+        assert self._delegate
         output = await self._delegate.read_descriptor(
             descriptor.obj, use_cached=use_cached
         )
@@ -360,6 +367,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not descriptor:
             raise BleakError("Descriptor {} was not found!".format(handle))
 
+        assert self._delegate
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         await self._delegate.write_descriptor(descriptor.obj, value)
         logger.debug("Write Descriptor {0} : {1}".format(handle, data))
@@ -371,7 +379,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         callback: NotifyCallback,
         *,
         cb: CBStartNotifyArgs,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
@@ -404,8 +412,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         if not characteristic:
             raise BleakCharacteristicNotFoundError(char_specifier)
 
+        assert self._delegate
         await self._delegate.stop_notifications(characteristic.obj)
 
     async def get_rssi(self) -> int:
         """To get RSSI value in dBm of the connected Peripheral"""
+        assert self._delegate
         return int(await self._delegate.read_rssi())
