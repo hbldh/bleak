@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 import asyncio
 import itertools
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Any, NewType, Optional
 
 if sys.version_info < (3, 11):
@@ -36,14 +36,13 @@ from CoreBluetooth import (
 )
 from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject, NSString
 
+from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends.client import NotifyCallback
 from bleak.exc import BleakError
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
-NotificationDiscriminator = Callable[[bytes], bool]
 
 CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 

@@ -22,6 +22,7 @@ Changed
 * Updated ``winrt`` backend to use PyWinRT >= 3.1.
 * Added ``notification_discriminator`` parameter to start_notify on CoreBluetooth backend
 * Changed return type of ``connect()``, ``disconnect()``, ``pair()`` and ``unpair()`` methods to ``None``.
+* Moved backend-specific arg types to new ``bleak.args`` sub-package.
 
 Fixed
 -----
