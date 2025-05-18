@@ -200,7 +200,13 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         device = self.create_or_update_device(
             props["Address"],
-            props["Alias"],
+            # BlueZ generates a name based on the address if no name is available.
+            # To match other backends, we replace this with None.
+            (
+                None
+                if props["Alias"] == props["Address"].replace(":", "-")
+                else props["Alias"]
+            ),
             {"path": path, "props": props},
             advertisement_data,
         )
