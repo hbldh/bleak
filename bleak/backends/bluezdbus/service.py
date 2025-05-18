@@ -17,7 +17,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
 
     def __init__(self, obj: Any, path: str):
         super().__init__(obj)
-        self.__characteristics = []
+        self.__characteristics: list[BleakGATTCharacteristicBlueZDBus] = []
         self.__path = path
         self.__handle = extract_service_handle_from_path(path)
 

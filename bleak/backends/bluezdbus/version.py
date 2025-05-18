@@ -14,12 +14,13 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-async def _get_bluetoothctl_version() -> Optional[re.Match]:
+async def _get_bluetoothctl_version() -> Optional[re.Match[bytes]]:
     """Get the version of bluetoothctl."""
     with contextlib.suppress(Exception):
         proc = await asyncio.create_subprocess_exec(
             "bluetoothctl", "--version", stdout=asyncio.subprocess.PIPE
         )
+        assert proc.stdout
         out = await proc.stdout.read()
         version = re.search(b"(\\d+).(\\d+)", out.strip(b"'"))
         await proc.wait()
