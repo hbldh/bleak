@@ -5,6 +5,7 @@ import logging
 from typing import Iterable
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
 
 
 async def connect_to_device(
@@ -55,11 +56,9 @@ async def connect_to_device(
                     logging.error("%s not found", name_or_address)
                     return
 
-                client = BleakClient(device)
-
                 logging.info("connecting to %s", name_or_address)
 
-                await stack.enter_async_context(client)
+                client = await stack.enter_async_context(BleakClient(device))
 
                 logging.info("connected to %s", name_or_address)
 
@@ -71,7 +70,7 @@ async def connect_to_device(
             # Bluetooth adapter is now free to scan and connect another device
             # without disconnecting this one.
 
-            def callback(_, data):
+            def callback(_: BleakGATTCharacteristic, data: bytearray) -> None:
                 logging.info("%s received %r", name_or_address, data)
 
             await client.start_notify(notify_uuid, callback)

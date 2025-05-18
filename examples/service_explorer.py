@@ -131,7 +131,7 @@ if __name__ == "__main__":
         help="sets the log level to debug",
     )
 
-    args: Args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

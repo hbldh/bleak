@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import uuid
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 
 class BleakError(Exception):
@@ -49,7 +49,7 @@ class BleakDeviceNotFoundError(BleakError):
 class BleakDBusError(BleakError):
     """Specialized exception type for D-Bus errors."""
 
-    def __init__(self, dbus_error: str, error_body: list):
+    def __init__(self, dbus_error: str, error_body: list[Any]):
         """
         Args:
             dbus_error (str): The D-Bus error, e.g. ``org.freedesktop.DBus.Error.UnknownObject``.
