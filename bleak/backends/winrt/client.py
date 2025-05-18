@@ -5,6 +5,8 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import sys
+from collections.abc import Callable
+from contextvars import Context
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -29,15 +31,18 @@ from typing import (
 )
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer, Self
 else:
-    from collections.abc import Buffer
+    from collections.abc import Buffer, Self
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import assert_never
 else:
     from asyncio import timeout as async_timeout
+    from typing import assert_never
 
+from winrt.system import Object
 from winrt.windows.devices.bluetooth import (
     BluetoothAddressType,
     BluetoothCacheMode,
@@ -220,7 +225,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
         self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{type(self).__name__} ({self.address})"
 
     # Connectivity methods
@@ -279,14 +284,14 @@ class BleakClientWinRT(BaseBleakClient):
         if pair:
             await self.pair(**kwargs)
 
-        def handle_services_changed():
+        def handle_services_changed() -> None:
             if not self._services_changed_events:
                 logger.warning("%s: unhandled services changed event", self.address)
             else:
                 for event in self._services_changed_events:
                     event.set()
 
-        def services_changed_handler(sender, args):
+        def services_changed_handler(sender: BluetoothLEDevice, args: Object) -> None:
             logger.debug("%s: services changed", self.address)
             loop.call_soon_threadsafe(handle_services_changed)
 
@@ -295,7 +300,7 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         # Called on disconnect event or on failure to connect.
-        def handle_disconnect():
+        def handle_disconnect() -> None:
             if self._requester:
                 if self._services_changed_token:
                     self._requester.remove_gatt_services_changed(
@@ -328,7 +333,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         def handle_session_status_changed(
             args: GattSessionStatusChangedEventArgs,
-        ):
+        ) -> None:
             if args.error != BluetoothError.SUCCESS:
                 logger.error("Unhandled GATT error %r", args.error)
 
@@ -359,7 +364,7 @@ class BleakClientWinRT(BaseBleakClient):
             )
             loop.call_soon_threadsafe(handle_session_status_changed, args)
 
-        def max_pdu_size_changed_handler(sender: GattSession, args):
+        def max_pdu_size_changed_handler(sender: GattSession, args: Object) -> None:
             try:
                 max_pdu_size = sender.max_pdu_size
             except OSError:
@@ -978,9 +983,9 @@ class BleakClientWinRT(BaseBleakClient):
 
         def handle_value_changed(
             sender: GattCharacteristic, args: GattValueChangedEventArgs
-        ):
+        ) -> None:
             value = bytearray(args.characteristic_value)
-            return loop.call_soon_threadsafe(callback, value)
+            loop.call_soon_threadsafe(callback, value)
 
         event_handler_token = winrt_char.add_value_changed(handle_value_changed)
         self._notification_callbacks[characteristic.handle] = event_handler_token
@@ -1054,18 +1059,20 @@ class FutureLike(Generic[T]):
 
     _asyncio_future_blocking = False
 
-    def __init__(self, op: IAsyncOperation[T]) -> None:
+    def __init__(self: Self, op: IAsyncOperation[T]) -> None:
         self._op = op
-        self._callbacks = []
+        self._callbacks: list[Callable[[Self], None]] = []
         self._loop = asyncio.get_running_loop()
         self._cancel_requested = False
         self._result = None
 
-        def call_callbacks():
+        def call_callbacks() -> None:
             for c in self._callbacks:
                 c(self)
 
-        def call_callbacks_threadsafe(op: IAsyncOperation[T], status: AsyncStatus):
+        def call_callbacks_threadsafe(
+            op: IAsyncOperation[T], status: AsyncStatus
+        ) -> None:
             if status == AsyncStatus.COMPLETED:
                 # have to get result on this thread, otherwise it may not return correct value
                 self._result = op.get_results()
@@ -1096,19 +1103,26 @@ class FutureLike(Generic[T]):
             error_code = self._op.error_code.value
             raise WinError(error_code)
 
+        assert_never(self._op.status)
+
     def done(self) -> bool:
         return self._op.status != AsyncStatus.STARTED
 
     def cancelled(self) -> bool:
         return self._cancel_requested or self._op.status == AsyncStatus.CANCELED
 
-    def add_done_callback(self, callback, *, context=None) -> None:
+    def add_done_callback(
+        self,
+        callback: Callable[[Self], None],
+        *,
+        context: Optional[Context] = None,
+    ) -> None:
         self._callbacks.append(callback)
 
-    def remove_done_callback(self, callback) -> None:
+    def remove_done_callback(self, callback: Callable[[Self], None]) -> None:
         self._callbacks.remove(callback)
 
-    def cancel(self, msg=None) -> bool:
+    def cancel(self, msg: Optional[str] = None) -> bool:
         if self._cancel_requested or self._op.status != AsyncStatus.STARTED:
             return False
 
@@ -1137,6 +1151,8 @@ class FutureLike(Generic[T]):
             error_code = self._op.error_code.value
 
             return WinError(error_code)
+
+        assert_never(self._op.status)
 
     def get_loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
