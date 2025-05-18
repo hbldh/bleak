@@ -5,8 +5,8 @@ if TYPE_CHECKING:
     if sys.platform != "android":
         assert False, "This backend is only available on Android"
 
-from ..service import BleakGATTService
-from .characteristic import BleakGATTCharacteristicP4Android
+from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
+from bleak.backends.service import BleakGATTService
 
 
 class BleakGATTServiceP4Android(BleakGATTService):

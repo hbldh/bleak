@@ -10,7 +10,7 @@ import ctypes
 from ctypes import wintypes
 from enum import IntEnum
 
-from ...exc import BleakError
+from bleak.exc import BleakError
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout

@@ -19,9 +19,13 @@ from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
-from ...exc import BleakError
-from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
-from . import defs, utils
+from bleak.backends.p4android import defs, utils
+from bleak.backends.scanner import (
+    AdvertisementData,
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+)
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 

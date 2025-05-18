@@ -40,25 +40,25 @@ else:
     from asyncio import timeout as async_timeout
     from typing import Never, Unpack, assert_never
 
-from .backends.characteristic import BleakGATTCharacteristic
-from .backends.client import BaseBleakClient, get_platform_client_backend_type
-from .backends.device import BLEDevice
-from .backends.scanner import (
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.client import BaseBleakClient, get_platform_client_backend_type
+from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
     AdvertisementDataFilter,
     BaseBleakScanner,
     get_platform_scanner_backend_type,
 )
-from .backends.service import BleakGATTServiceCollection
-from .exc import BleakCharacteristicNotFoundError, BleakError
-from .uuids import normalize_uuid_str
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import BleakCharacteristicNotFoundError, BleakError
+from bleak.uuids import normalize_uuid_str
 
 if TYPE_CHECKING:
-    from .backends.bluezdbus.scanner import BlueZScannerArgs
-    from .backends.corebluetooth.client import CBStartNotifyArgs
-    from .backends.corebluetooth.scanner import CBScannerArgs
-    from .backends.winrt.client import WinRTClientArgs
+    from bleak.backends.bluezdbus.scanner import BlueZScannerArgs
+    from bleak.backends.corebluetooth.client import CBStartNotifyArgs
+    from bleak.backends.corebluetooth.scanner import CBScannerArgs
+    from bleak.backends.winrt.client import WinRTClientArgs
 
 
 _logger = logging.getLogger(__name__)

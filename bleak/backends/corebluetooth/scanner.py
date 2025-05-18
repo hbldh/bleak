@@ -12,10 +12,14 @@ import objc
 from CoreBluetooth import CBPeripheral
 from Foundation import NSBundle
 
-from ...exc import BleakError
-from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
-from .CentralManagerDelegate import CentralManagerDelegate
-from .utils import cb_uuid_to_str
+from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
+from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.scanner import (
+    AdvertisementData,
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+)
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 

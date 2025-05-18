@@ -9,10 +9,10 @@ from collections.abc import Callable
 from typing import Union
 from uuid import UUID
 
-from ...exc import BleakError
-from ..characteristic import BleakGATTCharacteristic
-from ..descriptor import BleakGATTDescriptor
-from . import defs
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.backends.p4android import defs
+from bleak.exc import BleakError
 
 
 class BleakGATTCharacteristicP4Android(BleakGATTCharacteristic):

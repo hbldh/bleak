@@ -33,23 +33,23 @@ from dbus_fast.constants import BusType, ErrorType, MessageType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
-from ... import BleakScanner
-from ...exc import (
+from bleak import BleakScanner
+from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
+from bleak.backends.bluezdbus.manager import get_global_bluez_manager
+from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
+from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
+from bleak.backends.bluezdbus.version import BlueZFeatures
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.device import BLEDevice
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import (
     BleakCharacteristicNotFoundError,
     BleakDBusError,
     BleakDeviceNotFoundError,
     BleakError,
 )
-from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
-from ..device import BLEDevice
-from ..service import BleakGATTServiceCollection
-from . import defs
-from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .manager import get_global_bluez_manager
-from .scanner import BleakScannerBlueZDBus
-from .utils import assert_reply, get_dbus_authenticator
-from .version import BlueZFeatures
 
 logger = logging.getLogger(__name__)
 

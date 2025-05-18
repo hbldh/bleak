@@ -11,12 +11,16 @@ from typing import Any, Literal, Optional, TypedDict
 
 from dbus_fast import Variant
 
-from ...exc import BleakError
-from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
-from .advertisement_monitor import OrPatternLike
-from .defs import Device1
-from .manager import get_global_bluez_manager
-from .utils import bdaddr_from_device_path
+from bleak.backends.bluezdbus.advertisement_monitor import OrPatternLike
+from bleak.backends.bluezdbus.defs import Device1
+from bleak.backends.bluezdbus.manager import get_global_bluez_manager
+from bleak.backends.bluezdbus.utils import bdaddr_from_device_path
+from bleak.backends.scanner import (
+    AdvertisementData,
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+)
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 

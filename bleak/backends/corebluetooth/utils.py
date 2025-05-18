@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from CoreBluetooth import CBUUID
 from Foundation import NSData
 
-from ...uuids import normalize_uuid_str
+from bleak.uuids import normalize_uuid_str
 
 
 def cb_uuid_to_str(uuid: CBUUID) -> str:

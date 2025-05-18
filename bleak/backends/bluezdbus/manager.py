@@ -25,20 +25,28 @@ from weakref import WeakKeyDictionary
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
-from ...exc import BleakDBusError, BleakError
-from ..service import BleakGATTServiceCollection
-from . import defs
-from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
-from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .defs import Device1, GattCharacteristic1, GattDescriptor1, GattService1
-from .descriptor import BleakGATTDescriptorBlueZDBus
-from .service import BleakGATTServiceBlueZDBus
-from .signals import MatchRules, add_match
-from .utils import (
+from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.advertisement_monitor import (
+    AdvertisementMonitor,
+    OrPatternLike,
+)
+from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
+from bleak.backends.bluezdbus.defs import (
+    Device1,
+    GattCharacteristic1,
+    GattDescriptor1,
+    GattService1,
+)
+from bleak.backends.bluezdbus.descriptor import BleakGATTDescriptorBlueZDBus
+from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
+from bleak.backends.bluezdbus.signals import MatchRules, add_match
+from bleak.backends.bluezdbus.utils import (
     assert_reply,
     device_path_from_characteristic_path,
     get_dbus_authenticator,
 )
+from bleak.backends.service import BleakGATTServiceCollection
+from bleak.exc import BleakDBusError, BleakError
 
 logger = logging.getLogger(__name__)
 

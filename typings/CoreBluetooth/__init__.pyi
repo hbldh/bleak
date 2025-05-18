@@ -1,6 +1,6 @@
-from typing import Any, NewType, Optional, Type, TypeVar
+from typing import Any, NewType, Optional, TypeVar
 
-from ..Foundation import (
+from Foundation import (
     NSUUID,
     NSArray,
     NSData,
@@ -10,7 +10,7 @@ from ..Foundation import (
     NSObject,
     NSString,
 )
-from ..libdispatch import dispatch_queue_t
+from libdispatch import dispatch_queue_t
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...

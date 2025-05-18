@@ -11,10 +11,10 @@ from collections.abc import Iterator
 from typing import Any, Optional, Union
 from uuid import UUID
 
-from ..exc import BleakError
-from ..uuids import normalize_uuid_str, uuidstr_to_str
-from .characteristic import BleakGATTCharacteristic
-from .descriptor import BleakGATTDescriptor
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.exc import BleakError
+from bleak.uuids import normalize_uuid_str, uuidstr_to_str
 
 logger = logging.getLogger(__name__)
 

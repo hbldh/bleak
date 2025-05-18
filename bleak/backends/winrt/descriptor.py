@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 from winrt.windows.devices.bluetooth.genericattributeprofile import GattDescriptor
 
-from ..descriptor import BleakGATTDescriptor
+from bleak.backends.descriptor import BleakGATTDescriptor
 
 
 class BleakGATTDescriptorWinRT(BleakGATTDescriptor):
