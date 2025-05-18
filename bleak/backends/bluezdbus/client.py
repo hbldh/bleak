@@ -19,9 +19,10 @@ from typing import Any, Optional, Union, cast
 from uuid import UUID
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer, override
 else:
     from collections.abc import Buffer
+    from typing import override
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -112,6 +113,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # Connectivity methods
 
+    @override
     async def connect(
         self, pair: bool, dangerous_use_bleak_cache: bool = False, **kwargs: Any
     ) -> None:
@@ -415,6 +417,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             # Reset all stored services.
             self.services = None
 
+    @override
     async def disconnect(self) -> None:
         """Disconnect from the specified GATT server.
 
@@ -459,6 +462,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
+    @override
     async def pair(self, *args: Any, **kwargs: Any) -> None:
         """Pair with the peripheral.
 
@@ -510,6 +514,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert reply
         assert_reply(reply)
 
+    @override
     async def unpair(self) -> None:
         """Unpair with the peripheral."""
         adapter_path = await self._get_adapter_path()
@@ -555,6 +560,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             raise
 
     @property
+    @override
     def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
@@ -642,6 +648,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return f"{adapter_path}/dev_{bluez_address}"
 
     @property
+    @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         if self._mtu_size is None:
@@ -682,6 +689,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     # IO methods
 
+    @override
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
@@ -755,6 +763,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         return value
 
+    @override
     async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -803,6 +812,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         logger.debug("Read Descriptor %s | %s: %s", handle, descriptor.path, value)
         return value
 
+    @override
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -848,6 +858,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             data,
         )
 
+    @override
     async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
@@ -892,6 +903,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         logger.debug("Write Descriptor %s | %s: %s", handle, descriptor.path, data)
 
+    @override
     async def start_notify(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -918,6 +930,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert reply
         assert_reply(reply)
 
+    @override
     async def stop_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],

@@ -15,6 +15,11 @@ import uuid
 import warnings
 from typing import Optional, Union
 
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
+
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
@@ -64,6 +69,7 @@ class BleakClientP4Android(BaseBleakClient):
 
     # Connectivity methods
 
+    @override
     async def connect(self, pair: bool, **kwargs) -> None:
         """Connect to the specified GATT server."""
         if pair:
@@ -127,6 +133,7 @@ class BleakClientP4Android(BaseBleakClient):
                 pass
             raise
 
+    @override
     async def disconnect(self) -> None:
         """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
@@ -157,6 +164,7 @@ class BleakClientP4Android(BaseBleakClient):
         # Reset all stored services.
         self.services = None
 
+    @override
     async def pair(self, *args, **kwargs) -> None:
         """Pair with the peripheral.
 
@@ -204,6 +212,7 @@ class BleakClientP4Android(BaseBleakClient):
         finally:
             await receiver.stop()
 
+    @override
     async def unpair(self) -> None:
         """Unpair with the peripheral."""
         warnings.warn(
@@ -211,6 +220,7 @@ class BleakClientP4Android(BaseBleakClient):
         )
 
     @property
+    @override
     def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
@@ -225,7 +235,8 @@ class BleakClientP4Android(BaseBleakClient):
         )
 
     @property
-    def mtu_size(self) -> Optional[int]:
+    @override
+    def mtu_size(self) -> int:
         return self.__mtu
 
     # GATT services methods
@@ -280,6 +291,7 @@ class BleakClientP4Android(BaseBleakClient):
 
     # IO methods
 
+    @override
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
@@ -315,6 +327,7 @@ class BleakClientP4Android(BaseBleakClient):
         )
         return value
 
+    @override
     async def read_gatt_descriptor(
         self,
         desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
@@ -352,6 +365,7 @@ class BleakClientP4Android(BaseBleakClient):
 
         return value
 
+    @override
     async def write_gatt_char(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -379,6 +393,7 @@ class BleakClientP4Android(BaseBleakClient):
             f"Write Characteristic {characteristic.uuid} | {characteristic.handle}: {data}"
         )
 
+    @override
     async def write_gatt_descriptor(
         self,
         desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
@@ -413,6 +428,7 @@ class BleakClientP4Android(BaseBleakClient):
             f"Write Descriptor {descriptor.uuid} | {descriptor.handle}: {data}"
         )
 
+    @override
     async def start_notify(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -436,6 +452,7 @@ class BleakClientP4Android(BaseBleakClient):
             defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
         )
 
+    @override
     async def stop_notify(
         self,
         char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
