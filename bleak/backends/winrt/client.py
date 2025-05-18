@@ -20,16 +20,16 @@ from ctypes import WinError
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, Self
+    from typing_extensions import Buffer
 else:
-    from collections.abc import Buffer, Self
+    from collections.abc import Buffer
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
-    from typing_extensions import assert_never
+    from typing_extensions import Self, assert_never
 else:
     from asyncio import timeout as async_timeout
-    from typing import assert_never
+    from typing import assert_never, Self
 
 from winrt.system import Object
 from winrt.windows.devices.bluetooth import (

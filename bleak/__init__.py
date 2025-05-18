@@ -19,17 +19,16 @@ from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, Self
+    from typing_extensions import Buffer
 else:
     from collections.abc import Buffer
-    from typing import Self
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
-    from typing_extensions import Never, Unpack, assert_never
+    from typing_extensions import Never, Self, Unpack, assert_never
 else:
     from asyncio import timeout as async_timeout
-    from typing import Never, Unpack, assert_never
+    from typing import Never, Self, Unpack, assert_never
 
 from bleak.args.bluez import BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
