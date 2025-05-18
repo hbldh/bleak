@@ -28,9 +28,10 @@ from typing import (
 )
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer, Self
 else:
     from collections.abc import Buffer
+    from typing import Self
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -148,7 +149,7 @@ class BleakScanner:
             **kwargs,
         )
 
-    async def __aenter__(self) -> BleakScanner:
+    async def __aenter__(self) -> Self:
         await self._backend.start()
         return self
 
@@ -516,15 +517,15 @@ class BleakClient:
 
     # Async Context managers
 
-    async def __aenter__(self) -> BleakClient:
+    async def __aenter__(self) -> Self:
         await self.connect()
         return self
 
     async def __aexit__(
         self,
-        exc_type: type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         await self.disconnect()
 
