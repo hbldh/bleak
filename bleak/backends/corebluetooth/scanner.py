@@ -155,22 +155,6 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         await self._manager.stop_scan()
         self._manager.callbacks.pop(id(self), None)
 
-    def set_scanning_filter(self, **kwargs) -> None:
-        """Set scanning filter for the scanner.
-
-        .. note::
-
-            This is not implemented for macOS yet.
-
-        Raises:
-
-           ``NotImplementedError``
-
-        """
-        raise NotImplementedError(
-            "Need to evaluate which macOS versions to support first..."
-        )
-
     # macOS specific methods
 
     @property

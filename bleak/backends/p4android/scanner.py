@@ -228,11 +228,6 @@ class BleakScannerP4Android(BaseBleakScanner):
     async def stop(self) -> None:
         self.__stop()
 
-    def set_scanning_filter(self, **kwargs) -> None:
-        # If we do end up implementing this, this should accept List<ScanFilter>
-        # and ScanSettings java objects to pass to startScan().
-        raise NotImplementedError("not implemented in Android backend")
-
     def _handle_scan_result(self, result) -> None:
         native_device = result.getDevice()
         record = result.getScanRecord()

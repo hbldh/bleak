@@ -302,22 +302,3 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._received_token = None
 
         self.watcher = None
-
-    def set_scanning_filter(self, **kwargs: Any) -> None:
-        """Set a scanning filter for the BleakScanner.
-
-        Keyword Args:
-          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
-            BluetoothSignalStrengthFilter object used for configuration of Bluetooth
-            LE advertisement filtering that uses signal strength-based filtering.
-          AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
-            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-            advertisement filtering that uses payload section-based filtering.
-
-        """
-        if "SignalStrengthFilter" in kwargs:
-            # TODO: Handle SignalStrengthFilter parameters
-            self._signal_strength_filter = kwargs["SignalStrengthFilter"]
-        if "AdvertisementFilter" in kwargs:
-            # TODO: Handle AdvertisementFilter parameters
-            self._advertisement_filter = kwargs["AdvertisementFilter"]
