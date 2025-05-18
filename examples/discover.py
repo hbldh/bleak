@@ -14,7 +14,12 @@ import asyncio
 from bleak import BleakScanner
 
 
-async def main(args: argparse.Namespace):
+class Args(argparse.Namespace):
+    macos_use_bdaddr: bool
+    services: list[str]
+
+
+async def main(args: Args):
     print("scanning for 5 seconds, please wait...")
 
     devices = await BleakScanner.discover(
@@ -46,6 +51,6 @@ if __name__ == "__main__":
         help="when true use Bluetooth address instead of UUID on macOS",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     asyncio.run(main(args))

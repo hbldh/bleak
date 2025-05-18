@@ -11,13 +11,21 @@ Updated on 2019-09-07 by hbldh <henrik.blidh@gmail.com>
 import argparse
 import asyncio
 import logging
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 
 logger = logging.getLogger(__name__)
 
 
-async def main(args: argparse.Namespace):
+class Args(argparse.Namespace):
+    name: Optional[str]
+    address: Optional[str]
+    macos_use_bdaddr: bool
+    debug: bool
+
+
+async def main(args: Args):
     logger.info("scanning...")
 
     if args.address:
@@ -27,17 +35,19 @@ async def main(args: argparse.Namespace):
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             return
-    else:
+    elif args.name:
         device = await BleakScanner.find_device_by_name(
             args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
             return
+    else:
+        raise ValueError("Either --name or --address must be provided")
 
     disconnected_event = asyncio.Event()
 
-    def disconnected_callback(client):
+    def disconnected_callback(client: BleakClient):
         logger.info("Disconnected callback called!")
         disconnected_event.set()
 
@@ -78,7 +88,7 @@ if __name__ == "__main__":
         help="sets the log level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

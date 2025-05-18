@@ -17,6 +17,7 @@ import time
 from typing import Optional
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,17 @@ class DeviceNotFoundError(Exception):
     pass
 
 
+class Args(argparse.Namespace):
+    name: Optional[str]
+    address: Optional[str]
+    characteristic: str
+    macos_use_bdaddr: bool
+    services: list[str]
+    debug: bool
+
+
 async def run_ble_client(
-    args: argparse.Namespace, queue: asyncio.Queue[tuple[float, Optional[bytearray]]]
+    args: Args, queue: asyncio.Queue[tuple[float, Optional[bytearray]]]
 ):
     logger.info("starting scan...")
 
@@ -37,17 +47,19 @@ async def run_ble_client(
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             raise DeviceNotFoundError
-    else:
+    elif args.name:
         device = await BleakScanner.find_device_by_name(
             args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
             raise DeviceNotFoundError
+    else:
+        raise ValueError("Either --name or --address must be provided")
 
     logger.info("connecting to device...")
 
-    async def callback_handler(_, data: bytearray) -> None:
+    async def callback_handler(_: BleakGATTCharacteristic, data: bytearray) -> None:
         await queue.put((time.time(), data))
 
     async with BleakClient(device) as client:
@@ -76,7 +88,7 @@ async def run_queue_consumer(queue: asyncio.Queue[tuple[float, Optional[bytearra
             logger.info("Received callback data via async queue at %s: %r", epoch, data)
 
 
-async def main(args: argparse.Namespace):
+async def main(args: Args):
     queue = asyncio.Queue[tuple[float, Optional[bytearray]]]()
     client_task = run_ble_client(args, queue)
     consumer_task = run_queue_consumer(queue)
@@ -124,7 +136,7 @@ if __name__ == "__main__":
         help="sets the logging level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
