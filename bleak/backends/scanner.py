@@ -236,7 +236,7 @@ class BaseBleakScanner(abc.ABC):
             callback(device, advertisement_data)
 
     def create_or_update_device(
-        self, address: str, name: str, details: Any, adv: AdvertisementData
+        self, address: str, name: Optional[str], details: Any, adv: AdvertisementData
     ) -> BLEDevice:
         """
         Creates or updates a device in :attr:`seen_devices`.
