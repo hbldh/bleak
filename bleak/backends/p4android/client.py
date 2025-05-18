@@ -117,7 +117,7 @@ class BleakClientP4Android(BaseBleakClient):
                 resultApi="onServicesDiscovered",
             )
 
-            await self.get_services()
+            await self._get_services()
         except BaseException:
             # if connecting is canceled or one of the above fails, we need to
             # disconnect
@@ -230,7 +230,7 @@ class BleakClientP4Android(BaseBleakClient):
 
     # GATT services methods
 
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def _get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:

@@ -144,7 +144,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         await manager.connect(self._peripheral, disconnect_callback, timeout=timeout)
 
         # Now get services
-        await self.get_services()
+        await self._get_services()
 
     async def disconnect(self) -> None:
         """Disconnect from the peripheral device"""
@@ -206,7 +206,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         raise NotImplementedError("Pairing is not available in Core Bluetooth.")
 
-    async def get_services(self, **kwargs) -> BleakGATTServiceCollection:
+    async def _get_services(self, **kwargs) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:

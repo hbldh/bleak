@@ -115,18 +115,6 @@ class BaseBleakClient(abc.ABC):
         """
         raise NotImplementedError()
 
-    # GATT services methods
-
-    @abc.abstractmethod
-    async def get_services(self, **kwargs: Any) -> BleakGATTServiceCollection:
-        """Get all services registered for this GATT server.
-
-        Returns:
-           A :py:class:`bleak.backends.service.BleakGATTServiceCollection` with this device's services tree.
-
-        """
-        raise NotImplementedError()
-
     # I/O methods
 
     @abc.abstractmethod
