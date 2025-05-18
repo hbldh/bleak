@@ -62,11 +62,6 @@ class BleakClientP4Android(BaseBleakClient):
         self.__gatt = None
         self.__mtu = 23
 
-    def __del__(self):
-        if self.__gatt is not None:
-            self.__gatt.close()
-            self.__gatt = None
-
     # Connectivity methods
 
     @override
