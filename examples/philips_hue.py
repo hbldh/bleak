@@ -35,7 +35,7 @@ TEMPERATURE_CHARACTERISTIC = "932c32bd-0004-47a2-835a-a8d455b859dd"
 COLOR_CHARACTERISTIC = "932c32bd-0005-47a2-835a-a8d455b859dd"
 
 
-def convert_rgb(rgb):
+def convert_rgb(rgb: tuple[int, int, int]) -> bytearray:
     scale = 0xFF
     adjusted = [max(1, chan) for chan in rgb]
     total = sum(adjusted)
@@ -45,12 +45,12 @@ def convert_rgb(rgb):
     return bytearray([0x1, adjusted[0], adjusted[2], adjusted[1]])
 
 
-async def main(address):
+async def main(address: str):
     async with BleakClient(address) as client:
         print(f"Connected: {client.is_connected}")
 
-        paired = await client.pair(protection_level=2)
-        print(f"Paired: {paired}")
+        await client.pair(protection_level=2)
+        print("Paired:")
 
         print("Turning Light off...")
         await client.write_gatt_char(LIGHT_CHARACTERISTIC, b"\x00", response=False)
@@ -60,17 +60,17 @@ async def main(address):
         await asyncio.sleep(1.0)
 
         print("Setting color to RED...")
-        color = convert_rgb([255, 0, 0])
+        color = convert_rgb((255, 0, 0))
         await client.write_gatt_char(COLOR_CHARACTERISTIC, color, response=False)
         await asyncio.sleep(1.0)
 
         print("Setting color to GREEN...")
-        color = convert_rgb([0, 255, 0])
+        color = convert_rgb((0, 255, 0))
         await client.write_gatt_char(COLOR_CHARACTERISTIC, color, response=False)
         await asyncio.sleep(1.0)
 
         print("Setting color to BLUE...")
-        color = convert_rgb([0, 0, 255])
+        color = convert_rgb((0, 0, 255))
         await client.write_gatt_char(COLOR_CHARACTERISTIC, color, response=False)
         await asyncio.sleep(1.0)
 
