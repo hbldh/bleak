@@ -17,18 +17,7 @@ import asyncio
 import logging
 import uuid
 from ctypes import WinError
-from typing import (
-    Any,
-    Generic,
-    Literal,
-    Optional,
-    Protocol,
-    Sequence,
-    TypedDict,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, Self
@@ -79,6 +68,7 @@ from winrt.windows.foundation import (
 from winrt.windows.storage.streams import Buffer as WinBuffer
 
 from bleak import BleakScanner
+from bleak.args.winrt import WinRTClientArgs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.device import BLEDevice
@@ -149,31 +139,6 @@ def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
         raise BleakError(f"{fail_msg}: Unreachable")
 
     raise BleakError(f"{fail_msg}: Unexpected status code 0x{status:02X}")
-
-
-class WinRTClientArgs(TypedDict, total=False):
-    """
-    Windows-specific arguments for :class:`BleakClient`.
-    """
-
-    address_type: Literal["public", "random"]
-    """
-    Can either be ``"public"`` or ``"random"``, depending on the required address
-    type needed to connect to your device.
-    """
-
-    use_cached_services: bool
-    """
-    ``True`` allows Windows to fetch the services, characteristics and descriptors
-    from the Windows cache instead of reading them from the device. Can be very
-    much faster for known, unchanging devices, but not recommended for DIY peripherals
-    where the GATT layout can change between connections.
-
-    ``False`` will force the attribute database to be read from the remote device
-    instead of using the OS cache.
-
-    If omitted, the OS Bluetooth stack will do what it thinks is best.
-    """
 
 
 class BleakClientWinRT(BaseBleakClient):

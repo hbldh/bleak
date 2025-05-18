@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
-from typing import Optional, TypedDict, Union
+from typing import Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -31,6 +31,7 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
+from bleak.args.corebluetooth import CBStartNotifyArgs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -38,10 +39,7 @@ from bleak.backends.corebluetooth.characteristic import (
     BleakGATTCharacteristicCoreBluetooth,
 )
 from bleak.backends.corebluetooth.descriptor import BleakGATTDescriptorCoreBluetooth
-from bleak.backends.corebluetooth.PeripheralDelegate import (
-    NotificationDiscriminator,
-    PeripheralDelegate,
-)
+from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
@@ -54,21 +52,6 @@ from bleak.exc import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class CBStartNotifyArgs(TypedDict, total=False):
-    """CoreBluetooth backend-specific dictionary of arguments for the
-    :meth:`bleak.BleakClient.start_notify` method.
-    """
-
-    notification_discriminator: Optional[NotificationDiscriminator]
-    """
-    A function that takes a single argument of a characteristic value
-    and returns ``True`` if the value is from a notification or
-    ``False`` if the value is from a read response.
-
-    .. seealso:: :ref:`cb-notification-discriminator` for more info.
-    """
 
 
 class BleakClientCoreBluetooth(BaseBleakClient):

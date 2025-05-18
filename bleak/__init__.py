@@ -16,16 +16,7 @@ import sys
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, Self
@@ -40,6 +31,9 @@ else:
     from asyncio import timeout as async_timeout
     from typing import Never, Unpack, assert_never
 
+from bleak.args.bluez import BlueZScannerArgs
+from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
+from bleak.args.winrt import WinRTClientArgs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, get_platform_client_backend_type
 from bleak.backends.device import BLEDevice
@@ -53,13 +47,6 @@ from bleak.backends.scanner import (
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 from bleak.uuids import normalize_uuid_str
-
-if TYPE_CHECKING:
-    from bleak.backends.bluezdbus.scanner import BlueZScannerArgs
-    from bleak.backends.corebluetooth.client import CBStartNotifyArgs
-    from bleak.backends.corebluetooth.scanner import CBScannerArgs
-    from bleak.backends.winrt.client import WinRTClientArgs
-
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())

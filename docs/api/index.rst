@@ -10,6 +10,7 @@ Contents:
 
    scanner
    client
+   args
 
 .. TODO: move everything below to separate pages
 
