@@ -23,6 +23,7 @@ Changed
 * Added ``notification_discriminator`` parameter to start_notify on CoreBluetooth backend
 * Changed return type of ``connect()``, ``disconnect()``, ``pair()`` and ``unpair()`` methods to ``None``.
 * Moved backend-specific arg types to new ``bleak.args`` sub-package.
+* ``BLEDevice.name`` will now return ``None`` instead of the address when the name is not available.
 
 Fixed
 -----
