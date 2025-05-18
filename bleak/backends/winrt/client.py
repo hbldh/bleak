@@ -29,7 +29,7 @@ if sys.version_info < (3, 11):
     from typing_extensions import Self, assert_never
 else:
     from asyncio import timeout as async_timeout
-    from typing import assert_never, Self
+    from typing import Self, assert_never
 
 from winrt.system import Object
 from winrt.windows.devices.bluetooth import (
@@ -75,7 +75,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
 from bleak.backends.winrt.descriptor import BleakGATTDescriptorWinRT
-from bleak.backends.winrt.scanner import BleakScannerWinRT, _RawAdvData
+from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.backends.winrt.service import BleakGATTServiceWinRT
 from bleak.exc import (
     PROTOCOL_ERROR_CODES,
@@ -164,7 +164,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            data: _RawAdvData = address_or_ble_device.details
+            data: RawAdvData = address_or_ble_device.details
             args = data.adv or data.scan
             assert args
             self._device_info = args.bluetooth_address
@@ -235,7 +235,7 @@ class BleakClientWinRT(BaseBleakClient):
                     self.address, f"Device with address {self.address} was not found."
                 )
 
-            data: _RawAdvData = device.details
+            data: RawAdvData = device.details
             args = data.adv or data.scan
             assert args
             self._device_info = args.bluetooth_address

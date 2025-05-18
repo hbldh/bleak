@@ -44,7 +44,7 @@ def _format_event_args(e: BluetoothLEAdvertisementReceivedEventArgs) -> str:
         return _format_bdaddr(e.bluetooth_address)
 
 
-class _RawAdvData(NamedTuple):
+class RawAdvData(NamedTuple):
     """
     Platform-specific advertisement data.
 
@@ -89,7 +89,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
-        self._advertisement_pairs: dict[str, _RawAdvData] = {}
+        self._advertisement_pairs: dict[str, RawAdvData] = {}
         self._stopped_event: Optional[asyncio.Event] = None
 
         # case insensitivity is for backwards compatibility on Windows only
@@ -129,13 +129,13 @@ class BleakScannerWinRT(BaseBleakScanner):
         # us (regular advertisement + scan response) so we have to do it manually.
 
         # get the previous advertising data/scan response pair or start a new one
-        raw_data = self._advertisement_pairs.get(bdaddr, _RawAdvData(None, None))
+        raw_data = self._advertisement_pairs.get(bdaddr, RawAdvData(None, None))
 
         # update the advertising data depending on the advertising data type
         if event_args.advertisement_type == BluetoothLEAdvertisementType.SCAN_RESPONSE:
-            raw_data = _RawAdvData(raw_data.adv, event_args)
+            raw_data = RawAdvData(raw_data.adv, event_args)
         else:
-            raw_data = _RawAdvData(event_args, raw_data.scan)
+            raw_data = RawAdvData(event_args, raw_data.scan)
 
         self._advertisement_pairs[bdaddr] = raw_data
 
