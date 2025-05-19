@@ -70,12 +70,12 @@ from winrt.windows.storage.streams import Buffer as WinBuffer
 
 from bleak import BleakScanner
 from bleak.args.winrt import WinRTClientArgs
+from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.backends.winrt.characteristic import BleakGATTCharacteristicWinRT
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.backends.winrt.service import BleakGATTServiceWinRT
 from bleak.exc import (
@@ -711,7 +711,8 @@ class BleakClientWinRT(BaseBleakClient):
                     f"Could not get GATT characteristics for service {service.uuid} ({service.attribute_handle})",
                 )
 
-                new_services.add_service(BleakGATTServiceWinRT(service))
+                serv = BleakGATTServiceWinRT(service)
+                new_services.add_service(serv)
 
                 for characteristic in characteristics:
                     if cache_mode is not None:
@@ -731,8 +732,17 @@ class BleakClientWinRT(BaseBleakClient):
                         f"Could not get GATT descriptors for characteristic {characteristic.uuid} ({characteristic.attribute_handle})",
                     )
 
-                    char = BleakGATTCharacteristicWinRT(
-                        characteristic, lambda: self._session.max_pdu_size - 3
+                    char = BleakGATTCharacteristic(
+                        characteristic,
+                        characteristic.attribute_handle,
+                        str(characteristic.uuid),
+                        list(
+                            gatt_char_props_to_strs(
+                                characteristic.characteristic_properties
+                            )
+                        ),
+                        lambda: self._session.max_pdu_size - 3,
+                        serv,
                     )
 
                     new_services.add_characteristic(char)

@@ -30,7 +30,6 @@ from bleak.backends.bluezdbus.advertisement_monitor import (
     AdvertisementMonitor,
     OrPatternLike,
 )
-from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.defs import (
     Device1,
     GattCharacteristic1,
@@ -42,8 +41,10 @@ from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import (
     assert_reply,
     device_path_from_characteristic_path,
+    extract_service_handle_from_path,
     get_dbus_authenticator,
 )
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakError
@@ -702,14 +703,15 @@ class BlueZManager:
                     self._properties[char_path][defs.GATT_CHARACTERISTIC_INTERFACE],
                 )
 
-                char = BleakGATTCharacteristicBlueZDBus(
-                    char_props,
-                    char_path,
-                    service.uuid,
-                    service.handle,
+                char = BleakGATTCharacteristic(
+                    (char_path, char_props),
+                    extract_service_handle_from_path(char_path),
+                    char_props["UUID"],
+                    char_props["Flags"],
                     # "MTU" property was added in BlueZ 5.62, otherwise fall
                     # back to minimum MTU according to Bluetooth spec.
                     lambda: char_props.get("MTU", 23) - 3,
+                    service,
                 )
 
                 services.add_characteristic(char)

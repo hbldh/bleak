@@ -7,8 +7,8 @@ if TYPE_CHECKING:
 
 from typing import Any
 
-from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.utils import extract_service_handle_from_path
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTService
 
 
@@ -17,7 +17,7 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
 
     def __init__(self, obj: Any, path: str):
         super().__init__(obj)
-        self.__characteristics: list[BleakGATTCharacteristicBlueZDBus] = []
+        self.__characteristics: list[BleakGATTCharacteristic] = []
         self.__path = path
         self.__handle = extract_service_handle_from_path(path)
 
@@ -32,14 +32,12 @@ class BleakGATTServiceBlueZDBus(BleakGATTService):
         return self.__handle
 
     @property
-    def characteristics(self) -> list[BleakGATTCharacteristicBlueZDBus]:
+    def characteristics(self) -> list[BleakGATTCharacteristic]:
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def add_characteristic(
-        self, characteristic: BleakGATTCharacteristicBlueZDBus
-    ) -> None:
-        """Add a :py:class:`~BleakGATTCharacteristicBlueZDBus` to the service.
+    def add_characteristic(self, characteristic: BleakGATTCharacteristic) -> None:
+        """Add a :py:class:`~BleakGATTCharacteristic` to the service.
 
         Should not be used by end user, but rather by `bleak` itself.
         """

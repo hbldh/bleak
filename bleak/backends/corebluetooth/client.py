@@ -33,12 +33,10 @@ from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
 from bleak.args.corebluetooth import CBStartNotifyArgs
+from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
-from bleak.backends.corebluetooth.characteristic import (
-    BleakGATTCharacteristicCoreBluetooth,
-)
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
@@ -234,13 +232,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         cb_services = await self._delegate.discover_services(self._requested_services)
 
         for service in cb_services:
+            serv = BleakGATTServiceCoreBluetooth(service)
+            services.add_service(serv)
+
             serviceUUID = service.UUID().UUIDString()
             logger.debug(
                 "Retrieving characteristics for service {}".format(serviceUUID)
             )
             characteristics = await self._delegate.discover_characteristics(service)
-
-            services.add_service(BleakGATTServiceCoreBluetooth(service))
 
             for characteristic in characteristics:
                 cUUID = characteristic.UUID().UUIDString()
@@ -248,11 +247,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     "Retrieving descriptors for characteristic {}".format(cUUID)
                 )
 
-                char = BleakGATTCharacteristicCoreBluetooth(
+                char = BleakGATTCharacteristic(
                     characteristic,
+                    characteristic.handle(),
+                    cb_uuid_to_str(characteristic.UUID()),
+                    list(gatt_char_props_to_strs(characteristic.properties())),
                     lambda: self._peripheral.maximumWriteValueLengthForType_(
                         CBCharacteristicWriteWithoutResponse
                     ),
+                    serv,
                 )
                 services.add_characteristic(char)
 
