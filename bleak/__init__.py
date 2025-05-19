@@ -35,6 +35,7 @@ from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, get_platform_client_backend_type
+from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import (
     AdvertisementData,
@@ -388,6 +389,22 @@ def _resolve_characteristic(
 
     if not characteristic:
         raise BleakCharacteristicNotFoundError(char_specifier)
+
+    return characteristic
+
+
+def _resolve_descriptor(
+    desc_specifier: Union[BleakGATTDescriptor, int],
+    services: BleakGATTServiceCollection,
+) -> BleakGATTDescriptor:
+
+    if isinstance(desc_specifier, BleakGATTDescriptor):
+        return desc_specifier
+
+    characteristic = services.get_descriptor(desc_specifier)
+
+    if not characteristic:
+        raise BleakError(f"Descriptor with handle {desc_specifier} was not found!")
 
     return characteristic
 
@@ -789,31 +806,52 @@ class BleakClient:
         characteristic = _resolve_characteristic(char_specifier, self.services)
         await self._backend.stop_notify(characteristic)
 
-    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
+    async def read_gatt_descriptor(
+        self,
+        desc_specifier: Union[BleakGATTDescriptor, int],
+        **kwargs: Any,
+    ) -> bytearray:
         """
         Perform read operation on the specified GATT descriptor.
 
         Args:
-            handle: The handle of the descriptor to read from.
+            desc_specifier:
+                The descriptor to read from, specified by either integer handle
+                or directly by the BleakGATTDescriptor object representing it.
+
+        Raises:
+            BleakError: if the descriptor could not be found.
+            backend-specific exceptions: if the read operation failed.
 
         Returns:
             The read data.
 
         """
-        return await self._backend.read_gatt_descriptor(handle, **kwargs)
+        descriptor = _resolve_descriptor(desc_specifier, self.services)
+        return await self._backend.read_gatt_descriptor(descriptor, **kwargs)
 
-    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
+    async def write_gatt_descriptor(
+        self,
+        desc_specifier: Union[BleakGATTDescriptor, int],
+        data: Buffer,
+    ) -> None:
         """
         Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle:
-                The handle of the descriptor to read from.
+            desc_specifier:
+                The descriptor to write to, specified by either integer handle
+                directly by the BleakGATTDescriptor object representing it.
             data:
                 The data to send.
 
+        Raises:
+            BleakError: if the descriptor could not be found.
+            backend-specific exceptions: if the read operation failed.
+
         """
-        await self._backend.write_gatt_descriptor(handle, data)
+        descriptor = _resolve_descriptor(desc_specifier, self.services)
+        await self._backend.write_gatt_descriptor(descriptor, data)
 
 
 def cli() -> None:

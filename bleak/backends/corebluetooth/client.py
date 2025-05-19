@@ -292,7 +292,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, handle: int, use_cached: bool = False, **kwargs: Any
+        self, descriptor: BleakGATTDescriptor, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -304,13 +304,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         Returns:
             (bytearray) The read data.
         """
-        descriptor = self.services.get_descriptor(handle)
-        if not descriptor:
-            raise BleakError("Descriptor {} was not found!".format(handle))
-
         assert self._delegate
         output = await self._delegate.read_descriptor(
-            descriptor.obj, use_cached=use_cached
+            descriptor.obj, use_cached=kwargs.get("use_cached", False)
         )
         if isinstance(
             output, str
@@ -318,7 +314,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             value = bytearray(output.encode("utf-8"))
         else:  # _NSInlineData
             value = bytearray(output)  # value.getBytes_length_(None, len(value))
-        logger.debug("Read Descriptor {0} : {1}".format(handle, value))
+        logger.debug("Read Descriptor %d : %r", descriptor.handle, value)
         return value
 
     @override
@@ -338,22 +334,20 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         logger.debug(f"Write Characteristic {characteristic.uuid} : {data}")
 
     @override
-    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
+    async def write_gatt_descriptor(
+        self, descriptor: BleakGATTDescriptor, data: Buffer
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle: The handle of the descriptor to read from.
+            descriptor: The descriptor to read from.
             data: The data to send (any bytes-like object).
 
         """
-        descriptor = self.services.get_descriptor(handle)
-        if not descriptor:
-            raise BleakError("Descriptor {} was not found!".format(handle))
-
         assert self._delegate
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         await self._delegate.write_descriptor(descriptor.obj, value)
-        logger.debug("Write Descriptor {0} : {1}".format(handle, data))
+        logger.debug("Write Descriptor %d : %r", descriptor.handle, data)
 
     @override
     async def start_notify(
