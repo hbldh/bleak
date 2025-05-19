@@ -29,8 +29,7 @@ from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.p4android import defs, utils
-from bleak.backends.p4android.service import BleakGATTServiceP4Android
-from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 
 logger = logging.getLogger(__name__)
@@ -256,7 +255,11 @@ class BleakClientP4Android(BaseBleakClient):
             ):
                 continue
 
-            service = BleakGATTServiceP4Android(java_service)
+            service = BleakGATTService(
+                java_service,
+                java_service.getInstanceId(),
+                java_service.getUuid().toString(),
+            )
             services.add_service(service)
 
             for java_characteristic in java_service.getCharacteristics():
