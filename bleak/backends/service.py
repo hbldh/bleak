@@ -7,7 +7,7 @@ Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import logging
 from collections.abc import Iterator
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 from uuid import UUID
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -102,7 +102,7 @@ class BleakGATTServiceCollection:
         return (
             self.get_service(item)
             or self.get_characteristic(item)
-            or self.get_descriptor(item)
+            or self.get_descriptor(cast(int, item))
         )
 
     def __iter__(self) -> Iterator[BleakGATTService]:
