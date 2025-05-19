@@ -9,7 +9,6 @@ import abc
 import os
 import platform
 import sys
-import uuid
 from collections.abc import Callable
 from typing import Any, Optional, Union
 
@@ -119,16 +118,12 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def read_gatt_char(
-        self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs: Any,
+        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to read from.
 
         Returns:
             (bytearray) The read data.
@@ -151,10 +146,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def write_gatt_char(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        data: Buffer,
-        response: bool,
+        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
     ) -> None:
         """
         Perform a write operation on the specified GATT characteristic.
@@ -196,15 +188,12 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def stop_notify(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
-    ) -> None:
+    async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristic object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to deactivate
+                notification/indication on.
 
         """
         raise NotImplementedError()

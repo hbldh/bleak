@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
-import uuid
 from typing import Optional, Union
 
 if sys.version_info < (3, 12):
@@ -43,11 +42,7 @@ from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
-from bleak.exc import (
-    BleakCharacteristicNotFoundError,
-    BleakDeviceNotFoundError,
-    BleakError,
-)
+from bleak.exc import BleakDeviceNotFoundError, BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -276,34 +271,20 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        use_cached: bool = False,
-        **kwargs: Any,
+        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
-            use_cached (bool): `False` forces macOS to read the value from the
-                device again and not use its own cached value. Defaults to `False`.
+            characteristic (BleakGATTCharacteristic): The characteristic to read from.
 
         Returns:
             (bytearray) The read data.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
-
         assert self._delegate
         output = await self._delegate.read_characteristic(
-            characteristic.obj, use_cached=use_cached
+            characteristic.obj, use_cached=kwargs.get("use_cached", False)
         )
         value = bytearray(output)
         logger.debug("Read Characteristic {0} : {1}".format(characteristic.uuid, value))
@@ -342,10 +323,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        data: Buffer,
-        response: bool,
+        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
     ) -> None:
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         await self._delegate.write_characteristic(
@@ -398,25 +376,13 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
     @override
-    async def stop_notify(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
-    ) -> None:
+    async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristic object representing it.
-
-
+            characteristic (BleakGATTCharacteristic: The characteristic to deactivate
+                notification/indication on.
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
-
         assert self._delegate
         await self._delegate.stop_notifications(characteristic.obj)
 

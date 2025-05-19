@@ -376,6 +376,22 @@ class BleakScanner:
                 return None
 
 
+def _resolve_characteristic(
+    char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+    services: BleakGATTServiceCollection,
+) -> BleakGATTCharacteristic:
+
+    if isinstance(char_specifier, BleakGATTCharacteristic):
+        return char_specifier
+
+    characteristic = services.get_characteristic(char_specifier)
+
+    if not characteristic:
+        raise BleakCharacteristicNotFoundError(char_specifier)
+
+    return characteristic
+
+
 class BleakClient:
     """The Client interface for connecting to a specific BLE GATT server and communicating with it.
 
@@ -611,8 +627,13 @@ class BleakClient:
         Returns:
             The read data.
 
+        Raises:
+            BleakGattCharacteristicNotFoundError: if a characteristic with the
+                handle or UUID specified by ``char_specifier`` could not be found.
+            backend-specific exceptions: if the read operation failed.
         """
-        return await self._backend.read_gatt_char(char_specifier, **kwargs)
+        characteristic = _resolve_characteristic(char_specifier, self.services)
+        return await self._backend.read_gatt_char(characteristic, **kwargs)
 
     async def write_gatt_char(
         self,
@@ -655,6 +676,11 @@ class BleakClient:
                 used. Note: some devices may incorrectly report or omit the
                 property, which is why an explicit argument is encouraged.
 
+        Raises:
+            BleakGattCharacteristicNotFoundError: if a characteristic with the
+                handle or UUID specified by ``char_specifier`` could not be found.
+            backend-specific exceptions: if the write operation failed.
+
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
 
@@ -664,13 +690,7 @@ class BleakClient:
             ...
             await client.write_gatt_char(MY_CHAR_UUID, b"\x00\x01\x02\x03", response=True)
         """
-        if isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = char_specifier
-        else:
-            characteristic = self.services.get_characteristic(char_specifier)
-
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
+        characteristic = _resolve_characteristic(char_specifier, self.services)
 
         if response is None:
             # If not specified, prefer write-with-response over write-without-
@@ -715,6 +735,10 @@ class BleakClient:
             cb:
                 CoreBluetooth specific arguments.
 
+        Raises:
+            BleakGattCharacteristicNotFoundError: if a characteristic with the
+                handle or UUID specified by ``char_specifier`` could not be found.
+            backend-specific exceptions: if the start notification operation failed.
 
         .. versionchanged:: 0.18
             The first argument of the callback is now a :class:`BleakGATTCharacteristic`
@@ -725,13 +749,7 @@ class BleakClient:
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
+        characteristic = _resolve_characteristic(char_specifier, self.services)
 
         if inspect.iscoroutinefunction(callback):
 
@@ -759,11 +777,17 @@ class BleakClient:
                 specified by either integer handle, UUID or directly by the
                 BleakGATTCharacteristic object representing it.
 
+        Raises:
+            BleakGattCharacteristicNotFoundError: if a characteristic with the
+                handle or UUID specified by ``char_specifier`` could not be found.
+            backend-specific exceptions: if the stop notification operation failed.
+
         .. tip:: Notifications are stopped automatically on disconnect, so this
             method does not need to be called unless notifications need to be
             stopped some time before the device disconnects.
         """
-        await self._backend.stop_notify(char_specifier)
+        characteristic = _resolve_characteristic(char_specifier, self.services)
+        await self._backend.stop_notify(characteristic)
 
     async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
         """
