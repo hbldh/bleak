@@ -166,7 +166,7 @@ class PeripheralDelegate(NSObject):
     async def read_characteristic(
         self,
         characteristic: CBCharacteristic,
-        use_cached: bool = True,
+        use_cached: bool,
         timeout: int = 20,
     ) -> NSData:
         value = characteristic.value()

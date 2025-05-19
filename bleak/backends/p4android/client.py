@@ -13,7 +13,7 @@ import asyncio
 import logging
 import uuid
 import warnings
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import override
@@ -30,7 +30,7 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.p4android import defs, utils
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
-from bleak.exc import BleakCharacteristicNotFoundError, BleakError
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -293,28 +293,17 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        **kwargs,
+        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to read from.
 
         Returns:
             (bytearray) The read data.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
 
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readCharacteristic,
@@ -367,10 +356,7 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        data: bytearray,
-        response: bool,
+        self, characteristic: BleakGATTCharacteristic, data: bytearray, response: bool
     ) -> None:
         if response:
             characteristic.obj.setWriteType(
@@ -453,25 +439,14 @@ class BleakClientP4Android(BaseBleakClient):
         )
 
     @override
-    async def stop_notify(
-        self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-    ) -> None:
+    async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristic object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to deactivate
+                notification/indication on,.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
-
         await self.write_gatt_descriptor(
             characteristic.notification_descriptor,
             defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,

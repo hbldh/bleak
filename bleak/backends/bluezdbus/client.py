@@ -16,7 +16,6 @@ import warnings
 from collections.abc import Callable
 from contextlib import AsyncExitStack
 from typing import Any, Optional, Union, cast
-from uuid import UUID
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, override
@@ -44,12 +43,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import (
-    BleakCharacteristicNotFoundError,
-    BleakDBusError,
-    BleakDeviceNotFoundError,
-    BleakError,
-)
+from bleak.exc import BleakDBusError, BleakDeviceNotFoundError, BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -691,16 +685,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, UUID],
-        **kwargs: Any,
+        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristic object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to read from.
 
         Returns:
             (bytearray) The read data.
@@ -708,25 +698,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         if not self.is_connected:
             raise BleakError("Not connected")
-
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            if str(char_specifier) == "00002a00-0000-1000-8000-00805f9b34fb":
-                # Simulate regular characteristics read to be consistent over all platforms.
-                manager = await get_global_bluez_manager()
-                value = bytearray(manager.get_device_name(self._device_path).encode())
-                logger.debug(
-                    "Read Device Name {0} | {1}: {2}".format(
-                        char_specifier, self._device_path, value
-                    )
-                )
-                return value
-
-            raise BleakCharacteristicNotFoundError(char_specifier)
 
         while True:
             assert self._bus
@@ -814,10 +785,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        data: Buffer,
-        response: bool,
+        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
     ) -> None:
         if not self.is_connected:
             raise BleakError("Not connected")
@@ -931,27 +899,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert_reply(reply)
 
     @override
-    async def stop_notify(
-        self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, UUID],
-    ) -> None:
+    async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristic object representing it.
-
+            characteristic (BleakGATTCharacteristic): The characteristic to deactivate
+                notification/indication on.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
-
-        if not isinstance(char_specifier, BleakGATTCharacteristic):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
 
         reply = await self._bus.call(
             Message(
