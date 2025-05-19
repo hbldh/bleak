@@ -41,6 +41,7 @@ from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
 from bleak.backends.bluezdbus.version import BlueZFeatures
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakDeviceNotFoundError, BleakError
@@ -735,22 +736,19 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return value
 
     @override
-    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
+    async def read_gatt_descriptor(
+        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+    ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
+            descriptor: The descriptor to read from.
 
         Returns:
-            (bytearray) The read data.
-
+            The read data.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
-
-        descriptor = self.services.get_descriptor(handle)
-        if not descriptor:
-            raise BleakError("Descriptor with handle {0} was not found!".format(handle))
 
         while True:
             assert self._bus
@@ -780,7 +778,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         value = bytearray(reply.body[0])
 
-        logger.debug("Read Descriptor %s | %s: %s", handle, descriptor.obj[0], value)
+        logger.debug(
+            "Read Descriptor %s | %s: %s", descriptor.handle, descriptor.obj[0], value
+        )
         return value
 
     @override
@@ -827,7 +827,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
     @override
-    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
+    async def write_gatt_descriptor(
+        self, descriptor: BleakGATTDescriptor, data: Buffer
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
@@ -837,11 +839,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         if not self.is_connected:
             raise BleakError("Not connected")
-
-        descriptor = self.services.get_descriptor(handle)
-
-        if not descriptor:
-            raise BleakError(f"Descriptor with handle {handle} was not found!")
 
         while True:
             assert self._bus
@@ -869,7 +866,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
             assert_reply(reply)
             break
 
-        logger.debug("Write Descriptor %s | %s: %s", handle, descriptor.obj[0], data)
+        logger.debug(
+            "Write Descriptor %s | %s: %s", descriptor.handle, descriptor.obj[0], data
+        )
 
     @override
     async def start_notify(

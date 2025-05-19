@@ -318,29 +318,16 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self,
-        desc_specifier: Union[BleakGATTDescriptor, str, uuid.UUID],
-        **kwargs,
+        self, descriptor: BleakGATTDescriptor, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
-            desc_specifier (BleakGATTDescriptor, str or UUID): The descriptor to read from,
-                specified by either UUID or directly by the
-                BleakGATTDescriptor object representing it.
+            descriptor: The descriptor to read from.
 
         Returns:
-            (bytearray) The read data.
-
+            The read data.
         """
-        if not isinstance(desc_specifier, BleakGATTDescriptor):
-            descriptor = self.services.get_descriptor(desc_specifier)
-        else:
-            descriptor = desc_specifier
-
-        if not descriptor:
-            raise BleakError(f"Descriptor with UUID {desc_specifier} was not found!")
-
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readDescriptor,
             dispatchParams=(descriptor.obj,),

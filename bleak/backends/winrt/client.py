@@ -812,18 +812,20 @@ class BleakClientWinRT(BaseBleakClient):
         return value
 
     @override
-    async def read_gatt_descriptor(self, handle: int, **kwargs: Any) -> bytearray:
+    async def read_gatt_descriptor(
+        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+    ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
-            handle (int): The handle of the descriptor to read from.
+            descriptor: The descriptor to read from.
 
         Keyword Args:
             use_cached (bool): `False` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to `False`.
 
         Returns:
-            (bytearray) The read data.
+            The read data.
 
         """
         if not self.is_connected:
@@ -832,11 +834,6 @@ class BleakClientWinRT(BaseBleakClient):
         assert self.services
 
         use_cached = kwargs.get("use_cached", False)
-
-        descriptor = self.services.get_descriptor(handle)
-        if not descriptor:
-            raise BleakError(f"Descriptor with handle {handle} was not found!")
-
         gatt_desc = cast(GattDescriptor, descriptor.obj)
 
         value = bytearray(
@@ -847,11 +844,11 @@ class BleakClientWinRT(BaseBleakClient):
                     else BluetoothCacheMode.UNCACHED
                 ),
                 "value",
-                f"Could not read Descriptor value for {handle:04X}",
+                f"Could not read Descriptor value for {descriptor.handle:04X}",
             )
         )
 
-        logger.debug("Read Descriptor %04X : %s", handle, value)
+        logger.debug("Read Descriptor %04X : %s", descriptor.handle, value)
 
         return value
 
@@ -884,11 +881,13 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
     @override
-    async def write_gatt_descriptor(self, handle: int, data: Buffer) -> None:
+    async def write_gatt_descriptor(
+        self, descriptor: BleakGATTDescriptor, data: Buffer
+    ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            handle: The handle of the descriptor to read from.
+            descriptor: The descriptor to read from.
             data: The data to send (any bytes-like object).
 
         """
@@ -896,10 +895,6 @@ class BleakClientWinRT(BaseBleakClient):
             raise BleakError("Not connected")
 
         assert self.services
-
-        descriptor = self.services.get_descriptor(handle)
-        if not descriptor:
-            raise BleakError(f"Descriptor with handle {handle} was not found!")
 
         buf = WinBuffer(len(data))
         buf.length = buf.capacity
@@ -912,10 +907,10 @@ class BleakClientWinRT(BaseBleakClient):
         _ensure_success(
             await gatt_desc.write_value_with_result_async(buf),
             None,
-            f"Could not write value {data!r} to descriptor {handle:04X}",
+            f"Could not write value {data!r} to descriptor {descriptor.handle:04X}",
         )
 
-        logger.debug("Write Descriptor %04X : %s", handle, data)
+        logger.debug("Write Descriptor %04X : %s", descriptor.handle, data)
 
     @override
     async def start_notify(
