@@ -2,6 +2,8 @@
 
 from typing import Literal, TypedDict
 
+from bleak.assigned_numbers import CharacteristicPropertyName
+
 # DBus Interfaces
 OBJECT_MANAGER_INTERFACE = "org.freedesktop.DBus.ObjectManager"
 PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
@@ -120,29 +122,7 @@ class GattCharacteristic1(TypedDict):
     WriteAcquired: bool
     NotifyAcquired: bool
     Notifying: bool
-    Flags: list[
-        Literal[
-            "broadcast",
-            "read",
-            "write-without-response",
-            "write",
-            "notify",
-            "indicate",
-            "authenticated-signed-writes",
-            "extended-properties",
-            "reliable-write",
-            "writable-auxiliaries",
-            "encrypt-read",
-            "encrypt-write",
-            # "encrypt-notify" and "encrypt-indicate" are server-only
-            "encrypt-authenticated-read",
-            "encrypt-authenticated-write",
-            # "encrypt-authenticated-notify", "encrypt-authenticated-indicate",
-            # "secure-read", "secure-write", "secure-notify", "secure-indicate"
-            # are server-only
-            "authorize",
-        ]
-    ]
+    Flags: list[CharacteristicPropertyName]
     MTU: int
     # Handle is server-only and not available in Bleak
 

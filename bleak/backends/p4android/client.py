@@ -23,12 +23,12 @@ else:
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
+from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.p4android import defs, utils
-from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
 from bleak.backends.p4android.service import BleakGATTServiceP4Android
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
@@ -261,11 +261,13 @@ class BleakClientP4Android(BaseBleakClient):
 
             for java_characteristic in java_service.getCharacteristics():
 
-                characteristic = BleakGATTCharacteristicP4Android(
+                characteristic = BleakGATTCharacteristic(
                     java_characteristic,
-                    service.uuid,
-                    service.handle,
+                    java_characteristic.getInstanceId(),
+                    java_characteristic.getUuid().toString(),
+                    gatt_char_props_to_strs((java_characteristic.getProperties())),
                     lambda: self.__mtu - 3,
+                    service,
                 )
                 services.add_characteristic(characteristic)
 
@@ -289,21 +291,21 @@ class BleakClientP4Android(BaseBleakClient):
     @override
     async def read_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
         **kwargs,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to read from,
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
                 specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristicP4Android object representing it.
+                BleakGATTCharacteristic object representing it.
 
         Returns:
             (bytearray) The read data.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
             characteristic = char_specifier
@@ -450,17 +452,17 @@ class BleakClientP4Android(BaseBleakClient):
     @override
     async def stop_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
+        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
     ) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to deactivate
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
                 notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristicP4Android object representing it.
+                directly by the BleakGATTCharacteristic object representing it.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
             characteristic = char_specifier

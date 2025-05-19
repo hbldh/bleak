@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     if sys.platform != "android":
         assert False, "This backend is only available on Android"
 
-from bleak.backends.p4android.characteristic import BleakGATTCharacteristicP4Android
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTService
 
 
@@ -29,12 +29,12 @@ class BleakGATTServiceP4Android(BleakGATTService):
         return self.__handle
 
     @property
-    def characteristics(self) -> list[BleakGATTCharacteristicP4Android]:
+    def characteristics(self) -> list[BleakGATTCharacteristic]:
         """List of characteristics for this service"""
         return self.__characteristics
 
-    def add_characteristic(self, characteristic: BleakGATTCharacteristicP4Android):
-        """Add a :py:class:`~BleakGATTCharacteristicP4Android` to the service.
+    def add_characteristic(self, characteristic: BleakGATTCharacteristic):
+        """Add a :py:class:`~BleakGATTCharacteristic` to the service.
 
         Should not be used by end user, but rather by `bleak` itself.
         """

@@ -36,7 +36,6 @@ from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
 from bleak.backends.bluezdbus import defs
-from bleak.backends.bluezdbus.characteristic import BleakGATTCharacteristicBlueZDBus
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
@@ -603,7 +602,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
-                path=char.path,
+                path=char.obj[0],
                 interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                 member=method,
                 signature="a{sv}",
@@ -693,15 +692,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
     @override
     async def read_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
+        char_specifier: Union[BleakGATTCharacteristic, int, str, UUID],
         **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristicBlueZDBus, int, str or UUID): The characteristic to read from,
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to read from,
                 specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristicBlueZDBus object representing it.
+                BleakGATTCharacteristic object representing it.
 
         Returns:
             (bytearray) The read data.
@@ -710,7 +709,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
             characteristic = char_specifier
@@ -735,7 +734,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.path,
+                    path=characteristic.obj[0],
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="ReadValue",
                     signature="a{sv}",
@@ -759,7 +758,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         logger.debug(
             "Read Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.path, value
+                characteristic.uuid, characteristic.obj[0], value
             )
         )
         return value
@@ -829,7 +828,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.path,
+                    path=characteristic.obj[0],
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="WriteValue",
                     signature="aya{sv}",
@@ -855,7 +854,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         logger.debug(
             "Write Characteristic %s | %s: %s",
             characteristic.uuid,
-            characteristic.path,
+            characteristic.obj[0],
             data,
         )
 
@@ -914,16 +913,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         Activate notifications/indications on a characteristic.
         """
-        characteristic = cast(BleakGATTCharacteristicBlueZDBus, characteristic)
+        characteristic = cast(BleakGATTCharacteristic, characteristic)
 
-        self._notification_callbacks[characteristic.path] = callback
+        self._notification_callbacks[characteristic.obj[0]] = callback
 
         assert self._bus is not None
 
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
-                path=characteristic.path,
+                path=characteristic.obj[0],
                 interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                 member="StartNotify",
             )
@@ -934,20 +933,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
     @override
     async def stop_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristicBlueZDBus, int, str, UUID],
+        char_specifier: Union[BleakGATTCharacteristic, int, str, UUID],
     ) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristicBlueZDBus, int, str or UUID): The characteristic to deactivate
+            char_specifier (BleakGATTCharacteristic, int, str or UUID): The characteristic to deactivate
                 notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristicBlueZDBus object representing it.
+                directly by the BleakGATTCharacteristic object representing it.
 
         """
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if not isinstance(char_specifier, BleakGATTCharacteristicBlueZDBus):
+        if not isinstance(char_specifier, BleakGATTCharacteristic):
             characteristic = self.services.get_characteristic(char_specifier)
         else:
             characteristic = char_specifier
@@ -957,7 +956,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
-                path=characteristic.path,
+                path=characteristic.obj[0],
                 interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                 member="StopNotify",
             )
@@ -965,4 +964,4 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert reply
         assert_reply(reply)
 
-        self._notification_callbacks.pop(characteristic.path, None)
+        self._notification_callbacks.pop(characteristic.obj[0], None)

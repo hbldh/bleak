@@ -5,14 +5,19 @@ Interface class for the Bleak representation of a GATT Characteristic
 Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-import abc
+from __future__ import annotations
+
 import enum
 from collections.abc import Callable
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 from uuid import UUID
 
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.uuids import uuidstr_to_str
+from bleak.uuids import normalize_uuid_str, uuidstr_to_str
+
+# to prevent circular import
+if TYPE_CHECKING:
+    from bleak.backends.service import BleakGATTService
 
 
 class GattCharacteristicsFlags(enum.Enum):
@@ -28,10 +33,18 @@ class GattCharacteristicsFlags(enum.Enum):
     writable_auxiliaries = 0x0200
 
 
-class BleakGATTCharacteristic(abc.ABC):
-    """Interface for the Bleak representation of a GATT Characteristic"""
+class BleakGATTCharacteristic:
+    """The Bleak representation of a GATT Characteristic"""
 
-    def __init__(self, obj: Any, max_write_without_response_size: Callable[[], int]):
+    def __init__(
+        self,
+        obj: Any,
+        handle: int,
+        uuid: str,
+        properties: list[str],
+        max_write_without_response_size: Callable[[], int],
+        service: BleakGATTService,
+    ):
         """
         Args:
             obj:
@@ -39,36 +52,39 @@ class BleakGATTCharacteristic(abc.ABC):
             max_write_without_response_size:
                 The maximum size in bytes that can be written to the
                 characteristic in a single write without response command.
+            service:
+                The service this characteristic belongs to.
         """
         self.obj = obj
+        self._handle = handle
+        self._uuid = uuid
+        self._properties = properties
         self._max_write_without_response_size = max_write_without_response_size
+        self._service = service
+        self._descriptors: dict[int, BleakGATTDescriptor] = {}
 
     def __str__(self):
         return f"{self.uuid} (Handle: {self.handle}): {self.description}"
 
     @property
-    @abc.abstractmethod
     def service_uuid(self) -> str:
         """The UUID of the Service containing this characteristic"""
-        raise NotImplementedError()
+        return self._service.uuid
 
     @property
-    @abc.abstractmethod
     def service_handle(self) -> int:
         """The integer handle of the Service containing this characteristic"""
-        raise NotImplementedError()
+        return self._service.handle
 
     @property
-    @abc.abstractmethod
     def handle(self) -> int:
         """The handle for this characteristic"""
-        raise NotImplementedError()
+        return self._handle
 
     @property
-    @abc.abstractmethod
     def uuid(self) -> str:
         """The UUID for this characteristic"""
-        raise NotImplementedError()
+        return self._uuid
 
     @property
     def description(self) -> str:
@@ -76,10 +92,9 @@ class BleakGATTCharacteristic(abc.ABC):
         return uuidstr_to_str(self.uuid)
 
     @property
-    @abc.abstractmethod
     def properties(self) -> list[str]:
         """Properties of this characteristic"""
-        raise NotImplementedError()
+        return self._properties
 
     @property
     def max_write_without_response_size(self) -> int:
@@ -113,22 +128,32 @@ class BleakGATTCharacteristic(abc.ABC):
         return self._max_write_without_response_size()
 
     @property
-    @abc.abstractmethod
     def descriptors(self) -> list[BleakGATTDescriptor]:
         """List of descriptors for this service"""
-        raise NotImplementedError()
+        return list(self._descriptors.values())
 
-    @abc.abstractmethod
     def get_descriptor(
         self, specifier: Union[int, str, UUID]
     ) -> Union[BleakGATTDescriptor, None]:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
-        raise NotImplementedError()
+        if isinstance(specifier, int):
+            return self._descriptors.get(specifier)
 
-    @abc.abstractmethod
+        uuid = normalize_uuid_str(str(specifier))
+        for descriptor in self._descriptors.values():
+            if descriptor.uuid == uuid:
+                return descriptor
+
+        return None
+
     def add_descriptor(self, descriptor: BleakGATTDescriptor) -> None:
         """Add a :py:class:`~BleakGATTDescriptor` to the characteristic.
 
         Should not be used by end user, but rather by `bleak` itself.
         """
-        raise NotImplementedError()
+        if descriptor.handle in self._descriptors:
+            raise ValueError(
+                f"Descriptor with handle {descriptor.handle} already exists"
+            )
+
+        self._descriptors[descriptor.handle] = descriptor
