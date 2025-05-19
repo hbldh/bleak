@@ -5,7 +5,6 @@ Gatt Service Collection class and interface class for the Bleak representation o
 Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 
 """
-import abc
 import logging
 from collections.abc import Iterator
 from typing import Any, Optional, Union
@@ -19,26 +18,27 @@ from bleak.uuids import normalize_uuid_str, uuidstr_to_str
 logger = logging.getLogger(__name__)
 
 
-class BleakGATTService(abc.ABC):
-    """Interface for the Bleak representation of a GATT Service."""
+class BleakGATTService:
+    """The Bleak representation of a GATT Service."""
 
-    def __init__(self, obj: Any) -> None:
+    def __init__(self, obj: Any, handle: int, uuid: str) -> None:
         self.obj = obj
+        self._handle = handle
+        self._uuid = uuid
+        self._characteristics: dict[int, BleakGATTCharacteristic] = {}
 
     def __str__(self) -> str:
         return f"{self.uuid} (Handle: {self.handle}): {self.description}"
 
     @property
-    @abc.abstractmethod
     def handle(self) -> int:
         """The handle of this service"""
-        raise NotImplementedError()
+        return self._handle
 
     @property
-    @abc.abstractmethod
     def uuid(self) -> str:
         """The UUID to this service"""
-        raise NotImplementedError()
+        return self._uuid
 
     @property
     def description(self) -> str:
@@ -46,18 +46,22 @@ class BleakGATTService(abc.ABC):
         return uuidstr_to_str(self.uuid)
 
     @property
-    @abc.abstractmethod
     def characteristics(self) -> list[BleakGATTCharacteristic]:
         """List of characteristics for this service"""
-        raise NotImplementedError()
+        return list(self._characteristics.values())
 
-    @abc.abstractmethod
     def add_characteristic(self, characteristic: BleakGATTCharacteristic) -> None:
         """Add a :py:class:`~BleakGATTCharacteristic` to the service.
 
         Should not be used by end user, but rather by `bleak` itself.
         """
-        raise NotImplementedError()
+        if characteristic.handle in self._characteristics:
+            raise BleakError(
+                "The characteristic '%s' is already present in this BleakGATTService!",
+                characteristic.handle,
+            )
+
+        self._characteristics[characteristic.handle] = characteristic
 
     def get_characteristic(
         self, uuid: Union[str, UUID]
@@ -74,7 +78,9 @@ class BleakGATTService(abc.ABC):
         uuid = normalize_uuid_str(str(uuid))
 
         try:
-            return next(filter(lambda x: x.uuid == uuid, self.characteristics))
+            return next(
+                filter(lambda x: x.uuid == uuid, self._characteristics.values())
+            )
         except StopIteration:
             return None
 

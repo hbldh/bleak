@@ -39,11 +39,10 @@ from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
-from bleak.backends.corebluetooth.service import BleakGATTServiceCoreBluetooth
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.exc import (
     BleakCharacteristicNotFoundError,
     BleakDeviceNotFoundError,
@@ -232,7 +231,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         cb_services = await self._delegate.discover_services(self._requested_services)
 
         for service in cb_services:
-            serv = BleakGATTServiceCoreBluetooth(service)
+            serv = BleakGATTService(
+                service, service.startHandle(), cb_uuid_to_str(service.UUID())
+            )
             services.add_service(serv)
 
             serviceUUID = service.UUID().UUIDString()

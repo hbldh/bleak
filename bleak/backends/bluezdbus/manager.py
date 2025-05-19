@@ -36,7 +36,6 @@ from bleak.backends.bluezdbus.defs import (
     GattDescriptor1,
     GattService1,
 )
-from bleak.backends.bluezdbus.service import BleakGATTServiceBlueZDBus
 from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import (
     assert_reply,
@@ -46,7 +45,7 @@ from bleak.backends.bluezdbus.utils import (
 )
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakError
 
 logger = logging.getLogger(__name__)
@@ -687,7 +686,11 @@ class BlueZManager:
                 self._properties[service_path][defs.GATT_SERVICE_INTERFACE],
             )
 
-            service = BleakGATTServiceBlueZDBus(service_props, service_path)
+            service = BleakGATTService(
+                (service_path, service_props),
+                extract_service_handle_from_path(service_path),
+                service_props["UUID"],
+            )
 
             if (
                 requested_services is not None

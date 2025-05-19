@@ -75,9 +75,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
-from bleak.backends.service import BleakGATTServiceCollection
+from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
-from bleak.backends.winrt.service import BleakGATTServiceWinRT
 from bleak.exc import (
     PROTOCOL_ERROR_CODES,
     BleakCharacteristicNotFoundError,
@@ -711,7 +710,9 @@ class BleakClientWinRT(BaseBleakClient):
                     f"Could not get GATT characteristics for service {service.uuid} ({service.attribute_handle})",
                 )
 
-                serv = BleakGATTServiceWinRT(service)
+                serv = BleakGATTService(
+                    service, service.attribute_handle, str(service.uuid)
+                )
                 new_services.add_service(serv)
 
                 for characteristic in characteristics:
