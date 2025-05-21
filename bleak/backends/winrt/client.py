@@ -172,7 +172,6 @@ class BleakClientWinRT(BaseBleakClient):
         self._requester: Optional[BluetoothLEDevice] = None
         self._services_changed_events: list[asyncio.Event] = []
         self._session_active_events: list[asyncio.Event] = []
-        self._session_closed_events: list[asyncio.Event] = []
         self._session: Optional[GattSession] = None
         self._notification_callbacks: dict[int, EventRegistrationToken] = {}
 
@@ -307,9 +306,6 @@ class BleakClientWinRT(BaseBleakClient):
             elif args.status == GattSessionStatus.CLOSED and is_connect_complete:
                 if self._disconnected_callback:
                     self._disconnected_callback()
-
-                for e in self._session_closed_events:
-                    e.set()
 
                 handle_disconnect()
 
@@ -479,26 +475,13 @@ class BleakClientWinRT(BaseBleakClient):
                 service.obj.close()
             self.services = None
 
-        # Without this, disposing the BluetoothLEDevice won't disconnect it
         if self._session:
-            self._session.maintain_connection = False
-            # calling self._session.close() here prevents any further GATT
-            # session status events, so we defer that until after the session
-            # is no longer active
+            self._session.close()
+            self._session = None
 
-        # Dispose of the BluetoothLEDevice and see that the session
-        # status is now closed.
         if self._requester:
-            event = asyncio.Event()
-            self._session_closed_events.append(event)
-            try:
-                self._requester.close()
-                # sometimes it can take over one minute before Windows decides
-                # to end the GATT session/disconnect the device
-                async with async_timeout(120):
-                    await event.wait()
-            finally:
-                self._session_closed_events.remove(event)
+            self._requester.close()
+            self._requester = None
 
     @property
     @override
