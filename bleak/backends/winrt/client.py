@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
+# Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 BLE Client for Windows 10 systems, implemented with WinRT.
-
-Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 import sys
 from typing import TYPE_CHECKING

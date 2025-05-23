@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
+# Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 Interface class for the Bleak representation of a GATT Descriptor
-
-Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
-
 """
 from __future__ import annotations
 

@@ -1,7 +1,6 @@
+# Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 BLE Client for CoreBluetooth on macOS
-
-Created on 2019-06-26 by kevincar <kevincarrolldavis@gmail.com>
 """
 
 import sys
