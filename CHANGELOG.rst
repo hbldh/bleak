@@ -514,7 +514,7 @@ Changed
 * Replaced usage of deprecated ``@abc.abstractproperty``.
 * Use ``asyncio.get_running_loop()`` instead of ``asyncio.get_event_loop()``.
 * Changed "service is already present" exception to logged error in BlueZ backend. Merged #622.
-* WinRT backend no longer wait for GATT session to close on disconnect. Fixes #1759.
+* WinRT backend no longer waits for GATT session to close on disconnect. Fixes #1759.
 
 Removed
 -------
