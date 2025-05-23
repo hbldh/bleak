@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, TypeVar, overload
+from typing import Literal, Optional, TypeVar, overload
 
 from CoreBluetooth import CBCentralManagerDelegate, CBPeripheralDelegate
 from Foundation import NSObject
@@ -21,4 +21,3 @@ def protocolNamed(
 def protocolNamed(
     name: Literal["CBPeripheralDelegate"],
 ) -> type[CBPeripheralDelegate]: ...
-def protocolNamed(name: str) -> type[Any]: ...
