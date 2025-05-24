@@ -49,7 +49,7 @@ async def main(address: str):
     async with BleakClient(address) as client:
         print(f"Connected: {client.is_connected}")
 
-        await client.pair(protection_level=2)
+        await client.pair()
         print("Paired:")
 
         print("Turning Light off...")

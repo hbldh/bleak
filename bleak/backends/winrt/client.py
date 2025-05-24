@@ -552,7 +552,24 @@ class BleakClientWinRT(BaseBleakClient):
                     ceremony, protection_level
                 )
             else:
-                pairing_result = await custom_pairing.pair_async(ceremony)
+                for level in (
+                    DevicePairingProtectionLevel.ENCRYPTION_AND_AUTHENTICATION,
+                    DevicePairingProtectionLevel.ENCRYPTION,
+                ):
+                    pairing_result = (
+                        await custom_pairing.pair_with_protection_level_async(
+                            ceremony, level
+                        )
+                    )
+                    if (
+                        pairing_result.status
+                        != DevicePairingResultStatus.PROTECTION_LEVEL_COULD_NOT_BE_MET
+                    ):
+                        break
+
+                    logger.debug("Protection level %r not met. Retrying.", level)
+                else:
+                    pairing_result = await custom_pairing.pair_async(ceremony)
 
         except Exception as e:
             raise BleakError("Failure trying to pair with device!") from e
