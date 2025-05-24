@@ -24,6 +24,7 @@ Changed
 * Changed return type of ``connect()``, ``disconnect()``, ``pair()`` and ``unpair()`` methods to ``None``.
 * Moved backend-specific arg types to new ``bleak.args`` sub-package.
 * ``BLEDevice.name`` will now return ``None`` instead of the address when the name is not available.
+* Deprecated ``protection_level`` kwarg for pairing in WinRT backend.
 
 Fixed
 -----
