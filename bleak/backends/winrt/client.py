@@ -567,10 +567,18 @@ class BleakClientWinRT(BaseBleakClient):
                 f"Could not pair with device: {pairing_result.status.name}"
             )
 
-        logger.debug(
-            "Paired to device with protection level %r.",
-            pairing_result.protection_level_used,
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            # pairing_result.protection_level_used doesn't seem to return
+            # accurate information if we don't update the DeviceInformation
+            # first.
+            device_information = await DeviceInformation.create_from_id_async(
+                self._requester.device_information.id
+            )
+
+            logger.debug(
+                "Paired to device with protection level %s.",
+                pairing_result.protection_level_used.name,
+            )
 
     @override
     async def unpair(self) -> None:
