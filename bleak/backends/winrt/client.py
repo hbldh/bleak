@@ -563,7 +563,9 @@ class BleakClientWinRT(BaseBleakClient):
             DevicePairingResultStatus.PAIRED,
             DevicePairingResultStatus.ALREADY_PAIRED,
         ):
-            raise BleakError(f"Could not pair with device: {pairing_result.status}")
+            raise BleakError(
+                f"Could not pair with device: {pairing_result.status.name}"
+            )
 
         logger.debug(
             "Paired to device with protection level %r.",
