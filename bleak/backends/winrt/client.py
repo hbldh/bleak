@@ -506,7 +506,6 @@ class BleakClientWinRT(BaseBleakClient):
     @override
     async def pair(
         self,
-        protection_level: Optional[DevicePairingProtectionLevel] = None,
         **kwargs: Any,
     ) -> None:
         """Attempts to pair with the device.
@@ -532,6 +531,8 @@ class BleakClientWinRT(BaseBleakClient):
         if device_information.pairing.is_paired:
             logging.debug("Device is already paired. Skipping pairing.")
             return
+
+        protection_level = kwargs.get("protection_level")
 
         # Currently only supporting Just Works solutions...
         ceremony = DevicePairingKinds.CONFIRM_ONLY
