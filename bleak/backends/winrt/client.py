@@ -5,6 +5,7 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 """
 import sys
 from typing import TYPE_CHECKING
+from warnings import warn
 
 if TYPE_CHECKING:
     if sys.platform != "win32":
@@ -516,7 +517,12 @@ class BleakClientWinRT(BaseBleakClient):
                 1. None - Pair the device using no levels of protection.
                 2. Encryption - Pair the device using encryption.
                 3. EncryptionAndAuthentication - Pair the device using
-                   encryption and authentication. (This will not work in Bleak...)
+                   encryption and authentication.
+
+                .. versionchanged:: unreleased
+                    Issues :class:`DeprecationWarning` if used. The default
+                    behavior has changed and this argument should no longer
+                    be needed.
         """
         assert self._requester
 
@@ -548,6 +554,11 @@ class BleakClientWinRT(BaseBleakClient):
 
         try:
             if protection_level is not None:
+                warn(
+                    "protection_level is deprecated and will be removed in a future version. The default protection level has changed, so it should be safe to omit this argument.",
+                    DeprecationWarning,
+                    2,
+                )
                 pairing_result = await custom_pairing.pair_with_protection_level_async(
                     ceremony, protection_level
                 )
