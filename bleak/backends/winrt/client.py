@@ -525,12 +525,12 @@ class BleakClientWinRT(BaseBleakClient):
             self._requester.device_information.id
         )
 
-        if not device_information.pairing.can_pair:
-            raise BleakError("Device does not support pairing")
-
         if device_information.pairing.is_paired:
             logging.debug("Device is already paired. Skipping pairing.")
             return
+
+        if not device_information.pairing.can_pair:
+            raise BleakError("Device does not support pairing")
 
         protection_level = kwargs.get("protection_level")
 
