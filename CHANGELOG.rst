@@ -17,6 +17,7 @@ Added
 
 Changed
 -------
+* Enabled extended advertising scanning in the WinRT backend.
 * Made `response` argument of class ``BleakClient.write_gatt_char()`` explicitly optional. Fixes #1730.
 * Updated Poetry build system version to ``>=2.0``. Merged #1718.
 * Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled. Merged #1709.

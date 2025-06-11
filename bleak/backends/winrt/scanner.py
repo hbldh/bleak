@@ -245,6 +245,8 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
+        # BlueZ and CoreBluetooth don't allow controlling this and always enabled it, so do the same here
+        self.watcher.allow_extended_advertisements = True
 
         event_loop = asyncio.get_running_loop()
         self._stopped_event = asyncio.Event()
