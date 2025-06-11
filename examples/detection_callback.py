@@ -19,13 +19,21 @@ from bleak.backends.scanner import AdvertisementData
 logger = logging.getLogger(__name__)
 
 
+class Args(argparse.Namespace):
+    macos_use_bdaddr: bool
+    services: list[str]
+    debug: bool
+
+
 def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
-    logger.info("%s: %r", device.address, advertisement_data)
+    logger.info(
+        "addr: %s, name: %s, %r", device.address, device.name, advertisement_data
+    )
 
 
-async def main(args: argparse.Namespace):
+async def main(args: Args):
     scanner = BleakScanner(
-        simple_callback, args.services, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+        simple_callback, args.services, cb={"use_bdaddr": args.macos_use_bdaddr}
     )
 
     while True:
@@ -57,7 +65,7 @@ if __name__ == "__main__":
         help="sets the logging level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

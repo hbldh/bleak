@@ -22,3 +22,10 @@ def test_device_path_from_characteristic_path():
         )
         == "/org/bluez/hci0/dev_11_22_33_44_55_66"
     )
+
+    assert (
+        device_path_from_characteristic_path(
+            "/org/bluez/hci10/dev_11_22_33_44_55_66/service000c/char000d"
+        )
+        == "/org/bluez/hci10/dev_11_22_33_44_55_66"
+    )

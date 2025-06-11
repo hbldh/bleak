@@ -1,11 +1,16 @@
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "win32":
+        assert False, "This backend is only available on Windows"
+
 import asyncio
 import ctypes
-import sys
 from ctypes import wintypes
 from enum import IntEnum
-from typing import Tuple
 
-from ...exc import BleakError
+from bleak.exc import BleakError
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -13,14 +18,14 @@ else:
     from asyncio import timeout as async_timeout
 
 
-def _check_result(result, func, args):
+def _check_result(result: int, func, args):
     if not result:
         raise ctypes.WinError()
 
     return args
 
 
-def _check_hresult(result, func, args):
+def _check_hresult(result: int, func, args):
     if result:
         raise ctypes.WinError(result)
 
@@ -99,7 +104,7 @@ class _AptQualifierType(IntEnum):
     RESERVED_1 = 7
 
 
-def _get_apartment_type() -> Tuple[_AptType, _AptQualifierType]:
+def _get_apartment_type() -> tuple[_AptType, _AptQualifierType]:
     """
     Calls CoGetApartmentType to get the current apartment type and qualifier.
 

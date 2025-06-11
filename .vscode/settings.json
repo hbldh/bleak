@@ -9,5 +9,6 @@
       "black-formatter.importStrategy": "fromEnvironment",
       "isort.importStrategy": "fromEnvironment",
       "isort.args":["--profile", "black"],
-      "flake8.importStrategy": "fromEnvironment"
+    "flake8.importStrategy": "fromEnvironment",
+    "python.analysis.typeCheckingMode": "strict"
 }

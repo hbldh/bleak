@@ -1,21 +1,28 @@
+# Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
 """
 CentralManagerDelegate will implement the CBCentralManagerDelegate protocol to
 manage CoreBluetooth services and resources on the Central End
-
-Created on June, 25 2019 by kevincar <kevincarrolldavis@gmail.com>
-
 """
+
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
 
 import asyncio
 import logging
-import sys
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import Self
 else:
     from asyncio import timeout as async_timeout
+    from typing import Self
 
 import objc
 from CoreBluetooth import (
@@ -36,13 +43,11 @@ from Foundation import (
     NSError,
     NSKeyValueChangeNewKey,
     NSKeyValueObservingOptionNew,
-    NSNumber,
     NSObject,
-    NSString,
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
-from ...exc import BleakError
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
@@ -56,7 +61,7 @@ class CentralManagerDelegate(NSObject):
 
     ___pyobjc_protocols__ = [CBCentralManagerDelegate]
 
-    def init(self) -> Optional["CentralManagerDelegate"]:
+    def init(self: Self) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(CentralManagerDelegate, self).init()
 
@@ -64,13 +69,14 @@ class CentralManagerDelegate(NSObject):
             return None
 
         self.event_loop = asyncio.get_running_loop()
-        self._connect_futures: Dict[NSUUID, asyncio.Future] = {}
+        self._connect_futures: dict[NSUUID, asyncio.Future[bool]] = {}
 
-        self.callbacks: Dict[
-            int, Callable[[CBPeripheral, Dict[str, Any], int], None]
+        self.callbacks: dict[
+            int,
+            Callable[[CBPeripheral, NSDictionary, int], None],
         ] = {}
-        self._disconnect_callbacks: Dict[NSUUID, DisconnectCallback] = {}
-        self._disconnect_futures: Dict[NSUUID, asyncio.Future] = {}
+        self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
+        self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
 
         self._did_update_state_event = threading.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
@@ -93,65 +99,52 @@ class CentralManagerDelegate(NSObject):
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
 
-        # isScanning property was added in 10.13
-        if objc.macos_available(10, 13):
-            self.central_manager.addObserver_forKeyPath_options_context_(
-                self, "isScanning", NSKeyValueObservingOptionNew, 0
-            )
-            self._did_start_scanning_event: Optional[asyncio.Event] = None
-            self._did_stop_scanning_event: Optional[asyncio.Event] = None
+        self.central_manager.addObserver_forKeyPath_options_context_(
+            self, "isScanning", NSKeyValueObservingOptionNew, 0
+        )
+        self._did_start_scanning_event: Optional[asyncio.Event] = None
+        self._did_stop_scanning_event: Optional[asyncio.Event] = None
 
         return self
 
     def __del__(self) -> None:
-        if objc.macos_available(10, 13):
-            try:
-                self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
-            except IndexError:
-                # If self.init() raised an exception before calling
-                # addObserver_forKeyPath_options_context_, attempting
-                # to remove the observer will fail with IndexError
-                pass
+        try:
+            self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
+        except IndexError:
+            # If self.init() raised an exception before calling
+            # addObserver_forKeyPath_options_context_, attempting
+            # to remove the observer will fail with IndexError
+            pass
 
     # User defined functions
 
     @objc.python_method
-    async def start_scan(self, service_uuids: Optional[List[str]]) -> None:
-        service_uuids = (
-            NSArray.alloc().initWithArray_(
-                list(map(CBUUID.UUIDWithString_, service_uuids))
-            )
+    async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
+        _service_uuids = (
+            NSArray[CBUUID]
+            .alloc()
+            .initWithArray_(list(map(CBUUID.UUIDWithString_, service_uuids)))
             if service_uuids
             else None
         )
 
         self.central_manager.scanForPeripheralsWithServices_options_(
-            service_uuids, None
+            _service_uuids, None
         )
 
-        # The `isScanning` property was added in macOS 10.13, so before that
-        # just waiting some will have to do.
-        if objc.macos_available(10, 13):
-            event = asyncio.Event()
-            self._did_start_scanning_event = event
-            if not self.central_manager.isScanning():
-                await event.wait()
-        else:
-            await asyncio.sleep(0.1)
+        event = asyncio.Event()
+        self._did_start_scanning_event = event
+        if not self.central_manager.isScanning():
+            await event.wait()
 
     @objc.python_method
     async def stop_scan(self) -> None:
         self.central_manager.stopScan()
 
-        # The `isScanning` property was added in macOS 10.13, so before that
-        # just waiting some will have to do.
-        if objc.macos_available(10, 13):
-            event = asyncio.Event()
-            self._did_stop_scanning_event = event
-            if self.central_manager.isScanning():
-                await event.wait()
-        else:
-            await asyncio.sleep(0.1)
+        event = asyncio.Event()
+        self._did_stop_scanning_event = event
+        if self.central_manager.isScanning():
+            await event.wait()
 
     @objc.python_method
     async def connect(
@@ -207,7 +200,7 @@ class CentralManagerDelegate(NSObject):
                 self._did_stop_scanning_event.set()
 
     def observeValueForKeyPath_ofObject_change_context_(
-        self, keyPath: NSString, object: Any, change: NSDictionary, context: int
+        self, keyPath: str, object: Any, change: NSDictionary, context: int
     ) -> None:
         logger.debug("'%s' changed", keyPath)
 
@@ -242,7 +235,7 @@ class CentralManagerDelegate(NSObject):
         central: CBCentralManager,
         peripheral: CBPeripheral,
         advertisementData: NSDictionary,
-        RSSI: NSNumber,
+        RSSI: int,
     ) -> None:
         # Note: this function might be called several times for same device.
         # This can happen for instance when an active scan is done, and the
@@ -278,7 +271,7 @@ class CentralManagerDelegate(NSObject):
         central: CBCentralManager,
         peripheral: CBPeripheral,
         advertisementData: NSDictionary,
-        RSSI: NSNumber,
+        RSSI: int,
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
         self.event_loop.call_soon_threadsafe(

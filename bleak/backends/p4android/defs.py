@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "android":
+        assert False, "This backend is only available on Android"
 
 import enum
 
@@ -75,17 +80,6 @@ GATT_STATUS_STRINGS = {
     0x0091: "Already Open",
     0x0092: "Cancel",
     0x0101: "Failure",
-}
-
-CHARACTERISTIC_PROPERTY_DBUS_NAMES = {
-    BluetoothGattCharacteristic.PROPERTY_BROADCAST: "broadcast",
-    BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS: "extended-properties",
-    BluetoothGattCharacteristic.PROPERTY_INDICATE: "indicate",
-    BluetoothGattCharacteristic.PROPERTY_NOTIFY: "notify",
-    BluetoothGattCharacteristic.PROPERTY_READ: "read",
-    BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE: "authenticated-signed-writes",
-    BluetoothGattCharacteristic.PROPERTY_WRITE: "write",
-    BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE: "write-without-response",
 }
 
 CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = normalize_uuid_16(0x2902)

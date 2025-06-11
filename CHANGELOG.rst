@@ -10,9 +10,37 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``pair`` parameter to ``BleakClient()`` constructor to allow pairing before connecting. Fixes #309.
+* Added ``notification_discriminator`` parameter to ``start_notify()`` on CoreBluetooth backend. Merged #1742.
+
 Changed
 -------
-* Enabled extended advertising scanning on the ``BleakClientWinRT`` backend.
+* Enabled extended advertising scanning in the WinRT backend.
+* Made `response` argument of class ``BleakClient.write_gatt_char()`` explicitly optional. Fixes #1730.
+* Updated Poetry build system version to ``>=2.0``. Merged #1718.
+* Log to stderr instead of stdout when ``BLEAK_LOGGING`` is enabled. Merged #1709.
+* Updated ``winrt`` backend to use PyWinRT >= 3.1.
+* Changed return type of ``connect()``, ``disconnect()``, ``pair()`` and ``unpair()`` methods to ``None``.
+* Moved backend-specific arg types to new ``bleak.args`` sub-package.
+* ``BLEDevice.name`` will now return ``None`` instead of the address when the name is not available.
+* Deprecated ``protection_level`` kwarg for pairing in WinRT backend.
+
+Fixed
+-----
+* Fixed possible ``KeyError`` when getting services in BlueZ backend. Fixes #1435.
+* Fix D-Bus connection leak when connecting to a device fails in BlueZ backend. Fixes #1698.
+* Fixed possible deadlock when connecting on WinRT backend when device is already connected. Fixes #1757.
+* Fixed getting notifications from devices connected to BLE adapters with index >9 (hci10, hci11, ...)
+* Fixed ATT error code 15 description to "Insufficient Encryption". Merged #1746.
+
+Removed
+-------
+* Removed support for Python 3.8. The minimum supported version is now Python 3.9.
+* Removed deprecated parameters properties and methods.
+* Removed support for macOS < 10.13.
+* Removed support for BlueZ < 5.55.
 
 `0.22.3`_ (2024-10-05)
 ======================
@@ -488,6 +516,7 @@ Changed
 * Replaced usage of deprecated ``@abc.abstractproperty``.
 * Use ``asyncio.get_running_loop()`` instead of ``asyncio.get_event_loop()``.
 * Changed "service is already present" exception to logged error in BlueZ backend. Merged #622.
+* WinRT backend no longer waits for GATT session to close on disconnect. Fixes #1759.
 
 Removed
 -------

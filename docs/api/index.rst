@@ -10,6 +10,7 @@ Contents:
 
    scanner
    client
+   args
 
 .. TODO: move everything below to separate pages
 
@@ -45,10 +46,3 @@ Utilities
 
 .. automodule:: bleak.uuids
     :members:
-
-Deprecated
-----------
-
-.. module:: bleak
-
-.. autofunction:: bleak.discover
