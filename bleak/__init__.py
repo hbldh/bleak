@@ -292,7 +292,7 @@ class BleakScanner:
 
         .. versionadded:: 0.19
         """
-        return self._backend.seen_devices
+        return {d[0].address: d for d in self._backend.seen_devices.values()}
 
     @classmethod
     async def find_device_by_address(
