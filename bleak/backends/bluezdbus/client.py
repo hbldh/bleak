@@ -284,6 +284,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                     member="Pair",
                                 )
                             )
+
+                            # For resolvable private addresses, the address will
+                            # change after pairing, so we need to update that.
+                            # Hopefully there is no race condition here. D-Bus
+                            # traffic capture shows that Address change happens
+                            # at the same time as Paired property change and
+                            # that PropertiesChanged signal is sent before the
+                            # "Pair" reply is sent.
+                            self.address = manager.get_device_address(self._device_path)
                         else:
                             reply = await self._bus.call(
                                 Message(
@@ -508,6 +517,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
         assert reply
         assert_reply(reply)
+
+        # For resolvable private addresses, the address will
+        # change after pairing, so we need to update that.
+        # Hopefully there is no race condition here. D-Bus
+        # traffic capture shows that Address change happens
+        # at the same time as Paired property change and
+        # that PropertiesChanged signal is sent before the
+        # "Pair" reply is sent.
+        manager = await get_global_bluez_manager()
+        self.address = manager.get_device_address(self._device_path)
 
     @override
     async def unpair(self) -> None:
