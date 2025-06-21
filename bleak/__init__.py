@@ -450,6 +450,10 @@ class BleakClient:
         **kwargs:
             Additional keyword arguments for backwards compatibility.
 
+    .. tip:: If you enable pairing with the ``pair`` argument, you will also
+        want to extend the timeout to allow enough time for the user to find
+        and enter the PIN code on the device, if required.
+
     .. warning:: Although example code frequently initializes :class:`BleakClient`
         with a Bluetooth address for simplicity, it is not recommended to do so
         for more complex use cases. There are several known issues with providing

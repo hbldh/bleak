@@ -54,6 +54,8 @@ async def main(args: Args):
         device,
         pair=args.pair,
         services=args.services,
+        # Give the user plenty of time to enter a PIN code if paring is required.
+        timeout=90 if args.pair else 10,
     ) as client:
         logger.info("connected")
 
