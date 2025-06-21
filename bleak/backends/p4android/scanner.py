@@ -268,6 +268,7 @@ class BleakScannerP4Android(BaseBleakScanner):
 
         device = self.create_or_update_device(
             native_device.getAddress(),
+            native_device.getAddress(),
             native_device.getName(),
             native_device,
             advertisement,

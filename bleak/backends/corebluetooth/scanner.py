@@ -148,6 +148,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 address = p.identifier().UUIDString()
 
             device = self.create_or_update_device(
+                p.identifier().UUIDString(),
                 address,
                 p.name(),
                 (p, self._manager.central_manager.delegate()),

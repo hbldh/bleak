@@ -115,6 +115,8 @@ class BaseBleakScanner(abc.ABC):
     """
     Map of device identifier to BLEDevice and most recent advertisement data.
 
+    The key is a backend-specific identifier for the device.
+
     This map must be cleared when scanning starts.
     """
 
@@ -236,12 +238,18 @@ class BaseBleakScanner(abc.ABC):
             callback(device, advertisement_data)
 
     def create_or_update_device(
-        self, address: str, name: Optional[str], details: Any, adv: AdvertisementData
+        self,
+        key: str,
+        address: str,
+        name: Optional[str],
+        details: Any,
+        adv: AdvertisementData,
     ) -> BLEDevice:
         """
         Creates or updates a device in :attr:`seen_devices`.
 
         Args:
+            key: A backend-specific identifier for the device.
             address: The Bluetooth address of the device (UUID on macOS).
             name: The OS display name for the device.
             details: The platform-specific handle for the device.
@@ -252,13 +260,13 @@ class BaseBleakScanner(abc.ABC):
         """
 
         try:
-            device, _ = self.seen_devices[address]
+            device, _ = self.seen_devices[key]
 
             device.name = name
         except KeyError:
             device = BLEDevice(address, name, details)
 
-        self.seen_devices[address] = (device, adv)
+        self.seen_devices[key] = (device, adv)
 
         return device
 

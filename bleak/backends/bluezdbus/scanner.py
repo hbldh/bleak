@@ -19,7 +19,6 @@ from dbus_fast import Variant
 from bleak.args.bluez import BlueZScannerArgs
 from bleak.backends.bluezdbus.defs import Device1
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
-from bleak.backends.bluezdbus.utils import bdaddr_from_device_path
 from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
@@ -199,6 +198,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         )
 
         device = self.create_or_update_device(
+            path,
             props["Address"],
             # BlueZ generates a name based on the address if no name is available.
             # To match other backends, we replace this with None.
@@ -218,8 +218,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         Handles a device being removed from BlueZ.
         """
         try:
-            bdaddr = bdaddr_from_device_path(device_path)
-            del self.seen_devices[bdaddr]
+            del self.seen_devices[device_path]
         except KeyError:
             # The device will not have been added to self.seen_devices if no
             # advertising data was received, so this is expected to happen
