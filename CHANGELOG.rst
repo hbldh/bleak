@@ -29,6 +29,7 @@ Changed
 
 Fixed
 -----
+* Fixed resolvable private address not updated after connecting in BlueZ backend. Fixes #1737.
 * Fixed possible ``KeyError`` when getting services in BlueZ backend. Fixes #1435.
 * Fix D-Bus connection leak when connecting to a device fails in BlueZ backend. Fixes #1698.
 * Fixed possible deadlock when connecting on WinRT backend when device is already connected. Fixes #1757.

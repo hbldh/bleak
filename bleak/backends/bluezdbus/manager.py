@@ -753,6 +753,21 @@ class BlueZManager:
         """
         return self._get_device_property(device_path, defs.DEVICE_INTERFACE, "Name")
 
+    def get_device_address(self, device_path: str) -> str:
+        """
+        Gets the value of the "Address" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
+        """
+        return self._get_device_property(device_path, defs.DEVICE_INTERFACE, "Address")
+
     def is_connected(self, device_path: str) -> bool:
         """
         Gets the value of the "Connected" property for a device.
