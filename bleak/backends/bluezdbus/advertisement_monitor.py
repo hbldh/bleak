@@ -6,31 +6,24 @@ This module contains types associated with the BlueZ D-Bus `advertisement
 monitor api <https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst>`.
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import logging
-from typing import Iterable, NamedTuple, Tuple, Union, no_type_check
+from collections.abc import Iterable
+from typing import no_type_check
 
-from dbus_fast.service import PropertyAccess, ServiceInterface, dbus_property, method
+from dbus_fast import PropertyAccess
+from dbus_fast.service import ServiceInterface, dbus_property, method
 
-from ...assigned_numbers import AdvertisementDataType
-from . import defs
+from bleak.args.bluez import OrPatternLike
+from bleak.backends.bluezdbus import defs
 
 logger = logging.getLogger(__name__)
-
-
-class OrPattern(NamedTuple):
-    """
-    BlueZ advertisement monitor or-pattern.
-
-    https://github.com/bluez/bluez/blob/master/doc/org.bluez.AdvertisementMonitor.rst#arrayuint8-uint8-arraybyte-patterns-read-only-optional
-    """
-
-    start_position: int
-    ad_data_type: AdvertisementDataType
-    content_of_pattern: bytes
-
-
-# Windows has a similar structure, so we allow generic tuple for cross-platform compatibility
-OrPatternLike = Union[OrPattern, Tuple[int, AdvertisementDataType, bytes]]
 
 
 class AdvertisementMonitor(ServiceInterface):

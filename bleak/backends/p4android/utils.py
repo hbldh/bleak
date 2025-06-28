@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "android":
+        assert False, "This backend is only available on Android"
 
 import asyncio
 import logging
@@ -6,7 +11,7 @@ import warnings
 
 from jnius import PythonJavaClass
 
-from ...exc import BleakError
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 

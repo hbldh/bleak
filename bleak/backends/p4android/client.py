@@ -2,24 +2,35 @@
 """
 BLE Client for python-for-android
 """
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "android":
+        assert False, "This backend is only available on Android"
+
 import asyncio
 import logging
 import uuid
 import warnings
-from typing import Optional, Set, Union
+from typing import Any, Optional, Union
+
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
 
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
-from ...exc import BleakCharacteristicNotFoundError, BleakError
-from ..characteristic import BleakGATTCharacteristic
-from ..client import BaseBleakClient, NotifyCallback
-from ..device import BLEDevice
-from ..service import BleakGATTServiceCollection
-from . import defs, utils
-from .characteristic import BleakGATTCharacteristicP4Android
-from .descriptor import BleakGATTDescriptorP4Android
-from .service import BleakGATTServiceP4Android
+from bleak.assigned_numbers import gatt_char_props_to_strs
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.client import BaseBleakClient, NotifyCallback
+from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.backends.device import BLEDevice
+from bleak.backends.p4android import defs, utils
+from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +49,7 @@ class BleakClientP4Android(BaseBleakClient):
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[Set[uuid.UUID]],
+        services: Optional[set[uuid.UUID]],
         **kwargs,
     ):
         super(BleakClientP4Android, self).__init__(address_or_ble_device, **kwargs)
@@ -50,20 +61,14 @@ class BleakClientP4Android(BaseBleakClient):
         self.__gatt = None
         self.__mtu = 23
 
-    def __del__(self):
-        if self.__gatt is not None:
-            self.__gatt.close()
-            self.__gatt = None
-
     # Connectivity methods
 
-    async def connect(self, **kwargs) -> bool:
-        """Connect to the specified GATT server.
+    @override
+    async def connect(self, pair: bool, **kwargs) -> None:
+        """Connect to the specified GATT server."""
+        if pair:
+            logger.warning("Pairing during connect is not implemented on Android")
 
-        Returns:
-            Boolean representing connection status.
-
-        """
         loop = asyncio.get_running_loop()
 
         self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
@@ -112,7 +117,7 @@ class BleakClientP4Android(BaseBleakClient):
                 resultApi="onServicesDiscovered",
             )
 
-            await self.get_services()
+            await self._get_services()
         except BaseException:
             # if connecting is canceled or one of the above fails, we need to
             # disconnect
@@ -122,22 +127,16 @@ class BleakClientP4Android(BaseBleakClient):
                 pass
             raise
 
-        return True
-
-    async def disconnect(self) -> bool:
-        """Disconnect from the specified GATT server.
-
-        Returns:
-            Boolean representing if device is disconnected.
-
-        """
+    @override
+    async def disconnect(self) -> None:
+        """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
         if self.__gatt is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the gatt
             # connection.
             logger.debug("already disconnected")
-            return True
+            return
 
         # Try to disconnect the actual device/peripheral
         try:
@@ -159,17 +158,12 @@ class BleakClientP4Android(BaseBleakClient):
         # Reset all stored services.
         self.services = None
 
-        return True
-
-    async def pair(self, *args, **kwargs) -> bool:
+    @override
+    async def pair(self, *args, **kwargs) -> None:
         """Pair with the peripheral.
 
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
-
-        Returns:
-            Boolean regarding success of pairing.
-
         """
         loop = asyncio.get_running_loop()
 
@@ -201,30 +195,26 @@ class BleakClientP4Android(BaseBleakClient):
             # See if it is already paired.
             bond_state = self.__device.getBondState()
             if bond_state == defs.BluetoothDevice.BOND_BONDED:
-                return True
+                return
             elif bond_state == defs.BluetoothDevice.BOND_NONE:
                 logger.debug(f"Pairing to BLE device @ {self.address}")
                 if not self.__device.createBond():
                     raise BleakError(
                         f"Could not initiate bonding with device @ {self.address}"
                     )
-            return await bondedFuture
+            await bondedFuture
         finally:
             await receiver.stop()
 
-    async def unpair(self) -> bool:
-        """Unpair with the peripheral.
-
-        Returns:
-            Boolean regarding success of unpairing.
-
-        """
+    @override
+    async def unpair(self) -> None:
+        """Unpair with the peripheral."""
         warnings.warn(
             "Unpairing is seemingly unavailable in the Android API at the moment."
         )
-        return False
 
     @property
+    @override
     def is_connected(self) -> bool:
         """Check connection status between this client and the server.
 
@@ -239,12 +229,13 @@ class BleakClientP4Android(BaseBleakClient):
         )
 
     @property
-    def mtu_size(self) -> Optional[int]:
+    @override
+    def mtu_size(self) -> int:
         return self.__mtu
 
     # GATT services methods
 
-    async def get_services(self) -> BleakGATTServiceCollection:
+    async def _get_services(self) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
 
         Returns:
@@ -264,16 +255,22 @@ class BleakClientP4Android(BaseBleakClient):
             ):
                 continue
 
-            service = BleakGATTServiceP4Android(java_service)
+            service = BleakGATTService(
+                java_service,
+                java_service.getInstanceId(),
+                java_service.getUuid().toString(),
+            )
             services.add_service(service)
 
             for java_characteristic in java_service.getCharacteristics():
 
-                characteristic = BleakGATTCharacteristicP4Android(
+                characteristic = BleakGATTCharacteristic(
                     java_characteristic,
-                    service.uuid,
-                    service.handle,
+                    java_characteristic.getInstanceId(),
+                    java_characteristic.getUuid().toString(),
+                    gatt_char_props_to_strs((java_characteristic.getProperties())),
                     lambda: self.__mtu - 3,
+                    service,
                 )
                 services.add_characteristic(characteristic)
 
@@ -281,11 +278,11 @@ class BleakClientP4Android(BaseBleakClient):
                     java_characteristic.getDescriptors()
                 ):
 
-                    descriptor = BleakGATTDescriptorP4Android(
+                    descriptor = BleakGATTDescriptor(
                         java_descriptor,
-                        characteristic.uuid,
-                        characteristic.handle,
-                        descriptor_index,
+                        characteristic.handle + 1 + descriptor_index,
+                        self.obj.getUuid().toString(),
+                        characteristic,
                     )
                     services.add_descriptor(descriptor)
 
@@ -294,29 +291,19 @@ class BleakClientP4Android(BaseBleakClient):
 
     # IO methods
 
+    @override
     async def read_gatt_char(
-        self,
-        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
-        **kwargs,
+        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to read from,
-                specified by either integer handle, UUID or directly by the
-                BleakGATTCharacteristicP4Android object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to read from.
 
         Returns:
             (bytearray) The read data.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
 
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readCharacteristic,
@@ -329,30 +316,18 @@ class BleakClientP4Android(BaseBleakClient):
         )
         return value
 
+    @override
     async def read_gatt_descriptor(
-        self,
-        desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
-        **kwargs,
+        self, descriptor: BleakGATTDescriptor, **kwargs: Any
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
-            desc_specifier (BleakGATTDescriptorP4Android, str or UUID): The descriptor to read from,
-                specified by either UUID or directly by the
-                BleakGATTDescriptorP4Android object representing it.
+            descriptor: The descriptor to read from.
 
         Returns:
-            (bytearray) The read data.
-
+            The read data.
         """
-        if not isinstance(desc_specifier, BleakGATTDescriptorP4Android):
-            descriptor = self.services.get_descriptor(desc_specifier)
-        else:
-            descriptor = desc_specifier
-
-        if not descriptor:
-            raise BleakError(f"Descriptor with UUID {desc_specifier} was not found!")
-
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readDescriptor,
             dispatchParams=(descriptor.obj,),
@@ -366,11 +341,9 @@ class BleakClientP4Android(BaseBleakClient):
 
         return value
 
+    @override
     async def write_gatt_char(
-        self,
-        characteristic: BleakGATTCharacteristic,
-        data: bytearray,
-        response: bool,
+        self, characteristic: BleakGATTCharacteristic, data: bytearray, response: bool
     ) -> None:
         if response:
             characteristic.obj.setWriteType(
@@ -393,21 +366,22 @@ class BleakClientP4Android(BaseBleakClient):
             f"Write Characteristic {characteristic.uuid} | {characteristic.handle}: {data}"
         )
 
+    @override
     async def write_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptorP4Android, str, uuid.UUID],
+        desc_specifier: Union[BleakGATTDescriptor, str, uuid.UUID],
         data: bytearray,
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
         Args:
-            desc_specifier (BleakGATTDescriptorP4Android, str or UUID): The descriptor to write
+            desc_specifier (BleakGATTDescriptor, str or UUID): The descriptor to write
                 to, specified by either UUID or directly by the
-                BleakGATTDescriptorP4Android object representing it.
+                BleakGATTDescriptor object representing it.
             data (bytes or bytearray): The data to send.
 
         """
-        if not isinstance(desc_specifier, BleakGATTDescriptorP4Android):
+        if not isinstance(desc_specifier, BleakGATTDescriptor):
             descriptor = self.services.get_descriptor(desc_specifier)
         else:
             descriptor = desc_specifier
@@ -427,6 +401,7 @@ class BleakClientP4Android(BaseBleakClient):
             f"Write Descriptor {descriptor.uuid} | {descriptor.handle}: {data}"
         )
 
+    @override
     async def start_notify(
         self,
         characteristic: BleakGATTCharacteristic,
@@ -450,25 +425,15 @@ class BleakClientP4Android(BaseBleakClient):
             defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
         )
 
-    async def stop_notify(
-        self,
-        char_specifier: Union[BleakGATTCharacteristicP4Android, int, str, uuid.UUID],
-    ) -> None:
+    @override
+    async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
         """Deactivate notification/indication on a specified characteristic.
 
         Args:
-            char_specifier (BleakGATTCharacteristicP4Android, int, str or UUID): The characteristic to deactivate
-                notification/indication on, specified by either integer handle, UUID or
-                directly by the BleakGATTCharacteristicP4Android object representing it.
+            characteristic (BleakGATTCharacteristic): The characteristic to deactivate
+                notification/indication on,.
 
         """
-        if not isinstance(char_specifier, BleakGATTCharacteristicP4Android):
-            characteristic = self.services.get_characteristic(char_specifier)
-        else:
-            characteristic = char_specifier
-        if not characteristic:
-            raise BleakCharacteristicNotFoundError(char_specifier)
-
         await self.write_gatt_descriptor(
             characteristic.notification_descriptor,
             defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,

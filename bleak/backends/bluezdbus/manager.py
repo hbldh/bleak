@@ -6,42 +6,47 @@ This module contains code for the global BlueZ D-Bus object manager that is
 used internally by Bleak.
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import asyncio
 import contextlib
 import logging
 import os
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Coroutine,
-    Dict,
-    List,
-    MutableMapping,
-    NamedTuple,
-    Optional,
-    Set,
-    cast,
-)
+from collections.abc import Callable, Coroutine, MutableMapping
+from typing import Any, NamedTuple, Optional, cast
 from weakref import WeakKeyDictionary
 
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
-from ...exc import BleakDBusError, BleakError
-from ..service import BleakGATTServiceCollection
-from . import defs
-from .advertisement_monitor import AdvertisementMonitor, OrPatternLike
-from .characteristic import BleakGATTCharacteristicBlueZDBus
-from .defs import Device1, GattCharacteristic1, GattDescriptor1, GattService1
-from .descriptor import BleakGATTDescriptorBlueZDBus
-from .service import BleakGATTServiceBlueZDBus
-from .signals import MatchRules, add_match
-from .utils import (
+from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.advertisement_monitor import (
+    AdvertisementMonitor,
+    OrPatternLike,
+)
+from bleak.backends.bluezdbus.defs import (
+    Device1,
+    GattCharacteristic1,
+    GattDescriptor1,
+    GattService1,
+)
+from bleak.backends.bluezdbus.signals import MatchRules, add_match
+from bleak.backends.bluezdbus.utils import (
     assert_reply,
     device_path_from_characteristic_path,
+    extract_service_handle_from_path,
     get_dbus_authenticator,
 )
+from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.descriptor import BleakGATTDescriptor
+from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
+from bleak.exc import BleakDBusError, BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -158,33 +163,33 @@ class BlueZManager:
     Use :func:`bleak.backends.bluezdbus.get_global_bluez_manager` to get the global instance.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._bus: Optional[MessageBus] = None
         self._bus_lock = asyncio.Lock()
 
         # dict of object path: dict of interface name: dict of property name: property value
-        self._properties: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        self._properties: dict[str, dict[str, dict[str, Any]]] = {}
 
         # set of available adapters for quick lookup
-        self._adapters: Set[str] = set()
+        self._adapters = set[str]()
 
         # The BlueZ APIs only maps children to parents, so we need to keep maps
         # to quickly find the children of a parent D-Bus object.
 
         # map of device d-bus object paths to set of service d-bus object paths
-        self._service_map: Dict[str, Set[str]] = {}
+        self._service_map: dict[str, set[str]] = {}
         # map of service d-bus object paths to set of characteristic d-bus object paths
-        self._characteristic_map: Dict[str, Set[str]] = {}
+        self._characteristic_map: dict[str, set[str]] = {}
         # map of characteristic d-bus object paths to set of descriptor d-bus object paths
-        self._descriptor_map: Dict[str, Set[str]] = {}
+        self._descriptor_map: dict[str, set[str]] = {}
 
-        self._advertisement_callbacks: defaultdict[str, List[AdvertisementCallback]] = (
+        self._advertisement_callbacks: defaultdict[str, list[AdvertisementCallback]] = (
             defaultdict(list)
         )
-        self._device_removed_callbacks: List[DeviceRemovedCallbackAndState] = []
-        self._device_watchers: Dict[str, Set[DeviceWatcher]] = {}
-        self._condition_callbacks: Dict[str, Set[DeviceConditionCallback]] = {}
-        self._services_cache: Dict[str, BleakGATTServiceCollection] = {}
+        self._device_removed_callbacks: list[DeviceRemovedCallbackAndState] = []
+        self._device_watchers: dict[str, set[DeviceWatcher]] = {}
+        self._condition_callbacks: dict[str, set[DeviceConditionCallback]] = {}
+        self._services_cache: dict[str, BleakGATTServiceCollection] = {}
 
     def _check_adapter(self, adapter_path: str) -> None:
         """
@@ -247,6 +252,7 @@ class BlueZManager:
                 # Add signal listeners
 
                 bus.add_message_handler(self._parse_msg)
+                reply: Optional[Message]
 
                 rules = MatchRules(
                     interface=defs.OBJECT_MANAGER_INTERFACE,
@@ -283,6 +289,7 @@ class BlueZManager:
                         interface=defs.OBJECT_MANAGER_INTERFACE,
                     )
                 )
+                assert reply
                 assert_reply(reply)
 
                 # dictionaries are cleared in case AddInterfaces was received first
@@ -363,10 +370,10 @@ class BlueZManager:
     async def active_scan(
         self,
         adapter_path: str,
-        filters: Dict[str, Variant],
+        filters: dict[str, Variant],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
-    ) -> Callable[[], Coroutine]:
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
         """
         Configures the advertisement data filters and starts scanning.
 
@@ -385,6 +392,8 @@ class BlueZManager:
             BleakError: if the adapter is not present in BlueZ
         """
         async with self._bus_lock:
+            assert self._bus
+
             # If the adapter doesn't exist, then the message calls below would
             # fail with "method not found". This provides a more informative
             # error message.
@@ -409,6 +418,7 @@ class BlueZManager:
                         body=[filters],
                     )
                 )
+                assert reply
                 assert_reply(reply)
 
                 # Start scanning
@@ -420,6 +430,7 @@ class BlueZManager:
                         member="StartDiscovery",
                     )
                 )
+                assert reply
                 assert_reply(reply)
 
                 async def stop() -> None:
@@ -434,6 +445,8 @@ class BlueZManager:
                     )
 
                     async with self._bus_lock:
+                        assert self._bus
+
                         reply = await self._bus.call(
                             Message(
                                 destination=defs.BLUEZ_SERVICE,
@@ -442,6 +455,7 @@ class BlueZManager:
                                 member="StopDiscovery",
                             )
                         )
+                        assert reply
 
                         try:
                             assert_reply(reply)
@@ -460,6 +474,7 @@ class BlueZManager:
                                     body=[{}],
                                 )
                             )
+                            assert reply
                             assert_reply(reply)
 
                 return stop
@@ -474,10 +489,10 @@ class BlueZManager:
     async def passive_scan(
         self,
         adapter_path: str,
-        filters: List[OrPatternLike],
+        filters: list[OrPatternLike],
         advertisement_callback: AdvertisementCallback,
         device_removed_callback: DeviceRemovedCallback,
-    ) -> Callable[[], Coroutine]:
+    ) -> Callable[[], Coroutine[Any, Any, None]]:
         """
         Configures the advertisement data filters and starts scanning.
 
@@ -496,6 +511,8 @@ class BlueZManager:
             BleakError: if the adapter is not present in BlueZ
         """
         async with self._bus_lock:
+            assert self._bus
+
             # If the adapter doesn't exist, then the message calls below would
             # fail with "method not found". This provides a more informative
             # error message.
@@ -525,6 +542,7 @@ class BlueZManager:
                         body=[monitor_path],
                     )
                 )
+                assert reply
 
                 if (
                     reply.message_type == MessageType.ERROR
@@ -552,6 +570,8 @@ class BlueZManager:
                     )
 
                     async with self._bus_lock:
+                        assert self._bus
+
                         self._bus.unexport(monitor_path, monitor)
 
                         reply = await self._bus.call(
@@ -564,6 +584,7 @@ class BlueZManager:
                                 body=[monitor_path],
                             )
                         )
+                        assert reply
                         assert_reply(reply)
 
                 return stop
@@ -625,7 +646,7 @@ class BlueZManager:
             del self._device_watchers[device_path]
 
     async def get_services(
-        self, device_path: str, use_cached: bool, requested_services: Optional[Set[str]]
+        self, device_path: str, use_cached: bool, requested_services: Optional[set[str]]
     ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
@@ -665,7 +686,11 @@ class BlueZManager:
                 self._properties[service_path][defs.GATT_SERVICE_INTERFACE],
             )
 
-            service = BleakGATTServiceBlueZDBus(service_props, service_path)
+            service = BleakGATTService(
+                (service_path, service_props),
+                extract_service_handle_from_path(service_path),
+                service_props["UUID"],
+            )
 
             if (
                 requested_services is not None
@@ -681,14 +706,15 @@ class BlueZManager:
                     self._properties[char_path][defs.GATT_CHARACTERISTIC_INTERFACE],
                 )
 
-                char = BleakGATTCharacteristicBlueZDBus(
-                    char_props,
-                    char_path,
-                    service.uuid,
-                    service.handle,
+                char = BleakGATTCharacteristic(
+                    (char_path, char_props),
+                    extract_service_handle_from_path(char_path),
+                    char_props["UUID"],
+                    char_props["Flags"],
                     # "MTU" property was added in BlueZ 5.62, otherwise fall
                     # back to minimum MTU according to Bluetooth spec.
                     lambda: char_props.get("MTU", 23) - 3,
+                    service,
                 )
 
                 services.add_characteristic(char)
@@ -699,11 +725,11 @@ class BlueZManager:
                         self._properties[desc_path][defs.GATT_DESCRIPTOR_INTERFACE],
                     )
 
-                    desc = BleakGATTDescriptorBlueZDBus(
-                        desc_props,
-                        desc_path,
-                        char.uuid,
-                        char.handle,
+                    desc = BleakGATTDescriptor(
+                        (desc_path, desc_props),
+                        int(desc_path[-4:], 16),
+                        desc_props["UUID"],
+                        char,
                     )
 
                     services.add_descriptor(desc)
@@ -727,6 +753,21 @@ class BlueZManager:
         """
         return self._get_device_property(device_path, defs.DEVICE_INTERFACE, "Name")
 
+    def get_device_address(self, device_path: str) -> str:
+        """
+        Gets the value of the "Address" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value.
+
+        Raises:
+            BleakError: if the device is not present in BlueZ
+        """
+        return self._get_device_property(device_path, defs.DEVICE_INTERFACE, "Address")
+
     def is_connected(self, device_path: str) -> bool:
         """
         Gets the value of the "Connected" property for a device.
@@ -739,6 +780,21 @@ class BlueZManager:
         """
         try:
             return self._properties[device_path][defs.DEVICE_INTERFACE]["Connected"]
+        except KeyError:
+            return False
+
+    def is_paired(self, device_path: str) -> bool:
+        """
+        Gets the value of the "Paired" property for a device.
+
+        Args:
+            device_path: The D-Bus object path of the device.
+
+        Returns:
+            The current property value or ``False`` if the device does not exist in BlueZ.
+        """
+        try:
+            return self._properties[device_path][defs.DEVICE_INTERFACE]["Paired"]
         except KeyError:
             return False
 
@@ -879,11 +935,11 @@ class BlueZManager:
 
         # type hints
         obj_path: str
-        interfaces_and_props: Dict[str, Dict[str, Variant]]
-        interfaces: List[str]
+        interfaces_and_props: dict[str, dict[str, Variant]]
+        interfaces: list[str]
         interface: str
-        changed: Dict[str, Variant]
-        invalidated: List[str]
+        changed: dict[str, Variant]
+        invalidated: list[str]
 
         if message.member == "InterfacesAdded":
             obj_path, interfaces_and_props = message.body
@@ -945,6 +1001,13 @@ class BlueZManager:
                         if obj_path.startswith(adapter_path):
                             callback(obj_path)
                 elif interface == defs.GATT_SERVICE_INTERFACE:
+                    device_path = obj_path[: obj_path.rfind("/")]
+
+                    try:
+                        self._service_map[device_path].remove(obj_path)
+                    except KeyError:
+                        pass
+
                     try:
                         del self._characteristic_map[obj_path]
                     except KeyError:
@@ -966,7 +1029,7 @@ class BlueZManager:
             assert message_path is not None
 
             try:
-                self_interface = self._properties[message.path][interface]
+                self_interface = self._properties[message_path][interface]
             except KeyError:
                 # This can happen during initialization. The "PropertiesChanged"
                 # handler is attached before "GetManagedObjects" is called
@@ -1001,10 +1064,10 @@ class BlueZManager:
                     # handle device condition watchers
                     callbacks = self._condition_callbacks.get(device_path)
                     if callbacks:
-                        for callback in callbacks:
-                            name = callback.property_name
+                        for item in callbacks:
+                            name = item.property_name
                             if name in changed:
-                                callback.callback(self_interface.get(name))
+                                item.callback(self_interface.get(name))
 
                     # handle device connection change watchers
                     if "Connected" in changed:

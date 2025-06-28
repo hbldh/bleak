@@ -12,35 +12,50 @@ Created on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 import argparse
 import asyncio
 import logging
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 
 logger = logging.getLogger(__name__)
 
 
-async def main(args: argparse.Namespace):
+class Args(argparse.Namespace):
+    name: Optional[str]
+    address: Optional[str]
+    macos_use_bdaddr: bool
+    services: list[str]
+    pair: bool
+    debug: bool
+
+
+async def main(args: Args):
     logger.info("starting scan...")
 
     if args.address:
         device = await BleakScanner.find_device_by_address(
-            args.address, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+            args.address, cb={"use_bdaddr": args.macos_use_bdaddr}
         )
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             return
-    else:
+    elif args.name:
         device = await BleakScanner.find_device_by_name(
-            args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+            args.name, cb={"use_bdaddr": args.macos_use_bdaddr}
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
             return
+    else:
+        raise ValueError("Either --name or --address must be provided")
 
     logger.info("connecting to device...")
 
     async with BleakClient(
         device,
+        pair=args.pair,
         services=args.services,
+        # Give the user plenty of time to enter a PIN code if paring is required.
+        timeout=90 if args.pair else 10,
     ) as client:
         logger.info("connected")
 
@@ -109,13 +124,19 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--pair",
+        action="store_true",
+        help="pair with the device before connecting if not already paired",
+    )
+
+    parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
         help="sets the log level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

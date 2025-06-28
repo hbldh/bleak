@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import os
 from typing import Optional
 
@@ -6,7 +12,7 @@ from dbus_fast.auth import AuthExternal
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
-from ...exc import BleakDBusError, BleakError
+from bleak.exc import BleakDBusError, BleakError
 
 
 def assert_reply(reply: Message) -> None:
@@ -17,6 +23,7 @@ def assert_reply(reply: Message) -> None:
         AssertionError: if the message type is not ``MessageType.METHOD_RETURN``
     """
     if reply.message_type == MessageType.ERROR:
+        assert reply.error_name
         raise BleakDBusError(reply.error_name, reply.body)
     assert reply.message_type == MessageType.METHOD_RETURN
 
@@ -26,19 +33,6 @@ def extract_service_handle_from_path(path: str) -> int:
         return int(path[-4:], 16)
     except Exception as e:
         raise BleakError(f"Could not parse service handle from path: {path}") from e
-
-
-def bdaddr_from_device_path(device_path: str) -> str:
-    """
-    Scrape the Bluetooth address from a D-Bus device path.
-
-    Args:
-        device_path: The D-Bus object path of the device.
-
-    Returns:
-        A Bluetooth address as a string.
-    """
-    return ":".join(device_path[-17:].split("_"))
 
 
 def device_path_from_characteristic_path(characteristic_path: str) -> str:
@@ -52,7 +46,7 @@ def device_path_from_characteristic_path(characteristic_path: str) -> str:
         A D-Bus object path of the device.
     """
     # /org/bluez/hci1/dev_FA_23_9D_AA_45_46/service000c/char000d
-    return characteristic_path[:37]
+    return characteristic_path[:-21]
 
 
 def get_dbus_authenticator() -> Optional[AuthExternal]:

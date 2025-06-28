@@ -1,91 +1,32 @@
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import logging
-from typing import Callable, Coroutine, Dict, List, Literal, Optional, TypedDict
-from warnings import warn
+from collections.abc import Callable, Coroutine
+from typing import Any, Literal, Optional
+
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
 
 from dbus_fast import Variant
 
-from ...exc import BleakError
-from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
-from .advertisement_monitor import OrPatternLike
-from .defs import Device1
-from .manager import get_global_bluez_manager
-from .utils import bdaddr_from_device_path
+from bleak.args.bluez import BlueZScannerArgs
+from bleak.backends.bluezdbus.defs import Device1
+from bleak.backends.bluezdbus.manager import get_global_bluez_manager
+from bleak.backends.scanner import (
+    AdvertisementData,
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+)
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
-
-
-class BlueZDiscoveryFilters(TypedDict, total=False):
-    """
-    Dictionary of arguments for the ``org.bluez.Adapter1.SetDiscoveryFilter``
-    D-Bus method.
-
-    https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst#void-setdiscoveryfilterdict-filter
-    """
-
-    UUIDs: List[str]
-    """
-    Filter by service UUIDs, empty means match _any_ UUID.
-
-    Normally, the ``service_uuids`` argument of :class:`bleak.BleakScanner`
-    is used instead.
-    """
-    RSSI: int
-    """
-    RSSI threshold value.
-    """
-    Pathloss: int
-    """
-    Pathloss threshold value.
-    """
-    Transport: str
-    """
-    Transport parameter determines the type of scan.
-
-    This should not be used since it is required to be set to ``"le"``.
-    """
-    DuplicateData: bool
-    """
-    Disables duplicate detection of advertisement data.
-
-    This does not affect the ``Filter Duplicates`` parameter of the ``LE Set Scan Enable``
-    HCI command to the Bluetooth adapter!
-
-    Although the default value for BlueZ is ``True``, Bleak sets this to ``False`` by default.
-    """
-    Discoverable: bool
-    """
-    Make adapter discoverable while discovering,
-    if the adapter is already discoverable setting
-    this filter won't do anything.
-    """
-    Pattern: str
-    """
-    Discover devices where the pattern matches
-    either the prefix of the address or
-    device name which is convenient way to limited
-    the number of device objects created during a
-    discovery.
-    """
-
-
-class BlueZScannerArgs(TypedDict, total=False):
-    """
-    :class:`BleakScanner` args that are specific to the BlueZ backend.
-    """
-
-    filters: BlueZDiscoveryFilters
-    """
-    Filters to pass to the adapter SetDiscoveryFilter D-Bus method.
-
-    Only used for active scanning.
-    """
-
-    or_patterns: List[OrPatternLike]
-    """
-    Or patterns to pass to the AdvertisementMonitor1 D-Bus interface.
-
-    Only used for passive scanning.
-    """
 
 
 class BleakScannerBlueZDBus(BaseBleakScanner):
@@ -114,11 +55,11 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[List[str]],
+        service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
         *,
         bluez: BlueZScannerArgs,
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
 
@@ -128,11 +69,11 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
         # callback from manager for stopping scanning if it has been started
-        self._stop: Optional[Callable[[], Coroutine]] = None
+        self._stop: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
 
         # Discovery filters
 
-        self._filters: Dict[str, Variant] = {}
+        self._filters: dict[str, Variant] = {}
 
         self._filters["Transport"] = Variant("s", "le")
         self._filters["DuplicateData"] = Variant("b", False)
@@ -140,16 +81,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if self._service_uuids:
             self._filters["UUIDs"] = Variant("as", self._service_uuids)
 
-        filters = kwargs.get("filters")
-
-        if filters is None:
-            filters = bluez.get("filters")
-        else:
-            warn(
-                "the 'filters' kwarg is deprecated, use 'bluez' kwarg instead",
-                FutureWarning,
-                stacklevel=2,
-            )
+        filters = bluez.get("filters")
 
         if filters is not None:
             self.set_scanning_filter(filters=filters)
@@ -164,6 +96,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         if self._scanning_mode == "passive" and not self._or_patterns:
             raise BleakError("passive scanning mode requires bluez or_patterns")
 
+    @override
     async def start(self) -> None:
         manager = await get_global_bluez_manager()
 
@@ -189,6 +122,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
                 self._handle_device_removed,
             )
 
+    @override
     async def stop(self) -> None:
         if self._stop:
             # avoid reentrancy
@@ -196,7 +130,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
             await stop()
 
-    def set_scanning_filter(self, **kwargs) -> None:
+    def set_scanning_filter(self, **kwargs: Any) -> None:
         """Sets OS level scanning filters for the BleakScanner.
 
         For possible values for `filters`, see the parameters to the
@@ -264,8 +198,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         )
 
         device = self.create_or_update_device(
+            path,
             props["Address"],
-            props["Alias"],
+            # BlueZ generates a name based on the address if no name is available.
+            # To match other backends, we replace this with None.
+            (
+                None
+                if props["Alias"] == props["Address"].replace(":", "-")
+                else props["Alias"]
+            ),
             {"path": path, "props": props},
             advertisement_data,
         )
@@ -277,8 +218,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         Handles a device being removed from BlueZ.
         """
         try:
-            bdaddr = bdaddr_from_device_path(device_path)
-            del self.seen_devices[bdaddr]
+            del self.seen_devices[device_path]
         except KeyError:
             # The device will not have been added to self.seen_devices if no
             # advertising data was received, so this is expected to happen

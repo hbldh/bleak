@@ -5,6 +5,17 @@ import logging
 from typing import Iterable
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
+
+
+class Args(argparse.Namespace):
+    device1: str
+    uuid1: str
+    device2: str
+    uuid2: str
+    by_address: bool
+    macos_use_bdaddr: bool
+    debug: bool
 
 
 async def connect_to_device(
@@ -44,7 +55,7 @@ async def connect_to_device(
 
                 if by_address:
                     device = await BleakScanner.find_device_by_address(
-                        name_or_address, macos=dict(use_bdaddr=macos_use_bdaddr)
+                        name_or_address, cb={"use_bdaddr": macos_use_bdaddr}
                     )
                 else:
                     device = await BleakScanner.find_device_by_name(name_or_address)
@@ -55,11 +66,9 @@ async def connect_to_device(
                     logging.error("%s not found", name_or_address)
                     return
 
-                client = BleakClient(device)
-
                 logging.info("connecting to %s", name_or_address)
 
-                await stack.enter_async_context(client)
+                client = await stack.enter_async_context(BleakClient(device))
 
                 logging.info("connected to %s", name_or_address)
 
@@ -71,7 +80,7 @@ async def connect_to_device(
             # Bluetooth adapter is now free to scan and connect another device
             # without disconnecting this one.
 
-            def callback(_, data):
+            def callback(_: BleakGATTCharacteristic, data: bytearray) -> None:
                 logging.info("%s received %r", name_or_address, data)
 
             await client.start_notify(notify_uuid, callback)
@@ -145,7 +154,7 @@ if __name__ == "__main__":
         help="sets the log level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

@@ -13,6 +13,7 @@ import platform
 import sys
 
 from bleak import BleakClient
+from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.uuids import normalize_uuid_16, uuid16_dict
 
 ADDRESS = (
@@ -81,8 +82,8 @@ IO_DATA_CHAR_UUID = "f000aa65-0451-4000-b000-000000000000"
 IO_CONFIG_CHAR_UUID = "f000aa66-0451-4000-b000-000000000000"
 
 
-async def main(address):
-    async with BleakClient(address, winrt=dict(use_cached_services=True)) as client:
+async def main(address: str):
+    async with BleakClient(address, winrt={"use_cached_services": True}) as client:
         print(f"Connected: {client.is_connected}")
 
         system_id = await client.read_gatt_char(SYSTEM_ID_UUID)
@@ -116,7 +117,9 @@ async def main(address):
         battery_level = await client.read_gatt_char(BATTERY_LEVEL_UUID)
         print("Battery Level: {0}%".format(int(battery_level[0])))
 
-        async def notification_handler(characteristic, data):
+        async def notification_handler(
+            characteristic: BleakGATTCharacteristic, data: bytearray
+        ):
             print(f"{characteristic.description}: {data}")
 
         # Turn on the red light on the Sensor Tag by writing to I/O Data and I/O Config.

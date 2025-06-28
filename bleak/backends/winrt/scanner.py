@@ -1,32 +1,39 @@
+import sys
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    if sys.platform != "win32":
+        assert False, "This backend is only available on Windows"
+
 import asyncio
 import logging
-import sys
-from typing import Dict, List, Literal, NamedTuple, Optional
+from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
-from .util import assert_mta
-
-if sys.version_info >= (3, 12):
-    from winrt.windows.devices.bluetooth.advertisement import (
-        BluetoothLEAdvertisementReceivedEventArgs,
-        BluetoothLEAdvertisementType,
-        BluetoothLEAdvertisementWatcher,
-        BluetoothLEAdvertisementWatcherStatus,
-        BluetoothLEScanningMode,
-    )
+if sys.version_info < (3, 12):
+    from typing_extensions import override
 else:
-    from bleak_winrt.windows.devices.bluetooth.advertisement import (
-        BluetoothLEAdvertisementReceivedEventArgs,
-        BluetoothLEAdvertisementType,
-        BluetoothLEAdvertisementWatcher,
-        BluetoothLEAdvertisementWatcherStatus,
-        BluetoothLEScanningMode,
-    )
+    from typing import override
 
-from ...assigned_numbers import AdvertisementDataType
-from ...exc import BleakError
-from ...uuids import normalize_uuid_str
-from ..scanner import AdvertisementData, AdvertisementDataCallback, BaseBleakScanner
+from winrt.windows.devices.bluetooth.advertisement import (
+    BluetoothLEAdvertisementReceivedEventArgs,
+    BluetoothLEAdvertisementType,
+    BluetoothLEAdvertisementWatcher,
+    BluetoothLEAdvertisementWatcherStatus,
+    BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    BluetoothLEScanningMode,
+)
+from winrt.windows.foundation import EventRegistrationToken
+
+from bleak.assigned_numbers import AdvertisementDataType
+from bleak.backends.scanner import (
+    AdvertisementData,
+    AdvertisementDataCallback,
+    BaseBleakScanner,
+)
+from bleak.backends.winrt.util import assert_mta
+from bleak.exc import BleakError
+from bleak.uuids import normalize_uuid_str
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +49,7 @@ def _format_event_args(e: BluetoothLEAdvertisementReceivedEventArgs) -> str:
         return _format_bdaddr(e.bluetooth_address)
 
 
-class _RawAdvData(NamedTuple):
+class RawAdvData(NamedTuple):
     """
     Platform-specific advertisement data.
 
@@ -80,15 +87,15 @@ class BleakScannerWinRT(BaseBleakScanner):
     def __init__(
         self,
         detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[List[str]],
+        service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
-        **kwargs,
+        **kwargs: Any,
     ):
         super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
 
         self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
-        self._advertisement_pairs: Dict[int, _RawAdvData] = {}
-        self._stopped_event = None
+        self._advertisement_pairs: dict[str, RawAdvData] = {}
+        self._stopped_event: Optional[asyncio.Event] = None
 
         # case insensitivity is for backwards compatibility on Windows only
         if scanning_mode.lower() == "passive":
@@ -104,8 +111,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
-        self._received_token = None
-        self._stopped_token = None
+        self._received_token: Optional[EventRegistrationToken] = None
+        self._stopped_token: Optional[EventRegistrationToken] = None
 
     def _received_handler(
         self,
@@ -127,23 +134,25 @@ class BleakScannerWinRT(BaseBleakScanner):
         # us (regular advertisement + scan response) so we have to do it manually.
 
         # get the previous advertising data/scan response pair or start a new one
-        raw_data = self._advertisement_pairs.get(bdaddr, _RawAdvData(None, None))
+        raw_data = self._advertisement_pairs.get(bdaddr, RawAdvData(None, None))
 
         # update the advertising data depending on the advertising data type
         if event_args.advertisement_type == BluetoothLEAdvertisementType.SCAN_RESPONSE:
-            raw_data = _RawAdvData(raw_data.adv, event_args)
+            raw_data = RawAdvData(raw_data.adv, event_args)
         else:
-            raw_data = _RawAdvData(event_args, raw_data.scan)
+            raw_data = RawAdvData(event_args, raw_data.scan)
 
         self._advertisement_pairs[bdaddr] = raw_data
 
-        uuids = []
+        uuids: list[str] = []
         mfg_data = {}
         service_data = {}
         local_name = None
         tx_power = None
 
         for args in filter(lambda d: d is not None, raw_data):
+            assert args
+
             for u in args.advertisement.service_uuids:
                 uuids.append(str(u))
 
@@ -155,8 +164,8 @@ class BleakScannerWinRT(BaseBleakScanner):
                 local_name = args.advertisement.local_name
 
             try:
-                if args.transmit_power_level_in_d_bm is not None:
-                    tx_power = args.transmit_power_level_in_d_bm
+                if args.transmit_power_level_in_dbm is not None:
+                    tx_power = args.transmit_power_level_in_dbm
             except AttributeError:
                 # the transmit_power_level_in_d_bm property was introduce in
                 # Windows build 19041 so we have a fallback for older versions
@@ -198,24 +207,30 @@ class BleakScannerWinRT(BaseBleakScanner):
             service_data=service_data,
             service_uuids=uuids,
             tx_power=tx_power,
-            rssi=event_args.raw_signal_strength_in_d_bm,
+            rssi=event_args.raw_signal_strength_in_dbm,
             platform_data=(sender, raw_data),
         )
 
         device = self.create_or_update_device(
-            bdaddr, local_name, raw_data, advertisement_data
+            bdaddr, bdaddr, local_name, raw_data, advertisement_data
         )
 
         self.call_detection_callbacks(device, advertisement_data)
 
-    def _stopped_handler(self, sender, e):
+    def _stopped_handler(
+        self,
+        sender: BluetoothLEAdvertisementWatcher,
+        e: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+    ) -> None:
         logger.debug(
             "%s devices found. Watcher status: %r.",
             len(self.seen_devices),
             sender.status,
         )
+        assert self._stopped_event
         self._stopped_event.set()
 
+    @override
     async def start(self) -> None:
         if self.watcher:
             raise BleakError("Scanner already started")
@@ -230,16 +245,27 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         self.watcher = BluetoothLEAdvertisementWatcher()
         self.watcher.scanning_mode = self._scanning_mode
+        # BlueZ and CoreBluetooth don't allow controlling this and always enabled it, so do the same here
+        self.watcher.allow_extended_advertisements = True
 
         event_loop = asyncio.get_running_loop()
         self._stopped_event = asyncio.Event()
 
-        self._received_token = self.watcher.add_received(
-            lambda s, e: event_loop.call_soon_threadsafe(self._received_handler, s, e)
-        )
-        self._stopped_token = self.watcher.add_stopped(
-            lambda s, e: event_loop.call_soon_threadsafe(self._stopped_handler, s, e)
-        )
+        def on_received(
+            sender: BluetoothLEAdvertisementWatcher,
+            args: BluetoothLEAdvertisementReceivedEventArgs,
+        ) -> None:
+            event_loop.call_soon_threadsafe(self._received_handler, sender, args)
+
+        self._received_token = self.watcher.add_received(on_received)
+
+        def on_stopped(
+            sender: BluetoothLEAdvertisementWatcher,
+            args: BluetoothLEAdvertisementWatcherStoppedEventArgs,
+        ) -> None:
+            event_loop.call_soon_threadsafe(self._stopped_handler, sender, args)
+
+        self._stopped_token = self.watcher.add_stopped(on_stopped)
 
         if self._signal_strength_filter is not None:
             self.watcher.signal_strength_filter = self._signal_strength_filter
@@ -258,7 +284,13 @@ class BleakScannerWinRT(BaseBleakScanner):
         if self.watcher.status != BluetoothLEAdvertisementWatcherStatus.STARTED:
             raise BleakError(f"Unexpected watcher status: {self.watcher.status.name}")
 
+    @override
     async def stop(self) -> None:
+        assert self.watcher
+        assert self._stopped_event
+        assert self._received_token
+        assert self._stopped_token
+
         self.watcher.stop()
 
         if self.watcher.status == BluetoothLEAdvertisementWatcherStatus.STOPPING:
@@ -279,22 +311,3 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._received_token = None
 
         self.watcher = None
-
-    def set_scanning_filter(self, **kwargs) -> None:
-        """Set a scanning filter for the BleakScanner.
-
-        Keyword Args:
-          SignalStrengthFilter (``Windows.Devices.Bluetooth.BluetoothSignalStrengthFilter``): A
-            BluetoothSignalStrengthFilter object used for configuration of Bluetooth
-            LE advertisement filtering that uses signal strength-based filtering.
-          AdvertisementFilter (Windows.Devices.Bluetooth.Advertisement.BluetoothLEAdvertisementFilter): A
-            BluetoothLEAdvertisementFilter object used for configuration of Bluetooth LE
-            advertisement filtering that uses payload section-based filtering.
-
-        """
-        if "SignalStrengthFilter" in kwargs:
-            # TODO: Handle SignalStrengthFilter parameters
-            self._signal_strength_filter = kwargs["SignalStrengthFilter"]
-        if "AdvertisementFilter" in kwargs:
-            # TODO: Handle AdvertisementFilter parameters
-            self._advertisement_filter = kwargs["AdvertisementFilter"]

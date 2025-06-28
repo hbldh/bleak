@@ -27,20 +27,68 @@ In the example files, this is handled in this fashion:
 As stated above, this will however only work the macOS machine that performed
 the scan and thus cached the device as ``243E23AE-4A99-406C-B317-18F1BD7B4CBE``.
 
-There is also no pairing functionality implemented in macOS right now, since it does not seem
-to be any explicit pairing methods in the COre Bluetooth.
+Pairing
+^^^^^^^
+There is no pairing functionality implemented in macOS right now, since it does not seem
+to be any explicit pairing methods in CoreBluetooth.
+
+Instead, macOS will prompt the user the first time a characteristic that requires
+authorization/authentication is accessed. This means that a GATT read or write
+operation could block for a long time waiting for the user to responsed. So
+timeouts should be set accordingly.
+
+Calling the :meth:`bleak.BleakClient.pair` method will raise a ``NotImplementedError``
+on macOS. But setting ``pair=True`` in :class:`bleak.BleakClient` will be silently ignored.
+
+.. _cb-notification-discriminator:
+
+Notifications
+^^^^^^^^^^^^^
+CoreBluetooth does not differentiate between data from a notification and data from a read.
+This can cause confusion in cases where a device may send a notification message on a characteristic
+as a signal that the characteristic needs to be read again.
+
+Bleak can accept a ``notification_discriminator`` callback in the ``cb`` dict parameter that is
+passed to the :meth:`bleak.BleakClient.start_notify` method that can differentiate between these types of data.
+
+.. code-block:: python
+
+    event = asyncio.Event()
+
+    async def notification_handler(char, data):
+        event.set()
+
+    def notification_check_handler(data):
+        # We can identify notifications on this characteristic because they
+        # only contain 1 byte of data. Read responses will have more than
+        # 1 byte.
+        return len(data) == 1
+
+    await client.start_notify(
+        char,
+        notification_handler,
+        cb={"notification_discriminator": notification_check_handler},
+    )
+
+    while True:
+        await event.wait()
+        # We received a notification - prepare to receive another
+        event.clear()
+        # Then read the characteristic to get the full value
+        data = await client.read_gatt_char(char)
+        # Do stuff with data
 
 API
 ---
 
 Scanner
-~~~~~~~
+^^^^^^^
 
 .. automodule:: bleak.backends.corebluetooth.scanner
     :members:
 
 Client
-~~~~~~
+^^^^^^
 
 .. automodule:: bleak.backends.corebluetooth.client
     :members:

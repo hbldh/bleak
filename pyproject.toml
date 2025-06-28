@@ -1,12 +1,21 @@
-[tool.poetry]
+[project]
 name = "bleak"
-version = "0.22.3"
+version = "1.0.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
-authors = ["Henrik Blidh <henrik.blidh@nedomkull.com>"]
+authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
 readme = "README.rst"
-homepage = "https://github.com/hbldh/bleak"
-documentation = "https://bleak.readthedocs.io"
+requires-python = ">=3.9"
+dynamic = ["classifiers", "dependencies"]
+
+[project.urls]
+"Homepage"      = "https://github.com/hbldh/bleak"
+"Documentation" = "https://bleak.readthedocs.io"
+"Changelog"     =  "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst"
+"Support"       =  "https://github.com/hbldh/bleak/discussions"
+"Issues"        =  "https://github.com/hbldh/bleak/issues"
+
+[tool.poetry]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
@@ -16,37 +25,33 @@ classifiers = [
     "Operating System :: Android",
 ]
 
-[tool.poetry.urls]
-"Changelog" =  "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst"
-"Support" =  "https://github.com/hbldh/bleak/discussions"
-"Issues" =  "https://github.com/hbldh/bleak/issues"
-
 [tool.poetry.dependencies]
-python = ">=3.8,<3.14"
-async-timeout = { version = ">= 3.0.0, < 5", python = "<3.11" }
+async-timeout = { version = ">=3.0.0", python = "<3.11" }
 typing-extensions = { version = ">=4.7.0", python = "<3.12" }
-pyobjc-core = { version = "^10.3", markers = "platform_system=='Darwin'" }
-pyobjc-framework-CoreBluetooth = { version = "^10.3", markers = "platform_system=='Darwin'" }
-pyobjc-framework-libdispatch = { version = "^10.3", markers = "platform_system=='Darwin'" }
-bleak-winrt = { version = "^1.2.0", markers = "platform_system=='Windows'", python = "<3.12" }
-"winrt-runtime" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Devices.Enumeration" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Foundation" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Foundation.Collections" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-"winrt-Windows.Storage.Streams" = { version = "^2", markers = "platform_system=='Windows'", python = ">=3.12" }
-dbus-fast = { version = ">=1.83.0, < 3", markers = "platform_system == 'Linux'" }
+pyobjc-core = { version = ">=10.3", markers = "platform_system=='Darwin'" }
+pyobjc-framework-CoreBluetooth = { version = ">=10.3", markers = "platform_system=='Darwin'" }
+pyobjc-framework-libdispatch = { version = ">=10.3", markers = "platform_system=='Darwin'" }
+"winrt-runtime" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Devices.Bluetooth" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Devices.Enumeration" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Foundation" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Foundation.Collections" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Storage.Streams" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
+
+[tool.poetry.group.docs]
+optional = true
 
 [tool.poetry.group.docs.dependencies]
-Sphinx = "^5.1.1"
-sphinx-rtd-theme = "^1.0.0"
-tomli = "^2.0.1"
+Sphinx = { version = ">=8.2.3", python = ">=3.11" }
+sphinx-rtd-theme = { version = ">=3.0.2", python = ">=3.11" }
+tomli = ">=2.2.1"
 
 [tool.poetry.group.lint.dependencies]
 black = ">=24.3,<25.0"
-flake8 = "^5.0.0"
+flake8 = "^7.1.1"
 isort = "^5.13.2"
 
 [tool.poetry.group.test.dependencies]
@@ -55,11 +60,15 @@ pytest-asyncio = "^0.23.7"
 pytest-cov = "^3.0.0 "
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
 py_version=38
-src_paths = ["bleak", "examples", "tests", "typings"]
+src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer"]
+
+[tool.mypy]
+python_version = "3.9"
+disable_error_code = ["import-not-found"]

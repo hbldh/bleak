@@ -14,8 +14,10 @@ import argparse
 import asyncio
 import logging
 import time
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
 
 logger = logging.getLogger(__name__)
 
@@ -24,27 +26,40 @@ class DeviceNotFoundError(Exception):
     pass
 
 
-async def run_ble_client(args: argparse.Namespace, queue: asyncio.Queue):
+class Args(argparse.Namespace):
+    name: Optional[str]
+    address: Optional[str]
+    characteristic: str
+    macos_use_bdaddr: bool
+    services: list[str]
+    debug: bool
+
+
+async def run_ble_client(
+    args: Args, queue: asyncio.Queue[tuple[float, Optional[bytearray]]]
+):
     logger.info("starting scan...")
 
     if args.address:
         device = await BleakScanner.find_device_by_address(
-            args.address, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+            args.address, cb={"use_bdaddr": args.macos_use_bdaddr}
         )
         if device is None:
             logger.error("could not find device with address '%s'", args.address)
             raise DeviceNotFoundError
-    else:
+    elif args.name:
         device = await BleakScanner.find_device_by_name(
-            args.name, cb=dict(use_bdaddr=args.macos_use_bdaddr)
+            args.name, cb={"use_bdaddr": args.macos_use_bdaddr}
         )
         if device is None:
             logger.error("could not find device with name '%s'", args.name)
             raise DeviceNotFoundError
+    else:
+        raise ValueError("Either --name or --address must be provided")
 
     logger.info("connecting to device...")
 
-    async def callback_handler(_, data):
+    async def callback_handler(_: BleakGATTCharacteristic, data: bytearray) -> None:
         await queue.put((time.time(), data))
 
     async with BleakClient(device) as client:
@@ -58,7 +73,7 @@ async def run_ble_client(args: argparse.Namespace, queue: asyncio.Queue):
     logger.info("disconnected")
 
 
-async def run_queue_consumer(queue: asyncio.Queue):
+async def run_queue_consumer(queue: asyncio.Queue[tuple[float, Optional[bytearray]]]):
     logger.info("Starting queue consumer")
 
     while True:
@@ -73,8 +88,8 @@ async def run_queue_consumer(queue: asyncio.Queue):
             logger.info("Received callback data via async queue at %s: %r", epoch, data)
 
 
-async def main(args: argparse.Namespace):
-    queue = asyncio.Queue()
+async def main(args: Args):
+    queue = asyncio.Queue[tuple[float, Optional[bytearray]]]()
     client_task = run_ble_client(args, queue)
     consumer_task = run_queue_consumer(queue)
 
@@ -121,7 +136,7 @@ if __name__ == "__main__":
         help="sets the logging level to debug",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=Args())
 
     log_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(

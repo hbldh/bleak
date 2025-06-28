@@ -119,6 +119,37 @@ crash with an ``ImportError`` similar to::
 To fix the error, change the name of the script to something other than ``bleak.py``.
 
 ----------
+Linux Bugs
+----------
+
+Occasional "Not connected" errors or missing advertisments on Raspberry Pi
+==========================================================================
+
+If you are using the built in WiFi/Bluetooth module on a Raspberry Pi and are
+seeing occasional "Not connected" errors, also manifesting as HCI error 0x3e
+and BlueZ error "Software caused connection abort", when trying to connect to
+a device, it may be due to wifi interference on the chip level. This can also
+cause advertisements to be missed when scanning.
+
+As a test the wifi interface can be disabled using either
+
+.. code-block:: shell
+
+    sudo rfkill block wlan
+
+or
+
+.. code-block:: shell
+
+    sudo nmcli radio wifi off
+
+See `this <https://github.com/project-chip/connectedhomeip/issues/16178>`_ Matter issue
+with similar problems on Raspberry Pi and other devices.
+
+If you need Wi-Fi, you can possibly work around the issue by using a USB
+Bluetooth adapter instead.
+
+----------
 macOS Bugs
 ----------
 
