@@ -519,7 +519,7 @@ class BleakClientWinRT(BaseBleakClient):
                 3. EncryptionAndAuthentication - Pair the device using
                    encryption and authentication.
 
-                .. versionchanged:: unreleased
+                .. versionchanged:: 1.0
                     Issues :class:`DeprecationWarning` if used. The default
                     behavior has changed and this argument should no longer
                     be needed.

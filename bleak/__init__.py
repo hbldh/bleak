@@ -474,7 +474,7 @@ class BleakClient:
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakClient`.
         Added ``backend`` parameter.
 
-    .. versionchanged:: unreleased
+    .. versionchanged:: 1.0
         Added ``pair`` parameter.
     """
 
@@ -560,7 +560,7 @@ class BleakClient:
         Args:
             **kwargs: For backwards compatibility - should not be used.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 1.0
             No longer returns ``True``. Instead, the return type is ``None``.
         """
         await self._backend.connect(self._pair_before_connect, **kwargs)
@@ -568,7 +568,7 @@ class BleakClient:
     async def disconnect(self) -> None:
         """Disconnect from the specified GATT server.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 1.0
             No longer returns ``True``. Instead, the return type is ``None``.
         """
         await self._backend.disconnect()
@@ -582,7 +582,7 @@ class BleakClient:
         that a characteristic that requires authentication is read or written.
         This method may have backend-specific additional keyword arguments.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 1.0
             No longer returns ``True``. Instead, the return type is ``None``.
         """
         await self._backend.pair(*args, **kwargs)
@@ -596,7 +596,7 @@ class BleakClient:
         This method is only available on Windows and Linux and will raise an
         exception on other platforms.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 1.0
             No longer returns ``True``. Instead, the return type is ``None``.
         """
         await self._backend.unpair()
@@ -764,7 +764,7 @@ class BleakClient:
         .. versionchanged:: 0.18
             The first argument of the callback is now a :class:`BleakGATTCharacteristic`
             instead of an ``int``.
-        .. versionchanged:: unreleased
+        .. versionchanged:: 1.0
             Added the ``cb`` parameter.
         """
         if not self.is_connected:
