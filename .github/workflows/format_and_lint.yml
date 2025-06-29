@@ -17,7 +17,7 @@ jobs:
             -   name: Install development dependencies
                 run: pipx run poetry install --only docs,lint
             -   name: Check import sort with isort
-                run: pipx run poetry run isort . --check --diff
+                run: pipx run poetry run isort {.,docs} --check --diff
             -   name: Check code formatting with black
                 run: pipx run poetry run black . --check --diff
             -   name: Lint with flake8
