@@ -64,9 +64,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
-py_version=38
+py_version=39
 src_paths = ["bleak", "examples", "tests"]
-extend_skip = [".buildozer"]
+extend_skip = [".buildozer", "docs"]
 
 [tool.mypy]
 python_version = "3.9"
