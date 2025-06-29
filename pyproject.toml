@@ -26,7 +26,6 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-async-timeout = { version = ">=3.0.0", python = "<3.11" }
 typing-extensions = { version = ">=4.7.0", python = "<3.12" }
 pyobjc-core = { version = ">=10.3", markers = "platform_system=='Darwin'" }
 pyobjc-framework-CoreBluetooth = { version = ">=10.3", markers = "platform_system=='Darwin'" }
@@ -47,7 +46,6 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 Sphinx = { version = ">=8.2.3", python = ">=3.11" }
 sphinx-rtd-theme = { version = ">=3.0.2", python = ">=3.11" }
-tomli = { version = ">=2.2.1", python = "<3.11" }
 
 [tool.poetry.group.lint.dependencies]
 black = ">=24.3,<25.0"

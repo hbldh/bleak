@@ -16,11 +16,7 @@
 import os
 import pathlib
 import sys
-
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
+import tomllib
 
 PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.resolve()
 
