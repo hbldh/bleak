@@ -14,6 +14,19 @@ files = [
 ]
 
 [[package]]
+name = "async-timeout"
+version = "5.0.1"
+description = "Timeout context manager for asyncio programs"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "python_version < \"3.11\""
+files = [
+    {file = "async_timeout-5.0.1-py3-none-any.whl", hash = "sha256:39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c"},
+    {file = "async_timeout-5.0.1.tar.gz", hash = "sha256:d9321a7a3d5a6a5e187e824d2fa0793ce379a202935782d555d6e9d2735677d3"},
+]
+
+[[package]]
 name = "babel"
 version = "2.17.0"
 description = "Internationalization utilities"
@@ -1262,4 +1275,4 @@ all = ["winrt-Windows.Foundation.Collections[all] (==3.1.0)", "winrt-Windows.Fou
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9"
-content-hash = "dfe62edae96b8d02b07d201e5acc6bb981e2740f15b2d1ff5dc273ec13ab1184"
+content-hash = "26e51524733733c0430cebba61666dcf25bbd138ba4269a69fad6de67a41e374"
