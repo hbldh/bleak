@@ -47,7 +47,7 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 Sphinx = { version = ">=8.2.3", python = ">=3.11" }
 sphinx-rtd-theme = { version = ">=3.0.2", python = ">=3.11" }
-tomli = ">=2.2.1"
+tomli = { version = ">=2.2.1", python = "<3.11" }
 
 [tool.poetry.group.lint.dependencies]
 black = ">=24.3,<25.0"

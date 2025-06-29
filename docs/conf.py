@@ -17,7 +17,10 @@ import os
 import pathlib
 import sys
 
-import tomli
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.resolve()
 
@@ -67,7 +70,7 @@ copyright = "2020, Henrik Blidh"
 #
 # The full version, including alpha/beta/rc tags.
 with open(PROJECT_ROOT_DIR / "pyproject.toml", "rb") as f:
-    release = tomli.load(f)["project"]["version"]
+    release = tomllib.load(f)["project"]["version"]
 # The short X.Y version.
 version = ".".join(release.split(".")[:2])
 
