@@ -33,7 +33,7 @@ jobs:
                 run: pipx run poetry install --only main,test
             -   name: Test with pytest
                 run: |
-                    pipx run poetry run pytest tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
+                    pipx run poetry run pytest -v tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
             -   name: Upload pytest test results
                 uses: actions/upload-artifact@v4
                 with:
