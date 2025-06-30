@@ -7,6 +7,7 @@ Wrapper class for Bluetooth LE servers returned from calling
 
 
 from typing import Any, Optional
+from warnings import warn
 
 
 class BLEDevice:
@@ -16,7 +17,7 @@ class BLEDevice:
 
     __slots__ = ("address", "name", "details")
 
-    def __init__(self, address: str, name: Optional[str], details: Any):
+    def __init__(self, address: str, name: Optional[str], details: Any, **kwargs: Any):
         #: The Bluetooth address of the device on this machine (UUID on macOS).
         self.address = address
         #: The operating system name of the device (not necessarily the local name
@@ -24,6 +25,13 @@ class BLEDevice:
         self.name = name
         #: The OS native details required for connecting to the device.
         self.details = details
+
+        if kwargs:
+            warn(
+                "Passing additional arguments for BLEDevice is deprecated and has no effect.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
     def __str__(self):
         return f"{self.address}: {self.name}"

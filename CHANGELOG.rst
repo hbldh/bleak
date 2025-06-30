@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+
+- Restored ``**kwargs`` in ``BLEDevice()`` constructor. Fixes #1783.
+
 `1.0.0`_ (2025-06-28)
 =====================
 
