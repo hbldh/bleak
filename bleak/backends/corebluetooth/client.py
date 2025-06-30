@@ -4,7 +4,7 @@ BLE Client for CoreBluetooth on macOS
 """
 
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, override

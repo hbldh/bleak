@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 import logging
 from typing import Any, Literal, Optional
+from warnings import warn
 
 if sys.version_info < (3, 12):
     from typing_extensions import override
@@ -17,7 +18,7 @@ import objc
 from CoreBluetooth import CBPeripheral
 from Foundation import NSBundle, NSDictionary
 
-from bleak.args.corebluetooth import CBScannerArgs
+from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.utils import cb_uuid_to_str
 from bleak.backends.scanner import (
@@ -28,6 +29,17 @@ from bleak.backends.scanner import (
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
+
+
+def __getattr__(name: str):
+    if name == "CBScannerArgs":
+        warn(
+            "importing CBScannerArgs from bleak.backends.corebluetooth.scanner is deprecated, use bleak.args.corebluetooth instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _CBScannerArgs
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class BleakScannerCoreBluetooth(BaseBleakScanner):
@@ -64,7 +76,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
         *,
-        cb: CBScannerArgs,
+        cb: _CBScannerArgs,
         **kwargs: Any,
     ):
         super(BleakScannerCoreBluetooth, self).__init__(
