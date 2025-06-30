@@ -15,15 +15,33 @@ if TYPE_CHECKING:
 
 import logging
 from collections.abc import Iterable
-from typing import no_type_check
+from typing import Any, no_type_check
+from warnings import warn
 
 from dbus_fast import PropertyAccess
 from dbus_fast.service import ServiceInterface, dbus_property, method
 
-from bleak.args.bluez import OrPatternLike
+from bleak.args.bluez import OrPattern as _OrPattern
+from bleak.args.bluez import OrPatternLike as _OrPatternLike
 from bleak.backends.bluezdbus import defs
 
 logger = logging.getLogger(__name__)
+
+_DEPRECATED: dict[str, Any] = {
+    "OrPattern": _OrPattern,
+    "OrPatternLike": _OrPatternLike,
+}
+
+
+def __getattr__(name: str):
+    if value := _DEPRECATED.get(name):
+        warn(
+            f"importing {name} from bleak.backends.bluezdbus.advertisement_monitor is deprecated, use bleak.args.bluez instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class AdvertisementMonitor(ServiceInterface):
@@ -42,7 +60,7 @@ class AdvertisementMonitor(ServiceInterface):
 
     def __init__(
         self,
-        or_patterns: Iterable[OrPatternLike],
+        or_patterns: Iterable[_OrPatternLike],
     ):
         """
         Args:

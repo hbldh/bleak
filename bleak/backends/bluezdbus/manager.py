@@ -25,11 +25,9 @@ from weakref import WeakKeyDictionary
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
+from bleak.args.bluez import OrPatternLike
 from bleak.backends.bluezdbus import defs
-from bleak.backends.bluezdbus.advertisement_monitor import (
-    AdvertisementMonitor,
-    OrPatternLike,
-)
+from bleak.backends.bluezdbus.advertisement_monitor import AdvertisementMonitor
 from bleak.backends.bluezdbus.defs import (
     Device1,
     GattCharacteristic1,
