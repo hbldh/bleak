@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 import logging
 from collections.abc import Callable, Coroutine
 from typing import Any, Literal, Optional
+from warnings import warn
 
 if sys.version_info < (3, 12):
     from typing_extensions import override
@@ -16,7 +17,8 @@ else:
 
 from dbus_fast import Variant
 
-from bleak.args.bluez import BlueZScannerArgs
+from bleak.args.bluez import BlueZDiscoveryFilters as _BlueZDiscoveryFilters
+from bleak.args.bluez import BlueZScannerArgs as _BlueZScannerArgs
 from bleak.backends.bluezdbus.defs import Device1
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.scanner import (
@@ -27,6 +29,23 @@ from bleak.backends.scanner import (
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
+
+
+_DEPRECATED: dict[str, Any] = {
+    "BlueZDiscoveryFilters": _BlueZDiscoveryFilters,
+    "BlueZScannerArgs": _BlueZScannerArgs,
+}
+
+
+def __getattr__(name: str):
+    if value := _DEPRECATED.get(name):
+        warn(
+            f"importing {name} from bleak.backends.bluezdbus.scanner is deprecated, use bleak.args.bluez instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class BleakScannerBlueZDBus(BaseBleakScanner):
@@ -58,7 +77,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         service_uuids: Optional[list[str]],
         scanning_mode: Literal["active", "passive"],
         *,
-        bluez: BlueZScannerArgs,
+        bluez: _BlueZScannerArgs,
         **kwargs: Any,
     ):
         super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)

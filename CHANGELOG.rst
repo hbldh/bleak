@@ -10,10 +10,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+- Added deprecation warnings for importing ``bleak.args.*`` types from ``bleak.backends.*``.
+
 Fixed
 -----
 
 - Restored ``**kwargs`` in ``BLEDevice()`` constructor. Fixes #1783.
+- Restored importing ``OrPattern`` from ``bleak.backends.bluezdbus.advertisement_monitor``.
+
 
 `1.0.0`_ (2025-06-28)
 =====================

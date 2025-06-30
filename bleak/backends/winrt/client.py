@@ -5,7 +5,6 @@ BLE Client for Windows 10 systems, implemented with WinRT.
 """
 import sys
 from typing import TYPE_CHECKING
-from warnings import warn
 
 if TYPE_CHECKING:
     if sys.platform != "win32":
@@ -18,6 +17,7 @@ from collections.abc import Callable
 from contextvars import Context
 from ctypes import WinError
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
+from warnings import warn
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, override
@@ -69,7 +69,7 @@ from winrt.windows.foundation import (
 from winrt.windows.storage.streams import Buffer as WinBuffer
 
 from bleak import BleakScanner
-from bleak.args.winrt import WinRTClientArgs
+from bleak.args.winrt import WinRTClientArgs as _WinRTClientArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
@@ -80,6 +80,17 @@ from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
 
 logger = logging.getLogger(__name__)
+
+
+def __getattr__(name: str):
+    if name == "WinRTClientArgs":
+        warn(
+            "importing WinRTClientArgs from bleak.backends.winrt.client is deprecated, use bleak.args.winrt instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _WinRTClientArgs
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class _Result(Protocol):
@@ -152,7 +163,7 @@ class BleakClientWinRT(BaseBleakClient):
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
         *,
-        winrt: WinRTClientArgs,
+        winrt: _WinRTClientArgs,
         **kwargs: Any,
     ):
         super(BleakClientWinRT, self).__init__(address_or_ble_device, **kwargs)
