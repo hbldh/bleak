@@ -56,6 +56,16 @@ be added to the android application in the buildozer.spec file, and are also
 requested from the user at runtime.  This means that enabling bluetooth may not
 succeed if the user does not accept permissions.
 
+Specific features for the Android backend
+-----------------------------------------
+
+Client
+~~~~~~
+ - The constructor keyword ``auto_connect`` which can be set to ``True`` or ``False``.
+Whether to directly connect to the remote device ``False`` or to automatically
+connect as soon as the remote device becomes available ``True``.
+The default value is ``False``.
+
 API
 ---
 
