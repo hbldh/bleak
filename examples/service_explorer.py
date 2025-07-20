@@ -65,7 +65,7 @@ async def main(args: Args):
             for char in service.characteristics:
                 if "read" in char.properties:
                     try:
-                        value = await client.read_gatt_char(char.handle)
+                        value = await client.read_gatt_char(char)
                         extra = f", Value: {value}"
                     except Exception as e:
                         extra = f", Error: {e}"
@@ -84,7 +84,7 @@ async def main(args: Args):
 
                 for descriptor in char.descriptors:
                     try:
-                        value = await client.read_gatt_descriptor(descriptor.handle)
+                        value = await client.read_gatt_descriptor(descriptor)
                         logger.info("    [Descriptor] %s, Value: %r", descriptor, value)
                     except Exception as e:
                         logger.error("    [Descriptor] %s, Error: %s", descriptor, e)
