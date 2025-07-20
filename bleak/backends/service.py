@@ -10,7 +10,7 @@ from uuid import UUID
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.exc import BleakError
+from bleak.exc import BleakError, BleakUUIDNonUnique
 from bleak.uuids import normalize_uuid_str, uuidstr_to_str
 
 logger = logging.getLogger(__name__)
@@ -142,7 +142,7 @@ class BleakGATTServiceCollection:
         if isinstance(specifier, int):
             return self.services.get(specifier)
 
-        uuid = normalize_uuid_str(str(specifier))
+        uuid: str = normalize_uuid_str(str(specifier))
 
         x = list(
             filter(
@@ -152,9 +152,7 @@ class BleakGATTServiceCollection:
         )
 
         if len(x) > 1:
-            raise BleakError(
-                "Multiple Services with this UUID, refer to your desired service by the `handle` attribute instead."
-            )
+            raise BleakUUIDNonUnique(uuid)
 
         return x[0] if x else None
 
@@ -181,7 +179,7 @@ class BleakGATTServiceCollection:
         if isinstance(specifier, int):
             return self.characteristics.get(specifier)
 
-        uuid = normalize_uuid_str(str(specifier))
+        uuid: str = normalize_uuid_str(str(specifier))
 
         # Assume uuid usage.
         x = list(
@@ -192,9 +190,7 @@ class BleakGATTServiceCollection:
         )
 
         if len(x) > 1:
-            raise BleakError(
-                "Multiple Characteristics with this UUID, refer to your desired characteristic by the `handle` attribute instead."
-            )
+            raise BleakUUIDNonUnique(uuid)
 
         return x[0] if x else None
 

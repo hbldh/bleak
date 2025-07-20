@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+- Added new exception ``BleakUUIDNonUnique`` which is raised when a service or characteristic UUID is not unique.
+
 `1.0.1`_ (2025-06-30)
 =====================
 

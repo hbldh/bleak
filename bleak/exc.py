@@ -21,10 +21,30 @@ class BleakCharacteristicNotFoundError(BleakError):
     def __init__(self, char_specifier: Union[int, str, uuid.UUID]) -> None:
         """
         Args:
-            characteristic (str): handle or UUID of the characteristic which was not found
+            char_specifier (int | str | UUID): handle or UUID of the characteristic which was not found
         """
         super().__init__(f"Characteristic {char_specifier} was not found!")
         self.char_specifier = char_specifier
+
+
+class BleakUUIDNonUnique(BleakError):
+    """
+    Exception which is raised if a device does not support a characteristic.
+
+    .. versionadded: 1.0.2
+    """
+
+    specifier: Union[str, uuid.UUID]
+
+    def __init__(self, specifier: Union[str, uuid.UUID]) -> None:
+        """
+        Args:
+            specifier (str | UUID): UUID of the characteristic or service which is not unique
+        """
+        super().__init__(
+            f"Multiple elements with UUID {specifier}, refer to your desired characteristic by the `handle` attribute instead."
+        )
+        self.char_specifier = specifier
 
 
 class BleakDeviceNotFoundError(BleakError):
