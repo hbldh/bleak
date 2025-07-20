@@ -65,7 +65,7 @@ async def main(args: Args):
             for char in service.characteristics:
                 if "read" in char.properties:
                     try:
-                        value = await client.read_gatt_char(char.uuid)
+                        value = await client.read_gatt_char(char.handle)
                         extra = f", Value: {value}"
                     except Exception as e:
                         extra = f", Error: {e}"
