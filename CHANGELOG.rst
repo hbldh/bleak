@@ -10,6 +10,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+- Added Bitchat Bluetooth Mesh Service and Characteristic UUIDs, `Referred to official Bitchat repo <https://github.com/permissionlesstech/bitchat>`_.
+
 `1.0.1`_ (2025-06-30)
 =====================
 
