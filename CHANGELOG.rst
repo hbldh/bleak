@@ -12,6 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
+- Added support for Pythonista iOS app backend.
 - Added ``BleakClient.name`` property for getting the peripheral's name. Fixes #1802.
 
 Fixed
