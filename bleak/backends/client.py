@@ -223,6 +223,19 @@ def get_platform_client_backend_type() -> type[BaseBleakClient]:
 
         return BleakClientBlueZDBus
 
+    if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
+        # Must be resolved before checking for "Darwin" (macOS),
+        # as both the Pythonista app for iOS and macOS
+        # return "Darwin" from platform.system()
+        try:
+            from bleak_pythonista import BleakClientPythonistaCB
+
+            return BleakClientPythonistaCB
+        except ImportError as e:
+            raise ImportError(
+                "Ensure you have `bleak-pythonista` package installed."
+            ) from e
+
     if platform.system() == "Darwin":
         from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 
