@@ -1172,6 +1172,9 @@ uuid128_dict: dict[str, str] = {
     "ef680500-9b35-4933-9b10-52ffa9740042": "Thingy Sound Service",
     "ef680300-9b35-4933-9b10-52ffa9740042": "Thingy User Interface Service",
     "b35d7da6-eed4-4d59-8f89-f6573edea967": "URI Beacon Config (V1)",
+    # Bitchat
+    "f47b5e2d-4a9e-4c5a-9b3f-8e1d2c3a4b5c": "Bitchat Bluetooth Mesh Service",
+    "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d": "Bitchat Bluetooth Mesh Characteristic",
 }
 
 
