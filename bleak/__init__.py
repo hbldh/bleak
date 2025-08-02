@@ -7,6 +7,9 @@ from __future__ import annotations
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
+from bleak.backends.circuitpython import patches
+patches.apply_patches()
+
 import asyncio
 import functools
 import inspect
@@ -17,22 +20,25 @@ import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
+from typing import TYPE_CHECKING
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
-else:
-    from collections.abc import Buffer
+if sys.implementation.name == "cpython":
+    if sys.version_info < (3, 12):
+        from typing_extensions import Buffer
+    else:
+        from collections.abc import Buffer
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-    from typing_extensions import Never, Self, Unpack, assert_never
-else:
-    from asyncio import timeout as async_timeout
-    from typing import Never, Self, Unpack, assert_never
+    if sys.version_info < (3, 11):
+        from async_timeout import timeout as async_timeout
+        from typing_extensions import Never, Self, Unpack, assert_never
+    else:
+        from asyncio import timeout as async_timeout
+        from typing import Never, Self, Unpack, assert_never
 
-from bleak.args.bluez import BlueZScannerArgs
-from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
-from bleak.args.winrt import WinRTClientArgs
+if TYPE_CHECKING:
+    from bleak.args.bluez import BlueZScannerArgs
+    from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
+    from bleak.args.winrt import WinRTClientArgs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, get_platform_client_backend_type
 from bleak.backends.descriptor import BleakGATTDescriptor
@@ -50,17 +56,18 @@ from bleak.uuids import normalize_uuid_str
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
-if bool(os.environ.get("BLEAK_LOGGING", False)):
-    FORMAT = "%(asctime)-15s %(name)-8s %(threadName)s %(levelname)s: %(message)s"
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(logging.Formatter(fmt=FORMAT))
-    _logger.addHandler(handler)
-    _logger.setLevel(logging.DEBUG)
+if sys.implementation.name == "cpython":
+    if bool(os.environ.get("BLEAK_LOGGING", False)):
+        FORMAT = "%(asctime)-15s %(name)-8s %(threadName)s %(levelname)s: %(message)s"
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(logging.Formatter(fmt=FORMAT))
+        _logger.addHandler(handler)
+        _logger.setLevel(logging.DEBUG)
 
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class BleakScanner:
@@ -170,7 +177,7 @@ class BleakScanner:
 
         .. versionadded:: 0.21
         """
-        devices = asyncio.Queue[tuple[BLEDevice, AdvertisementData]]()
+        devices: asyncio.Queue[tuple[BLEDevice, AdvertisementData]] = asyncio.Queue()
 
         unregister_callback = self._backend.register_detection_callback(
             lambda bd, ad: devices.put_nowait((bd, ad))
@@ -181,7 +188,7 @@ class BleakScanner:
         finally:
             unregister_callback()
 
-    class ExtraArgs(TypedDict, total=False):
+    class ExtraArgs(TypedDict):
         """
         Keyword args from :class:`~bleak.BleakScanner` that can be passed to
         other convenience methods.
@@ -372,7 +379,7 @@ class BleakScanner:
                     async for bd, ad in scanner.advertisement_data():
                         if filterfunc(bd, ad):
                             return bd
-                    assert_never(cast(Never, "advertisement_data() should never stop"))
+                    # assert_never(cast(Never, "advertisement_data() should never stop"))
             except asyncio.TimeoutError:
                 return None
 

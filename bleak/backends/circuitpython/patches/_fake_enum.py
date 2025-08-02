@@ -1,0 +1,2 @@
+Enum = str
+IntEnum = int
