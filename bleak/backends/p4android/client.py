@@ -281,7 +281,7 @@ class BleakClientP4Android(BaseBleakClient):
                     descriptor = BleakGATTDescriptor(
                         java_descriptor,
                         characteristic.handle + 1 + descriptor_index,
-                        self.obj.getUuid().toString(),
+                        java_descriptor.getUuid().toString(),
                         characteristic,
                     )
                     services.add_descriptor(descriptor)
