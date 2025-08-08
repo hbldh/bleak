@@ -511,6 +511,14 @@ class BleakClientWinRT(BaseBleakClient):
 
     @property
     @override
+    def name(self) -> str:
+        """See :meth:`bleak.BleakClient.name`."""
+        if self._requester is None:
+            raise BleakError("Not connected")
+        return self._requester.name
+
+    @property
+    @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         return self._session.max_pdu_size
