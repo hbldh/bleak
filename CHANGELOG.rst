@@ -10,9 +10,12 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+- Added ``BleakClient.name`` property for getting the peripheral's name. Fixes #1802.
+
 Fixed
 -----
-
 - Fixed ``BleakClient.connect()`` on Android when service characteristics have descriptors. Fixes #1803.
 
 `1.0.1`_ (2025-06-30)

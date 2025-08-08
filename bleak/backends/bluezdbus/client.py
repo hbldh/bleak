@@ -79,6 +79,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
+        self._device_info: Optional[dict[str, Any]]
+
         # Backend specific, D-Bus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
             self._device_path = address_or_ble_device.details["path"]
@@ -665,6 +667,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         adapter_path = await self._get_adapter_path()
         bluez_address = self.address.upper().replace(":", "_")
         return f"{adapter_path}/dev_{bluez_address}"
+
+    @property
+    @override
+    def name(self) -> str:
+        """See :meth:`bleak.BleakClient.name`."""
+        if self._device_info is None:
+            raise BleakError("Not connected")
+        return self._device_info["Alias"]
 
     @property
     @override

@@ -165,6 +165,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @property
     @override
+    def name(self) -> str:
+        """Get the name of the connected peripheral"""
+        if self._peripheral is None:
+            raise BleakError("Not connected")
+        return self._peripheral.name()
+
+    @property
+    @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
         # Use type CBCharacteristicWriteWithoutResponse to get maximum write

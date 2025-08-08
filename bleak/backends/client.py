@@ -52,6 +52,13 @@ class BaseBleakClient(abc.ABC):
             "disconnected_callback"
         )
 
+    # NB: this is not marked as @abc.abstractmethod because that would break
+    # 3rd-party backends. We might change this in the future to make it required.
+    @property
+    def name(self) -> str:
+        """See :meth:`bleak.BleakClient.name`."""
+        raise NotImplementedError
+
     @property
     @abc.abstractmethod
     def mtu_size(self) -> int:
