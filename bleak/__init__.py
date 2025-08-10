@@ -513,6 +513,20 @@ class BleakClient:
     # device info
 
     @property
+    def name(self) -> str:
+        """
+        Gets a human-readable name for the peripheral device.
+
+        The name can be somewhat OS-dependent. It is usually the name provided
+        by the standard Device Name characteristic, if present or the name
+        provided by the advertising data. If neither is available, it will be
+        a Bluetooth address separated with dashes (``-``) instead of colons
+        (``:``) (or a UUID on Apple devices). It may also be possible to override
+        the device name using the OS's Bluetooth settings.
+        """
+        return self._backend.name
+
+    @property
     def address(self) -> str:
         """
         Gets the Bluetooth address of this device (UUID on macOS).

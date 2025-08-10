@@ -57,7 +57,7 @@ async def main(args: Args):
         # Give the user plenty of time to enter a PIN code if paring is required.
         timeout=90 if args.pair else 10,
     ) as client:
-        logger.info("connected")
+        logger.info("connected to %s (%s)", client.name, client.address)
 
         for service in client.services:
             logger.info("[Service] %s", service)
@@ -65,7 +65,7 @@ async def main(args: Args):
             for char in service.characteristics:
                 if "read" in char.properties:
                     try:
-                        value = await client.read_gatt_char(char.uuid)
+                        value = await client.read_gatt_char(char)
                         extra = f", Value: {value}"
                     except Exception as e:
                         extra = f", Error: {e}"
@@ -84,7 +84,7 @@ async def main(args: Args):
 
                 for descriptor in char.descriptors:
                     try:
-                        value = await client.read_gatt_descriptor(descriptor.handle)
+                        value = await client.read_gatt_descriptor(descriptor)
                         logger.info("    [Descriptor] %s, Value: %r", descriptor, value)
                     except Exception as e:
                         logger.error("    [Descriptor] %s, Error: %s", descriptor, e)

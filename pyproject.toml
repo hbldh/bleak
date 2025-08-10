@@ -1,6 +1,6 @@
 [project]
 name = "bleak"
-version = "1.0.1"
+version = "1.1.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
@@ -40,6 +40,9 @@ pyobjc-framework-libdispatch = { version = ">=10.3", markers = "platform_system=
 "winrt-Windows.Foundation.Collections" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Storage.Streams" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
+
+[project.optional-dependencies]
+pythonista = ["bleak-pythonista>=0.1.1"]
 
 [tool.poetry.group.docs]
 optional = true

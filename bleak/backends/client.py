@@ -52,6 +52,13 @@ class BaseBleakClient(abc.ABC):
             "disconnected_callback"
         )
 
+    # NB: this is not marked as @abc.abstractmethod because that would break
+    # 3rd-party backends. We might change this in the future to make it required.
+    @property
+    def name(self) -> str:
+        """See :meth:`bleak.BleakClient.name`."""
+        raise NotImplementedError
+
     @property
     @abc.abstractmethod
     def mtu_size(self) -> int:
@@ -215,6 +222,19 @@ def get_platform_client_backend_type() -> type[BaseBleakClient]:
         from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 
         return BleakClientBlueZDBus
+
+    if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
+        # Must be resolved before checking for "Darwin" (macOS),
+        # as both the Pythonista app for iOS and macOS
+        # return "Darwin" from platform.system()
+        try:
+            from bleak_pythonista import BleakClientPythonistaCB
+
+            return BleakClientPythonistaCB
+        except ImportError as e:
+            raise ImportError(
+                "Ensure you have `bleak-pythonista` package installed."
+            ) from e
 
     if platform.system() == "Darwin":
         from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth

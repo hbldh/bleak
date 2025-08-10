@@ -10,6 +10,19 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`1.1.0`_ (2025-08-10)
+=====================
+
+Added
+-----
+- Added support for Pythonista iOS app backend.
+- Added ``BleakClient.name`` property for getting the peripheral's name. Fixes #1802.
+
+Fixed
+-----
+- Fixed ``BleakClient.connect()`` on Android when service characteristics have descriptors. Fixes #1803.
+- Fixed disconnect callback not called on Windows when Bleak initiates disconnection.
+
 `1.0.1`_ (2025-06-30)
 =====================
 
@@ -1098,7 +1111,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v1.0.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v1.1.0...develop
+.. _1.1.0: https://github.com/hbldh/bleak/compare/v1.0.1...v1.1.0
 .. _1.0.1: https://github.com/hbldh/bleak/compare/v1.0.0...v1.0.1
 .. _1.0.0: https://github.com/hbldh/bleak/compare/v0.22.3...v1.0.0
 .. _0.22.3: https://github.com/hbldh/bleak/compare/v0.22.2...v0.22.3
