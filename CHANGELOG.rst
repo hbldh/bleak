@@ -18,6 +18,7 @@ Added
 Fixed
 -----
 - Fixed ``BleakClient.connect()`` on Android when service characteristics have descriptors. Fixes #1803.
+- Fixed disconnect callback not called on Windows when Bleak initiates disconnection.
 
 `1.0.1`_ (2025-06-30)
 =====================

@@ -475,6 +475,17 @@ class BleakClientWinRT(BaseBleakClient):
             gatt_char.remove_value_changed(event_handler_token)
         self._notification_callbacks.clear()
 
+        # Since we can't wait for the session close event (it may never come)
+        # we need to synthesize the disconnect event
+        if self._session and self._session_status_changed_token:
+            self._session.remove_session_status_changed(
+                self._session_status_changed_token
+            )
+            self._session_status_changed_token = None
+
+            if self._disconnected_callback:
+                self._disconnected_callback()
+
         # Dispose all service components that we have requested and created.
         if self.services:
             # HACK: sometimes GattDeviceService.Close() hangs forever, so we
