@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+- Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
+
+
 `1.1.0`_ (2025-08-10)
 =====================
 
