@@ -10,15 +10,12 @@ import logging
 import warnings
 from typing import Literal, Optional
 
+from typing_extensions import override
+
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
 else:
     from asyncio import timeout as async_timeout
-
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
 
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions

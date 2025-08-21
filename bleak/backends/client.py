@@ -7,13 +7,9 @@ import abc
 import os
 import platform
 import sys
-from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
-else:
-    from collections.abc import Buffer
+from typing_extensions import Buffer
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor

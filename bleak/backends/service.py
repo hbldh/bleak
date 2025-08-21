@@ -4,8 +4,7 @@
 Gatt Service Collection class and interface class for the Bleak representation of a GATT Service.
 """
 import logging
-from collections.abc import Iterator
-from typing import Any, Optional, Union, cast
+from typing import Any, Iterator, Optional, Union, cast
 from uuid import UUID
 
 from bleak.backends.characteristic import BleakGATTCharacteristic

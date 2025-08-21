@@ -10,11 +10,7 @@ import logging
 from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
+from typing_extensions import override
 from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,

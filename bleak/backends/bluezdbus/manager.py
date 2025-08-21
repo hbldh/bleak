@@ -18,8 +18,7 @@ import contextlib
 import logging
 import os
 from collections import defaultdict
-from collections.abc import Callable, Coroutine, MutableMapping
-from typing import Any, NamedTuple, Optional, cast
+from typing import Any, Callable, Coroutine, MutableMapping, NamedTuple, Optional, cast
 from weakref import WeakKeyDictionary
 
 from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants

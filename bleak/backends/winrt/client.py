@@ -13,24 +13,27 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
-from collections.abc import Callable
 from contextvars import Context
 from ctypes import WinError
-from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    Protocol,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 from warnings import warn
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
-else:
-    from collections.abc import Buffer
-    from typing import override
+from typing_extensions import Buffer, Self, assert_never, override
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
-    from typing_extensions import Self, assert_never
 else:
     from asyncio import timeout as async_timeout
-    from typing import Self, assert_never
 
 from winrt.system import Object
 from winrt.windows.devices.bluetooth import (

@@ -2,8 +2,6 @@
 
 """Top-level package for bleak."""
 
-from __future__ import annotations
-
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
@@ -14,22 +12,24 @@ import logging
 import os
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
+from typing import (
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+    overload,
+)
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
-else:
-    from collections.abc import Buffer
+from typing_extensions import Buffer, Never, Self, Unpack, assert_never
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-    from typing_extensions import Never, Self, Unpack, assert_never
-else:
-    from asyncio import timeout as async_timeout
-    from typing import Never, Self, Unpack, assert_never
-
+from bleak._compat import async_timeout
 from bleak.args.bluez import BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
@@ -481,7 +481,7 @@ class BleakClient:
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
+        disconnected_callback: Optional[Callable[["BleakClient"], None]] = None,
         services: Optional[Iterable[str]] = None,
         *,
         timeout: float = 10.0,

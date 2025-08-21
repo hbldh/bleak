@@ -4,8 +4,7 @@ import inspect
 import os
 import platform
 import sys
-from collections.abc import Callable, Coroutine, Hashable
-from typing import Any, NamedTuple, Optional
+from typing import Any, Callable, Coroutine, Hashable, NamedTuple, Optional
 
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError

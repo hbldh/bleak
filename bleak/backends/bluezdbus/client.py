@@ -13,15 +13,10 @@ import asyncio
 import logging
 import os
 import warnings
-from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
-else:
-    from collections.abc import Buffer
-    from typing import override
+from typing_extensions import Buffer, override
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout

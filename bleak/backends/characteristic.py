@@ -6,8 +6,7 @@ Interface class for the Bleak representation of a GATT Characteristic
 from __future__ import annotations
 
 import enum
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 from uuid import UUID
 
 from bleak.assigned_numbers import CharacteristicPropertyName

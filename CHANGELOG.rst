@@ -10,6 +10,26 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+- `build_and_test.yml` workflow_dispatch trigger added
+- Updated `typing_extensions` dependency platform flags
+- Simplified conditional imports from `typing` with alternatives from `typing_extensions`
+  that resolves it under the hood, so we need no control it manually
+- Legacy `collections.abc` imports replaced with `typing_extensions`
+  cause current required `typing_extensions>=4.7` version already supports all them
+- Removed redundant (legacy) imports from `__future__`
+- Undefined annotations fixed
+
+Added
+-----
+- Added `_compat.py` module to simplify future support for other python implementations, like `pypy` or `circuitpython`
+
+Added
+-----
+- Added support for Pythonista iOS app backend.
+- Added ``BleakClient.name`` property for getting the peripheral's name. Fixes #1802.
+
 Fixed
 -----
 - Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
