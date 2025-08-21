@@ -244,9 +244,10 @@ class BlueZManager:
             # dbus-next will destroy the underlying file descriptors
             # when the previous one is closed in its finalizer.
             bus = MessageBus(bus_type=BusType.SYSTEM, auth=get_dbus_authenticator())
-            await bus.connect()
 
             try:
+                await bus.connect()
+
                 # Add signal listeners
 
                 bus.add_message_handler(self._parse_msg)
