@@ -43,6 +43,13 @@ dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
 
 [project.optional-dependencies]
 pythonista = ["bleak-pythonista>=0.1.1"]
+circuit-dev = [
+    "adafruit-circuitpython-logging>=5.5.5",
+    "circuitpython_functools>=2.0.2.post0",
+    "adafruit-circuitpython-typing>=1.12.1",
+    "adafruit-circuitpython-ble>=8.3.5",
+    "circuitpython-stubs>=9.2.8",
+]
 
 [tool.poetry.group.docs]
 optional = true
