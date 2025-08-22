@@ -1,14 +1,6 @@
 import sys
-from typing import (
-    Any,
-    Iterator,
-    Mapping,
-    NewType,
-    Optional,
-    Sequence,
-    TypeVar,
-    overload,
-)
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, NewType, Optional, TypeVar, overload
 
 from typing_extensions import Buffer, Self
 

@@ -14,7 +14,8 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on Linux"
 
 import logging
-from typing import Any, Iterable, no_type_check
+from collections.abc import Iterable
+from typing import Any, no_type_check
 from warnings import warn
 
 from dbus_fast import PropertyAccess

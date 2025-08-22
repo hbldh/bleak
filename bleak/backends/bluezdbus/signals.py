@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -142,7 +144,7 @@ class MatchRules:
             self.args = None
 
     @staticmethod
-    def parse(rules: str) -> "MatchRules":
+    def parse(rules: str) -> MatchRules:
         return MatchRules(**dict(r.split("=") for r in rules.split(",")))
 
     def __str__(self) -> str:

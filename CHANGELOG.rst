@@ -13,12 +13,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Changed
 -------
 - `build_and_test.yml` workflow_dispatch trigger added
-- Updated `typing_extensions` dependency platform flags
 - Simplified conditional imports from `typing` with alternatives from `typing_extensions`
   that resolves it under the hood, so we need no control it manually
-- Legacy `collections.abc` imports replaced with `typing_extensions`
-  cause current required `typing_extensions>=4.7` version already supports all them
-- Removed redundant (legacy) imports from `__future__`
 - Undefined annotations fixed
 
 Added

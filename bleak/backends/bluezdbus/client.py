@@ -13,8 +13,9 @@ import asyncio
 import logging
 import os
 import warnings
+from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 from typing_extensions import Buffer, override
 

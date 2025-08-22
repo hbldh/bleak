@@ -13,19 +13,10 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
+from collections.abc import Callable
 from contextvars import Context
 from ctypes import WinError
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    Protocol,
-    Sequence,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
 from warnings import warn
 
 from typing_extensions import Buffer, Self, assert_never, override

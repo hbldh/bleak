@@ -4,7 +4,8 @@ CoreBluetooth backend arguments
 -------------------------------
 """
 
-from typing import Callable, Optional, TypedDict
+from collections.abc import Callable
+from typing import Optional, TypedDict
 
 
 class CBScannerArgs(TypedDict, total=False):

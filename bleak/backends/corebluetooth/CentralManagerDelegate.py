@@ -14,14 +14,15 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import threading
-from typing import Any, Callable, Optional
-
-from typing_extensions import Self
+from collections.abc import Callable
+from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import Self
 else:
     from asyncio import timeout as async_timeout
+    from typing import Self
 
 import objc
 from CoreBluetooth import (

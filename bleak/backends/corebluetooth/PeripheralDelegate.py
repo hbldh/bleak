@@ -6,6 +6,8 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 
 """
 
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -16,7 +18,8 @@ if TYPE_CHECKING:
 import asyncio
 import itertools
 import logging
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -53,7 +56,7 @@ class PeripheralDelegate(NSObject):
 
     def initWithPeripheral_(
         self, peripheral: CBPeripheral
-    ) -> Optional["PeripheralDelegate"]:
+    ) -> Optional[PeripheralDelegate]:
         """macOS init function for NSObject"""
         self = objc.super(PeripheralDelegate, self).init()
 
@@ -613,7 +616,7 @@ class PeripheralDelegate(NSObject):
             future.set_result(rssi)
 
     def peripheral_didReadRSSI_error_(
-        self: "PeripheralDelegate",
+        self: PeripheralDelegate,
         peripheral: CBPeripheral,
         rssi: int,
         error: Optional[NSError],

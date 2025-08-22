@@ -2,6 +2,8 @@
 
 """Top-level package for bleak."""
 
+from __future__ import annotations
+
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
@@ -12,20 +14,9 @@ import logging
 import os
 import sys
 import uuid
+from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import (
-    Any,
-    AsyncGenerator,
-    Awaitable,
-    Callable,
-    Iterable,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
 
 from typing_extensions import Buffer, Never, Self, Unpack, assert_never
 

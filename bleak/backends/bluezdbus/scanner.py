@@ -6,7 +6,8 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on Linux"
 
 import logging
-from typing import Any, Callable, Coroutine, Literal, Optional
+from collections.abc import Callable, Coroutine
+from typing import Any, Literal, Optional
 from warnings import warn
 
 from dbus_fast import Variant

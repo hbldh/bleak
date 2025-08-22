@@ -7,7 +7,8 @@ import abc
 import os
 import platform
 import sys
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any, Optional, Union
 
 from typing_extensions import Buffer
 
