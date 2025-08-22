@@ -49,7 +49,7 @@ from bleak.exc import BleakDBusError, BleakDeviceNotFoundError, BleakError
 logger = logging.getLogger(__name__)
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class BleakClientBlueZDBus(BaseBleakClient):
