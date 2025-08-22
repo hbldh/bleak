@@ -15,13 +15,9 @@ import uuid
 import warnings
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
+from typing_extensions import override
 
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic

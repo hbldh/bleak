@@ -14,12 +14,6 @@ import asyncio
 import logging
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
-else:
-    from collections.abc import Buffer
-    from typing import override
-
 from CoreBluetooth import (
     CBUUID,
     CBCharacteristicWriteWithoutResponse,
@@ -28,6 +22,7 @@ from CoreBluetooth import (
     CBPeripheralStateConnected,
 )
 from Foundation import NSArray, NSData
+from typing_extensions import Buffer, override
 
 from bleak import BleakScanner
 from bleak.args.corebluetooth import CBStartNotifyArgs

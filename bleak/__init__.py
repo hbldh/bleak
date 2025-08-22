@@ -18,18 +18,9 @@ from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
-else:
-    from collections.abc import Buffer
+from typing_extensions import Buffer, Never, Self, Unpack, assert_never
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-    from typing_extensions import Never, Self, Unpack, assert_never
-else:
-    from asyncio import timeout as async_timeout
-    from typing import Never, Self, Unpack, assert_never
-
+from bleak._compat import async_timeout
 from bleak.args.bluez import BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
@@ -60,7 +51,7 @@ if bool(os.environ.get("BLEAK_LOGGING", False)):
 
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class BleakScanner:
@@ -170,7 +161,7 @@ class BleakScanner:
 
         .. versionadded:: 0.21
         """
-        devices = asyncio.Queue[tuple[BLEDevice, AdvertisementData]]()
+        devices: asyncio.Queue[tuple[BLEDevice, AdvertisementData]] = asyncio.Queue()
 
         unregister_callback = self._backend.register_detection_callback(
             lambda bd, ad: devices.put_nowait((bd, ad))
@@ -481,7 +472,7 @@ class BleakClient:
     def __init__(
         self,
         address_or_ble_device: Union[BLEDevice, str],
-        disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
+        disconnected_callback: Optional[Callable[["BleakClient"], None]] = None,
         services: Optional[Iterable[str]] = None,
         *,
         timeout: float = 10.0,

@@ -11,7 +11,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class AdvertisementData(NamedTuple):
