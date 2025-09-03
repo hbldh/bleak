@@ -19,6 +19,7 @@ import logging
 import os
 from collections import defaultdict
 from collections.abc import Callable, Coroutine, MutableMapping
+from functools import partial
 from typing import Any, NamedTuple, Optional, cast
 from weakref import WeakKeyDictionary
 
@@ -711,7 +712,10 @@ class BlueZManager:
                     char_props["Flags"],
                     # "MTU" property was added in BlueZ 5.62, otherwise fall
                     # back to minimum MTU according to Bluetooth spec.
-                    lambda: char_props.get("MTU", 23) - 3,
+                    partial(
+                        lambda char_props_: char_props_.get("MTU", 23) - 3,
+                        char_props,
+                    ),
                     service,
                 )
 
