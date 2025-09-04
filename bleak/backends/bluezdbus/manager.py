@@ -712,6 +712,10 @@ class BlueZManager:
                     char_props["Flags"],
                     # "MTU" property was added in BlueZ 5.62, otherwise fall
                     # back to minimum MTU according to Bluetooth spec.
+                    # Because `char_props` is a loop varialbe, we cannot bind
+                    # the lambda closure directly to it; instead, we let
+                    # `functools.partial` create a new function frame to
+                    # close over at each iteration.
                     partial(
                         lambda char_props_: char_props_.get("MTU", 23) - 3,
                         char_props,
