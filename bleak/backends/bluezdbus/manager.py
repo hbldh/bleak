@@ -155,6 +155,12 @@ _ADVERTISING_DATA_PROPERTIES = {
 }
 
 
+def get_max_write_without_response_size(char_props: GattCharacteristic1) -> int:
+    # "MTU" property was added in BlueZ 5.62, otherwise fall
+    # back to minimum MTU according to Bluetooth spec.
+    return char_props.get("MTU", 23) - 3
+
+
 class BlueZManager:
     """
     BlueZ D-Bus object manager.
@@ -710,16 +716,11 @@ class BlueZManager:
                     extract_service_handle_from_path(char_path),
                     char_props["UUID"],
                     char_props["Flags"],
-                    # "MTU" property was added in BlueZ 5.62, otherwise fall
-                    # back to minimum MTU according to Bluetooth spec.
-                    # Because `char_props` is a loop varialbe, we cannot bind
-                    # the lambda closure directly to it; instead, we let
-                    # `functools.partial` create a new function frame to
-                    # close over at each iteration.
-                    partial(
-                        lambda char_props_: char_props_.get("MTU", 23) - 3,
-                        char_props,
-                    ),
+                    # Because `char_props` is a loop varialbe, we cannot
+                    # directly bind a closure (i.e. lambda) to it;
+                    # instead, we let `functools.partial` create a new
+                    # function frame to close over at each iteration.
+                    partial(get_max_write_without_response_size, char_props),
                     service,
                 )
 
