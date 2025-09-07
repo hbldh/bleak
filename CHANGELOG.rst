@@ -10,6 +10,15 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`1.1.1`_ (2025-09-07)
+=====================
+
+Fixed
+-----
+- Fixed D-Bus connection leak on connection failure in BlueZ backend.
+- Fixed characteristic's max write without response size using wrong characteristic's value. Fixes #1820.
+- Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
+
 `1.1.0`_ (2025-08-10)
 =====================
 
@@ -1111,7 +1120,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v1.1.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v1.1.1...develop
+.. _1.1.1: https://github.com/hbldh/bleak/compare/v1.1.0...v1.1.1
 .. _1.1.0: https://github.com/hbldh/bleak/compare/v1.0.1...v1.1.0
 .. _1.0.1: https://github.com/hbldh/bleak/compare/v1.0.0...v1.0.1
 .. _1.0.0: https://github.com/hbldh/bleak/compare/v0.22.3...v1.0.0

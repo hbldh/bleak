@@ -61,6 +61,8 @@ class BleakClientP4Android(BaseBleakClient):
         self.__gatt = None
         self.__mtu = 23
 
+        self.__callbacks = None
+
     # Connectivity methods
 
     @override

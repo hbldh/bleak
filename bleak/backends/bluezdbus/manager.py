@@ -19,6 +19,7 @@ import logging
 import os
 from collections import defaultdict
 from collections.abc import Callable, Coroutine, MutableMapping
+from functools import partial
 from typing import Any, NamedTuple, Optional, cast
 from weakref import WeakKeyDictionary
 
@@ -154,6 +155,12 @@ _ADVERTISING_DATA_PROPERTIES = {
 }
 
 
+def get_max_write_without_response_size(char_props: GattCharacteristic1) -> int:
+    # "MTU" property was added in BlueZ 5.62, otherwise fall
+    # back to minimum MTU according to Bluetooth spec.
+    return char_props.get("MTU", 23) - 3
+
+
 class BlueZManager:
     """
     BlueZ D-Bus object manager.
@@ -244,9 +251,12 @@ class BlueZManager:
             # dbus-next will destroy the underlying file descriptors
             # when the previous one is closed in its finalizer.
             bus = MessageBus(bus_type=BusType.SYSTEM, auth=get_dbus_authenticator())
-            await bus.connect()
 
             try:
+                # We need to call bus.disconnect() even when bus.connect() fails in
+                # order to release the file handles created in the constructor.
+                await bus.connect()
+
                 # Add signal listeners
 
                 bus.add_message_handler(self._parse_msg)
@@ -709,9 +719,11 @@ class BlueZManager:
                     extract_service_handle_from_path(char_path),
                     char_props["UUID"],
                     char_props["Flags"],
-                    # "MTU" property was added in BlueZ 5.62, otherwise fall
-                    # back to minimum MTU according to Bluetooth spec.
-                    lambda: char_props.get("MTU", 23) - 3,
+                    # Because `char_props` is a loop varialbe, we cannot
+                    # directly bind a closure (i.e. lambda) to it;
+                    # instead, we let `functools.partial` create a new
+                    # function frame to close over at each iteration.
+                    partial(get_max_write_without_response_size, char_props),
                     service,
                 )
 
