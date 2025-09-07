@@ -253,6 +253,8 @@ class BlueZManager:
             bus = MessageBus(bus_type=BusType.SYSTEM, auth=get_dbus_authenticator())
 
             try:
+                # We need to call bus.disconnect() even when bus.connect() fails in
+                # order to release the file handles created in the constructor.
                 await bus.connect()
 
                 # Add signal listeners
