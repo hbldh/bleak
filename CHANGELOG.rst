@@ -12,9 +12,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Fixed
 -----
-- Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
 - Fixed D-Bus connection leak on connection failure in BlueZ backend.
-
+- Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
+- Fixed a bug causing a characteristic's max write without response size potentially being misrepresented. Fixes #1820.
 
 `1.1.0`_ (2025-08-10)
 =====================
