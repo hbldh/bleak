@@ -21,7 +21,10 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
 
-NotifyCallback = Callable[[bytearray], None]
+if sys.implementation.name == "circuitpython":  # FIXME: possible to use TYPE_CHECKING flag ?
+    NotifyCallback = type(Callable)
+else:
+    NotifyCallback = Callable[[bytearray], None]
 
 
 class BaseBleakClient(abc.ABC):
@@ -213,6 +216,11 @@ def get_platform_client_backend_type() -> type[BaseBleakClient]:
     """
     Gets the platform-specific :class:`BaseBleakClient` type.
     """
+    if sys.implementation.name == "circuitpython":
+        from bleak.backends.circuitpython.client import BleakClientCircuitPython
+
+        return BleakClientCircuitPython
+
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         from bleak.backends.p4android.client import BleakClientP4Android
 

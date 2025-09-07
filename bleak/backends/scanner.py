@@ -10,10 +10,12 @@ from typing import Any, NamedTuple, Optional
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
+from bleak.backends.circuitpython._advertisement_data import circuit_advertisement_data_patch
+
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
-
+@circuit_advertisement_data_patch
 class AdvertisementData(NamedTuple):
     """
     Wrapper around the advertisement data that each platform returns upon discovery
@@ -80,18 +82,23 @@ class AdvertisementData(NamedTuple):
         return f"AdvertisementData({', '.join(kwargs)})"
 
 
-AdvertisementDataCallback = Callable[
-    [BLEDevice, AdvertisementData],
-    Optional[Coroutine[Any, Any, None]],
-]
+if sys.implementation.name == "circuitpython":  # FIXME: possible to use TYPE_CHECKING flag ?
+    AdvertisementDataCallback = type(Callable)
+else:
+    AdvertisementDataCallback = Callable[
+        [BLEDevice, AdvertisementData],
+        Optional[Coroutine[Any, Any, None]],
+    ]
 """
 Type alias for callback called when advertisement data is received.
 """
-
-AdvertisementDataFilter = Callable[
-    [BLEDevice, AdvertisementData],
-    bool,
-]
+if sys.implementation.name == "circuitpython":  # FIXME: possible to use TYPE_CHECKING flag ?
+    AdvertisementDataFilter = type(Callable)
+else:
+    AdvertisementDataFilter = Callable[
+        [BLEDevice, AdvertisementData],
+        bool,
+    ]
 """
 Type alias for an advertisement data filter function.
 
@@ -165,10 +172,10 @@ class BaseBleakScanner(abc.ABC):
         if not callable(callback):
             raise TypeError(error_text)
 
-        handler_signature = inspect.signature(callback)
-
-        if len(handler_signature.parameters) != 2:
-            raise TypeError(error_text)
+        # handler_signature = inspect.signature(callback)
+        #
+        # if len(handler_signature.parameters) != 2:
+        #     raise TypeError(error_text)
 
         if inspect.iscoroutinefunction(callback):
 
@@ -286,6 +293,11 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """
+    if sys.implementation.name == "circuitpython":
+        from bleak.backends.circuitpython.scanner import BleakScannerCircuitPython
+
+        return BleakScannerCircuitPython
+
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         from bleak.backends.p4android.scanner import BleakScannerP4Android
 
