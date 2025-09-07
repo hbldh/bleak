@@ -17,11 +17,7 @@ from collections.abc import Callable
 from contextlib import AsyncExitStack
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
-else:
-    from collections.abc import Buffer
-    from typing import override
+from typing_extensions import Buffer, override
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -49,7 +45,7 @@ from bleak.exc import BleakDBusError, BleakDeviceNotFoundError, BleakError
 logger = logging.getLogger(__name__)
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class BleakClientBlueZDBus(BaseBleakClient):

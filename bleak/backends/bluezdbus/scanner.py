@@ -10,12 +10,8 @@ from collections.abc import Callable, Coroutine
 from typing import Any, Literal, Optional
 from warnings import warn
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
 from dbus_fast import Variant
+from typing_extensions import override
 
 from bleak.args.bluez import BlueZDiscoveryFilters as _BlueZDiscoveryFilters
 from bleak.args.bluez import BlueZScannerArgs as _BlueZScannerArgs

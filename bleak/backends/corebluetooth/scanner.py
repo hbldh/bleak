@@ -9,14 +9,10 @@ import logging
 from typing import Any, Literal, Optional
 from warnings import warn
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
 import objc
 from CoreBluetooth import CBPeripheral
 from Foundation import NSBundle, NSDictionary
+from typing_extensions import override
 
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
