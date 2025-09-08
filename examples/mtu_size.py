@@ -11,8 +11,8 @@ from bleak.backends.scanner import AdvertisementData, BLEDevice
 CHAR_UUID = "00000000-0000-0000-0000-000000000000"
 
 
-async def main():
-    queue = asyncio.Queue[BLEDevice]()
+async def main() -> None:
+    queue: asyncio.Queue[BLEDevice] = asyncio.Queue()
 
     def callback(device: BLEDevice, adv: AdvertisementData) -> None:
         # can use advertising data to filter here

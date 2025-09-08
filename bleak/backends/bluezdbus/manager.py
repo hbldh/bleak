@@ -176,7 +176,7 @@ class BlueZManager:
         self._properties: dict[str, dict[str, dict[str, Any]]] = {}
 
         # set of available adapters for quick lookup
-        self._adapters = set[str]()
+        self._adapters: set[str] = set()
 
         # The BlueZ APIs only maps children to parents, so we need to keep maps
         # to quickly find the children of a parent D-Bus object.
