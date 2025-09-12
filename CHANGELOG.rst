@@ -21,6 +21,7 @@ Changed
 
 Fixed
 -----
+* Fixed file handle leak in BlueZ backend when D-Bus connection is lost and re-established.
 * Fixed crash in CoreBluetooth backend if an ObjC delegate callback is called after the asyncio run loop stops.
 * Fixed possible deadlock when starting scanning on Windows when Bluetooth is turned off.
 * Fixed "Bluetooth device is turned off" Exception on macOS, when a Bluetooth permission request popup is shown to the user by the OS.
