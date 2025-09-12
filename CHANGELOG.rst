@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+- Fixed file handle leak in BlueZ backend when D-Bus connection is lost and re-established.
+
 `1.1.1`_ (2025-09-07)
 =====================
 
