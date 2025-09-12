@@ -361,6 +361,11 @@ class BlueZManager:
                 bus.disconnect()
                 raise
 
+            if self._bus:
+                # Even if we are disconnected, still need to call this to
+                # release file handles.
+                self._bus.disconnect()
+
             # Everything is setup, so save the bus
             self._bus = bus
 
