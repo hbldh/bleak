@@ -360,19 +360,19 @@ class BleakClientWinRT(BaseBleakClient):
                 )
             )
 
-            # If the session is already active, we need to set the event since
-            # the session_status_changed event won't fire. This happens, e.g.,
-            # when pairing before connecting which causes the device to already
-            # be connected.
-            if self._session.session_status == GattSessionStatus.ACTIVE:
-                event.set()
-
             self._max_pdu_size_changed_token = self._session.add_max_pdu_size_changed(
                 max_pdu_size_changed_handler
             )
 
             services_changed_event = asyncio.Event()
             self._services_changed_events.append(services_changed_event)
+
+            # If the session is already active, we need to set the event since
+            # the session_status_changed event won't fire. This happens, e.g.,
+            # when pairing before connecting which causes the device to already
+            # be connected.
+            if self._session.session_status == GattSessionStatus.ACTIVE:
+                event.set()
 
             try:
                 # Windows does not support explicitly connecting to a device.
