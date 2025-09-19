@@ -23,6 +23,7 @@ Changed
 
 Fixed
 -----
+* Fixed potential race condition causing timeout while connecting in WinRT backend.
 * Fixed file handle leak in BlueZ backend when D-Bus connection is lost and re-established.
 * Fixed crash in CoreBluetooth backend if an ObjC delegate callback is called after the asyncio run loop stops.
 * Fixed possible deadlock when starting scanning on Windows when Bluetooth is turned off.
