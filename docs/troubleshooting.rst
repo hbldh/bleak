@@ -167,10 +167,8 @@ If you see a crash similar to this::
     Termination Reason:    Namespace TCC, Code 0
     This app has crashed because it attempted to access privacy-sensitive data without a usage description. The app's Info.plist must contain an NSBluetoothAlwaysUsageDescription key with a string value explaining to the user how the app uses this data.
 
-It is not a problem with Bleak. It is a problem with your terminal application.
-
-Ideally, the terminal application should be fixed by adding ``NSBluetoothAlwaysUsageDescription``
-to the ``Info.plist`` file (`example <https://github.com/gnachman/iTerm2/pull/457/commits/626068e026ffb958242034129a1974ff87b21a32>`_).
+It is not a problem with Bleak. It is a problem with your application. The application has to add
+``NSBluetoothAlwaysUsageDescription`` to the ``Info.plist`` file. See :ref:`cb-permissions` for more details.
 
 It is also possible to manually add the app to the list of Bluetooth apps in
 the *Privacy* settings in the macOS *System Preferences*.
@@ -178,9 +176,9 @@ the *Privacy* settings in the macOS *System Preferences*.
 .. image:: images/macos-privacy-bluetooth.png
 
 If the app is already in the list but the checkbox for Bluetooth is disabled,
-you will get the a ``BleakError``: "BLE is not authorized - check macOS privacy settings".
-instead of crashing with ``SIGABRT``, in which case you need to check the box
-to allow Bluetooth for the app that is running Python.
+you will get the a ``BleakPermissionError`` instead of crashing with ``SIGABRT``,
+in which case you need to check the box to allow Bluetooth for the app that is 
+running Python.
 
 
 No devices found when scanning on macOS 12

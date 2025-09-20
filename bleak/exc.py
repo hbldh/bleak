@@ -9,6 +9,14 @@ class BleakError(Exception):
     pass
 
 
+class BleakPermissionError(Exception):
+    """
+    Exception which is raised if the access to the bluetooth peripheral is denied.
+    """
+
+    pass
+
+
 class BleakCharacteristicNotFoundError(BleakError):
     """
     Exception which is raised if a device does not support a characteristic.

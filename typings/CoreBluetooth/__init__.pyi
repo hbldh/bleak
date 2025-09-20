@@ -11,6 +11,7 @@ from libdispatch import dispatch_queue_t
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...
+    def authorization(self) -> CBManagerAuthorization: ...
 
 TCBCentralManager = TypeVar("TCBCentralManager", bound=CBCentralManager)
 
@@ -76,6 +77,13 @@ CBManagerStateResetting: CBManagerState
 CBManagerStateUnauthorized: CBManagerState
 CBManagerStateUnknown: CBManagerState
 CBManagerStateUnsupported: CBManagerState
+
+CBManagerAuthorization = NewType("CBManagerAuthorization", int)
+
+CBManagerAuthorizationAllowedAlways: CBManagerAuthorization
+CBManagerAuthorizationDenied: CBManagerAuthorization
+CBManagerAuthorizationNotDetermined: CBManagerAuthorization
+CBManagerAuthorizationRestricted: CBManagerAuthorization
 
 CBConnectionEvent = NewType("CBConnectionEvent", int)
 

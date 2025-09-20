@@ -10,6 +10,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+- Raise new ``BleakPermissionError`` on macOS when the bluetooth permission are denied by the user.
+
+Fixed
+-----
+- Fixed "Bluetooth device is turned off" Exception on macOS, when a bluetooth permission request popup is shown to the user by the OS.
+
 `1.1.1`_ (2025-09-07)
 =====================
 

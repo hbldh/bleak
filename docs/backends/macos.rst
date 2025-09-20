@@ -40,6 +40,42 @@ timeouts should be set accordingly.
 Calling the :meth:`bleak.BleakClient.pair` method will raise a ``NotImplementedError``
 on macOS. But setting ``pair=True`` in :class:`bleak.BleakClient` will be silently ignored.
 
+
+.. _cb-permissions:
+
+Permissions
+^^^^^^^^^^^
+To use bluetooth in an bundled application you have to make sure, that `NSBluetoothAlwaysUsageDescription <https://developer.apple.com/documentation/BundleResources/Information-Property-List/NSBluetoothAlwaysUsageDescription>`_
+is set in your ``Info.plist``. For example this has to look like:
+
+.. code-block::
+
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Some description why your app needs bluetooth access</string>
+
+When using `briefcase <https://briefcase.readthedocs.io/en/stable/>`_ to package your application, 
+you have to add the following to your ``pyproject.toml`` to create that entry in the ``Info.plist``:
+
+.. code-block::
+
+    [tool.briefcase.app.YOUR_APP_NAME.macOS]
+    info."NSBluetoothAlwaysUsageDescription" = "Some description why your app needs bluetooth access"
+
+Additional to this, the user has to grant the bluetooth permission to the application. When
+the application currently has no permission the OS will automatically create a popup window and
+ask the user for permission. This happens when the ``BleakScanner.start()`` is called for the
+first time.
+
+.. image:: ../images/macos-permission-request.png
+    :scale: 40%
+
+When the users allow the the bluetooth access, all ``bleak`` features can be used normally.
+
+When the user don't allow it, a ``BleakPermissionError`` will raised every time Bleak is accessed.
+An re-request of the bluetooth permissions is not possible programmatically. This is only possible
+via the macOS system settings. To create a nice user experience the application can catch the
+``BleakPermissionError`` and guide the user to ``System Settings → Privacy & Security → Bluetooth``.
+
 .. _cb-notification-discriminator:
 
 Notifications
