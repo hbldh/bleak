@@ -256,7 +256,7 @@ class CentralManagerDelegate(NSObject):
         elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
 
-        self._did_update_state_event.set()
+        self.event_loop.call_soon_threadsafe(self._did_update_state_event.set)
 
     @objc.python_method
     def did_discover_peripheral(
