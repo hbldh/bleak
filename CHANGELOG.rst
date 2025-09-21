@@ -18,6 +18,10 @@ Fixed
 -----
 - Fixed "Bluetooth device is turned off" Exception on macOS, when a bluetooth permission request popup is shown to the user by the OS.
 
+Removed
+-------
+- Removed support for macOS < 10.15.
+
 `1.1.1`_ (2025-09-07)
 =====================
 
