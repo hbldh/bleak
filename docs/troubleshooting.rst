@@ -176,7 +176,7 @@ the *Privacy* settings in the macOS *System Preferences*.
 .. image:: images/macos-privacy-bluetooth.png
 
 If the app is already in the list but the checkbox for Bluetooth is disabled,
-you will get the a ``BleakPermissionError`` instead of crashing with ``SIGABRT``,
+you will get a :class:`BleakBluetoothPermissionError` instead of crashing with ``SIGABRT``,
 in which case you need to check the box to allow Bluetooth for the app that is 
 running Python.
 

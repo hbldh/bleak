@@ -61,9 +61,9 @@ you have to add the following to your ``pyproject.toml`` to create that entry in
     [tool.briefcase.app.YOUR_APP_NAME.macOS]
     info."NSBluetoothAlwaysUsageDescription" = "Some description why your app needs bluetooth access"
 
-Additional to this, the user has to grant the bluetooth permission to the application. When
+In addition to this, the user has to grant the Bluetooth permission to the application. When
 the application currently has no permission the OS will automatically create a popup window and
-ask the user for permission. This happens when the ``BleakScanner.start()`` is called for the
+ask the user for permission. This happens when Bluetooth is used by the application for the
 first time.
 
 .. image:: ../images/macos-permission-request.png
@@ -71,10 +71,11 @@ first time.
 
 When the users allow the the bluetooth access, all ``bleak`` features can be used normally.
 
-When the user don't allow it, a ``BleakPermissionError`` will raised every time Bleak is accessed.
-An re-request of the bluetooth permissions is not possible programmatically. This is only possible
-via the macOS system settings. To create a nice user experience the application can catch the
-``BleakPermissionError`` and guide the user to ``System Settings → Privacy & Security → Bluetooth``.
+If the user doesn't allow it, a :class:`BleakBluetoothPermissionError` will raised every time
+Bluetooth is accessed. An re-request of the bluetooth permissions is not possible programmatically.
+This is only possible via the macOS system settings. To create a nice user experience the application
+can catch the :class:`BleakBluetoothPermissionError` and guide the user to ``System Settings → Privacy & Security → 
+Bluetooth``.
 
 .. _cb-notification-discriminator:
 

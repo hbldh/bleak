@@ -48,7 +48,11 @@ from Foundation import (
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
-from bleak.exc import BleakError, BleakPermissionError
+from bleak.exc import (
+    BleakBluetoothPermissionError,
+    BleakError,
+    BluetoothPermissionErrorReason,
+)
 
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
@@ -58,7 +62,12 @@ DisconnectCallback = Callable[[], None]
 
 
 class CentralManagerDelegate(NSObject):
-    """macOS conforming python class for managing the CentralManger for BLE"""
+    """
+    macOS conforming python class for managing the CentralManger for BLE
+
+    Before this object can be used, the `wait_until_ready` method has to be
+    called. This can take a while, when the OS asks the user for permissions.
+    """
 
     ___pyobjc_protocols__ = [CBCentralManagerDelegate]
 
@@ -104,7 +113,7 @@ class CentralManagerDelegate(NSObject):
         # According to CoreBluetooth docs, it is not valid to call CBCentral
         # methods until the centralManagerDidUpdateState_() delegate method
         # is called and the current state is CBManagerStatePoweredOn.
-        # Wait until the callback occure. This normally should not take too long,
+        # Wait until the callback occurs. This normally should not take too long,
         # but if the app currently has no permission to access the bluetooth peripheral,
         # there is automatically a dialog shown by the OS. The user has to accept or deny
         # the bluetooth access. This may take infinite time until the user clicks something.
@@ -115,17 +124,20 @@ class CentralManagerDelegate(NSObject):
 
         if self.central_manager.state() == CBManagerStateUnauthorized:
             if self.central_manager.authorization() == CBManagerAuthorizationDenied:
-                raise BleakPermissionError(
-                    "BLE access is denied by the user for the current application. Check macOS privacy settings."
+                raise BleakBluetoothPermissionError(
+                    "BLE access is denied by the user for the current application. Check macOS privacy settings.",
+                    BluetoothPermissionErrorReason.Denied,
                 )
 
             if self.central_manager.authorization() == CBManagerAuthorizationRestricted:
-                raise BleakPermissionError(
-                    "BLE access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction."
+                raise BleakBluetoothPermissionError(
+                    "BLE access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction.",
+                    BluetoothPermissionErrorReason.Restricted,
                 )
 
-            raise BleakPermissionError(
-                "BLE is not authorized - check macOS privacy settings"
+            raise BleakBluetoothPermissionError(
+                "BLE is not authorized - check macOS privacy settings",
+                BluetoothPermissionErrorReason.Unknown,
             )
 
         if self.central_manager.state() != CBManagerStatePoweredOn:

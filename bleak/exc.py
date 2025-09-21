@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import enum
 import uuid
 from typing import Any, Optional, Union
 
@@ -9,12 +10,25 @@ class BleakError(Exception):
     pass
 
 
-class BleakPermissionError(Exception):
+class BluetoothPermissionErrorReason(enum.Enum):
+    # The bluetooth access was denied explicitly by the user.
+    Denied = enum.auto()
+
+    # The bluetooth access is restricted, possibly due to active restrictions such as parental controls.
+    Restricted = enum.auto()
+
+    # The bluetooth access was denied for an unknown reason
+    Unknown = enum.auto()
+
+
+class BleakBluetoothPermissionError(BleakError):
     """
-    Exception which is raised if the access to the bluetooth peripheral is denied.
+    Exception which is raised if the Bluetooth access is denied.
     """
 
-    pass
+    def __init__(self, msg: str, reason: BluetoothPermissionErrorReason) -> None:
+        super().__init__(msg)
+        self.reason = reason
 
 
 class BleakCharacteristicNotFoundError(BleakError):
