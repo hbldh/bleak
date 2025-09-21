@@ -93,6 +93,10 @@ class CentralManagerDelegate(NSObject):
             self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
         )
 
+        self.central_manager.addObserver_forKeyPath_options_context_(
+            self, "isScanning", NSKeyValueObservingOptionNew, 0
+        )
+
         self._did_start_scanning_event: Optional[asyncio.Event] = None
         self._did_stop_scanning_event: Optional[asyncio.Event] = None
 
@@ -142,10 +146,6 @@ class CentralManagerDelegate(NSObject):
 
         if self.central_manager.state() != CBManagerStatePoweredOn:
             raise BleakError("Bluetooth device is turned off")
-
-        self.central_manager.addObserver_forKeyPath_options_context_(
-            self, "isScanning", NSKeyValueObservingOptionNew, 0
-        )
 
     @objc.python_method
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
