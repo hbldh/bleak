@@ -49,9 +49,9 @@ from Foundation import (
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
 from bleak.exc import (
-    BleakBluetoothPermissionError,
+    BleakBluetoothNotAvailableError,
+    BleakBluetoothNotAvailableReason,
     BleakError,
-    BluetoothPermissionErrorReason,
 )
 
 logger = logging.getLogger(__name__)
@@ -123,29 +123,34 @@ class CentralManagerDelegate(NSObject):
         # the bluetooth access. This may take infinite time until the user clicks something.
         await self._did_update_state_event.wait()
 
-        if self.central_manager.state() == CBManagerStateUnsupported:
-            raise BleakError("BLE is unsupported")
-
-        if self.central_manager.state() == CBManagerStateUnauthorized:
-            if self.central_manager.authorization() == CBManagerAuthorizationDenied:
-                raise BleakBluetoothPermissionError(
-                    "BLE access is denied by the user for the current application. Check macOS privacy settings.",
-                    BluetoothPermissionErrorReason.Denied,
-                )
-
-            if self.central_manager.authorization() == CBManagerAuthorizationRestricted:
-                raise BleakBluetoothPermissionError(
-                    "BLE access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction.",
-                    BluetoothPermissionErrorReason.Restricted,
-                )
-
-            raise BleakBluetoothPermissionError(
-                "BLE is not authorized - check macOS privacy settings",
-                BluetoothPermissionErrorReason.Unknown,
+        state = self.central_manager.state()
+        if state == CBManagerStateUnsupported:
+            raise BleakBluetoothNotAvailableError(
+                "BLE is unsupported",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
             )
-
-        if self.central_manager.state() != CBManagerStatePoweredOn:
-            raise BleakError("Bluetooth device is turned off")
+        elif state == CBManagerStateUnauthorized:
+            authorization = self.central_manager.authorization()
+            if authorization == CBManagerAuthorizationDenied:
+                raise BleakBluetoothNotAvailableError(
+                    "BLE access is denied by the user for the current application. Check macOS privacy settings.",
+                    BleakBluetoothNotAvailableReason.DENIED_BY_USER,
+                )
+            elif authorization == CBManagerAuthorizationRestricted:
+                raise BleakBluetoothNotAvailableError(
+                    "BLE access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction.",
+                    BleakBluetoothNotAvailableReason.DENIED_BY_SYSTEM,
+                )
+            else:
+                raise BleakBluetoothNotAvailableError(
+                    "BLE is not authorized - check macOS privacy settings",
+                    BleakBluetoothNotAvailableReason.DENIED_BY_UNKNOWN,
+                )
+        elif state != CBManagerStatePoweredOn:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth device is turned off",
+                BleakBluetoothNotAvailableReason.POWERED_OFF,
+            )
 
     @objc.python_method
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:

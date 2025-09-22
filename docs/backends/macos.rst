@@ -71,10 +71,10 @@ first time.
 
 When the users allow the the bluetooth access, all ``bleak`` features can be used normally.
 
-If the user doesn't allow it, a :class:`BleakBluetoothPermissionError` will raised every time
+If the user doesn't allow it, a :class:`BleakBluetoothNotAvailableError` will raised every time
 Bluetooth is accessed. An re-request of the bluetooth permissions is not possible programmatically.
 This is only possible via the macOS system settings. To create a nice user experience the application
-can catch the :class:`BleakBluetoothPermissionError` and guide the user to ``System Settings → Privacy & Security → 
+can catch the :class:`BleakBluetoothNotAvailableError` and guide the user to ``System Settings → Privacy & Security → 
 Bluetooth``.
 
 .. _cb-notification-discriminator:

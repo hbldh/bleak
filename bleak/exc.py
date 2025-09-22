@@ -10,25 +10,49 @@ class BleakError(Exception):
     pass
 
 
-class BluetoothPermissionErrorReason(enum.Enum):
-    # The bluetooth access was denied explicitly by the user.
-    Denied = enum.auto()
-
-    # The bluetooth access is restricted, possibly due to active restrictions such as parental controls.
-    Restricted = enum.auto()
-
-    # The bluetooth access was denied for an unknown reason
-    Unknown = enum.auto()
-
-
-class BleakBluetoothPermissionError(BleakError):
+class BleakBluetoothNotAvailableReason(enum.Enum):
+    NO_BLUETOOTH = enum.auto()
     """
-    Exception which is raised if the Bluetooth access is denied.
+    The system does not support Bluetooth. I.e. there is no Bluetooth radio.
     """
 
-    def __init__(self, msg: str, reason: BluetoothPermissionErrorReason) -> None:
-        super().__init__(msg)
-        self.reason = reason
+    POWERED_OFF = enum.auto()
+    """
+    Bluetooth is not currently available because the radio is turned off.
+    """
+
+    DENIED_BY_USER = enum.auto()
+    """
+    The user denied permission for the app to use Bluetooth when prompted.
+    """
+
+    DENIED_BY_SYSTEM = enum.auto()
+    """
+    Using Bluetooth was denied by the system. E.g. because of a system administrator policy.
+    """
+
+    DENIED_BY_UNKNOWN = enum.auto()
+    """
+    Permission to use Bluetooth was denied for an unknown reason.
+    """
+
+    UNKNOWN = enum.auto()
+    """
+    Bluetooth is not available for an unknown reason.
+    """
+
+
+class BleakBluetoothNotAvailableError(BleakError):
+    """
+    Exception which is raised if the Bluetooth access is not available for some reason.
+    """
+
+    def __init__(self, msg: str, reason: BleakBluetoothNotAvailableReason) -> None:
+        super().__init__(msg, reason)
+
+    @property
+    def reason(self) -> BleakBluetoothNotAvailableReason:
+        return self.args[1]
 
 
 class BleakCharacteristicNotFoundError(BleakError):
