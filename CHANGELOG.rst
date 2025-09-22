@@ -12,7 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Changed
 -------
-- Raise new ``BleakPermissionError`` on macOS when the bluetooth permission are denied by the user.
+- Raise new ``BleakBluetoothNotAvailableError`` on macOS when bluetooth is not supported, turned off or the bluetooth permission are denied.
 
 Fixed
 -----
