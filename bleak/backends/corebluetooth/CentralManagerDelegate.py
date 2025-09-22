@@ -118,9 +118,9 @@ class CentralManagerDelegate(NSObject):
         # methods until the centralManagerDidUpdateState_() delegate method
         # is called and the current state is CBManagerStatePoweredOn.
         # Wait until the callback occurs. This normally should not take too long,
-        # but if the app currently has no permission to access the bluetooth peripheral,
+        # but if the app currently has no permission to access the Bluetooth peripheral,
         # there is automatically a dialog shown by the OS. The user has to accept or deny
-        # the bluetooth access. This may take infinite time until the user clicks something.
+        # the Bluetooth access. This may take infinite time until the user clicks something.
         await self._did_update_state_event.wait()
 
         state = self.central_manager.state()
