@@ -663,7 +663,7 @@ class BleakClient:
             The read data.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the read operation failed.
         """
@@ -712,7 +712,7 @@ class BleakClient:
                 property, which is why an explicit argument is encouraged.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the write operation failed.
 
@@ -771,7 +771,7 @@ class BleakClient:
                 CoreBluetooth specific arguments.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the start notification operation failed.
 
@@ -813,7 +813,7 @@ class BleakClient:
                 BleakGATTCharacteristic object representing it.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the stop notification operation failed.
 
