@@ -65,8 +65,8 @@ class CentralManagerDelegate(NSObject):
     """
     macOS conforming python class for managing the CentralManger for BLE
 
-    Before this object can be used, the `wait_until_ready` method has to be
-    called. This can take a while, when the OS asks the user for permissions.
+    Before this object can be used, the :method:`wait_until_ready` method has to
+    be called. This can take a while, when the OS asks the user for permissions.
     """
 
     ___pyobjc_protocols__ = [CBCentralManagerDelegate]
@@ -126,30 +126,40 @@ class CentralManagerDelegate(NSObject):
         state = self.central_manager.state()
         if state == CBManagerStateUnsupported:
             raise BleakBluetoothNotAvailableError(
-                "BLE is unsupported",
+                "Bluetooth is unsupported",
                 BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
             )
         elif state == CBManagerStateUnauthorized:
             authorization = self.central_manager.authorization()
             if authorization == CBManagerAuthorizationDenied:
                 raise BleakBluetoothNotAvailableError(
-                    "BLE access is denied by the user for the current application. Check macOS privacy settings.",
+                    "Bluetooth access is denied by the user for the current application. Check macOS privacy settings.",
                     BleakBluetoothNotAvailableReason.DENIED_BY_USER,
                 )
             elif authorization == CBManagerAuthorizationRestricted:
                 raise BleakBluetoothNotAvailableError(
-                    "BLE access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction.",
+                    "Bluetooth access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction.",
                     BleakBluetoothNotAvailableReason.DENIED_BY_SYSTEM,
                 )
             else:
                 raise BleakBluetoothNotAvailableError(
-                    "BLE is not authorized - check macOS privacy settings",
+                    "Bluetooth is not authorized for an unknown reason. Check macOS privacy settings.",
                     BleakBluetoothNotAvailableReason.DENIED_BY_UNKNOWN,
                 )
-        elif state != CBManagerStatePoweredOn:
+        elif state == CBManagerStatePoweredOff:
             raise BleakBluetoothNotAvailableError(
                 "Bluetooth device is turned off",
                 BleakBluetoothNotAvailableReason.POWERED_OFF,
+            )
+        elif state == CBManagerStateResetting:
+            raise BleakBluetoothNotAvailableError(
+                "Connection to the Bluetooth system service was lost. Currently trying to reconnect...",
+                BleakBluetoothNotAvailableReason.UNKNOWN,
+            )
+        elif state != CBManagerStatePoweredOn:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth state is unknwon",
+                BleakBluetoothNotAvailableReason.UNKNOWN,
             )
 
     @objc.python_method
