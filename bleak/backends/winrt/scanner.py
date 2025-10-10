@@ -54,7 +54,7 @@ class RawAdvData(NamedTuple):
     Platform-specific advertisement data.
 
     Windows does not combine advertising data with type SCAN_RSP with other
-    advertising data like other platforms, so se have to do it ourselves.
+    advertising data like other platforms, so we have to do it ourselves.
     """
 
     adv: Optional[BluetoothLEAdvertisementReceivedEventArgs]
