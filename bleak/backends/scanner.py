@@ -1,12 +1,10 @@
 import abc
 import asyncio
 import inspect
-import os
-import platform
-import sys
 from collections.abc import Callable, Coroutine, Hashable
 from typing import Any, NamedTuple, Optional
 
+from bleak.backends import BleakBackend, get_backend
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
@@ -286,20 +284,18 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """
-    if os.environ.get("P4A_BOOTSTRAP") is not None:
+    backend = get_backend()
+    if backend == BleakBackend.P4Android:
         from bleak.backends.p4android.scanner import BleakScannerP4Android
 
         return BleakScannerP4Android
 
-    if platform.system() == "Linux":
+    if backend == BleakBackend.BlueZDBus:
         from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 
         return BleakScannerBlueZDBus
 
-    if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
-        # Must be resolved before checking for "Darwin" (macOS),
-        # as both the Pythonista app for iOS and macOS
-        # return "Darwin" from platform.system()
+    if backend == BleakBackend.PythonistaCB:
         try:
             from bleak_pythonista import BleakScannerPythonistaCB
 
@@ -309,14 +305,14 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
                 "Ensure you have `bleak-pythonista` package installed."
             ) from e
 
-    if platform.system() == "Darwin":
+    if backend == BleakBackend.CoreBluetooth:
         from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 
         return BleakScannerCoreBluetooth
 
-    if platform.system() == "Windows":
+    if backend == BleakBackend.WinRT:
         from bleak.backends.winrt.scanner import BleakScannerWinRT
 
         return BleakScannerWinRT
 
-    raise BleakError(f"Unsupported platform: {platform.system()}")
+    raise BleakError(f"Unsupported backend: {backend}")

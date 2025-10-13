@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+- Added ``bleak.backends.get_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
+
 `1.1.1`_ (2025-09-07)
 =====================
 
