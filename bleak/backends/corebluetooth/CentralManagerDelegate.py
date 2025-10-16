@@ -3,6 +3,7 @@
 CentralManagerDelegate will implement the CBCentralManagerDelegate protocol to
 manage CoreBluetooth services and resources on the Central End
 """
+from __future__ import annotations
 
 import sys
 from typing import TYPE_CHECKING
@@ -18,10 +19,8 @@ from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
-    from typing_extensions import Self
 else:
     from asyncio import timeout as async_timeout
-    from typing import Self
 
 import objc
 from CoreBluetooth import (
@@ -61,7 +60,116 @@ CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 DisconnectCallback = Callable[[], None]
 
 
-class CentralManagerDelegate(NSObject):
+class ObjcCentralManagerDelegate(NSObject):
+    """macOS conforming python class for managing the CentralManger for BLE"""
+
+    ___pyobjc_protocols__ = [CBCentralManagerDelegate]
+
+    def initWithPyDelegate_(
+        self, py_delegate: CentralManagerDelegate
+    ) -> Optional[ObjcCentralManagerDelegate]:
+        """macOS init function for NSObject"""
+        self = objc.super(ObjcCentralManagerDelegate, self).init()
+
+        if self is None:
+            return None
+
+        self.py_delegate = py_delegate
+
+        return self
+
+    # User defined functions
+
+    def observeValueForKeyPath_ofObject_change_context_(
+        self, keyPath: str, object: Any, change: NSDictionary, context: int
+    ) -> None:
+        logger.debug("'%s' changed", keyPath)
+
+        if keyPath != "isScanning":
+            return
+
+        is_scanning = bool(change[NSKeyValueChangeNewKey])
+        self.py_delegate.event_loop.call_soon_threadsafe(
+            self.py_delegate.changed_is_scanning, is_scanning
+        )
+
+    # Protocol Functions
+
+    def centralManagerDidUpdateState_(self, centralManager: CBCentralManager) -> None:
+        logger.debug("centralManagerDidUpdateState_")
+        if centralManager.state() == CBManagerStateUnknown:
+            logger.debug("Cannot detect bluetooth device")
+        elif centralManager.state() == CBManagerStateResetting:
+            logger.debug("Bluetooth is resetting")
+        elif centralManager.state() == CBManagerStateUnsupported:
+            logger.debug("Bluetooth is unsupported")
+        elif centralManager.state() == CBManagerStateUnauthorized:
+            logger.debug("Bluetooth is unauthorized")
+        elif centralManager.state() == CBManagerStatePoweredOff:
+            logger.debug("Bluetooth powered off")
+        elif centralManager.state() == CBManagerStatePoweredOn:
+            logger.debug("Bluetooth powered on")
+
+        self.py_delegate.event_loop.call_soon_threadsafe(
+            self.py_delegate.did_update_state_event.set
+        )
+
+    def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
+        self,
+        central: CBCentralManager,
+        peripheral: CBPeripheral,
+        advertisementData: NSDictionary,
+        RSSI: int,
+    ) -> None:
+        logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
+        self.py_delegate.event_loop.call_soon_threadsafe(
+            self.py_delegate.did_discover_peripheral,
+            central,
+            peripheral,
+            advertisementData,
+            RSSI,
+        )
+
+    def centralManager_didConnectPeripheral_(
+        self, central: CBCentralManager, peripheral: CBPeripheral
+    ) -> None:
+        logger.debug("centralManager_didConnectPeripheral_")
+        self.py_delegate.event_loop.call_soon_threadsafe(
+            self.py_delegate.did_connect_peripheral,
+            central,
+            peripheral,
+        )
+
+    def centralManager_didFailToConnectPeripheral_error_(
+        self,
+        centralManager: CBCentralManager,
+        peripheral: CBPeripheral,
+        error: Optional[NSError],
+    ) -> None:
+        logger.debug("centralManager_didFailToConnectPeripheral_error_")
+        self.py_delegate.event_loop.call_soon_threadsafe(
+            self.py_delegate.did_fail_to_connect_peripheral,
+            centralManager,
+            peripheral,
+            error,
+        )
+
+    def centralManager_didDisconnectPeripheral_error_(
+        self,
+        central: CBCentralManager,
+        peripheral: CBPeripheral,
+        error: Optional[NSError],
+    ) -> None:
+        logger.debug("centralManager_didDisconnectPeripheral_error_")
+        self.py_delegate.event_loop.call_soon_threadsafe(
+            self.py_delegate.did_disconnect_peripheral,
+            central,
+            peripheral,
+            error,
+        )
+
+
+class CentralManagerDelegate:
     """
     macOS conforming python class for managing the CentralManger for BLE
 
@@ -69,14 +177,11 @@ class CentralManagerDelegate(NSObject):
     be called. This can take a while, when the OS asks the user for permissions.
     """
 
-    ___pyobjc_protocols__ = [CBCentralManagerDelegate]
-
-    def init(self: Self) -> Optional[Self]:
+    def __init__(self) -> None:
         """macOS init function for NSObject"""
-        self = objc.super(CentralManagerDelegate, self).init()
-
-        if self is None:
-            return None
+        self.objc_delegate = ObjcCentralManagerDelegate.alloc().initWithPyDelegate_(
+            self
+        )
 
         self.event_loop = asyncio.get_running_loop()
         self._connect_futures: dict[NSUUID, asyncio.Future[bool]] = {}
@@ -88,23 +193,24 @@ class CentralManagerDelegate(NSObject):
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
 
-        self._did_update_state_event = asyncio.Event()
+        self.did_update_state_event = asyncio.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
-            self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
+            self.objc_delegate,
+            dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL),
         )
 
         self.central_manager.addObserver_forKeyPath_options_context_(
-            self, "isScanning", NSKeyValueObservingOptionNew, 0
+            self.objc_delegate, "isScanning", NSKeyValueObservingOptionNew, 0
         )
 
         self._did_start_scanning_event: Optional[asyncio.Event] = None
         self._did_stop_scanning_event: Optional[asyncio.Event] = None
 
-        return self
-
     def __del__(self) -> None:
         try:
-            self.central_manager.removeObserver_forKeyPath_(self, "isScanning")
+            self.central_manager.removeObserver_forKeyPath_(
+                self.objc_delegate, "isScanning"
+            )
         except IndexError:
             # If self.init() raised an exception before calling
             # addObserver_forKeyPath_options_context_, attempting
@@ -121,7 +227,7 @@ class CentralManagerDelegate(NSObject):
         # but if the app currently has no permission to access the Bluetooth peripheral,
         # there is automatically a dialog shown by the OS. The user has to accept or deny
         # the Bluetooth access. This may take infinite time until the user clicks something.
-        await self._did_update_state_event.wait()
+        await self.did_update_state_event.wait()
 
         state = self.central_manager.state()
         if state == CBManagerStateUnsupported:
@@ -162,7 +268,6 @@ class CentralManagerDelegate(NSObject):
                 BleakBluetoothNotAvailableReason.UNKNOWN,
             )
 
-    @objc.python_method
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
         _service_uuids = (
             NSArray[CBUUID]
@@ -181,7 +286,6 @@ class CentralManagerDelegate(NSObject):
         if not self.central_manager.isScanning():
             await event.wait()
 
-    @objc.python_method
     async def stop_scan(self) -> None:
         self.central_manager.stopScan()
 
@@ -190,7 +294,6 @@ class CentralManagerDelegate(NSObject):
         if self.central_manager.isScanning():
             await event.wait()
 
-    @objc.python_method
     async def connect(
         self,
         peripheral: CBPeripheral,
@@ -223,7 +326,6 @@ class CentralManagerDelegate(NSObject):
 
             raise
 
-    @objc.python_method
     async def disconnect(self, peripheral: CBPeripheral) -> None:
         future = self.event_loop.create_future()
 
@@ -234,8 +336,7 @@ class CentralManagerDelegate(NSObject):
         finally:
             del self._disconnect_futures[peripheral.identifier()]
 
-    @objc.python_method
-    def _changed_is_scanning(self, is_scanning: bool) -> None:
+    def changed_is_scanning(self, is_scanning: bool) -> None:
         if is_scanning:
             if self._did_start_scanning_event:
                 self._did_start_scanning_event.set()
@@ -243,37 +344,8 @@ class CentralManagerDelegate(NSObject):
             if self._did_stop_scanning_event:
                 self._did_stop_scanning_event.set()
 
-    def observeValueForKeyPath_ofObject_change_context_(
-        self, keyPath: str, object: Any, change: NSDictionary, context: int
-    ) -> None:
-        logger.debug("'%s' changed", keyPath)
-
-        if keyPath != "isScanning":
-            return
-
-        is_scanning = bool(change[NSKeyValueChangeNewKey])
-        self.event_loop.call_soon_threadsafe(self._changed_is_scanning, is_scanning)
-
     # Protocol Functions
 
-    def centralManagerDidUpdateState_(self, centralManager: CBCentralManager) -> None:
-        logger.debug("centralManagerDidUpdateState_")
-        if centralManager.state() == CBManagerStateUnknown:
-            logger.debug("Cannot detect bluetooth device")
-        elif centralManager.state() == CBManagerStateResetting:
-            logger.debug("Bluetooth is resetting")
-        elif centralManager.state() == CBManagerStateUnsupported:
-            logger.debug("Bluetooth is unsupported")
-        elif centralManager.state() == CBManagerStateUnauthorized:
-            logger.debug("Bluetooth is unauthorized")
-        elif centralManager.state() == CBManagerStatePoweredOff:
-            logger.debug("Bluetooth powered off")
-        elif centralManager.state() == CBManagerStatePoweredOn:
-            logger.debug("Bluetooth powered on")
-
-        self.event_loop.call_soon_threadsafe(self._did_update_state_event.set)
-
-    @objc.python_method
     def did_discover_peripheral(
         self,
         central: CBCentralManager,
@@ -310,23 +382,6 @@ class CentralManagerDelegate(NSObject):
             central,
         )
 
-    def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
-        self,
-        central: CBCentralManager,
-        peripheral: CBPeripheral,
-        advertisementData: NSDictionary,
-        RSSI: int,
-    ) -> None:
-        logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
-        self.event_loop.call_soon_threadsafe(
-            self.did_discover_peripheral,
-            central,
-            peripheral,
-            advertisementData,
-            RSSI,
-        )
-
-    @objc.python_method
     def did_connect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral
     ) -> None:
@@ -334,17 +389,6 @@ class CentralManagerDelegate(NSObject):
         if future is not None:
             future.set_result(True)
 
-    def centralManager_didConnectPeripheral_(
-        self, central: CBCentralManager, peripheral: CBPeripheral
-    ) -> None:
-        logger.debug("centralManager_didConnectPeripheral_")
-        self.event_loop.call_soon_threadsafe(
-            self.did_connect_peripheral,
-            central,
-            peripheral,
-        )
-
-    @objc.python_method
     def did_fail_to_connect_peripheral(
         self,
         centralManager: CBCentralManager,
@@ -358,21 +402,6 @@ class CentralManagerDelegate(NSObject):
             else:
                 future.set_result(False)
 
-    def centralManager_didFailToConnectPeripheral_error_(
-        self,
-        centralManager: CBCentralManager,
-        peripheral: CBPeripheral,
-        error: Optional[NSError],
-    ) -> None:
-        logger.debug("centralManager_didFailToConnectPeripheral_error_")
-        self.event_loop.call_soon_threadsafe(
-            self.did_fail_to_connect_peripheral,
-            centralManager,
-            peripheral,
-            error,
-        )
-
-    @objc.python_method
     def did_disconnect_peripheral(
         self,
         central: CBCentralManager,
@@ -392,17 +421,3 @@ class CentralManagerDelegate(NSObject):
 
         if callback is not None:
             callback()
-
-    def centralManager_didDisconnectPeripheral_error_(
-        self,
-        central: CBCentralManager,
-        peripheral: CBPeripheral,
-        error: Optional[NSError],
-    ) -> None:
-        logger.debug("centralManager_didDisconnectPeripheral_error_")
-        self.event_loop.call_soon_threadsafe(
-            self.did_disconnect_peripheral,
-            central,
-            peripheral,
-            error,
-        )
