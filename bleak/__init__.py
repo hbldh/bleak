@@ -33,8 +33,9 @@ else:
 from bleak.args.bluez import BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
+from bleak.backends import get_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.client import BaseBleakClient, get_platform_client_backend_type
+from bleak.backends.client import BaseBleakClient
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import (
@@ -42,7 +43,6 @@ from bleak.backends.scanner import (
     AdvertisementDataCallback,
     AdvertisementDataFilter,
     BaseBleakScanner,
-    get_platform_scanner_backend_type,
 )
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
@@ -124,7 +124,7 @@ class BleakScanner:
         **kwargs: Any,
     ) -> None:
         PlatformBleakScanner = (
-            get_platform_scanner_backend_type() if backend is None else backend
+            get_backend().scanner_type if backend is None else backend
         )
 
         self._backend = PlatformBleakScanner(
@@ -490,9 +490,7 @@ class BleakClient:
         backend: Optional[type[BaseBleakClient]] = None,
         **kwargs: Any,
     ) -> None:
-        PlatformBleakClient = (
-            get_platform_client_backend_type() if backend is None else backend
-        )
+        PlatformBleakClient = get_backend().client_type if backend is None else backend
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,

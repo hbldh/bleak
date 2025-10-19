@@ -4,8 +4,6 @@
 Base class for backend clients.
 """
 import abc
-import os
-import platform
 import sys
 from collections.abc import Callable
 from typing import Any, Optional, Union
@@ -207,43 +205,3 @@ class BaseBleakClient(abc.ABC):
 
         """
         raise NotImplementedError()
-
-
-def get_platform_client_backend_type() -> type[BaseBleakClient]:
-    """
-    Gets the platform-specific :class:`BaseBleakClient` type.
-    """
-    if os.environ.get("P4A_BOOTSTRAP") is not None:
-        from bleak.backends.p4android.client import BleakClientP4Android
-
-        return BleakClientP4Android
-
-    if platform.system() == "Linux":
-        from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
-
-        return BleakClientBlueZDBus
-
-    if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
-        # Must be resolved before checking for "Darwin" (macOS),
-        # as both the Pythonista app for iOS and macOS
-        # return "Darwin" from platform.system()
-        try:
-            from bleak_pythonista import BleakClientPythonistaCB
-
-            return BleakClientPythonistaCB
-        except ImportError as e:
-            raise ImportError(
-                "Ensure you have `bleak-pythonista` package installed."
-            ) from e
-
-    if platform.system() == "Darwin":
-        from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
-
-        return BleakClientCoreBluetooth
-
-    if platform.system() == "Windows":
-        from bleak.backends.winrt.client import BleakClientWinRT
-
-        return BleakClientWinRT
-
-    raise BleakError(f"Unsupported platform: {platform.system()}")

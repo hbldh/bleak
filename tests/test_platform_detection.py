@@ -5,15 +5,14 @@
 
 import platform
 
-from bleak.backends.client import get_platform_client_backend_type
-from bleak.backends.scanner import get_platform_scanner_backend_type
+from bleak.backends import get_backend
 
 
 def test_platform_detection():
     """Test by importing the client and assert correct client by OS."""
 
-    client_backend_type = get_platform_client_backend_type()
-    scanner_backend_type = get_platform_scanner_backend_type()
+    client_backend_type = get_backend().client_type
+    scanner_backend_type = get_backend().scanner_type
 
     if platform.system() == "Linux":
         assert client_backend_type.__name__ == "BleakClientBlueZDBus"
