@@ -10,6 +10,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+- Raise new ``BleakBluetoothNotAvailableError`` on macOS when Bluetooth is not supported, turned off or the Bluetooth permission are denied.
+
+Fixed
+-----
+- Fixed "Bluetooth device is turned off" Exception on macOS, when a Bluetooth permission request popup is shown to the user by the OS.
+
 Removed
 -------
 - Removed support for macOS < 10.15.
