@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Removed
+-------
+- Removed support for macOS < 10.15.
+
 `1.1.1`_ (2025-09-07)
 =====================
 
