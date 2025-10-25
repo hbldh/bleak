@@ -149,7 +149,17 @@ class BleakScanner:
         await self._backend.stop()
 
     async def start(self) -> None:
-        """Start scanning for devices"""
+        """
+        Start scanning for devices.
+
+        Raises:
+            BleakBluetoothNotAvailableError:
+                if Bluetooth is not currently available
+
+        .. versionchanged: unreleased
+            Now raises :class:`BleakBluetoothNotAvailableError` instead of :class:`BleakError`
+            when Bluetooth is not currently available.
+        """
         await self._backend.start()
 
     async def stop(self) -> None:
