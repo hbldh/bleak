@@ -9,7 +9,7 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on Linux"
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 from dbus_fast.aio.message_bus import MessageBus
 from dbus_fast.errors import InvalidObjectPathError
@@ -69,13 +69,13 @@ class MatchRules:
     def __init__(
         self,
         type: str = "signal",
-        sender: Optional[str] = None,
-        interface: Optional[str] = None,
-        member: Optional[str] = None,
-        path: Optional[str] = None,
-        path_namespace: Optional[str] = None,
-        destination: Optional[str] = None,
-        arg0namespace: Optional[str] = None,
+        sender: str | None = None,
+        interface: str | None = None,
+        member: str | None = None,
+        path: str | None = None,
+        path_namespace: str | None = None,
+        destination: str | None = None,
+        arg0namespace: str | None = None,
         **kwargs: Any,
     ):
         assert_bus_name_valid(type)
@@ -83,31 +83,31 @@ class MatchRules:
 
         if sender:
             assert_bus_name_valid(sender)
-            self.sender: Optional[str] = sender
+            self.sender: str | None = sender
         else:
             self.sender = None
 
         if interface:
             assert_interface_name_valid(interface)
-            self.interface: Optional[str] = interface
+            self.interface: str | None = interface
         else:
             self.interface = None
 
         if member:
             assert_member_name_valid(member)
-            self.member: Optional[str] = member
+            self.member: str | None = member
         else:
             self.member = None
 
         if path:
             assert_object_path_valid(path)
-            self.path: Optional[str] = path
+            self.path: str | None = path
         else:
             self.path = None
 
         if path_namespace:
             assert_object_path_valid(path_namespace)
-            self.path_namespace: Optional[str] = path_namespace
+            self.path_namespace: str | None = path_namespace
         else:
             self.path_namespace = None
 
@@ -118,13 +118,13 @@ class MatchRules:
 
         if destination:
             assert_bus_name_valid(destination)
-            self.destination: Optional[str] = destination
+            self.destination: str | None = destination
         else:
             self.destination = None
 
         if arg0namespace:
             assert_bus_name_valid(arg0namespace)
-            self.arg0namespace: Optional[str] = arg0namespace
+            self.arg0namespace: str | None = arg0namespace
         else:
             self.arg0namespace = None
 
@@ -139,7 +139,7 @@ class MatchRules:
                     assert_object_path_valid(v[:-1] if v.endswith("/") else v)
                 else:
                     raise ValueError("kwargs must be in the form 'arg0' or 'arg0path'")
-            self.args: Optional[dict[str, str]] = kwargs
+            self.args: dict[str, str] | None = kwargs
         else:
             self.args = None
 

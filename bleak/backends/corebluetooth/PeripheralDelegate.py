@@ -19,7 +19,7 @@ import asyncio
 import itertools
 import logging
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -56,7 +56,7 @@ class PeripheralDelegate(NSObject):
 
     def initWithPeripheral_(
         self, peripheral: CBPeripheral
-    ) -> Optional[PeripheralDelegate]:
+    ) -> PeripheralDelegate | None:
         """macOS init function for NSObject"""
         self = objc.super(PeripheralDelegate, self).init()
 
@@ -85,7 +85,7 @@ class PeripheralDelegate(NSObject):
         self._characteristic_notify_change_futures: dict[int, asyncio.Future[None]] = {}
         self._characteristic_notify_callbacks: dict[int, NotifyCallback] = {}
         self._characteristic_notification_discriminators: dict[
-            int, Optional[NotificationDiscriminator]
+            int, NotificationDiscriminator | None
         ] = {}
 
         self._read_rssi_futures: dict[NSUUID, asyncio.Future[int]] = {}
@@ -119,7 +119,7 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     async def discover_services(
-        self, services: Optional[NSArray[CBUUID]] = None
+        self, services: NSArray[CBUUID] | None = None
     ) -> NSArray[CBService]:
         future = self._event_loop.create_future()
 
@@ -242,7 +242,7 @@ class PeripheralDelegate(NSObject):
         self,
         characteristic: CBCharacteristic,
         callback: NotifyCallback,
-        notification_discriminator: Optional[NotificationDiscriminator] = None,
+        notification_discriminator: NotificationDiscriminator | None = None,
     ) -> None:
         c_handle = characteristic.handle()
         if c_handle in self._characteristic_notify_callbacks:
@@ -298,7 +298,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         services: NSArray[CBService],
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._services_discovered_future
         if error is not None:
@@ -309,7 +309,7 @@ class PeripheralDelegate(NSObject):
             future.set_result(services)
 
     def peripheral_didDiscoverServices_(
-        self, peripheral: CBPeripheral, error: Optional[NSError]
+        self, peripheral: CBPeripheral, error: NSError | None
     ) -> None:
         logger.debug("peripheral_didDiscoverServices_")
         self._event_loop.call_soon_threadsafe(
@@ -325,7 +325,7 @@ class PeripheralDelegate(NSObject):
         peripheral: CBPeripheral,
         service: CBService,
         characteristics: NSArray[CBCharacteristic],
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._service_characteristic_discovered_futures.get(
             service.startHandle()
@@ -345,7 +345,7 @@ class PeripheralDelegate(NSObject):
             future.set_result(characteristics)
 
     def peripheral_didDiscoverCharacteristicsForService_error_(
-        self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
+        self, peripheral: CBPeripheral, service: CBService, error: NSError | None
     ) -> None:
         logger.debug("peripheral_didDiscoverCharacteristicsForService_error_")
         self._event_loop.call_soon_threadsafe(
@@ -361,7 +361,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._characteristic_descriptor_discover_futures.get(
             characteristic.handle()
@@ -384,7 +384,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didDiscoverDescriptorsForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -399,8 +399,8 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        value: Optional[NSData],
-        error: Optional[NSError],
+        value: NSData | None,
+        error: NSError | None,
     ) -> None:
         c_handle = characteristic.handle()
 
@@ -447,7 +447,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didUpdateValueForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -463,8 +463,8 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         descriptor: CBDescriptor,
-        value: Optional[Any],
-        error: Optional[NSError],
+        value: Any | None,
+        error: NSError | None,
     ) -> None:
         future = self._descriptor_read_futures.get(descriptor.handle())
         if not future:
@@ -484,7 +484,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         descriptor: CBDescriptor,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didUpdateValueForDescriptor_error_")
         self._event_loop.call_soon_threadsafe(
@@ -500,7 +500,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._characteristic_write_futures.get(characteristic.handle(), None)
         if not future:
@@ -518,7 +518,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didWriteValueForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -533,7 +533,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         descriptor: CBDescriptor,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._descriptor_write_futures.get(descriptor.handle())
         if not future:
@@ -552,7 +552,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         descriptor: CBDescriptor,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didWriteValueForDescriptor_error_")
         self._event_loop.call_soon_threadsafe(
@@ -567,7 +567,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         c_handle = characteristic.handle()
         future = self._characteristic_notify_change_futures.get(c_handle)
@@ -589,7 +589,7 @@ class PeripheralDelegate(NSObject):
         self,
         peripheral: CBPeripheral,
         characteristic: CBCharacteristic,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didUpdateNotificationStateForCharacteristic_error_")
         self._event_loop.call_soon_threadsafe(
@@ -601,7 +601,7 @@ class PeripheralDelegate(NSObject):
 
     @objc.python_method
     def did_read_rssi(
-        self, peripheral: CBPeripheral, rssi: int, error: Optional[NSError]
+        self, peripheral: CBPeripheral, rssi: int, error: NSError | None
     ) -> None:
         future = self._read_rssi_futures.get(peripheral.identifier(), None)
 
@@ -619,7 +619,7 @@ class PeripheralDelegate(NSObject):
         self: PeripheralDelegate,
         peripheral: CBPeripheral,
         rssi: int,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("peripheral_didReadRSSI_error_")
         self._event_loop.call_soon_threadsafe(

@@ -5,7 +5,7 @@ Gatt Service Collection class and interface class for the Bleak representation o
 """
 import logging
 from collections.abc import Iterator
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 from uuid import UUID
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -61,9 +61,7 @@ class BleakGATTService:
 
         self._characteristics[characteristic.handle] = characteristic
 
-    def get_characteristic(
-        self, uuid: Union[str, UUID]
-    ) -> Union[BleakGATTCharacteristic, None]:
+    def get_characteristic(self, uuid: str | UUID) -> BleakGATTCharacteristic | None:
         """Get a characteristic by UUID.
 
         Args:
@@ -92,10 +90,8 @@ class BleakGATTServiceCollection:
         self.__descriptors: dict[int, BleakGATTDescriptor] = {}
 
     def __getitem__(
-        self, item: Union[str, int, UUID]
-    ) -> Optional[
-        Union[BleakGATTService, BleakGATTCharacteristic, BleakGATTDescriptor]
-    ]:
+        self, item: str | int | UUID
+    ) -> BleakGATTService | BleakGATTCharacteristic | BleakGATTDescriptor | None:
         """Get a service, characteristic or descriptor from uuid or handle"""
         return (
             self.get_service(item)
@@ -135,9 +131,7 @@ class BleakGATTServiceCollection:
                 service.handle,
             )
 
-    def get_service(
-        self, specifier: Union[int, str, UUID]
-    ) -> Optional[BleakGATTService]:
+    def get_service(self, specifier: str | int | UUID) -> BleakGATTService | None:
         """Get a service by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
             return self.services.get(specifier)
@@ -175,8 +169,8 @@ class BleakGATTServiceCollection:
             )
 
     def get_characteristic(
-        self, specifier: Union[int, str, UUID]
-    ) -> Optional[BleakGATTCharacteristic]:
+        self, specifier: str | int | UUID
+    ) -> BleakGATTCharacteristic | None:
         """Get a characteristic by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
             return self.characteristics.get(specifier)
@@ -214,6 +208,6 @@ class BleakGATTServiceCollection:
                 descriptor.handle,
             )
 
-    def get_descriptor(self, handle: int) -> Optional[BleakGATTDescriptor]:
+    def get_descriptor(self, handle: int) -> BleakGATTDescriptor | None:
         """Get a descriptor by integer handle"""
         return self.descriptors.get(handle)

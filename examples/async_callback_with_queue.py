@@ -14,7 +14,6 @@ import argparse
 import asyncio
 import logging
 import time
-from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -27,8 +26,8 @@ class DeviceNotFoundError(Exception):
 
 
 class Args(argparse.Namespace):
-    name: Optional[str]
-    address: Optional[str]
+    name: str | None
+    address: str | None
     characteristic: str
     macos_use_bdaddr: bool
     services: list[str]
@@ -36,7 +35,7 @@ class Args(argparse.Namespace):
 
 
 async def run_ble_client(
-    args: Args, queue: asyncio.Queue[tuple[float, Optional[bytearray]]]
+    args: Args, queue: asyncio.Queue[tuple[float, bytearray | None]]
 ):
     logger.info("starting scan...")
 
@@ -73,7 +72,7 @@ async def run_ble_client(
     logger.info("disconnected")
 
 
-async def run_queue_consumer(queue: asyncio.Queue[tuple[float, Optional[bytearray]]]):
+async def run_queue_consumer(queue: asyncio.Queue[tuple[float, bytearray | None]]):
     logger.info("Starting queue consumer")
 
     while True:
@@ -89,7 +88,7 @@ async def run_queue_consumer(queue: asyncio.Queue[tuple[float, Optional[bytearra
 
 
 async def main(args: Args) -> None:
-    queue: asyncio.Queue[tuple[float, Optional[bytearray]]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[float, bytearray | None]] = asyncio.Queue()
     client_task = run_ble_client(args, queue)
     consumer_task = run_queue_consumer(queue)
 

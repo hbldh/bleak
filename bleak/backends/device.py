@@ -6,7 +6,7 @@ Wrapper class for Bluetooth LE servers returned from calling
 """
 
 
-from typing import Any, Optional
+from typing import Any
 from warnings import warn
 
 
@@ -17,7 +17,7 @@ class BLEDevice:
 
     __slots__ = ("address", "name", "details")
 
-    def __init__(self, address: str, name: Optional[str], details: Any, **kwargs: Any):
+    def __init__(self, address: str, name: str | None, details: Any, **kwargs: Any):
         #: The Bluetooth address of the device on this machine (UUID on macOS).
         self.address = address
         #: The operating system name of the device (not necessarily the local name

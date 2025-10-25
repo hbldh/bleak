@@ -6,7 +6,7 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on macOS"
 
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from warnings import warn
 
 if sys.version_info < (3, 12):
@@ -72,8 +72,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         *,
         cb: _CBScannerArgs,
@@ -149,7 +149,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
-                address_bytes: Optional[bytes] = (
+                address_bytes: bytes | None = (
                     self._manager.central_manager.retrieveAddressForPeripheral_(p)
                 )
                 if address_bytes is None:

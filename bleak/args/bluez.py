@@ -4,7 +4,7 @@ BlueZ backend arguments
 -----------------------
 """
 
-from typing import NamedTuple, TypedDict, Union
+from typing import NamedTuple, TypedDict
 
 from bleak.assigned_numbers import AdvertisementDataType
 
@@ -76,7 +76,7 @@ class OrPattern(NamedTuple):
 
 
 # Windows has a similar structure, so we allow generic tuple for cross-platform compatibility
-OrPatternLike = Union[OrPattern, tuple[int, AdvertisementDataType, bytes]]
+OrPatternLike = OrPattern | tuple[int, AdvertisementDataType, bytes]
 
 
 class BlueZScannerArgs(TypedDict, total=False):

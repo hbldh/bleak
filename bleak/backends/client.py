@@ -8,7 +8,7 @@ import os
 import platform
 import sys
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -39,16 +39,16 @@ class BaseBleakClient(abc.ABC):
             argument, which will be this client object.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs: Any):
+    def __init__(self, address_or_ble_device: BLEDevice | str, **kwargs: Any):
         if isinstance(address_or_ble_device, BLEDevice):
             self.address = address_or_ble_device.address
         else:
             self.address = address_or_ble_device
 
-        self.services: Optional[BleakGATTServiceCollection] = None
+        self.services: BleakGATTServiceCollection | None = None
 
         self._timeout = kwargs.get("timeout", 10.0)
-        self._disconnected_callback: Optional[Callable[[], None]] = kwargs.get(
+        self._disconnected_callback: Callable[[], None] | None = kwargs.get(
             "disconnected_callback"
         )
 
@@ -68,7 +68,7 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Optional[Callable[[], None]], **kwargs: Any
+        self, callback: Callable[[], None] | None, **kwargs: Any
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.

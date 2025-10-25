@@ -15,7 +15,7 @@ import os
 import warnings
 from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Any, Optional, Union
+from typing import Any
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, override
@@ -71,15 +71,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[set[str]] = None,
+        address_or_ble_device: BLEDevice | str,
+        services: set[str] | None = None,
         **kwargs: Any,
     ):
         super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
-        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
+        self._adapter: str | None = kwargs.get("adapter", kwargs.get("device"))
 
-        self._device_info: Optional[dict[str, Any]]
+        self._device_info: dict[str, Any] | None
 
         # Backend specific, D-Bus objects and data
         if isinstance(address_or_ble_device, BLEDevice):
@@ -92,20 +92,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._requested_services = services
 
         # D-Bus message bus
-        self._bus: Optional[MessageBus] = None
+        self._bus: MessageBus | None = None
         # tracks device watcher subscription
-        self._remove_device_watcher: Optional[Callable[[], None]] = None
+        self._remove_device_watcher: Callable[[], None] | None = None
         # private backing for is_connected property
         self._is_connected = False
         # indicates disconnect request in progress when not None
-        self._disconnecting_event: Optional[asyncio.Event] = None
+        self._disconnecting_event: asyncio.Event | None = None
         # used to ensure device gets disconnected if event loop crashes
-        self._disconnect_monitor_event: Optional[asyncio.Event] = None
+        self._disconnect_monitor_event: asyncio.Event | None = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: dict[str, NotifyCallback] = {}
 
         # used to override mtu_size property
-        self._mtu_size: Optional[int] = None
+        self._mtu_size: int | None = None
 
     # Connectivity methods
 
