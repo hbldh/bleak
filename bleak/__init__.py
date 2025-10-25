@@ -156,7 +156,7 @@ class BleakScanner:
             BleakBluetoothNotAvailableError:
                 if Bluetooth is not currently available
 
-        .. versionchanged: unreleased
+        .. versionchanged:: unreleased
             Now raises :class:`BleakBluetoothNotAvailableError` instead of :class:`BleakError`
             when Bluetooth is not currently available.
         """
