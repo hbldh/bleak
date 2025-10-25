@@ -102,7 +102,7 @@ Before you submit a pull request, check that it meets these guidelines:
 1. If the pull request adds functionality, the docs should be updated.
 2. Modify the ``CHANGELOG.rst``, describing your changes as is specified by the
    guidelines in that document.
-3. The pull request should work for Python 3.9+ on the following platforms:
+3. The pull request should work for Python 3.10+ on the following platforms:
     - Windows 10, version 16299 (Fall Creators Update) and greater
     - Linux distributions with BlueZ >= 5.55
     - OS X / macOS >= 10.15

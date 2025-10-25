@@ -5,7 +5,7 @@ description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dynamic = ["classifiers", "dependencies"]
 
 [project.urls]
@@ -67,10 +67,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
-py_version=39
+py_version=310
 src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer", "docs"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 disable_error_code = ["import-not-found"]

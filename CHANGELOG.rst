@@ -20,6 +20,7 @@ Fixed
 
 Removed
 -------
+- Removed support for Python 3.9.
 - Removed support for macOS < 10.15.
 
 `1.1.1`_ (2025-09-07)
