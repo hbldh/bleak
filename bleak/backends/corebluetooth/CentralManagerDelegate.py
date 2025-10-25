@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
-import threading
 from collections.abc import Callable
 from typing import Any, Optional
 
@@ -28,6 +27,8 @@ import objc
 from CoreBluetooth import (
     CBUUID,
     CBCentralManager,
+    CBManagerAuthorizationDenied,
+    CBManagerAuthorizationRestricted,
     CBManagerStatePoweredOff,
     CBManagerStatePoweredOn,
     CBManagerStateResetting,
@@ -47,7 +48,11 @@ from Foundation import (
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
-from bleak.exc import BleakError
+from bleak.exc import (
+    BleakBluetoothNotAvailableError,
+    BleakBluetoothNotAvailableReason,
+    BleakError,
+)
 
 logger = logging.getLogger(__name__)
 CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
@@ -57,7 +62,12 @@ DisconnectCallback = Callable[[], None]
 
 
 class CentralManagerDelegate(NSObject):
-    """macOS conforming python class for managing the CentralManger for BLE"""
+    """
+    macOS conforming python class for managing the CentralManger for BLE
+
+    Before this object can be used, the :method:`wait_until_ready` method has to
+    be called. This can take a while, when the OS asks the user for permissions.
+    """
 
     ___pyobjc_protocols__ = [CBCentralManagerDelegate]
 
@@ -78,30 +88,15 @@ class CentralManagerDelegate(NSObject):
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
 
-        self._did_update_state_event = threading.Event()
+        self._did_update_state_event = asyncio.Event()
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
             self, dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL)
         )
 
-        # according to CoreBluetooth docs, it is not valid to call CBCentral
-        # methods until the centralManagerDidUpdateState_() delegate method
-        # is called and the current state is CBManagerStatePoweredOn.
-        # It doesn't take long for the callback to occur, so we should be able
-        # to do a blocking wait here without anyone complaining.
-        self._did_update_state_event.wait(1)
-
-        if self.central_manager.state() == CBManagerStateUnsupported:
-            raise BleakError("BLE is unsupported")
-
-        if self.central_manager.state() == CBManagerStateUnauthorized:
-            raise BleakError("BLE is not authorized - check macOS privacy settings")
-
-        if self.central_manager.state() != CBManagerStatePoweredOn:
-            raise BleakError("Bluetooth device is turned off")
-
         self.central_manager.addObserver_forKeyPath_options_context_(
             self, "isScanning", NSKeyValueObservingOptionNew, 0
         )
+
         self._did_start_scanning_event: Optional[asyncio.Event] = None
         self._did_stop_scanning_event: Optional[asyncio.Event] = None
 
@@ -117,6 +112,55 @@ class CentralManagerDelegate(NSObject):
             pass
 
     # User defined functions
+    @objc.python_method
+    async def wait_until_ready(self):
+        # According to CoreBluetooth docs, it is not valid to call CBCentral
+        # methods until the centralManagerDidUpdateState_() delegate method
+        # is called and the current state is CBManagerStatePoweredOn.
+        # Wait until the callback occurs. This normally should not take too long,
+        # but if the app currently has no permission to access the Bluetooth peripheral,
+        # there is automatically a dialog shown by the OS. The user has to accept or deny
+        # the Bluetooth access. This may take infinite time until the user clicks something.
+        await self._did_update_state_event.wait()
+
+        state = self.central_manager.state()
+        if state == CBManagerStateUnsupported:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth is unsupported",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+            )
+        elif state == CBManagerStateUnauthorized:
+            authorization = self.central_manager.authorization()
+            if authorization == CBManagerAuthorizationDenied:
+                raise BleakBluetoothNotAvailableError(
+                    "Bluetooth access is denied by the user for the current application. Check macOS privacy settings.",
+                    BleakBluetoothNotAvailableReason.DENIED_BY_USER,
+                )
+            elif authorization == CBManagerAuthorizationRestricted:
+                raise BleakBluetoothNotAvailableError(
+                    "Bluetooth access is restricted for the current application, e.g. by parental controls. Ask the admin to remove this restriction.",
+                    BleakBluetoothNotAvailableReason.DENIED_BY_SYSTEM,
+                )
+            else:
+                raise BleakBluetoothNotAvailableError(
+                    "Bluetooth is not authorized for an unknown reason. Check macOS privacy settings.",
+                    BleakBluetoothNotAvailableReason.DENIED_BY_UNKNOWN,
+                )
+        elif state == CBManagerStatePoweredOff:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth device is turned off",
+                BleakBluetoothNotAvailableReason.POWERED_OFF,
+            )
+        elif state == CBManagerStateResetting:
+            raise BleakBluetoothNotAvailableError(
+                "Connection to the Bluetooth system service was lost. Currently trying to reconnect...",
+                BleakBluetoothNotAvailableReason.UNKNOWN,
+            )
+        elif state != CBManagerStatePoweredOn:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth state is unknwon",
+                BleakBluetoothNotAvailableReason.UNKNOWN,
+            )
 
     @objc.python_method
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
@@ -227,7 +271,7 @@ class CentralManagerDelegate(NSObject):
         elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
 
-        self._did_update_state_event.set()
+        self.event_loop.call_soon_threadsafe(self._did_update_state_event.set)
 
     @objc.python_method
     def did_discover_peripheral(

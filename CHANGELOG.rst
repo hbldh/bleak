@@ -14,6 +14,19 @@ Added
 -----
 - Added ``bleak.backends.get_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
 
+Changed
+-------
+- Raise new ``BleakBluetoothNotAvailableError`` on macOS when Bluetooth is not supported, turned off or the Bluetooth permission are denied.
+
+Fixed
+-----
+- Fixed "Bluetooth device is turned off" Exception on macOS, when a Bluetooth permission request popup is shown to the user by the OS.
+
+Removed
+-------
+- Removed support for Python 3.9.
+- Removed support for macOS < 10.15.
+
 `1.1.1`_ (2025-09-07)
 =====================
 

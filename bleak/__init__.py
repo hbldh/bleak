@@ -149,7 +149,17 @@ class BleakScanner:
         await self._backend.stop()
 
     async def start(self) -> None:
-        """Start scanning for devices"""
+        """
+        Start scanning for devices.
+
+        Raises:
+            BleakBluetoothNotAvailableError:
+                if Bluetooth is not currently available
+
+        .. versionchanged:: unreleased
+            Now raises :class:`BleakBluetoothNotAvailableError` instead of :class:`BleakError`
+            when Bluetooth is not currently available.
+        """
         await self._backend.start()
 
     async def stop(self) -> None:
@@ -663,7 +673,7 @@ class BleakClient:
             The read data.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the read operation failed.
         """
@@ -712,7 +722,7 @@ class BleakClient:
                 property, which is why an explicit argument is encouraged.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the write operation failed.
 
@@ -771,7 +781,7 @@ class BleakClient:
                 CoreBluetooth specific arguments.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the start notification operation failed.
 
@@ -813,7 +823,7 @@ class BleakClient:
                 BleakGATTCharacteristic object representing it.
 
         Raises:
-            BleakGattCharacteristicNotFoundError: if a characteristic with the
+            BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
             backend-specific exceptions: if the stop notification operation failed.
 

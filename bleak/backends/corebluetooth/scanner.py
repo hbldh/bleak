@@ -105,6 +105,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     @override
     async def start(self) -> None:
+        await self._manager.wait_until_ready()
+
         self.seen_devices = {}
 
         def callback(p: CBPeripheral, a: NSDictionary, r: int) -> None:

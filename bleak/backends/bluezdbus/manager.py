@@ -23,7 +23,7 @@ from functools import partial
 from typing import Any, NamedTuple, Optional, cast
 from weakref import WeakKeyDictionary
 
-from dbus_fast import BusType, Message, MessageType, Variant, unpack_variants
+from dbus_fast import AuthError, BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
 
 from bleak.args.bluez import OrPatternLike
@@ -45,7 +45,12 @@ from bleak.backends.bluezdbus.utils import (
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
-from bleak.exc import BleakDBusError, BleakError
+from bleak.exc import (
+    BleakBluetoothNotAvailableError,
+    BleakBluetoothNotAvailableReason,
+    BleakDBusError,
+    BleakError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -255,7 +260,13 @@ class BlueZManager:
             try:
                 # We need to call bus.disconnect() even when bus.connect() fails in
                 # order to release the file handles created in the constructor.
-                await bus.connect()
+                try:
+                    await bus.connect()
+                except AuthError as e:
+                    raise BleakBluetoothNotAvailableError(
+                        e.args[0],
+                        BleakBluetoothNotAvailableReason.DENIED_BY_SYSTEM,
+                    ) from e
 
                 # Add signal listeners
 
@@ -361,19 +372,42 @@ class BlueZManager:
             Name of the first found powered adapter on the system, i.e. "/org/bluez/hciX".
 
         Raises:
-            BleakError:
-                if there are no Bluetooth adapters or if none of the adapters are powered
+            BleakBluetoothNotAvailableError:
+                if there are no Bluetooth Low Energy adapters or if none of the adapters are powered
+
+        .. versionchanged:: unreleased
+            Now raises :class:`BleakBluetoothNotAvailableError` instead of :class:`BleakError`.
         """
         if not any(self._adapters):
-            raise BleakError("No Bluetooth adapters found.")
+            raise BleakBluetoothNotAvailableError(
+                "No Bluetooth adapters found.",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+            )
 
-        for adapter_path in self._adapters:
+        ble_central_adapters = list(
+            filter(
+                lambda a: "central"
+                in self._properties[a][defs.ADAPTER_INTERFACE]["Roles"],
+                self._adapters,
+            )
+        )
+
+        if not ble_central_adapters:
+            raise BleakBluetoothNotAvailableError(
+                "No Bluetooth adapters with BLE 'central' role found.",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+            )
+
+        for adapter_path in ble_central_adapters:
             if cast(
                 defs.Adapter1, self._properties[adapter_path][defs.ADAPTER_INTERFACE]
             )["Powered"]:
                 return adapter_path
 
-        raise BleakError("No powered Bluetooth adapters found.")
+        raise BleakBluetoothNotAvailableError(
+            "No powered Bluetooth adapters found. Turn on Bluetooth and try again.",
+            BleakBluetoothNotAvailableReason.POWERED_OFF,
+        )
 
     async def active_scan(
         self,
