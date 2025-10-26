@@ -1,4 +1,4 @@
-from typing import Literal, Optional, TypeVar, overload
+from typing import Literal, TypeVar, overload
 
 from CoreBluetooth import CBCentralManagerDelegate, CBPeripheralDelegate
 from Foundation import NSObject
@@ -11,7 +11,7 @@ def python_method(func: T) -> T: ...
 
 class WeakRef:
     def __init__(self, object: NSObject) -> None: ...
-    def __call__(self) -> Optional[NSObject]: ...
+    def __call__(self) -> NSObject | None: ...
 
 @overload
 def protocolNamed(

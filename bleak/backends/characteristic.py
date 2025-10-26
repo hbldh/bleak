@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import enum
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from bleak.assigned_numbers import CharacteristicPropertyName
@@ -131,9 +131,7 @@ class BleakGATTCharacteristic:
         """List of descriptors for this service"""
         return list(self._descriptors.values())
 
-    def get_descriptor(
-        self, specifier: Union[int, str, UUID]
-    ) -> Union[BleakGATTDescriptor, None]:
+    def get_descriptor(self, specifier: int | str | UUID) -> BleakGATTDescriptor | None:
         """Get a descriptor by handle (int) or UUID (str or uuid.UUID)"""
         if isinstance(specifier, int):
             return self._descriptors.get(specifier)

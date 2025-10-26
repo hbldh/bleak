@@ -16,7 +16,7 @@ import uuid
 from collections.abc import Callable
 from contextvars import Context
 from ctypes import WinError
-from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
+from typing import Any, Generic, Protocol, Sequence, TypeVar, cast
 from warnings import warn
 
 if sys.version_info < (3, 12):
@@ -97,7 +97,7 @@ class _Result(Protocol):
     @property
     def status(self) -> GattCommunicationStatus: ...
     @property
-    def protocol_error(self) -> Optional[int]: ...
+    def protocol_error(self) -> int | None: ...
 
 
 def _address_to_int(address: str) -> int:
@@ -116,7 +116,7 @@ def _address_to_int(address: str) -> int:
     return int(address, base=16)
 
 
-def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
+def _ensure_success(result: _Result, attr: str | None, fail_msg: str) -> Any:
     """
     Ensures that *status* is ``GattCommunicationStatus.SUCCESS``, otherwise
     raises ``BleakError``.
@@ -160,8 +160,8 @@ class BleakClientWinRT(BaseBleakClient):
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[set[str]] = None,
+        address_or_ble_device: BLEDevice | str,
+        services: set[str] | None = None,
         *,
         winrt: _WinRTClientArgs,
         **kwargs: Any,
@@ -180,10 +180,10 @@ class BleakClientWinRT(BaseBleakClient):
         self._requested_services = (
             [uuid.UUID(s) for s in services] if services else None
         )
-        self._requester: Optional[BluetoothLEDevice] = None
+        self._requester: BluetoothLEDevice | None = None
         self._services_changed_events: list[asyncio.Event] = []
         self._session_active_events: list[asyncio.Event] = []
-        self._session: Optional[GattSession] = None
+        self._session: GattSession | None = None
         self._notification_callbacks: dict[int, EventRegistrationToken] = {}
 
         # os-specific options
@@ -191,9 +191,9 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = winrt.get("address_type")
         self._retry_on_services_changed = False
 
-        self._session_services_changed_token: Optional[EventRegistrationToken] = None
-        self._session_status_changed_token: Optional[EventRegistrationToken] = None
-        self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
+        self._session_services_changed_token: EventRegistrationToken | None = None
+        self._session_status_changed_token: EventRegistrationToken | None = None
+        self._max_pdu_size_changed_token: EventRegistrationToken | None = None
 
     def __str__(self) -> str:
         return f"{type(self).__name__} ({self.address})"
@@ -668,8 +668,8 @@ class BleakClientWinRT(BaseBleakClient):
     async def _get_services(
         self,
         *,
-        service_cache_mode: Optional[BluetoothCacheMode] = None,
-        cache_mode: Optional[BluetoothCacheMode] = None,
+        service_cache_mode: BluetoothCacheMode | None = None,
+        cache_mode: BluetoothCacheMode | None = None,
         **kwargs: Any,
     ) -> BleakGATTServiceCollection:
         """Get all services registered for this GATT server.
@@ -1120,14 +1120,14 @@ class FutureLike(Generic[T]):
         self,
         callback: Callable[[Self], None],
         *,
-        context: Optional[Context] = None,
+        context: Context | None = None,
     ) -> None:
         self._callbacks.append(callback)
 
     def remove_done_callback(self, callback: Callable[[Self], None]) -> None:
         self._callbacks.remove(callback)
 
-    def cancel(self, msg: Optional[str] = None) -> bool:
+    def cancel(self, msg: str | None = None) -> bool:
         if self._cancel_requested or self._op.status != AsyncStatus.STARTED:
             return False
 
@@ -1136,7 +1136,7 @@ class FutureLike(Generic[T]):
 
         return True
 
-    def exception(self) -> Optional[Exception]:
+    def exception(self) -> Exception | None:
         if self._op.status == AsyncStatus.STARTED:
             raise asyncio.InvalidStateError
 

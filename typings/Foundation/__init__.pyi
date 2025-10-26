@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, NewType, Optional, TypeVar, overload
+from typing import Any, NewType, TypeVar, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -17,7 +17,7 @@ TNSObject = TypeVar("TNSObject", bound=NSObject)
 class NSObject:
     @classmethod
     def alloc(cls) -> Self: ...
-    def init(self) -> Optional[Self]: ...
+    def init(self) -> Self | None: ...
     def addObserver_forKeyPath_options_context_(
         self,
         observer: NSObject,

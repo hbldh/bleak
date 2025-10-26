@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -55,8 +55,8 @@ class BleakScannerP4Android(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         **kwargs,
     ):

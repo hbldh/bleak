@@ -20,7 +20,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable, Coroutine, MutableMapping
 from functools import partial
-from typing import Any, NamedTuple, Optional, cast
+from typing import Any, NamedTuple, cast
 from weakref import WeakKeyDictionary
 
 from dbus_fast import AuthError, BusType, Message, MessageType, Variant, unpack_variants
@@ -64,7 +64,7 @@ Args:
 """
 
 
-DevicePropertiesChangedCallback = Callable[[Optional[Any]], None]
+DevicePropertiesChangedCallback = Callable[[Any | None], None]
 """
 A callback that is called when the properties of a device change in BlueZ.
 
@@ -174,7 +174,7 @@ class BlueZManager:
     """
 
     def __init__(self) -> None:
-        self._bus: Optional[MessageBus] = None
+        self._bus: MessageBus | None = None
         self._bus_lock = asyncio.Lock()
 
         # dict of object path: dict of interface name: dict of property name: property value
@@ -271,7 +271,7 @@ class BlueZManager:
                 # Add signal listeners
 
                 bus.add_message_handler(self._parse_msg)
-                reply: Optional[Message]
+                reply: Message | None
 
                 rules = MatchRules(
                     interface=defs.OBJECT_MANAGER_INTERFACE,
@@ -688,7 +688,7 @@ class BlueZManager:
             del self._device_watchers[device_path]
 
     async def get_services(
-        self, device_path: str, use_cached: bool, requested_services: Optional[set[str]]
+        self, device_path: str, use_cached: bool, requested_services: set[str] | None
     ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
@@ -942,7 +942,7 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def _wait_condition_callback(new_value: Optional[Any]) -> None:
+        def _wait_condition_callback(new_value: Any) -> None:
             """Callback for when a property changes."""
             if new_value == property_value:
                 event.set()

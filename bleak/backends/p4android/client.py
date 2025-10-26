@@ -13,7 +13,7 @@ import asyncio
 import logging
 import uuid
 import warnings
-from typing import Any, Optional, Union
+from typing import Any
 
 if sys.version_info < (3, 12):
     from typing_extensions import override
@@ -48,8 +48,8 @@ class BleakClientP4Android(BaseBleakClient):
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[set[uuid.UUID]],
+        address_or_ble_device: BLEDevice | str,
+        services: set[uuid.UUID] | None,
         **kwargs,
     ):
         super(BleakClientP4Android, self).__init__(address_or_ble_device, **kwargs)
@@ -371,7 +371,7 @@ class BleakClientP4Android(BaseBleakClient):
     @override
     async def write_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptor, str, uuid.UUID],
+        desc_specifier: BleakGATTDescriptor | str | uuid.UUID,
         data: bytearray,
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.

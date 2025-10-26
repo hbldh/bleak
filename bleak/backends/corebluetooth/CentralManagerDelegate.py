@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -71,7 +71,7 @@ class CentralManagerDelegate(NSObject):
 
     ___pyobjc_protocols__ = [CBCentralManagerDelegate]
 
-    def init(self: Self) -> Optional[Self]:
+    def init(self: Self) -> Self | None:
         """macOS init function for NSObject"""
         self = objc.super(CentralManagerDelegate, self).init()
 
@@ -97,8 +97,8 @@ class CentralManagerDelegate(NSObject):
             self, "isScanning", NSKeyValueObservingOptionNew, 0
         )
 
-        self._did_start_scanning_event: Optional[asyncio.Event] = None
-        self._did_stop_scanning_event: Optional[asyncio.Event] = None
+        self._did_start_scanning_event: asyncio.Event | None = None
+        self._did_stop_scanning_event: asyncio.Event | None = None
 
         return self
 
@@ -163,7 +163,7 @@ class CentralManagerDelegate(NSObject):
             )
 
     @objc.python_method
-    async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
+    async def start_scan(self, service_uuids: list[str] | None) -> None:
         _service_uuids = (
             NSArray[CBUUID]
             .alloc()
@@ -349,7 +349,7 @@ class CentralManagerDelegate(NSObject):
         self,
         centralManager: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._connect_futures.get(peripheral.identifier(), None)
         if future is not None:
@@ -362,7 +362,7 @@ class CentralManagerDelegate(NSObject):
         self,
         centralManager: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("centralManager_didFailToConnectPeripheral_error_")
         self.event_loop.call_soon_threadsafe(
@@ -377,7 +377,7 @@ class CentralManagerDelegate(NSObject):
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("Peripheral Device disconnected!")
 
@@ -397,7 +397,7 @@ class CentralManagerDelegate(NSObject):
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("centralManager_didDisconnectPeripheral_error_")
         self.event_loop.call_soon_threadsafe(

@@ -9,12 +9,11 @@ import asyncio
 import contextlib
 import logging
 import re
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
-async def _get_bluetoothctl_version() -> Optional[re.Match[bytes]]:
+async def _get_bluetoothctl_version() -> re.Match[bytes] | None:
     """Get the version of bluetoothctl."""
     with contextlib.suppress(Exception):
         proc = await asyncio.create_subprocess_exec(
@@ -33,7 +32,7 @@ class BlueZFeatures:
 
     checked_bluez_version = False
     supported_version = True
-    _check_bluez_event: Optional[asyncio.Event] = None
+    _check_bluez_event: asyncio.Event | None = None
 
     @classmethod
     async def check_bluez_version(cls) -> None:

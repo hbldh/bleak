@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 import logging
 from collections.abc import Callable, Coroutine
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from warnings import warn
 
 if sys.version_info < (3, 12):
@@ -73,8 +73,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         *,
         bluez: _BlueZScannerArgs,
@@ -85,10 +85,10 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._scanning_mode = scanning_mode
 
         # kwarg "device" is for backwards compatibility
-        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
+        self._adapter: str | None = kwargs.get("adapter", kwargs.get("device"))
 
         # callback from manager for stopping scanning if it has been started
-        self._stop: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
+        self._stop: Callable[[], Coroutine[Any, Any, None]] | None = None
 
         # Discovery filters
 
