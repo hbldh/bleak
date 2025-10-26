@@ -4,7 +4,7 @@ import inspect
 from collections.abc import Callable, Coroutine, Hashable
 from typing import Any, NamedTuple, Optional
 
-from bleak.backends import BleakBackend, get_backend
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
@@ -284,7 +284,7 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """
-    backend = get_backend()
+    backend = get_default_backend()
     if backend == BleakBackend.P4Android:
         from bleak.backends.p4android.scanner import BleakScannerP4Android
 

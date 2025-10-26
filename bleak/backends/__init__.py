@@ -33,7 +33,7 @@ class BleakBackend(enum.Enum):
     """
 
 
-def get_backend() -> BleakBackend:
+def get_default_backend() -> BleakBackend:
     """
     Returns the preferred backend for the current platform/environment.
     """

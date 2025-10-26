@@ -13,7 +13,7 @@ if sys.version_info < (3, 12):
 else:
     from collections.abc import Buffer
 
-from bleak.backends import BleakBackend, get_backend
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
@@ -212,7 +212,7 @@ def get_platform_client_backend_type() -> type[BaseBleakClient]:
     """
     Gets the platform-specific :class:`BaseBleakClient` type.
     """
-    backend = get_backend()
+    backend = get_default_backend()
     if backend == BleakBackend.P4Android:
         from bleak.backends.p4android.client import BleakClientP4Android
 

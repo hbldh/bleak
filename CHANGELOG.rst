@@ -12,7 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
-- Added ``bleak.backends.get_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
+- Added ``bleak.backends.get_default_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
 
 Changed
 -------
