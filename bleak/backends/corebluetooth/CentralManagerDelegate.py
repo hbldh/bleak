@@ -19,8 +19,10 @@ from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import Self
 else:
     from asyncio import timeout as async_timeout
+    from typing import Self
 
 import objc
 from CoreBluetooth import (
@@ -60,14 +62,14 @@ CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 DisconnectCallback = Callable[[], None]
 
 
-class ObjcCentralManagerDelegate(NSObject):
-    """macOS conforming python class for managing the CentralManger for BLE"""
-
-    ___pyobjc_protocols__ = [CBCentralManagerDelegate]
+class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate]):
+    """
+    CoreBluetooth central manager delegate for bridging callbacks to asyncio.
+    """
 
     def initWithPyDelegate_(
         self, py_delegate: CentralManagerDelegate
-    ) -> Optional[ObjcCentralManagerDelegate]:
+    ) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(ObjcCentralManagerDelegate, self).init()
 

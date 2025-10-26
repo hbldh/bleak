@@ -23,8 +23,10 @@ from typing import Any, Optional
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
+    from typing_extensions import Self
 else:
     from asyncio import timeout as async_timeout
+    from typing import Self
 
 import objc
 from CoreBluetooth import (
@@ -49,14 +51,12 @@ logger = logging.getLogger(__name__)
 CBPeripheralDelegate = objc.protocolNamed("CBPeripheralDelegate")
 
 
-class ObjcPeripheralDelegate(NSObject):
-    """macOS conforming python class for managing the PeripheralDelegate for BLE"""
+class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
+    """
+    CoreBluetooth peripheral manager delegate for bridging callbacks to asyncio.
+    """
 
-    ___pyobjc_protocols__ = [CBPeripheralDelegate]
-
-    def initWithPyDelegate_(
-        self, py_delegate: PeripheralDelegate
-    ) -> Optional[ObjcPeripheralDelegate]:
+    def initWithPyDelegate_(self, py_delegate: PeripheralDelegate) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(ObjcPeripheralDelegate, self).init()
 
