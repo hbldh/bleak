@@ -254,8 +254,8 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         if not adapter.is_central_role_supported:
             raise BleakBluetoothNotAvailableError(
-                "Central role not supported on this adapter",
-                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+                "BLE 'central' role not supported on this adapter",
+                BleakBluetoothNotAvailableReason.NO_BLE_CENTRAL_ROLE,
             )
 
         radio = await adapter.get_radio_async()
