@@ -6,7 +6,7 @@ import sys
 from bleak.exc import BleakError
 
 
-class BleakBackend(enum.Enum):
+class BleakBackend(enum.StrEnum):
     P4Android = enum.auto()
     """
     Python for Android backend.

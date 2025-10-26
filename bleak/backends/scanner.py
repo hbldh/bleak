@@ -280,7 +280,7 @@ class BaseBleakScanner(abc.ABC):
         raise NotImplementedError()
 
 
-def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
+def get_platform_scanner_backend_type() -> tuple[type[BaseBleakScanner], BleakBackend]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """
@@ -288,18 +288,18 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     if backend == BleakBackend.P4Android:
         from bleak.backends.p4android.scanner import BleakScannerP4Android
 
-        return BleakScannerP4Android
+        return (BleakScannerP4Android, BleakBackend.P4Android)
 
     if backend == BleakBackend.BlueZDBus:
         from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 
-        return BleakScannerBlueZDBus
+        return (BleakScannerBlueZDBus, BleakBackend.BlueZDBus)
 
     if backend == BleakBackend.PythonistaCB:
         try:
             from bleak_pythonista import BleakScannerPythonistaCB
 
-            return BleakScannerPythonistaCB
+            return (BleakScannerPythonistaCB, BleakBackend.PythonistaCB)
         except ImportError as e:
             raise ImportError(
                 "Ensure you have `bleak-pythonista` package installed."
@@ -308,11 +308,11 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
     if backend == BleakBackend.CoreBluetooth:
         from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 
-        return BleakScannerCoreBluetooth
+        return (BleakScannerCoreBluetooth, BleakBackend.CoreBluetooth)
 
     if backend == BleakBackend.WinRT:
         from bleak.backends.winrt.scanner import BleakScannerWinRT
 
-        return BleakScannerWinRT
+        return (BleakScannerWinRT, BleakBackend.WinRT)
 
     raise BleakError(f"Unsupported backend: {backend}")
