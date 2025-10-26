@@ -6,28 +6,28 @@ import sys
 from bleak.exc import BleakError
 
 
-class BleakBackend(enum.StrEnum):
-    P4Android = enum.auto()
+class BleakBackend(str, enum.Enum):
+    P4Android = "P4Android"
     """
     Python for Android backend.
     """
 
-    BlueZDBus = enum.auto()
+    BlueZDBus = "BlueZDBus"
     """
     BlueZ D-Bus backend for Linux.
     """
 
-    PythonistaCB = enum.auto()
+    PythonistaCB = "PythonistaCB"
     """
     Pythonista CoreBluetooth backend for iOS and macOS.
     """
 
-    CoreBluetooth = enum.auto()
+    CoreBluetooth = "CoreBluetooth"
     """
     CoreBluetooth backend for macOS.
     """
 
-    WinRT = enum.auto()
+    WinRT = "WinRT"
     """
     Windows Runtime backend for Windows.
     """
