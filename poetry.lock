@@ -1418,6 +1418,42 @@ winrt-runtime = ">=3.2.1.0,<3.3.0.0"
 all = ["winrt-Windows.ApplicationModel.Background[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.Foundation.Collections[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.Foundation[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.Security.Credentials[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.Storage.Streams[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.UI.Popups[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.UI[all] (>=3.2.1.0,<3.3.0.0)"]
 
 [[package]]
+name = "winrt-windows-devices-radios"
+version = "3.2.1"
+description = "Python projection of Windows Runtime (WinRT) APIs"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "platform_system == \"Windows\""
+files = [
+    {file = "winrt_windows_devices_radios-3.2.1-cp310-cp310-win32.whl", hash = "sha256:f97766fd551d06c102155d51b2922f96663dee045e1f8d57177def0a2149cb78"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp310-cp310-win_amd64.whl", hash = "sha256:104b737fa1279a3b6a88ba3c6236157afc1de03c472657c45e5176ad7a209e23"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp310-cp310-win_arm64.whl", hash = "sha256:55b02877d2de06ca6f0f6140611a9af9d0c65710e28f1afdeaac1040433b1837"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp311-cp311-win32.whl", hash = "sha256:7c02790472414b6cda00d24a8cd23bca18e4b7474ddad4f9264f4484b891807e"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp311-cp311-win_amd64.whl", hash = "sha256:f87745486d313ba1e7562ca97f25ad436ec01ad4b3b9ea349fb6b6f25cb41104"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp311-cp311-win_arm64.whl", hash = "sha256:6cee6f946ff3a3571850d1ca745edaee7c331d06ca321873e650779654effc4a"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp312-cp312-win32.whl", hash = "sha256:c3e683ce682338a5a5ed465f735e223ba7a22f16d0bbea2d070962bc7657edbb"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp312-cp312-win_amd64.whl", hash = "sha256:a116e552a3f38607b9be558fb2e7de9b4450d1f9080069944d74d80cdda1873e"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp312-cp312-win_arm64.whl", hash = "sha256:4c28822f9251c9d547324f596b5c2581f050254ded05e5b786c650a3502744c1"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp313-cp313-win32.whl", hash = "sha256:ae4a0065927fcd2d10215223f8a46be6fb89bad71cb4edd25dae3d01c137b3a8"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:bf1a975f46a2aa271ffea1340be0c7e64985050d07433e701343dddc22a72290"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp313-cp313-win_arm64.whl", hash = "sha256:10b298ed154c5824cea2de174afce1694ed2aabfb58826de814074027ffef96f"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp314-cp314-win32.whl", hash = "sha256:21452e1cae50e44cd1d5e78159e1b9986ac3389b66458ad89caa196ce5eca2d6"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp314-cp314-win_amd64.whl", hash = "sha256:6a8413e586fe597c6849607885cca7e0549da33ae5699165d11f7911534c6eaf"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp314-cp314-win_arm64.whl", hash = "sha256:39129fd9d09103adb003575f59881c1a5a70a43310547850150b46c6f4020312"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp39-cp39-win32.whl", hash = "sha256:59b868d45ff22afad21b0b0d1466ec43e54543c4e4c6f1efcc2d4adc77053bd5"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp39-cp39-win_amd64.whl", hash = "sha256:dbfcbb977f60f19c852204987ace0cd6f7a432d735882a45b3074fdbfd3fdb5a"},
+    {file = "winrt_windows_devices_radios-3.2.1-cp39-cp39-win_arm64.whl", hash = "sha256:659e07e6aa5542587ccfc4d4e2cc6e1ef0869606c867a3e95fc82cc8aeaf1f81"},
+    {file = "winrt_windows_devices_radios-3.2.1.tar.gz", hash = "sha256:4dc9b9d1501846049eb79428d64ec698d6476c27a357999b78a8331072e18a0b"},
+]
+
+[package.dependencies]
+winrt-runtime = ">=3.2.1.0,<3.3.0.0"
+
+[package.extras]
+all = ["winrt-Windows.Foundation.Collections[all] (>=3.2.1.0,<3.3.0.0)", "winrt-Windows.Foundation[all] (>=3.2.1.0,<3.3.0.0)"]
+
+[[package]]
 name = "winrt-windows-foundation"
 version = "3.2.1"
 description = "Python projection of Windows Runtime (WinRT) APIs"
@@ -1531,4 +1567,4 @@ pythonista = ["bleak-pythonista"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "a537f2058d4e1e3c021d0acbb427ca9105fe93f2ebb594bfc6e84a23802ab91f"
+content-hash = "a3f83fc94c9a1a796ffce33b32e2cb9dc7abe228ed30a1241f1881a41807b23b"
