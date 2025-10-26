@@ -6,6 +6,7 @@ manage CoreBluetooth services and resources on the Central End
 from __future__ import annotations
 
 import sys
+import weakref
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -204,20 +205,15 @@ class CentralManagerDelegate:
         self.central_manager.addObserver_forKeyPath_options_context_(
             self.objc_delegate, "isScanning", NSKeyValueObservingOptionNew, 0
         )
+        weakref.finalize(
+            self,
+            self.central_manager.removeObserver_forKeyPath_,
+            self.objc_delegate,
+            "isScanning",
+        )
 
         self._did_start_scanning_event: Optional[asyncio.Event] = None
         self._did_stop_scanning_event: Optional[asyncio.Event] = None
-
-    def __del__(self) -> None:
-        try:
-            self.central_manager.removeObserver_forKeyPath_(
-                self.objc_delegate, "isScanning"
-            )
-        except IndexError:
-            # If self.init() raised an exception before calling
-            # addObserver_forKeyPath_options_context_, attempting
-            # to remove the observer will fail with IndexError
-            pass
 
     # User defined functions
     @objc.python_method
