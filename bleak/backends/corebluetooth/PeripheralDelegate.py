@@ -80,6 +80,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             error,
         )
 
+    def peripheral_didDiscoverIncludedServicesForService_error_(
+        self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
+    ) -> None:
+        logger.debug("peripheral_didDiscoverIncludedServicesForService_error_")
+        # Currently not used in Bleak
+
     def peripheral_didDiscoverCharacteristicsForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
@@ -164,6 +170,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             error,
         )
 
+    def peripheralIsReadyToSendWriteWithoutResponse_(
+        self, peripheral: CBPeripheral
+    ) -> None:
+        logger.debug("peripheralIsReadyToSendWriteWithoutResponse_")
+        # Currently not used in Bleak
+
     def peripheral_didUpdateNotificationStateForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -210,7 +222,9 @@ class PeripheralDelegate:
     """macOS conforming python class for managing the PeripheralDelegate for BLE"""
 
     def __init__(self, peripheral: CBPeripheral) -> None:
-        self.objc_delegate = ObjcPeripheralDelegate.alloc().initWithPyDelegate_(self)
+        delegate = ObjcPeripheralDelegate.alloc().initWithPyDelegate_(self)
+        assert delegate is not None
+        self.objc_delegate = delegate
 
         self.peripheral = peripheral
         self.peripheral.setDelegate_(self.objc_delegate)
