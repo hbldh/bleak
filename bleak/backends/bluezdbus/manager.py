@@ -395,7 +395,7 @@ class BlueZManager:
         if not ble_central_adapters:
             raise BleakBluetoothNotAvailableError(
                 "No Bluetooth adapters with BLE 'central' role found.",
-                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+                BleakBluetoothNotAvailableReason.NO_BLE_CENTRAL_ROLE,
             )
 
         for adapter_path in ble_central_adapters:

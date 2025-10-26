@@ -22,6 +22,11 @@ class BleakBluetoothNotAvailableReason(enum.Enum):
     The system does not support Bluetooth. I.e. there is no Bluetooth radio.
     """
 
+    NO_BLE_CENTRAL_ROLE = enum.auto()
+    """
+    The Bluetooth radio does not support the Central role. (E.g. classic-only adapters.)
+    """
+
     POWERED_OFF = enum.auto()
     """
     Bluetooth is not currently available because the radio is turned off.
