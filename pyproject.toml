@@ -36,6 +36,7 @@ pyobjc-framework-libdispatch = { version = ">=10.3", markers = "platform_system=
 "winrt-Windows.Devices.Bluetooth.Advertisement" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Devices.Enumeration" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Devices.Radios" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Foundation" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Foundation.Collections" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Storage.Streams" = { version = ">=3.1", markers = "platform_system=='Windows'" }
