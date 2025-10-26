@@ -181,9 +181,9 @@ class CentralManagerDelegate:
 
     def __init__(self) -> None:
         """macOS init function for NSObject"""
-        self.objc_delegate = ObjcCentralManagerDelegate.alloc().initWithPyDelegate_(
-            self
-        )
+        delegate = ObjcCentralManagerDelegate.alloc().initWithPyDelegate_(self)
+        assert delegate is not None
+        self.objc_delegate = delegate
 
         self.event_loop = asyncio.get_running_loop()
         self._connect_futures: dict[NSUUID, asyncio.Future[bool]] = {}
