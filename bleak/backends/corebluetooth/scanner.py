@@ -155,6 +155,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                         "Could not get Bluetooth address for %s. Ignoring this device.",
                         p.identifier().UUIDString(),
                     )
+                    return
                 address = address_bytes.hex(":").upper()
             else:
                 address = p.identifier().UUIDString()
