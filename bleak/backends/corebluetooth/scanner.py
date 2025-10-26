@@ -88,9 +88,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         if scanning_mode == "passive":
             raise BleakError("macOS does not support passive scanning")
 
-        manager = CentralManagerDelegate()
-        assert manager
-        self._manager = manager
+self._manager = CentralManagerDelegate()
         self._timeout: float = kwargs.get("timeout", 5.0)
         if (
             objc.macos_available(12, 0)
