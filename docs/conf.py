@@ -16,6 +16,7 @@
 import os
 import pathlib
 import sys
+
 import tomllib
 
 PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.resolve()
@@ -123,6 +124,8 @@ autodoc_mock_imports = [
     "objc",
     "ctypes",
     "typing_extensions",
+    "bleak.backends.corebluetooth.CentralManagerDelegate",
+    "bleak.backends.corebluetooth.PeripheralDelegate",
 ]
 
 # -- Options for HTML output -------------------------------------------

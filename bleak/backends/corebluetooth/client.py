@@ -111,9 +111,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 )
 
         if self._delegate is None:
-            self._delegate = PeripheralDelegate.alloc().initWithPeripheral_(
-                self._peripheral
-            )
+            self._delegate = PeripheralDelegate(self._peripheral)
 
         def disconnect_callback() -> None:
             # Ensure that `get_services` retrieves services again, rather
