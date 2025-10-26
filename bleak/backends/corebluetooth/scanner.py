@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -147,8 +147,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
-                address_bytes: Optional[bytes] = (
-                    self._manager.central_manager.retrieveAddressForPeripheral_(p)
+                address_bytes = cast(
+                    Optional[bytes],
+                    self._manager.central_manager.retrieveAddressForPeripheral_(p),  # type: ignore
                 )
                 if address_bytes is None:
                     logger.debug(
