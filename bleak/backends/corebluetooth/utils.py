@@ -5,9 +5,9 @@ if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
 
-from CoreBluetooth import CBUUID
-
 from bleak.uuids import normalize_uuid_str
+
+from .objc_framework import CBUUID, get_prop, to_str
 
 
 def cb_uuid_to_str(uuid: CBUUID) -> str:
@@ -22,4 +22,4 @@ def cb_uuid_to_str(uuid: CBUUID) -> str:
     Returns:
         The UUID as a lower case Python string (``xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx``)
     """
-    return normalize_uuid_str(uuid.UUIDString())
+    return normalize_uuid_str(to_str(get_prop(uuid.UUIDString)))

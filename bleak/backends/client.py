@@ -236,7 +236,7 @@ def get_platform_client_backend_type() -> type[BaseBleakClient]:
                 "Ensure you have `bleak-pythonista` package installed."
             ) from e
 
-    if platform.system() == "Darwin":
+    if platform.system() == "Darwin" or sys.platform == "ios":
         from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 
         return BleakClientCoreBluetooth

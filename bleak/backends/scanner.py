@@ -309,7 +309,7 @@ def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
                 "Ensure you have `bleak-pythonista` package installed."
             ) from e
 
-    if platform.system() == "Darwin":
+    if platform.system() == "Darwin" or sys.platform == "ios":
         from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 
         return BleakScannerCoreBluetooth
