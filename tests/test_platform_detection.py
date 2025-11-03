@@ -22,18 +22,18 @@ def test_platform_detection():
     if platform.system() == "Linux":
         assert client_backend_type.__name__ == "BleakClientBlueZDBus"
         assert scanner_backend_type.__name__ == "BleakScannerBlueZDBus"
-        assert client_backend_id == BleakBackend.BlueZDBus
-        assert scanner_backend_id == BleakBackend.BlueZDBus
+        assert client_backend_id == BleakBackend.BLUEZ_DBUS
+        assert scanner_backend_id == BleakBackend.BLUEZ_DBUS
     elif platform.system() == "Windows":
         assert client_backend_type.__name__ == "BleakClientWinRT"
         assert scanner_backend_type.__name__ == "BleakScannerWinRT"
-        assert client_backend_id == BleakBackend.WinRT
-        assert scanner_backend_id == BleakBackend.WinRT
+        assert client_backend_id == BleakBackend.WIN_RT
+        assert scanner_backend_id == BleakBackend.WIN_RT
     elif platform.system() == "Darwin":
         assert client_backend_type.__name__ == "BleakClientCoreBluetooth"
         assert scanner_backend_type.__name__ == "BleakScannerCoreBluetooth"
-        assert client_backend_id == BleakBackend.CoreBluetooth
-        assert scanner_backend_id == BleakBackend.CoreBluetooth
+        assert client_backend_id == BleakBackend.CORE_BLUETOOTH
+        assert scanner_backend_id == BleakBackend.CORE_BLUETOOTH
 
 
 @pytest.mark.asyncio
@@ -45,11 +45,11 @@ async def test_backend_id():
     assert client.backend_id == scanner.backend_id
 
     if platform.system() == "Linux":
-        assert client.backend_id == BleakBackend.BlueZDBus
-        assert scanner.backend_id == BleakBackend.BlueZDBus
+        assert client.backend_id == BleakBackend.BLUEZ_DBUS
+        assert scanner.backend_id == BleakBackend.BLUEZ_DBUS
     elif platform.system() == "Windows":
-        assert client.backend_id == BleakBackend.WinRT
-        assert scanner.backend_id == BleakBackend.WinRT
+        assert client.backend_id == BleakBackend.WIN_RT
+        assert scanner.backend_id == BleakBackend.WIN_RT
     elif platform.system() == "Darwin":
-        assert client.backend_id == BleakBackend.CoreBluetooth
-        assert scanner.backend_id == BleakBackend.CoreBluetooth
+        assert client.backend_id == BleakBackend.CORE_BLUETOOTH
+        assert scanner.backend_id == BleakBackend.CORE_BLUETOOTH

@@ -7,27 +7,33 @@ from bleak.exc import BleakError
 
 
 class BleakBackend(str, enum.Enum):
-    P4Android = "P4Android"
+    """
+    Identifiers for available built-in Bleak backends.
+
+    .. version-added:: unreleased
+    """
+
+    P4ANDROID = "p4android"
     """
     Python for Android backend.
     """
 
-    BlueZDBus = "BlueZDBus"
+    BLUEZ_DBUS = "bluez_dbus"
     """
     BlueZ D-Bus backend for Linux.
     """
 
-    PythonistaCB = "PythonistaCB"
+    PYTHONISTA_CB = "pythonista_cb"
     """
     Pythonista CoreBluetooth backend for iOS and macOS.
     """
 
-    CoreBluetooth = "CoreBluetooth"
+    CORE_BLUETOOTH = "core_bluetooth"
     """
     CoreBluetooth backend for macOS.
     """
 
-    WinRT = "WinRT"
+    WIN_RT = "win_rt"
     """
     Windows Runtime backend for Windows.
     """
@@ -36,23 +42,25 @@ class BleakBackend(str, enum.Enum):
 def get_default_backend() -> BleakBackend:
     """
     Returns the preferred backend for the current platform/environment.
+
+    .. version-added:: unreleased
     """
     if os.environ.get("P4A_BOOTSTRAP") is not None:
-        return BleakBackend.P4Android
+        return BleakBackend.P4ANDROID
 
     if platform.system() == "Linux":
-        return BleakBackend.BlueZDBus
+        return BleakBackend.BLUEZ_DBUS
 
     if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
         # Must be resolved before checking for "Darwin" (macOS),
         # as both the Pythonista app for iOS and macOS
         # return "Darwin" from platform.system()
-        return BleakBackend.PythonistaCB
+        return BleakBackend.PYTHONISTA_CB
 
     if platform.system() == "Darwin":
-        return BleakBackend.CoreBluetooth
+        return BleakBackend.CORE_BLUETOOTH
 
     if platform.system() == "Windows":
-        return BleakBackend.WinRT
+        return BleakBackend.WIN_RT
 
     raise BleakError(f"Unsupported platform: {platform.system()}")

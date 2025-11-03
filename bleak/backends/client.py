@@ -213,34 +213,36 @@ def get_platform_client_backend_type() -> tuple[type[BaseBleakClient], BleakBack
     Gets the platform-specific :class:`BaseBleakClient` type.
     """
     backend = get_default_backend()
-    if backend == BleakBackend.P4Android:
-        from bleak.backends.p4android.client import BleakClientP4Android
+    match backend:
+        case BleakBackend.P4ANDROID:
+            from bleak.backends.p4android.client import BleakClientP4Android
 
-        return (BleakClientP4Android, BleakBackend.P4Android)
+            return (BleakClientP4Android, backend)
 
-    if backend == BleakBackend.BlueZDBus:
-        from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
+        case BleakBackend.BLUEZ_DBUS:
+            from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 
-        return (BleakClientBlueZDBus, BleakBackend.BlueZDBus)
+            return (BleakClientBlueZDBus, backend)
 
-    if backend == BleakBackend.PythonistaCB:
-        try:
-            from bleak_pythonista import BleakClientPythonistaCB
+        case BleakBackend.PYTHONISTA_CB:
+            try:
+                from bleak_pythonista import BleakClientPythonistaCB
 
-            return (BleakClientPythonistaCB, BleakBackend.PythonistaCB)
-        except ImportError as e:
-            raise ImportError(
-                "Ensure you have `bleak-pythonista` package installed."
-            ) from e
+                return (BleakClientPythonistaCB, backend)
+            except ImportError as e:
+                raise ImportError(
+                    "Ensure you have `bleak-pythonista` package installed."
+                ) from e
 
-    if backend == BleakBackend.CoreBluetooth:
-        from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
+        case BleakBackend.CORE_BLUETOOTH:
+            from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 
-        return (BleakClientCoreBluetooth, BleakBackend.CoreBluetooth)
+            return (BleakClientCoreBluetooth, backend)
 
-    if backend == BleakBackend.WinRT:
-        from bleak.backends.winrt.client import BleakClientWinRT
+        case BleakBackend.WIN_RT:
+            from bleak.backends.winrt.client import BleakClientWinRT
 
-        return (BleakClientWinRT, BleakBackend.WinRT)
+            return (BleakClientWinRT, backend)
 
-    raise BleakError(f"Unsupported backend: {backend}")
+        case _:
+            raise BleakError(f"Unsupported backend: {backend}")
