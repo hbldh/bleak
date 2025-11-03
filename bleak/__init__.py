@@ -533,6 +533,8 @@ class BleakClient:
         a Bluetooth address separated with dashes (``-``) instead of colons
         (``:``) (or a UUID on Apple devices). It may also be possible to override
         the device name using the OS's Bluetooth settings.
+
+        .. versionadded:: 1.1
         """
         return self._backend.name
 
