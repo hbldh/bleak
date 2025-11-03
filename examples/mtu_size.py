@@ -26,7 +26,7 @@ async def main() -> None:
         # BlueZ doesn't have a proper way to get the MTU, so we have this hack.
         # If this doesn't work for you, you can set the client._mtu_size attribute
         # to override the value instead.
-        if client.backend_id == BleakBackend.BlueZDBus:
+        if client.backend_id == BleakBackend.BLUEZ_DBUS:
             await client._backend._acquire_mtu()  # type: ignore
 
         print("MTU:", client.mtu_size)
