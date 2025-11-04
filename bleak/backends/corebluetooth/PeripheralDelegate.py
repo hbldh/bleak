@@ -73,12 +73,17 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         self, peripheral: CBPeripheral, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverServices_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_discover_services,
-            peripheral,
-            peripheral.services(),
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_discover_services,
+                peripheral,
+                peripheral.services(),
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didDiscoverIncludedServicesForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
@@ -90,13 +95,18 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverCharacteristicsForService_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_discover_characteristics_for_service,
-            peripheral,
-            service,
-            service.characteristics(),
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_discover_characteristics_for_service,
+                peripheral,
+                service,
+                service.characteristics(),
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(
         self,
@@ -105,12 +115,17 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didDiscoverDescriptorsForCharacteristic_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_discover_descriptors_for_characteristic,
-            peripheral,
-            characteristic,
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_discover_descriptors_for_characteristic,
+                peripheral,
+                characteristic,
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didUpdateValueForCharacteristic_error_(
         self,
@@ -119,13 +134,18 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didUpdateValueForCharacteristic_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_update_value_for_characteristic,
-            peripheral,
-            characteristic,
-            characteristic.value(),
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_update_value_for_characteristic,
+                peripheral,
+                characteristic,
+                characteristic.value(),
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didUpdateValueForDescriptor_error_(
         self,
@@ -134,13 +154,18 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didUpdateValueForDescriptor_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_update_value_for_descriptor,
-            peripheral,
-            descriptor,
-            descriptor.value(),
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_update_value_for_descriptor,
+                peripheral,
+                descriptor,
+                descriptor.value(),
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didWriteValueForCharacteristic_error_(
         self,
@@ -149,12 +174,17 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didWriteValueForCharacteristic_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_write_value_for_characteristic,
-            peripheral,
-            characteristic,
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_write_value_for_characteristic,
+                peripheral,
+                characteristic,
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didWriteValueForDescriptor_error_(
         self,
@@ -163,12 +193,17 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didWriteValueForDescriptor_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_write_value_for_descriptor,
-            peripheral,
-            descriptor,
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_write_value_for_descriptor,
+                peripheral,
+                descriptor,
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheralIsReadyToSendWriteWithoutResponse_(
         self, peripheral: CBPeripheral
@@ -183,12 +218,17 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didUpdateNotificationStateForCharacteristic_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_update_notification_for_characteristic,
-            peripheral,
-            characteristic,
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_update_notification_for_characteristic,
+                peripheral,
+                characteristic,
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didReadRSSI_error_(
         self,
@@ -197,25 +237,40 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didReadRSSI_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_read_rssi, peripheral, rssi, error
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_read_rssi, peripheral, rssi, error
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     # Bleak currently doesn't use the callbacks below other than for debug logging
 
     def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
         logger.debug("peripheralDidUpdateName_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_update_name, peripheral, peripheral.name()
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_update_name, peripheral, peripheral.name()
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def peripheral_didModifyServices_(
         self, peripheral: CBPeripheral, invalidatedServices: NSArray[CBService]
     ) -> None:
         logger.debug("peripheral_didModifyServices_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_modify_services, peripheral, invalidatedServices
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_modify_services, peripheral, invalidatedServices
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
 
 class PeripheralDelegate:

@@ -92,9 +92,13 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             return
 
         is_scanning = bool(change[NSKeyValueChangeNewKey])
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.changed_is_scanning, is_scanning
-        )
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.changed_is_scanning, is_scanning
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     # Protocol Functions
 
@@ -113,9 +117,13 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         elif centralManager.state() == CBManagerStatePoweredOn:
             logger.debug("Bluetooth powered on")
 
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_update_state_event.set
-        )
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_update_state_event.set
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
         self,
@@ -125,23 +133,33 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         RSSI: int,
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_discover_peripheral,
-            central,
-            peripheral,
-            advertisementData,
-            RSSI,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_discover_peripheral,
+                central,
+                peripheral,
+                advertisementData,
+                RSSI,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def centralManager_didConnectPeripheral_(
         self, central: CBCentralManager, peripheral: CBPeripheral
     ) -> None:
         logger.debug("centralManager_didConnectPeripheral_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_connect_peripheral,
-            central,
-            peripheral,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_connect_peripheral,
+                central,
+                peripheral,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def centralManager_didFailToConnectPeripheral_error_(
         self,
@@ -150,12 +168,17 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         error: Optional[NSError],
     ) -> None:
         logger.debug("centralManager_didFailToConnectPeripheral_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_fail_to_connect_peripheral,
-            centralManager,
-            peripheral,
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_fail_to_connect_peripheral,
+                centralManager,
+                peripheral,
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
     def centralManager_didDisconnectPeripheral_error_(
         self,
@@ -164,12 +187,17 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         error: Optional[NSError],
     ) -> None:
         logger.debug("centralManager_didDisconnectPeripheral_error_")
-        self.py_delegate.event_loop.call_soon_threadsafe(
-            self.py_delegate.did_disconnect_peripheral,
-            central,
-            peripheral,
-            error,
-        )
+
+        try:
+            self.py_delegate.event_loop.call_soon_threadsafe(
+                self.py_delegate.did_disconnect_peripheral,
+                central,
+                peripheral,
+                error,
+            )
+        except RuntimeError as e:
+            # Likely caused by loop being closed
+            logger.debug("unraisable exception", exc_info=e)
 
 
 class CentralManagerDelegate:
