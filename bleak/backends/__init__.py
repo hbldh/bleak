@@ -1,3 +1,12 @@
+"""
+Communicating with Bluetooth hardware requires calling OS-specific APIs. These
+are abstracted as "backends" in Bleak.
+
+The backend will be automatically selected based on the operating system Bleak
+is running on. In some cases, this may also depend on a specific runtime, like
+Pythonista on iOS.
+"""
+
 import enum
 import os
 import platform
@@ -10,7 +19,7 @@ class BleakBackend(str, enum.Enum):
     """
     Identifiers for available built-in Bleak backends.
 
-    .. version-added:: unreleased
+    .. versionadded:: unreleased
     """
 
     P4ANDROID = "p4android"
@@ -43,7 +52,7 @@ def get_default_backend() -> BleakBackend:
     """
     Returns the preferred backend for the current platform/environment.
 
-    .. version-added:: unreleased
+    .. versionadded:: unreleased
     """
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         return BleakBackend.P4ANDROID

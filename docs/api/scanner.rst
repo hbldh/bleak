@@ -81,3 +81,10 @@ Otherwise, you can use one of the properties below after scanning has stopped.
 
 .. autoproperty:: bleak.BleakScanner.discovered_devices
 .. autoproperty:: bleak.BleakScanner.discovered_devices_and_advertisement_data
+
+
+-----------------
+Extra information
+-----------------
+
+.. autoproperty:: bleak.BleakScanner.backend_id
