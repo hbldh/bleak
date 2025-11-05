@@ -4,8 +4,6 @@
 Base class for backend clients.
 """
 import abc
-import os
-import platform
 import sys
 from collections.abc import Callable
 from typing import Any, Optional, Union
@@ -15,6 +13,7 @@ if sys.version_info < (3, 12):
 else:
     from collections.abc import Buffer
 
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
@@ -209,41 +208,41 @@ class BaseBleakClient(abc.ABC):
         raise NotImplementedError()
 
 
-def get_platform_client_backend_type() -> type[BaseBleakClient]:
+def get_platform_client_backend_type() -> tuple[type[BaseBleakClient], BleakBackend]:
     """
     Gets the platform-specific :class:`BaseBleakClient` type.
     """
-    if os.environ.get("P4A_BOOTSTRAP") is not None:
-        from bleak.backends.p4android.client import BleakClientP4Android
+    backend = get_default_backend()
+    match backend:
+        case BleakBackend.P4ANDROID:
+            from bleak.backends.p4android.client import BleakClientP4Android
 
-        return BleakClientP4Android
+            return (BleakClientP4Android, backend)
 
-    if platform.system() == "Linux":
-        from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
+        case BleakBackend.BLUEZ_DBUS:
+            from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 
-        return BleakClientBlueZDBus
+            return (BleakClientBlueZDBus, backend)
 
-    if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
-        # Must be resolved before checking for "Darwin" (macOS),
-        # as both the Pythonista app for iOS and macOS
-        # return "Darwin" from platform.system()
-        try:
-            from bleak_pythonista import BleakClientPythonistaCB
+        case BleakBackend.PYTHONISTA_CB:
+            try:
+                from bleak_pythonista import BleakClientPythonistaCB
 
-            return BleakClientPythonistaCB
-        except ImportError as e:
-            raise ImportError(
-                "Ensure you have `bleak-pythonista` package installed."
-            ) from e
+                return (BleakClientPythonistaCB, backend)
+            except ImportError as e:
+                raise ImportError(
+                    "Ensure you have `bleak-pythonista` package installed."
+                ) from e
 
-    if platform.system() == "Darwin":
-        from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
+        case BleakBackend.CORE_BLUETOOTH:
+            from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 
-        return BleakClientCoreBluetooth
+            return (BleakClientCoreBluetooth, backend)
 
-    if platform.system() == "Windows":
-        from bleak.backends.winrt.client import BleakClientWinRT
+        case BleakBackend.WIN_RT:
+            from bleak.backends.winrt.client import BleakClientWinRT
 
-        return BleakClientWinRT
+            return (BleakClientWinRT, backend)
 
-    raise BleakError(f"Unsupported platform: {platform.system()}")
+        case _:
+            raise BleakError(f"Unsupported backend: {backend}")

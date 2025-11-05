@@ -10,6 +10,11 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``bleak.backends.get_default_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
+* Added ``BleakClient().backend_id`` and ``BleakScanner().backend_id`` properties to identify the backend in use.
+
 Changed
 -------
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.

@@ -55,6 +55,7 @@ Device information
 
 .. autoproperty:: bleak.BleakClient.mtu_size
 
+.. autoproperty:: bleak.BleakClient.backend_id
 
 ----------------------
 GATT Client Operations

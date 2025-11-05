@@ -22,6 +22,13 @@ Contents:
    android
    pythonista
 
+Backend selection
+-----------------
+
+.. automodule:: bleak.backends
+    :members:
+
+
 Shared Backend API
 ------------------
 
