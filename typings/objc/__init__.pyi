@@ -5,7 +5,17 @@ from Foundation import NSObject
 
 T = TypeVar("T")
 
-def super(cls: type[T], self: T) -> T: ...
+class _OptionsType:
+    deprecation_warnings: bool
+    structs_indexable: bool
+    structs_writable: bool
+    unknown_pointer_raises: bool
+    use_kvo: bool
+    verbose: bool
+
+options: _OptionsType
+
+def super(cls: type, self: T) -> T: ...
 def macos_available(major: int, minor: int, patch: int = 0) -> bool: ...
 def python_method(func: T) -> T: ...
 

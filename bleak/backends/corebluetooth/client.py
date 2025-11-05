@@ -111,14 +111,15 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 )
 
         if self._delegate is None:
-            self._delegate = PeripheralDelegate.alloc().initWithPeripheral_(
-                self._peripheral
-            )
+            assert self._peripheral is not None
+            self._delegate = PeripheralDelegate(self._peripheral)
 
         def disconnect_callback() -> None:
             # Ensure that `get_services` retrieves services again, rather
             # than using the cached object
             self.services = None
+
+            assert self._delegate is not None
 
             # If there are any pending futures waiting for delegate callbacks, we
             # need to raise an exception since the callback will no longer be
@@ -134,8 +135,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 self._disconnected_callback()
 
         manager = self._central_manager_delegate
+        assert manager is not None
         logger.debug("CentralManagerDelegate  at {}".format(manager))
         logger.debug("Connecting to BLE device @ {}".format(self.address))
+        assert self._peripheral is not None
         await manager.connect(self._peripheral, disconnect_callback, timeout=timeout)
 
         # Now get services
@@ -329,6 +332,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
     ) -> None:
         value = NSData.alloc().initWithBytes_length_(data, len(data))
+        assert self._delegate
         await self._delegate.write_characteristic(
             characteristic.obj,
             value,

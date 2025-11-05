@@ -17,51 +17,53 @@ Added
 
 Changed
 -------
-- Raise new ``BleakBluetoothNotAvailableError`` on macOS when Bluetooth is not supported, turned off or the Bluetooth permission are denied.
+* Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
 
 Fixed
 -----
-- Fixed "Bluetooth device is turned off" Exception on macOS, when a Bluetooth permission request popup is shown to the user by the OS.
+* Fixed crash in CoreBluetooth backend if an ObjC delegate callback is called after the asyncio run loop stops.
+* Fixed possible deadlock when starting scanning on Windows when Bluetooth is turned off.
+* Fixed "Bluetooth device is turned off" Exception on macOS, when a Bluetooth permission request popup is shown to the user by the OS.
 
 Removed
 -------
-- Removed support for Python 3.9.
-- Removed support for macOS < 10.15.
+* Removed support for Python 3.9.
+* Removed support for macOS < 10.15.
 
 `1.1.1`_ (2025-09-07)
 =====================
 
 Fixed
 -----
-- Fixed D-Bus connection leak on connection failure in BlueZ backend.
-- Fixed characteristic's max write without response size using wrong characteristic's value. Fixes #1820.
-- Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
+* Fixed D-Bus connection leak on connection failure in BlueZ backend.
+* Fixed characteristic's max write without response size using wrong characteristic's value. Fixes #1820.
+* Fixed ``AttributeError`` in Python4Android backend when accessing ``is_connected`` before connecting. Fixes #1791.
 
 `1.1.0`_ (2025-08-10)
 =====================
 
 Added
 -----
-- Added support for Pythonista iOS app backend.
-- Added ``BleakClient.name`` property for getting the peripheral's name. Fixes #1802.
+* Added support for Pythonista iOS app backend.
+* Added ``BleakClient.name`` property for getting the peripheral's name. Fixes #1802.
 
 Fixed
 -----
-- Fixed ``BleakClient.connect()`` on Android when service characteristics have descriptors. Fixes #1803.
-- Fixed disconnect callback not called on Windows when Bleak initiates disconnection.
+* Fixed ``BleakClient.connect()`` on Android when service characteristics have descriptors. Fixes #1803.
+* Fixed disconnect callback not called on Windows when Bleak initiates disconnection.
 
 `1.0.1`_ (2025-06-30)
 =====================
 
 Changed
 -------
-- Added deprecation warnings for importing ``bleak.args.*`` types from ``bleak.backends.*``.
+* Added deprecation warnings for importing ``bleak.args.*`` types from ``bleak.backends.*``.
 
 Fixed
 -----
 
-- Restored ``**kwargs`` in ``BLEDevice()`` constructor. Fixes #1783.
-- Restored importing ``OrPattern`` from ``bleak.backends.bluezdbus.advertisement_monitor``.
+* Restored ``**kwargs`` in ``BLEDevice()`` constructor. Fixes #1783.
+* Restored importing ``OrPattern`` from ``bleak.backends.bluezdbus.advertisement_monitor``.
 
 
 `1.0.0`_ (2025-06-28)
