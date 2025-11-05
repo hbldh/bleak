@@ -12,8 +12,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
-- Added ``bleak.backends.get_default_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
-- Added ``BleakClient().backend_id`` and ``BleakScanner().backend_id`` properties to identify the backend in use.
+* Added ``bleak.backends.get_default_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
+* Added ``BleakClient().backend_id`` and ``BleakScanner().backend_id`` properties to identify the backend in use.
 
 Changed
 -------
