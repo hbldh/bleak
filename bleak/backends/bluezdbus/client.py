@@ -15,7 +15,7 @@ import os
 import warnings
 from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, override
@@ -103,6 +103,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: dict[str, NotifyCallback] = {}
+        self._notification_discriminators: Dict[int, Callable[[bytearray], bool]] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -184,7 +185,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                 disconnecting_event.set()
 
                     def on_value_changed(char_path: str, value: bytes) -> None:
+                        discriminator = self._notification_discriminators.get(char_path)
                         callback = self._notification_callbacks.get(char_path)
+
+                        if discriminator and not discriminator(value):
+                            return
 
                         if callback:
                             callback(bytearray(value))
@@ -909,12 +914,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
+        *,
+        bluez: BlueZStartNotifyArgs,
         **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
         """
         self._notification_callbacks[characteristic.obj[0]] = callback
+        self._notification_discriminators[characteristic.obj[0]] = bluez.get("notification_discriminator")
 
         assert self._bus is not None
 
