@@ -18,6 +18,7 @@ Added
 Changed
 -------
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
+* Added ''notification_discriminator'' parameter to start_notify on BlueZ backend
 
 Fixed
 -----

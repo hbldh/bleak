@@ -37,6 +37,13 @@ because the remapped UID will not match the UID that the hosts sees. To work
 around this, you can hardcode a UID with the `BLEAK_DBUS_AUTH_UID` environment
 variable.
 
+Notifications
+^^^^^^^^^^^^^
+While notifying on a characteristic BlueZ does not differentiate between data from a notification and data from a aread.
+This causes duplicate data in instances where a notification should trigger a re-read of the characteristic.
+
+Bleak can accept a ''notification_discriminator'' callback in the ''bluez'' dict parameter used in
+:meth:'BleakClient.start_notify' to filter non-notification data.  
 
 API
 ---
