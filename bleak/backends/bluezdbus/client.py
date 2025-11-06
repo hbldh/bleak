@@ -15,7 +15,7 @@ import os
 import warnings
 from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer, override
@@ -103,7 +103,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: dict[str, NotifyCallback] = {}
-        self._notification_discriminators: Dict[int, Callable[[bytearray], bool]] = {}
+        self._notification_discriminators: dict[int, Callable[[bytearray], bool]] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
