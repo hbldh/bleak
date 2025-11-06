@@ -34,6 +34,7 @@ from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
+from bleak.args.bluez import BlueZStartNotifyArgs
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
