@@ -103,7 +103,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: dict[str, NotifyCallback] = {}
-        self._notification_fd_stop_events: dict[str, asyncio.Event] = {}
+        self._notification_fds: dict[str, int] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -207,8 +207,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     async def disconnect_device() -> None:
                         # Clean up open notification file descriptors
-                        for stop_event in self._notification_fd_stop_events.items():
-                            stop_event.set()
+                        loop = asyncio.get_running_loop()
+                        for fd in self._notification_fds.items():
+                            try:
+                                loop.remove_reader(fd)
+                                os.close(fd)
+                            except Exception as e:
+                                logger.error(
+                                    "Failed to remove file descriptor %d: %d", fd, e
+                                )
 
                         # Calling Disconnect cancels any pending connect request. Also,
                         # if connection was successful but _get_services() raises (e.g.
@@ -909,23 +916,26 @@ class BleakClientBlueZDBus(BaseBleakClient):
             "Write Descriptor %s | %s: %s", descriptor.handle, descriptor.obj[0], data
         )
 
-    async def _read_notify_fd(self, fd, callback, close_event):
+    def _read_notify_fd(self, fd, callback):
         loop = asyncio.get_running_loop()
-        with os.fdopen(fd, "rb", closefd=True) as f:
-            while True:
-                try:
-                    if close_event.is_set():
-                        break
+        os.set_blocking(fd, False)
 
-                    data = await loop.run_in_executor(None, f.read, 1024)
-                    if not data:
-                        continue
-                    callback(bytes(data))
-                except Exception as e:
-                    logger.error(
-                        "Exception occured while using AcquireNotify fd: %s",
-                        e,
-                    )
+        def on_data():
+            try:
+                data = os.read(fd, 1024)
+                if not data:  # EOF, close file descriptor
+                    os.close(fd)
+                    return
+                callback(bytes(data))
+            except Exception as e:
+                logger.error("AcquireNotify: Read error on fd %d: %s", fd, e)
+                try:
+                    loop.remove_reader(fd)
+                    os.close(fd)
+                except OSError:
+                    pass
+
+        loop.add_reader(fd, on_data)
 
     @override
     async def start_notify(
@@ -939,6 +949,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         assert self._bus is not None
 
+        # If using StartNotify and calling a read on the same
+        # characteristic, BlueZ will return the response as
+        # both a notification and read, duplicating the message.
+        # Using NotifyAcquired on supported characteristics avoids this.
         if "NotifyAcquired" in characteristic.obj[1]:
             reply = await self._bus.call(
                 Message(
@@ -954,12 +968,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             assert_reply(reply)
 
             unix_fd = reply.unix_fds[0]
-            stop_event = asyncio.Event()
-            self._notification_fd_stop_events[characteristic.obj[0]] = stop_event
-            task = asyncio.create_task(
-                self._read_notify_fd(unix_fd, callback, stop_event)
-            )
-            _background_tasks.add(task)
+            self._notification_fds[characteristic.obj[0]] = unix_fd
+            self._read_notify_fd(unix_fd, callback)
         else:
             self._notification_callbacks[characteristic.obj[0]] = callback
             reply = await self._bus.call(
@@ -987,11 +997,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert self._bus is not None
 
         if "NotifyAcquired" in characteristic.obj[1]:
-            stop_event = self._notification_fd_stop_events.pop(
-                characteristic.obj[0], None
-            )
-            if stop_event:
-                stop_event.set()
+            fd = self._notification_fds.pop(characteristic.obj[0])
+            if fd:
+                loop = asyncio.get_running_loop()
+                try:
+                    loop.remove_reader(fd)
+                    os.close(fd)
+                except Exception as e:
+                    logger.error("Failed to remove file descriptor %d: %d", fd, e)
         else:
             reply = await self._bus.call(
                 Message(
