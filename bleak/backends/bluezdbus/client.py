@@ -34,7 +34,6 @@ from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
-from bleak.args.bluez import BlueZStartNotifyArgs
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
@@ -104,7 +103,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: dict[str, NotifyCallback] = {}
-        self._notification_discriminators: dict[int, Callable[[bytearray], bool]] = {}
+        self._notification_fd_stop_events: dict[str, asyncio.Event] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -186,11 +185,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                 disconnecting_event.set()
 
                     def on_value_changed(char_path: str, value: bytes) -> None:
-                        discriminator = self._notification_discriminators.get(char_path)
                         callback = self._notification_callbacks.get(char_path)
-
-                        if discriminator and not discriminator(value):
-                            return
 
                         if callback:
                             callback(bytearray(value))
@@ -211,6 +206,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     stack.callback(local_disconnect_monitor_event.set)
 
                     async def disconnect_device() -> None:
+                        # Clean up open notification file descriptors
+                        for stop_event in self._notification_fd_stop_events.items():
+                            stop_event.set()
+
                         # Calling Disconnect cancels any pending connect request. Also,
                         # if connection was successful but _get_services() raises (e.g.
                         # because task was cancelled), then we still need to disconnect
@@ -910,33 +909,69 @@ class BleakClientBlueZDBus(BaseBleakClient):
             "Write Descriptor %s | %s: %s", descriptor.handle, descriptor.obj[0], data
         )
 
+    async def _read_notify_fd(self, fd, callback, close_event):
+        loop = asyncio.get_running_loop()
+        with os.fdopen(fd, "rb", closefd=True) as f:
+            while True:
+                try:
+                    if close_event.is_set():
+                        break
+
+                    data = await loop.run_in_executor(None, f.read, 1024)
+                    if not data:
+                        continue
+                    callback(bytes(data))
+                except Exception as e:
+                    logger.error(
+                        "Exception occured while using AcquireNotify fd: %s",
+                        e,
+                    )
+
     @override
     async def start_notify(
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        *,
-        bluez: BlueZStartNotifyArgs,
         **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
         """
-        self._notification_callbacks[characteristic.obj[0]] = callback
-        self._notification_discriminators[characteristic.obj[0]] = bluez.get("notification_discriminator")
-
         assert self._bus is not None
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.obj[0],
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member="StartNotify",
+        if "NotifyAcquired" in characteristic.obj[1]:
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.obj[0],
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="AcquireNotify",
+                    body=[{}],
+                    signature="a{sv}",
+                )
             )
-        )
-        assert reply
-        assert_reply(reply)
+            assert reply
+            assert_reply(reply)
+
+            unix_fd = reply.unix_fds[0]
+            stop_event = asyncio.Event()
+            self._notification_fd_stop_events[characteristic.obj[0]] = stop_event
+            task = asyncio.create_task(
+                self._read_notify_fd(unix_fd, callback, stop_event)
+            )
+            _background_tasks.add(task)
+        else:
+            self._notification_callbacks[characteristic.obj[0]] = callback
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.obj[0],
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="StartNotify",
+                )
+            )
+            assert reply
+            assert_reply(reply)
 
     @override
     async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
@@ -951,15 +986,21 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         assert self._bus is not None
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.obj[0],
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member="StopNotify",
+        if "NotifyAcquired" in characteristic.obj[1]:
+            stop_event = self._notification_fd_stop_events.pop(
+                characteristic.obj[0], None
             )
-        )
-        assert reply
-        assert_reply(reply)
-
-        self._notification_callbacks.pop(characteristic.obj[0], None)
+            if stop_event:
+                stop_event.set()
+        else:
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.obj[0],
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="StopNotify",
+                )
+            )
+            assert reply
+            assert_reply(reply)
+            self._notification_callbacks.pop(characteristic.obj[0], None)

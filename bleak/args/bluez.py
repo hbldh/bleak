@@ -4,7 +4,7 @@ BlueZ backend arguments
 -----------------------
 """
 
-from typing import Callable, NamedTuple, Optional, TypedDict, Union
+from typing import NamedTuple, TypedDict, Union
 
 from bleak.assigned_numbers import AdvertisementDataType
 
@@ -97,8 +97,3 @@ class BlueZScannerArgs(TypedDict, total=False):
 
     Only used for passive scanning.
     """
-
-NotificationDiscriminator = Callable[[bytes], bool]
-
-class BlueZStartNotifyArgs(TypedDict, total=False):
-    notification_discriminator: Optional[NotificationDiscriminator]

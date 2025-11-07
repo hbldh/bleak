@@ -30,7 +30,7 @@ else:
     from asyncio import timeout as async_timeout
     from typing import Never, Self, Unpack, assert_never
 
-from bleak.args.bluez import BlueZScannerArgs, BlueZStartNotifyArgs
+from bleak.args.bluez import BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends import BleakBackend
@@ -787,7 +787,6 @@ class BleakClient:
         ],
         *,
         cb: CBStartNotifyArgs = {},
-        bluez: BlueZStartNotifyArgs = {},
         **kwargs: Any,
     ) -> None:
         """
@@ -841,7 +840,7 @@ class BleakClient:
             wrapped_callback = functools.partial(callback, characteristic)
 
         await self._backend.start_notify(
-            characteristic, wrapped_callback, cb=cb, bluez=bluez, **kwargs
+            characteristic, wrapped_callback, cb=cb, **kwargs
         )
 
     async def stop_notify(
