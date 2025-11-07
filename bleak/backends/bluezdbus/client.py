@@ -922,7 +922,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         def on_data():
             try:
                 data = os.read(fd, 1024)
-                if not data:  # EOF, close file descriptor
+                if not data:
                     raise RuntimeError("Unexpected EOF on notification file handle")
                 callback(bytes(data))
             except Exception as e:
