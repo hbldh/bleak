@@ -918,17 +918,19 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     def _read_notify_fd(self, fd, callback):
         loop = asyncio.get_running_loop()
-        os.set_blocking(fd, False)
 
         def on_data():
             try:
                 data = os.read(fd, 1024)
                 if not data:  # EOF, close file descriptor
-                    os.close(fd)
-                    return
+                    raise RuntimeError("Unexpected EOF on notification file handle")
                 callback(bytes(data))
             except Exception as e:
-                logger.error("AcquireNotify: Read error on fd %d: %s", fd, e)
+                logger.error(
+                    "AcquireNotify: Read error on fd %d: %s. Notifications have been stopped.",
+                    fd,
+                    e,
+                )
                 try:
                     loop.remove_reader(fd)
                     os.close(fd)
@@ -952,7 +954,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # If using StartNotify and calling a read on the same
         # characteristic, BlueZ will return the response as
         # both a notification and read, duplicating the message.
-        # Using NotifyAcquired on supported characteristics avoids this.
+        # Using AcquireNotify on supported characteristics avoids this.
+        # However, using the preferred AcquireNotify requires that devices
+        # correctly indicate "notify" and/or "indicate" properties. If they
+        # don't, we fall back to StartNotify.
         if "NotifyAcquired" in characteristic.obj[1]:
             reply = await self._bus.call(
                 Message(
