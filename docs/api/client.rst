@@ -49,10 +49,13 @@ A callback can be provided to the :class:`BleakClient` constructor via the
 Device information
 ------------------
 
+.. autoproperty:: bleak.BleakClient.name
+
 .. autoproperty:: bleak.BleakClient.address
 
 .. autoproperty:: bleak.BleakClient.mtu_size
 
+.. autoproperty:: bleak.BleakClient.backend_id
 
 ----------------------
 GATT Client Operations

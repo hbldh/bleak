@@ -10,12 +10,18 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``bleak.backends.get_default_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
+* Added ``BleakClient().backend_id`` and ``BleakScanner().backend_id`` properties to identify the backend in use.
+
 Changed
 -------
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
 
 Fixed
 -----
+* Fixed crash in CoreBluetooth backend if an ObjC delegate callback is called after the asyncio run loop stops.
 * Fixed possible deadlock when starting scanning on Windows when Bluetooth is turned off.
 * Fixed "Bluetooth device is turned off" Exception on macOS, when a Bluetooth permission request popup is shown to the user by the OS.
 
