@@ -465,7 +465,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
 
-        assert self.services
+        if self.services is None:
+            # No connection exists. Either one hasn't been created or
+            # we have already called disconnect and closed the gatt
+            # connection.
+            logger.debug("already disconnected")
+            return
 
         # Remove notifications.
         for handle, event_handler_token in list(self._notification_callbacks.items()):
