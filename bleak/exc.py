@@ -14,7 +14,7 @@ class BleakBluetoothNotAvailableReason(enum.Enum):
     """
     Reasons for Bluetooth not being available.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 2.0
     """
 
     NO_BLUETOOTH = enum.auto()
@@ -57,7 +57,7 @@ class BleakBluetoothNotAvailableError(BleakError):
     """
     Exception which is raised if the Bluetooth access is not available for some reason.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 2.0
     """
 
     def __init__(self, msg: str, reason: BleakBluetoothNotAvailableReason) -> None:

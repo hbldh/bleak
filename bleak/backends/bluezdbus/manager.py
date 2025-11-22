@@ -379,7 +379,7 @@ class BlueZManager:
             BleakBluetoothNotAvailableError:
                 if there are no Bluetooth Low Energy adapters or if none of the adapters are powered
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 2.0
             Now raises :class:`BleakBluetoothNotAvailableError` instead of :class:`BleakError`.
         """
         if not any(self._adapters):

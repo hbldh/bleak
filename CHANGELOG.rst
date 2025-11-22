@@ -10,6 +10,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`2.0.0`_ (2025-11-22)
+=====================
+
 Added
 -----
 * Added ``bleak.backends.get_default_backend()`` and ``BleakBackend`` enum for a centralized backend detection.
@@ -17,8 +20,8 @@ Added
 
 Changed
 -------
-* Use AcquireNotify rather than StartNotify for Linux backend on supported characteristics
-* Allow multiple calls to ``disconnect()`` on Windows to align behaviour over all backends.
+* Use ``"AcquireNotify"`` rather than ``"StartNotify"`` for Linux backend on supported characteristics
+* Allow multiple calls to ``disconnect()`` on Windows to align behavior over all backends.
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
 
 Fixed
@@ -1144,7 +1147,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v1.1.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.0.0...develop
+.. _2.0.0: https://github.com/hbldh/bleak/compare/v1.1.1...v2.0.0
 .. _1.1.1: https://github.com/hbldh/bleak/compare/v1.1.0...v1.1.1
 .. _1.1.0: https://github.com/hbldh/bleak/compare/v1.0.1...v1.1.0
 .. _1.0.1: https://github.com/hbldh/bleak/compare/v1.0.0...v1.0.1
