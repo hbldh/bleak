@@ -40,6 +40,43 @@ timeouts should be set accordingly.
 Calling the :meth:`bleak.BleakClient.pair` method will raise a ``NotImplementedError``
 on macOS. But setting ``pair=True`` in :class:`bleak.BleakClient` will be silently ignored.
 
+
+.. _cb-permissions:
+
+Permissions
+^^^^^^^^^^^
+To use Bluetooth in an bundled application you have to make sure, that `NSBluetoothAlwaysUsageDescription <https://developer.apple.com/documentation/BundleResources/Information-Property-List/NSBluetoothAlwaysUsageDescription>`_
+is set in your ``Info.plist``. For example this has to look like:
+
+.. code-block::
+
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Some description why your app needs Bluetooth access</string>
+
+When using `briefcase <https://briefcase.readthedocs.io/en/stable/>`_ to package your application, 
+you have to add the following to your ``pyproject.toml`` to create that entry in the ``Info.plist``:
+
+.. code-block::
+
+    [tool.briefcase.app.YOUR_APP_NAME.macOS]
+    info."NSBluetoothAlwaysUsageDescription" = "Some description why your app needs Bluetooth access"
+
+In addition to this, the user has to grant the Bluetooth permission to the application. When
+the application currently has no permission the OS will automatically create a popup window and
+ask the user for permission. This happens when Bluetooth is used by the application for the
+first time.
+
+.. image:: ../images/macos-permission-request.png
+    :scale: 40%
+
+When the users allow the the Bluetooth access, all ``bleak`` features can be used normally.
+
+If the user doesn't allow it, a :class:`BleakBluetoothNotAvailableError` will raised every time
+Bluetooth is accessed. An re-request of the Bluetooth permissions is not possible programmatically.
+This is only possible via the macOS system settings. To create a nice user experience the application
+can catch the :class:`BleakBluetoothNotAvailableError` and guide the user to ``System Settings → Privacy & Security → 
+Bluetooth``.
+
 .. _cb-notification-discriminator:
 
 Notifications

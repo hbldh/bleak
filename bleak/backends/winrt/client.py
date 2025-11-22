@@ -360,19 +360,19 @@ class BleakClientWinRT(BaseBleakClient):
                 )
             )
 
-            # If the session is already active, we need to set the event since
-            # the session_status_changed event won't fire. This happens, e.g.,
-            # when pairing before connecting which causes the device to already
-            # be connected.
-            if self._session.session_status == GattSessionStatus.ACTIVE:
-                event.set()
-
             self._max_pdu_size_changed_token = self._session.add_max_pdu_size_changed(
                 max_pdu_size_changed_handler
             )
 
             services_changed_event = asyncio.Event()
             self._services_changed_events.append(services_changed_event)
+
+            # If the session is already active, we need to set the event since
+            # the session_status_changed event won't fire. This happens, e.g.,
+            # when pairing before connecting which causes the device to already
+            # be connected.
+            if self._session.session_status == GattSessionStatus.ACTIVE:
+                event.set()
 
             try:
                 # Windows does not support explicitly connecting to a device.
@@ -465,7 +465,12 @@ class BleakClientWinRT(BaseBleakClient):
         """Disconnect from the specified GATT server."""
         logger.debug("Disconnecting from BLE device...")
 
-        assert self.services
+        if self.services is None:
+            # No connection exists. Either one hasn't been created or
+            # we have already called disconnect and closed the gatt
+            # connection.
+            logger.debug("already disconnected")
+            return
 
         # Remove notifications.
         for handle, event_handler_token in list(self._notification_callbacks.items()):

@@ -88,8 +88,8 @@ async def run_queue_consumer(queue: asyncio.Queue[tuple[float, Optional[bytearra
             logger.info("Received callback data via async queue at %s: %r", epoch, data)
 
 
-async def main(args: Args):
-    queue = asyncio.Queue[tuple[float, Optional[bytearray]]]()
+async def main(args: Args) -> None:
+    queue: asyncio.Queue[tuple[float, Optional[bytearray]]] = asyncio.Queue()
     client_task = run_ble_client(args, queue)
     consumer_task = run_queue_consumer(queue)
 

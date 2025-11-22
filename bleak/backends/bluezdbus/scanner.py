@@ -127,6 +127,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self.seen_devices = {}
 
         if self._scanning_mode == "passive":
+            assert self._or_patterns is not None  # should be checked in __init__
+
             self._stop = await manager.passive_scan(
                 adapter_path,
                 self._or_patterns,

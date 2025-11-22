@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import enum
 import uuid
 from typing import Any, Optional, Union
 
@@ -9,11 +10,72 @@ class BleakError(Exception):
     pass
 
 
+class BleakBluetoothNotAvailableReason(enum.Enum):
+    """
+    Reasons for Bluetooth not being available.
+
+    .. versionadded:: 2.0
+    """
+
+    NO_BLUETOOTH = enum.auto()
+    """
+    The system does not support Bluetooth. I.e. there is no Bluetooth radio.
+    """
+
+    NO_BLE_CENTRAL_ROLE = enum.auto()
+    """
+    The Bluetooth radio does not support the Central role. (E.g. classic-only adapters.)
+    """
+
+    POWERED_OFF = enum.auto()
+    """
+    Bluetooth is not currently available because the radio is turned off.
+    """
+
+    DENIED_BY_USER = enum.auto()
+    """
+    The user denied permission for the app to use Bluetooth when prompted.
+    """
+
+    DENIED_BY_SYSTEM = enum.auto()
+    """
+    Using Bluetooth was denied by the system. E.g. because of a system administrator policy.
+    """
+
+    DENIED_BY_UNKNOWN = enum.auto()
+    """
+    Permission to use Bluetooth was denied for an unknown reason.
+    """
+
+    UNKNOWN = enum.auto()
+    """
+    Bluetooth is not available for an unknown reason.
+    """
+
+
+class BleakBluetoothNotAvailableError(BleakError):
+    """
+    Exception which is raised if the Bluetooth access is not available for some reason.
+
+    .. versionadded:: 2.0
+    """
+
+    def __init__(self, msg: str, reason: BleakBluetoothNotAvailableReason) -> None:
+        super().__init__(msg, reason)
+
+    @property
+    def reason(self) -> BleakBluetoothNotAvailableReason:
+        """
+        Gets the reason why Bluetooth is not available.
+        """
+        return self.args[1]
+
+
 class BleakCharacteristicNotFoundError(BleakError):
     """
     Exception which is raised if a device does not support a characteristic.
 
-    .. versionadded: 0.22
+    .. versionadded:: 0.22
     """
 
     char_specifier: Union[int, str, uuid.UUID]
@@ -32,7 +94,7 @@ class BleakDeviceNotFoundError(BleakError):
     Exception which is raised if a device can not be found by ``connect``, ``pair`` and ``unpair``.
     This is the case if the OS Bluetooth stack has never seen this device or it was removed and forgotten.
 
-    .. versionadded: 0.19
+    .. versionadded:: 0.19
     """
 
     identifier: str

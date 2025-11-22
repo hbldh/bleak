@@ -1,17 +1,15 @@
 import abc
 import asyncio
 import inspect
-import os
-import platform
-import sys
 from collections.abc import Callable, Coroutine, Hashable
 from typing import Any, NamedTuple, Optional
 
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 # prevent tasks from being garbage collected
-_background_tasks = set[asyncio.Task[None]]()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class AdvertisementData(NamedTuple):
@@ -282,41 +280,41 @@ class BaseBleakScanner(abc.ABC):
         raise NotImplementedError()
 
 
-def get_platform_scanner_backend_type() -> type[BaseBleakScanner]:
+def get_platform_scanner_backend_type() -> tuple[type[BaseBleakScanner], BleakBackend]:
     """
     Gets the platform-specific :class:`BaseBleakScanner` type.
     """
-    if os.environ.get("P4A_BOOTSTRAP") is not None:
-        from bleak.backends.p4android.scanner import BleakScannerP4Android
+    backend = get_default_backend()
+    match backend:
+        case BleakBackend.P4ANDROID:
+            from bleak.backends.p4android.scanner import BleakScannerP4Android
 
-        return BleakScannerP4Android
+            return (BleakScannerP4Android, backend)
 
-    if platform.system() == "Linux":
-        from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
+        case BleakBackend.BLUEZ_DBUS:
+            from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 
-        return BleakScannerBlueZDBus
+            return (BleakScannerBlueZDBus, backend)
 
-    if sys.platform == "ios" and "Pythonista3.app" in sys.executable:
-        # Must be resolved before checking for "Darwin" (macOS),
-        # as both the Pythonista app for iOS and macOS
-        # return "Darwin" from platform.system()
-        try:
-            from bleak_pythonista import BleakScannerPythonistaCB
+        case BleakBackend.PYTHONISTA_CB:
+            try:
+                from bleak_pythonista import BleakScannerPythonistaCB
 
-            return BleakScannerPythonistaCB
-        except ImportError as e:
-            raise ImportError(
-                "Ensure you have `bleak-pythonista` package installed."
-            ) from e
+                return (BleakScannerPythonistaCB, backend)
+            except ImportError as e:
+                raise ImportError(
+                    "Ensure you have `bleak-pythonista` package installed."
+                ) from e
 
-    if platform.system() == "Darwin":
-        from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
+        case BleakBackend.CORE_BLUETOOTH:
+            from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 
-        return BleakScannerCoreBluetooth
+            return (BleakScannerCoreBluetooth, backend)
 
-    if platform.system() == "Windows":
-        from bleak.backends.winrt.scanner import BleakScannerWinRT
+        case BleakBackend.WIN_RT:
+            from bleak.backends.winrt.scanner import BleakScannerWinRT
 
-        return BleakScannerWinRT
+            return (BleakScannerWinRT, backend)
 
-    raise BleakError(f"Unsupported platform: {platform.system()}")
+        case _:
+            raise BleakError(f"Unsupported backend: {backend}")

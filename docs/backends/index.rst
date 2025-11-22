@@ -5,7 +5,7 @@ Bleak supports the following operating systems:
 
 * Windows 10, version 16299 (Fall Creators Update) and greater
 * Linux distributions with BlueZ >= 5.55 (See :ref:`linux-backend` for more details)
-* OS X/macOS support via Core Bluetooth API, from at least version 10.13
+* OS X/macOS support via Core Bluetooth API, from at least version 10.15
 * Partial Android support mostly using Python-for-Android/Kivy.
 * Partial, optional iOS support using Pythonista iOS app.
 
@@ -21,6 +21,13 @@ Contents:
    macos
    android
    pythonista
+
+Backend selection
+-----------------
+
+.. automodule:: bleak.backends
+    :members:
+
 
 Shared Backend API
 ------------------

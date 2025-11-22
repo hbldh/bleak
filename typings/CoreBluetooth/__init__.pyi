@@ -11,6 +11,7 @@ from libdispatch import dispatch_queue_t
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...
+    def authorization(self) -> CBManagerAuthorization: ...
 
 TCBCentralManager = TypeVar("TCBCentralManager", bound=CBCentralManager)
 
@@ -77,6 +78,13 @@ CBManagerStateUnauthorized: CBManagerState
 CBManagerStateUnknown: CBManagerState
 CBManagerStateUnsupported: CBManagerState
 
+CBManagerAuthorization = NewType("CBManagerAuthorization", int)
+
+CBManagerAuthorizationAllowedAlways: CBManagerAuthorization
+CBManagerAuthorizationDenied: CBManagerAuthorization
+CBManagerAuthorizationNotDetermined: CBManagerAuthorization
+CBManagerAuthorizationRestricted: CBManagerAuthorization
+
 CBConnectionEvent = NewType("CBConnectionEvent", int)
 
 CBConnectionEventPeerConnected: CBConnectionEvent
@@ -87,7 +95,7 @@ class CBConnectionEventMatchingOption(str): ...
 CBConnectionEventMatchingOptionPeripheralUUIDs: CBConnectionEventMatchingOption
 CBConnectionEventMatchingOptionServiceUUIDs: CBConnectionEventMatchingOption
 
-class CBCentralManagerDelegate: ...
+class CBCentralManagerDelegate(Protocol): ...
 
 class CBPeer(NSObject):
     def identifier(self) -> NSUUID: ...
@@ -181,7 +189,7 @@ class CBPeripheralDelegate(Protocol):
         descriptor: CBDescriptor,
         error: Optional[NSError],
     ) -> None: ...
-    def pperipheralIsReadyToSendWriteWithoutResponse_(
+    def peripheralIsReadyToSendWriteWithoutResponse_(
         self, peripheral: CBPeripheral
     ) -> None: ...
     def peripheral_didUpdateNotificationStateForCharacteristic_error_(
@@ -193,7 +201,7 @@ class CBPeripheralDelegate(Protocol):
     def peripheral_didReadRSSI_error_(
         self,
         peripheral: CBPeripheral,
-        RSSI: int,
+        rssi: int,
         error: Optional[NSError],
     ) -> None: ...
     def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None: ...

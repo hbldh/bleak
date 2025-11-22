@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -88,9 +88,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         if scanning_mode == "passive":
             raise BleakError("macOS does not support passive scanning")
 
-        manager = CentralManagerDelegate.alloc().init()
-        assert manager
-        self._manager = manager
+        self._manager = CentralManagerDelegate()
         self._timeout: float = kwargs.get("timeout", 5.0)
         if (
             objc.macos_available(12, 0)
@@ -105,6 +103,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     @override
     async def start(self) -> None:
+        await self._manager.wait_until_ready()
+
         self.seen_devices = {}
 
         def callback(p: CBPeripheral, a: NSDictionary, r: int) -> None:
@@ -147,14 +147,16 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
-                address_bytes: Optional[bytes] = (
-                    self._manager.central_manager.retrieveAddressForPeripheral_(p)
+                address_bytes = cast(
+                    Optional[bytes],
+                    self._manager.central_manager.retrieveAddressForPeripheral_(p),  # type: ignore
                 )
                 if address_bytes is None:
                     logger.debug(
                         "Could not get Bluetooth address for %s. Ignoring this device.",
                         p.identifier().UUIDString(),
                     )
+                    return
                 address = address_bytes.hex(":").upper()
             else:
                 address = p.identifier().UUIDString()
@@ -163,7 +165,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 p.identifier().UUIDString(),
                 address,
                 p.name(),
-                (p, self._manager.central_manager.delegate()),
+                (p, self._manager),
                 advertisement_data,
             )
 

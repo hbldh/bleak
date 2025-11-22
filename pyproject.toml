@@ -1,11 +1,11 @@
 [project]
 name = "bleak"
-version = "1.1.1"
+version = "2.0.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dynamic = ["classifiers", "dependencies"]
 
 [project.urls]
@@ -36,6 +36,7 @@ pyobjc-framework-libdispatch = { version = ">=10.3", markers = "platform_system=
 "winrt-Windows.Devices.Bluetooth.Advertisement" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Devices.Enumeration" = { version = ">=3.1", markers = "platform_system=='Windows'" }
+"winrt-Windows.Devices.Radios" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Foundation" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Foundation.Collections" = { version = ">=3.1", markers = "platform_system=='Windows'" }
 "winrt-Windows.Storage.Streams" = { version = ">=3.1", markers = "platform_system=='Windows'" }
@@ -67,10 +68,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
-py_version=39
+py_version=310
 src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer", "docs"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 disable_error_code = ["import-not-found"]
