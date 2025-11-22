@@ -18,6 +18,7 @@ Added
 Changed
 -------
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
+* Allow multiple calls to ``disconnect()`` on Windows to align behaviour over all backends.
 
 Fixed
 -----
