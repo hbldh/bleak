@@ -103,6 +103,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._disconnect_monitor_event: Optional[asyncio.Event] = None
         # map of characteristic D-Bus object path to notification callback
         self._notification_callbacks: dict[str, NotifyCallback] = {}
+        # map of characteristic D-Bus path to AcquireNotify file descriptor
+        self._notification_fds: dict[str, int] = {}
 
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
@@ -904,6 +906,39 @@ class BleakClientBlueZDBus(BaseBleakClient):
             "Write Descriptor %s | %s: %s", descriptor.handle, descriptor.obj[0], data
         )
 
+    def _register_notify_fd_reader(
+        self, char_path: str, fd: int, callback: NotifyCallback
+    ) -> None:
+        loop = asyncio.get_running_loop()
+
+        def on_data():
+            try:
+                data = os.read(fd, 1024)
+                if not data:
+                    raise RuntimeError("Unexpected EOF on notification file handle")
+            except Exception as e:
+                logger.debug(
+                    "AcquireNotify: Read error on fd %d: %s. Notifications have been stopped.",
+                    fd,
+                    e,
+                )
+                try:
+                    loop.remove_reader(fd)
+                except RuntimeError:
+                    # Run loop is closed
+                    pass
+                try:
+                    os.close(fd)
+                except OSError:
+                    # Bad file descriptor
+                    pass
+                self._notification_fds.pop(char_path, None)
+                return
+
+            callback(bytearray(data))
+
+        loop.add_reader(fd, on_data)
+
     @override
     async def start_notify(
         self,
@@ -914,20 +949,50 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         Activate notifications/indications on a characteristic.
         """
-        self._notification_callbacks[characteristic.obj[0]] = callback
-
         assert self._bus is not None
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.obj[0],
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member="StartNotify",
-            )
+        # If using StartNotify and calling a read on the same
+        # characteristic, BlueZ will return the response as
+        # both a notification and read, duplicating the message.
+        # Using AcquireNotify on supported characteristics avoids this.
+        # However, using the preferred AcquireNotify requires that devices
+        # correctly indicate "notify" and/or "indicate" properties. If they
+        # don't, we fall back to StartNotify.
+        use_notify_acquire = "NotifyAcquired" in characteristic.obj[1]
+        logger.debug(
+            'using "%s" for notifications on characteristic %d',
+            "AcquireNotify" if use_notify_acquire else "StartNotify",
+            characteristic.handle,
         )
-        assert reply
-        assert_reply(reply)
+        if use_notify_acquire:
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.obj[0],
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="AcquireNotify",
+                    body=[{}],
+                    signature="a{sv}",
+                )
+            )
+            assert reply
+            assert_reply(reply)
+
+            unix_fd = reply.unix_fds[0]
+            self._notification_fds[characteristic.obj[0]] = unix_fd
+            self._register_notify_fd_reader(characteristic.obj[0], unix_fd, callback)
+        else:
+            self._notification_callbacks[characteristic.obj[0]] = callback
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.obj[0],
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="StartNotify",
+                )
+            )
+            assert reply
+            assert_reply(reply)
 
     @override
     async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
@@ -942,15 +1007,40 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         assert self._bus is not None
 
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=characteristic.obj[0],
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member="StopNotify",
+        if "NotifyAcquired" in characteristic.obj[1]:
+            logger.debug(
+                "Closing notification fd for characteristic %d", characteristic.handle
             )
-        )
-        assert reply
-        assert_reply(reply)
+            fd = self._notification_fds.pop(characteristic.obj[0], None)
 
-        self._notification_callbacks.pop(characteristic.obj[0], None)
+            if fd is None:
+                logger.debug(
+                    "No notification fd found for characteristic %d",
+                    characteristic.handle,
+                )
+            else:
+                loop = asyncio.get_running_loop()
+                try:
+                    loop.remove_reader(fd)
+                except RuntimeError:
+                    # Run loop is closed
+                    pass
+                try:
+                    os.close(fd)
+                except OSError as e:
+                    logger.debug("Failed to remove file descriptor %d: %s", fd, e)
+        else:
+            logger.debug(
+                "Calling StopNotify for characteristic %d", characteristic.handle
+            )
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=characteristic.obj[0],
+                    interface=defs.GATT_CHARACTERISTIC_INTERFACE,
+                    member="StopNotify",
+                )
+            )
+            assert reply
+            assert_reply(reply)
+            self._notification_callbacks.pop(characteristic.obj[0], None)
