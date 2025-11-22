@@ -272,7 +272,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                     ],
                                 )
                             )
-                            assert reply
                             assert_reply(reply)
 
                             # REVIST: This leaves "Trusted" property set if we
@@ -306,7 +305,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                     member="Connect",
                                 )
                             )
-                        assert reply
 
                         if reply.message_type == MessageType.ERROR:
                             # This error is often caused by RF interference
@@ -459,7 +457,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         member="Disconnect",
                     )
                 )
-                assert reply
                 assert_reply(reply)
                 async with async_timeout(10):
                     await self._disconnecting_event.wait()
@@ -489,7 +486,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Paired"],
             )
         )
-        assert reply
         assert_reply(reply)
         if reply.body[0].value:
             logger.debug("BLE device @ %s is already paired", self.address)
@@ -506,7 +502,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
             )
         )
-        assert reply
         assert_reply(reply)
 
         logger.debug("Pairing to BLE device @ %s", self.address)
@@ -519,7 +514,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
-        assert reply
         assert_reply(reply)
 
         # For resolvable private addresses, the address will
@@ -568,7 +562,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     body=[device_path],
                 )
             )
-            assert reply
             assert_reply(reply)
         except BleakDBusError as e:
             if e.dbus_error == "org.bluez.Error.DoesNotExist":
@@ -632,7 +625,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 body=[{}],
             )
         )
-        assert reply
         assert_reply(reply)
 
         # we aren't actually using the write or notify, we just want the MTU
@@ -750,8 +742,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            assert reply
-
             if reply.error_name == "org.bluez.Error.InProgress":
                 logger.debug("retrying characteristic ReadValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
@@ -800,8 +790,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            assert reply
-
             if reply.error_name == "org.bluez.Error.InProgress":
                 logger.debug("retrying descriptor ReadValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
@@ -842,8 +830,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     ],
                 )
             )
-
-            assert reply
 
             if reply.error_name == "org.bluez.Error.InProgress":
                 logger.debug("retrying characteristic WriteValue due to InProgress")
@@ -889,8 +875,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     body=[bytes(data), {"type": Variant("s", "command")}],
                 )
             )
-
-            assert reply
 
             if reply.error_name == "org.bluez.Error.InProgress":
                 logger.debug("retrying descriptor WriteValue due to InProgress")
@@ -975,7 +959,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     signature="a{sv}",
                 )
             )
-            assert reply
             assert_reply(reply)
 
             unix_fd = reply.unix_fds[0]
@@ -991,7 +974,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="StartNotify",
                 )
             )
-            assert reply
             assert_reply(reply)
 
     @override
@@ -1041,6 +1023,5 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="StopNotify",
                 )
             )
-            assert reply
             assert_reply(reply)
             self._notification_callbacks.pop(characteristic.obj[0], None)
