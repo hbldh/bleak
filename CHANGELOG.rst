@@ -17,8 +17,9 @@ Added
 
 Changed
 -------
-* Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
 * Use AcquireNotify rather than StartNotify for Linux backend on supported characteristics
+* Allow multiple calls to ``disconnect()`` on Windows to align behaviour over all backends.
+* Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
 
 Fixed
 -----
