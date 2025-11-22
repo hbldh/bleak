@@ -308,7 +308,6 @@ class BlueZManager:
                         interface=defs.OBJECT_MANAGER_INTERFACE,
                     )
                 )
-                assert reply
                 assert_reply(reply)
 
                 # dictionaries are cleared in case AddInterfaces was received first
@@ -465,7 +464,6 @@ class BlueZManager:
                         body=[filters],
                     )
                 )
-                assert reply
                 assert_reply(reply)
 
                 # Start scanning
@@ -477,7 +475,6 @@ class BlueZManager:
                         member="StartDiscovery",
                     )
                 )
-                assert reply
                 assert_reply(reply)
 
                 async def stop() -> None:
@@ -502,7 +499,6 @@ class BlueZManager:
                                 member="StopDiscovery",
                             )
                         )
-                        assert reply
 
                         try:
                             assert_reply(reply)
@@ -521,7 +517,6 @@ class BlueZManager:
                                     body=[{}],
                                 )
                             )
-                            assert reply
                             assert_reply(reply)
 
                 return stop
@@ -589,7 +584,6 @@ class BlueZManager:
                         body=[monitor_path],
                     )
                 )
-                assert reply
 
                 if (
                     reply.message_type == MessageType.ERROR
@@ -631,7 +625,6 @@ class BlueZManager:
                                 body=[monitor_path],
                             )
                         )
-                        assert reply
                         assert_reply(reply)
 
                 return stop
