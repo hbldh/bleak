@@ -148,7 +148,7 @@ class BleakScanner:
         The value is one of the :class:`BleakBackend` enum values in case of
         built-in backends, or a string identifying a custom backend.
 
-        .. versionadded:: unreleased
+        .. versionadded:: 2.0
         """
         return self._backend_id
 
@@ -172,7 +172,7 @@ class BleakScanner:
             BleakBluetoothNotAvailableError:
                 if Bluetooth is not currently available
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 2.0
             Now raises :class:`BleakBluetoothNotAvailableError` instead of :class:`BleakError`
             when Bluetooth is not currently available.
         """
@@ -547,7 +547,7 @@ class BleakClient:
         The value is one of the :class:`BleakBackend` enum values in case of
         built-in backends, or a string identifying a custom backend.
 
-        .. versionadded:: unreleased
+        .. versionadded:: 2.0
         """
         return self._backend_id
 

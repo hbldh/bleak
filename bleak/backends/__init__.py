@@ -19,7 +19,7 @@ class BleakBackend(str, enum.Enum):
     """
     Identifiers for available built-in Bleak backends.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 2.0
     """
 
     P4ANDROID = "p4android"
@@ -52,7 +52,7 @@ def get_default_backend() -> BleakBackend:
     """
     Returns the preferred backend for the current platform/environment.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 2.0
     """
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         return BleakBackend.P4ANDROID
