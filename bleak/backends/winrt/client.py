@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Created on 2020-08-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 BLE Client for Windows 10 systems, implemented with WinRT.
@@ -166,7 +165,7 @@ class BleakClientWinRT(BaseBleakClient):
         winrt: _WinRTClientArgs,
         **kwargs: Any,
     ):
-        super(BleakClientWinRT, self).__init__(address_or_ble_device, **kwargs)
+        super().__init__(address_or_ble_device, **kwargs)
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):

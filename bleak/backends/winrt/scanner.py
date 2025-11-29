@@ -97,7 +97,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         **kwargs: Any,
     ):
-        super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
+        super().__init__(detection_callback, service_uuids)
 
         self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
         self._advertisement_pairs: dict[str, RawAdvData] = {}

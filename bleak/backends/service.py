@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Created on 2019-03-19 by hbldh <henrik.blidh@nedomkull.com>
 """
 Gatt Service Collection class and interface class for the Bleak representation of a GATT Service.
