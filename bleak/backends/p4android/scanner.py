@@ -60,7 +60,7 @@ class BleakScannerP4Android(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         **kwargs,
     ):
-        super(BleakScannerP4Android, self).__init__(detection_callback, service_uuids)
+        super().__init__(detection_callback, service_uuids)
 
         if scanning_mode == "passive":
             self.__scan_mode = defs.ScanSettings.SCAN_MODE_OPPORTUNISTIC

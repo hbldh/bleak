@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Top-level package for bleak."""
 
 from __future__ import annotations

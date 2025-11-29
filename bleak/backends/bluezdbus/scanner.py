@@ -80,7 +80,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         bluez: _BlueZScannerArgs,
         **kwargs: Any,
     ):
-        super(BleakScannerBlueZDBus, self).__init__(detection_callback, service_uuids)
+        super().__init__(detection_callback, service_uuids)
 
         self._scanning_mode = scanning_mode
 

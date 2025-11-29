@@ -79,9 +79,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         cb: _CBScannerArgs,
         **kwargs: Any,
     ):
-        super(BleakScannerCoreBluetooth, self).__init__(
-            detection_callback, service_uuids
-        )
+        super().__init__(detection_callback, service_uuids)
 
         self._use_bdaddr = cb.get("use_bdaddr", False)
 

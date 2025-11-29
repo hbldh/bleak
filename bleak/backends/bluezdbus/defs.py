@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import Literal, TypedDict
 
 from bleak.assigned_numbers import CharacteristicPropertyName

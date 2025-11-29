@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 BLE Client for BlueZ on Linux
 """
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -75,7 +75,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         services: Optional[set[str]] = None,
         **kwargs: Any,
     ):
-        super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
+        super().__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 

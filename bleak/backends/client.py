@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Created on 2018-04-23 by hbldh <henrik.blidh@nedomkull.com>
 """
 Base class for backend clients.

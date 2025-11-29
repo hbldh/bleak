@@ -64,7 +64,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         services: Optional[set[str]] = None,
         **kwargs: Any,
     ):
-        super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
+        super().__init__(address_or_ble_device, **kwargs)
 
         self._peripheral: Optional[CBPeripheral] = None
         self._delegate: Optional[PeripheralDelegate] = None
