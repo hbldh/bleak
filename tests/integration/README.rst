@@ -16,13 +16,13 @@ with a HCI-UART firmware. The firmware including instructions can be found
 the advantage over the HCI-USB firmware, that it is not automatically claimed by
 the OS, so that ``bumble`` can use it without special configurations.
 
-To run the integration tests you have to pass the ``--hci-transport`` monkier of your
+To run the integration tests you have to pass the ``--bleak-hci-transport`` monkier of your
  ``bumble`` device. You have to specify the bumble moniker of the transport. For more
 information see the `bumble documentation <https://google.github.io/bumble/transports/serial.html>`_.
 
 It looks for example like this on macOS:
 
-    $ poetry run pytest --hci-transport=serial:/dev/tty.usbmodem1101
+    $ poetry run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
 
 On macOS you can find the port via:
     

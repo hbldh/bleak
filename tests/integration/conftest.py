@@ -16,10 +16,10 @@ async def hci_transport(
     tmp_path: Path,
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
-    hci_transport_name: str | None = request.config.getoption("--hci-transport")
+    hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
 
     if not hci_transport_name:
-        pytest.skip("No HCI transport provided (use --hci-transport)")
+        pytest.skip("No HCI transport provided (use --bleak-hci-transport)")
     else:
         async with await open_transport(hci_transport_name) as hci_transport:
             yield hci_transport
