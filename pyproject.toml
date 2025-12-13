@@ -75,3 +75,8 @@ extend_skip = [".buildozer", "docs"]
 [tool.mypy]
 python_version = "3.10"
 disable_error_code = ["import-not-found"]
+exclude = "(.venv|kivy|recipes)/"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+exclude = [".venv/**", "**/kivy/**", "**/recipes/**"]

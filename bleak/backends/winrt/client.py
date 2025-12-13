@@ -14,7 +14,7 @@ import logging
 import uuid
 from collections.abc import Callable
 from contextvars import Context
-from ctypes import WinError
+from ctypes import WinError  # type: ignore[attr-defined]
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
 from warnings import warn
 

@@ -25,7 +25,7 @@ def _check_result(result: int, func, args):
     return args
 
 
-def _check_hresult(result: int, func, args):
+def check_hresult(result: int, func, args):
     if result:
         raise ctypes.WinError(result)
 
@@ -78,7 +78,7 @@ _CO_GET_APARTMENT_TYPE_PARAM_FLAGS = (
 _CoGetApartmentType = _CO_GET_APARTMENT_TYPE_PROTOTYPE(
     ("CoGetApartmentType", ctypes.windll.ole32), _CO_GET_APARTMENT_TYPE_PARAM_FLAGS
 )
-_CoGetApartmentType.errcheck = _check_hresult
+_CoGetApartmentType.errcheck = check_hresult
 
 _CO_E_NOTINITIALIZED = -2147221008
 
@@ -186,7 +186,7 @@ async def assert_mta() -> None:
         _KillTimer(None, timer)
 
 
-def allow_sta():
+def allow_sta() -> None:
     """
     Suppress check for MTA thread type and allow STA.
 

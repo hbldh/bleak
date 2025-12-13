@@ -16,7 +16,11 @@ import os
 import pathlib
 import sys
 
-import tomllib
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    # tell type checkers to ignore this file if using Python 3.10
+    assert False
 
 PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.resolve()
 
