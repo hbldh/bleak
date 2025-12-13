@@ -148,7 +148,7 @@ class BleakScanner:
         return self._backend_id
 
     async def __aenter__(self) -> Self:
-        await self._backend.start()
+        await self.start()
         return self
 
     async def __aexit__(
@@ -157,7 +157,7 @@ class BleakScanner:
         exc_val: BaseException,
         exc_tb: TracebackType,
     ) -> None:
-        await self._backend.stop()
+        await self.stop()
 
     async def start(self) -> None:
         """
