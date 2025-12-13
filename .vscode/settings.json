@@ -10,7 +10,6 @@
       "isort.importStrategy": "fromEnvironment",
       "isort.args":["--profile", "black"],
     "flake8.importStrategy": "fromEnvironment",
-    "python.analysis.typeCheckingMode": "strict",
     "python-envs.defaultEnvManager": "ms-python.python:poetry",
     "python-envs.defaultPackageManager": "ms-python.python:poetry",
     "python-envs.pythonProjects": []
