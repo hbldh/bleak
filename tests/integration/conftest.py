@@ -18,7 +18,7 @@ async def hci_transport(
     """Create a bumble HCI Transport."""
     hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
 
-    if not hci_transport_name:
+    if hci_transport_name is None:
         pytest.skip("No HCI transport provided (use --bleak-hci-transport)")
     else:
         async with await open_transport(hci_transport_name) as hci_transport:
