@@ -22,7 +22,7 @@ async def test_discover(bumble_peripheral: Device):
     await bumble_peripheral.power_on()
     await bumble_peripheral.start_advertising()
 
-    devices = await BleakScanner.discover(return_adv=True, timeout=DEFAULT_TIMEOUT)
+    devices = await BleakScanner.discover(return_adv=True)
     filtered_devices = list(
         filter(
             lambda device: device[1].local_name == bumble_peripheral.name,
