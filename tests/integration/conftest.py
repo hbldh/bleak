@@ -23,9 +23,9 @@ async def hci_transport(
             yield hci_transport
 
 
-def create_virtual_device(hci_transport: Transport) -> Device:
+def create_bumble_peripheral(hci_transport: Transport) -> Device:
     """
-    Create a virtual BLE peripheral device with bumble.
+    Create a BLE peripheral device with bumble.
     """
     config = DeviceConfiguration(
         name="Bleak",
