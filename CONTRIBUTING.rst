@@ -86,8 +86,8 @@ and your favorite text editor. And Python of course.
     $ poetry run flake8
     $ poetry run pytest
 
-6. Additionally, you can run integration tests by adding the ``hci-transport`` argument to ``pytest``.
-For more information, see `test/integrations/README.rst <test/integrations/README.rst>`_.
+6. Additionally, you can run integration tests by adding the ``--hci-transport`` argument to ``pytest``.
+For more information, see `tests/integration/README.rst <tests/integration/README.rst>`_.
 
   $ poetry run pytest --hci-transport=serial:/dev/tty.usbmodem1101
 
