@@ -86,13 +86,18 @@ and your favorite text editor. And Python of course.
     $ poetry run flake8
     $ poetry run pytest
 
-6. Commit your changes and push your branch to GitHub::
+6. Additionally, you can run integration tests by adding the ``--bleak-hci-transport`` argument to ``pytest``.
+For more information, see `tests/integration/README.rst <tests/integration/README.rst>`_.
+
+  $ poetry run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+
+7. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitHub website.
+8. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
