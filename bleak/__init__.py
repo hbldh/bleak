@@ -236,6 +236,10 @@ class BleakScanner:
         Used to override the automatically selected backend (i.e. for a
             custom backend).
         """
+        adapter: str | None
+        """
+        Name of adapter to use (BlueZ specific), e.g. hci0.
+        """
 
     @overload
     @classmethod
@@ -835,7 +839,7 @@ class BleakClient:
                 task.add_done_callback(_background_tasks.discard)
 
         else:
-            wrapped_callback = functools.partial(callback, characteristic)
+            wrapped_callback = functools.partial(callback, characteristic)  # type: ignore
 
         await self._backend.start_notify(
             characteristic, wrapped_callback, cb=cb, **kwargs
