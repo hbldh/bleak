@@ -33,7 +33,6 @@ def create_virtual_device(hci_transport: Transport) -> Device:
         address=Address.generate_static_address(),
         advertising_interval_min=200,
         advertising_interval_max=200,
-        keystore="JsonKeyStore",
     )
     return Device.from_config_with_hci(
         config,
