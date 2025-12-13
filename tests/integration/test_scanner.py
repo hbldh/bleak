@@ -10,6 +10,7 @@ from bumble.device import Device
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
+from bleak.uuids import normalize_uuid_str
 from tests.integration.conftest import add_default_advertising_data
 
 DEFAULT_TIMEOUT = 5.0
@@ -60,7 +61,7 @@ async def test_discover_filter_by_service_uuid(
 
     async with BleakScanner(
         detection_callback,
-        service_uuids=["0000180f-0000-1000-8000-00805f9b34fb"],
+        service_uuids=[normalize_uuid_str("180f")],
     ):
         found_adv_data = None
         with contextlib.suppress(asyncio.TimeoutError):
