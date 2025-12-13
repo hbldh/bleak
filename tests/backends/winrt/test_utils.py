@@ -6,15 +6,17 @@ import sys
 
 import pytest
 
-if not sys.platform.startswith("win"):
+if sys.platform != "win32":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
+    # HACK: work around pyright bug
+    allow_sta: object
 
-from ctypes import windll, wintypes
+from ctypes import windll, wintypes  # type: ignore[attr-defined]
 
 from bleak.backends.winrt.util import (
-    _check_hresult,
     allow_sta,
     assert_mta,
+    check_hresult,
     uninitialize_sta,
 )
 from bleak.exc import BleakError
@@ -27,7 +29,7 @@ COINIT_APARTMENTTHREADED = 0x2
 _CoInitializeEx = windll.ole32.CoInitializeEx
 _CoInitializeEx.restype = wintypes.LONG
 _CoInitializeEx.argtypes = [wintypes.LPVOID, wintypes.DWORD]
-_CoInitializeEx.errcheck = _check_hresult
+_CoInitializeEx.errcheck = check_hresult
 
 # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
 _CoUninitialize = windll.ole32.CoUninitialize

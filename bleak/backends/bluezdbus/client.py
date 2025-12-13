@@ -79,6 +79,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
+        self._device_path: Optional[str]
         self._device_info: Optional[dict[str, Any]]
 
         # Backend specific, D-Bus objects and data
@@ -152,6 +153,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 raise BleakDeviceNotFoundError(
                     self.address, f"Device with address {self.address} was not found."
                 )
+
+        assert self._device_path is not None
 
         manager = await get_global_bluez_manager()
 
@@ -379,7 +382,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # by using send() instead of call(), we ensure that the message
                 # gets sent, but we don't wait for a reply, which could take
                 # over one second while the device disconnects.
-                await bus.send(
+                # TODO: fix send() return type in dbus-fast so we can remove the pyright ignore
+                await bus.send(  # pyright: ignore[reportUnknownMemberType]
                     Message(
                         destination=defs.BLUEZ_SERVICE,
                         path=device_path,
@@ -474,7 +478,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
         """
-        assert self._bus
+        assert self._bus is not None
+        assert self._device_path is not None
+
         # See if it is already paired.
         reply = await self._bus.call(
             Message(
@@ -549,10 +555,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._device_info = None
         self._is_connected = False
 
-        assert manager._bus
+        assert manager._bus  # pyright: ignore[reportPrivateUsage]
 
+        # TODO: should move this to manager so that we don't access its private members
         try:
-            reply = await manager._bus.call(
+            reply = await manager._bus.call(  # pyright: ignore[reportPrivateUsage]
                 Message(
                     destination=defs.BLUEZ_SERVICE,
                     path=adapter_path,
@@ -701,6 +708,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         if self.services is not None:
             return self.services
+
+        assert self._device_path is not None
 
         manager = await get_global_bluez_manager()
 

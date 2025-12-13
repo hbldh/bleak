@@ -2,9 +2,14 @@
 
 """Tests for `bleak.backends.bluezdbus.version` package."""
 
-from unittest.mock import AsyncMock, Mock
+import sys
 
 import pytest
+
+if sys.platform != "linux":
+    pytest.skip("skipping linux-only tests", allow_module_level=True)
+
+from unittest.mock import AsyncMock, Mock
 
 from bleak.backends.bluezdbus.version import BlueZFeatures
 

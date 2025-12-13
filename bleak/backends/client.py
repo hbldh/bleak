@@ -214,34 +214,40 @@ def get_platform_client_backend_type() -> tuple[type[BaseBleakClient], BleakBack
     backend = get_default_backend()
     match backend:
         case BleakBackend.P4ANDROID:
-            from bleak.backends.p4android.client import BleakClientP4Android
+            from bleak.backends.p4android.client import (
+                BleakClientP4Android,  # type: ignore
+            )
 
-            return (BleakClientP4Android, backend)
+            return (BleakClientP4Android, backend)  # type: ignore
 
         case BleakBackend.BLUEZ_DBUS:
-            from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
+            from bleak.backends.bluezdbus.client import (
+                BleakClientBlueZDBus,  # type: ignore
+            )
 
-            return (BleakClientBlueZDBus, backend)
+            return (BleakClientBlueZDBus, backend)  # type: ignore
 
         case BleakBackend.PYTHONISTA_CB:
             try:
-                from bleak_pythonista import BleakClientPythonistaCB
+                from bleak_pythonista import BleakClientPythonistaCB  # type: ignore
 
-                return (BleakClientPythonistaCB, backend)
+                return (BleakClientPythonistaCB, backend)  # type: ignore
             except ImportError as e:
                 raise ImportError(
                     "Ensure you have `bleak-pythonista` package installed."
                 ) from e
 
         case BleakBackend.CORE_BLUETOOTH:
-            from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
+            from bleak.backends.corebluetooth.client import (
+                BleakClientCoreBluetooth,  # type: ignore
+            )
 
-            return (BleakClientCoreBluetooth, backend)
+            return (BleakClientCoreBluetooth, backend)  # type: ignore
 
         case BleakBackend.WIN_RT:
-            from bleak.backends.winrt.client import BleakClientWinRT
+            from bleak.backends.winrt.client import BleakClientWinRT  # type: ignore
 
-            return (BleakClientWinRT, backend)
+            return (BleakClientWinRT, backend)  # type: ignore
 
         case _:
             raise BleakError(f"Unsupported backend: {backend}")
