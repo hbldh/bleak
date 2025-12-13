@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
+from bumble import data_types
+from bumble.core import AdvertisingData, DataType
 from bumble.device import Device, DeviceConfiguration
 from bumble.hci import Address
 from bumble.transport import open_transport
@@ -23,7 +25,8 @@ async def hci_transport(
             yield hci_transport
 
 
-def create_bumble_peripheral(hci_transport: Transport) -> Device:
+@pytest.fixture
+def bumble_peripheral(hci_transport: Transport) -> Device:
     """
     Create a BLE peripheral device with bumble.
     """
@@ -39,3 +42,20 @@ def create_bumble_peripheral(hci_transport: Transport) -> Device:
         hci_transport.source,
         hci_transport.sink,
     )
+
+
+def add_default_advertising_data(
+    bumble_peripheral: Device,
+    additional_adv_data: list[DataType] | None = None,
+) -> None:
+    """Add default advertising data to bumble peripheral."""
+    adv_data: list[DataType] = [
+        data_types.Flags(
+            AdvertisingData.Flags.LE_GENERAL_DISCOVERABLE_MODE
+            | AdvertisingData.Flags.BR_EDR_NOT_SUPPORTED
+        ),
+        data_types.CompleteLocalName(bumble_peripheral.name),
+    ]
+    if additional_adv_data:
+        adv_data.extend(additional_adv_data)
+    bumble_peripheral.advertising_data = bytes(AdvertisingData(adv_data))
