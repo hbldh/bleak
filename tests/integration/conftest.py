@@ -10,7 +10,7 @@ from bumble.transport import open_transport
 from bumble.transport.common import Transport
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def hci_transport(
     request: pytest.FixtureRequest,
     tmp_path: Path,
