@@ -61,7 +61,7 @@ isort = "^5.13.2"
 pytest = "^8.2.1"
 pytest-asyncio = "^1.2.0"
 pytest-cov = "^7.0.0 "
-bumble = { version = "^0.0.220", python = ">3.10" }
+bumble = "^0.0.220"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
