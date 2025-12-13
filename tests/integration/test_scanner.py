@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import sys
 
 import pytest
@@ -51,23 +52,21 @@ async def test_discover_filter_by_service_uuid(
     await bumble_peripheral.power_on()
     await bumble_peripheral.start_advertising()
 
-    found_adv_data: AdvertisementData | None = None
-    device_found_event = asyncio.Event()
+    found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
 
     def detection_callback(device: BLEDevice, adv_data: AdvertisementData):
-        nonlocal found_adv_data
         if device.name == bumble_peripheral.name:
-            found_adv_data = adv_data
-            device_found_event.set()
+            found_adv_data_future.set_result(adv_data)
 
     async with BleakScanner(
         detection_callback,
         service_uuids=["0000180f-0000-1000-8000-00805f9b34fb"],
     ):
-        if service_uuid_available:
-            await asyncio.wait_for(device_found_event.wait(), timeout=DEFAULT_TIMEOUT)
-        else:
-            await asyncio.sleep(DEFAULT_TIMEOUT)
+        found_adv_data = None
+        with contextlib.suppress(asyncio.TimeoutError):
+            found_adv_data = await asyncio.wait_for(
+                found_adv_data_future, timeout=DEFAULT_TIMEOUT
+            )
 
     if service_uuid_available:
         assert found_adv_data is not None
@@ -81,17 +80,16 @@ async def test_adv_data_simple(bumble_peripheral: Device):
     await bumble_peripheral.power_on()
     await bumble_peripheral.start_advertising()
 
-    found_adv_data: AdvertisementData | None = None
-    device_found_event = asyncio.Event()
+    found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
 
     def detection_callback(device: BLEDevice, adv_data: AdvertisementData):
-        nonlocal found_adv_data
         if device.name == bumble_peripheral.name:
-            found_adv_data = adv_data
-            device_found_event.set()
+            found_adv_data_future.set_result(adv_data)
 
     async with BleakScanner(detection_callback):
-        await asyncio.wait_for(device_found_event.wait(), timeout=DEFAULT_TIMEOUT)
+        found_adv_data = await asyncio.wait_for(
+            found_adv_data_future, timeout=DEFAULT_TIMEOUT
+        )
 
     assert found_adv_data is not None
     assert found_adv_data.local_name == bumble_peripheral.name
@@ -117,17 +115,16 @@ async def test_adv_data_complex(bumble_peripheral: Device):
     await bumble_peripheral.power_on()
     await bumble_peripheral.start_advertising()
 
-    found_adv_data: AdvertisementData | None = None
-    device_found_event = asyncio.Event()
+    found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
 
     def detection_callback(device: BLEDevice, adv_data: AdvertisementData):
-        nonlocal found_adv_data
         if device.name == bumble_peripheral.name:
-            found_adv_data = adv_data
-            device_found_event.set()
+            found_adv_data_future.set_result(adv_data)
 
     async with BleakScanner(detection_callback):
-        await asyncio.wait_for(device_found_event.wait(), timeout=DEFAULT_TIMEOUT)
+        found_adv_data = await asyncio.wait_for(
+            found_adv_data_future, timeout=DEFAULT_TIMEOUT
+        )
 
     assert found_adv_data is not None
     assert found_adv_data.local_name == bumble_peripheral.name
