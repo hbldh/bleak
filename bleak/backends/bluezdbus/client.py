@@ -473,9 +473,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
+                path=self._device_path,
                 interface=defs.DEVICE_INTERFACE,
                 member="Pair",
-                path=self._device_path,
             )
         )
 
@@ -488,6 +488,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         You can use ConnectDevice method if you already know the MAC address of the device.
         Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
         """
+        assert self._device_path is not None
         manager = await get_global_bluez_manager()
         if manager.is_paired(self._device_path):
             logger.debug("BLE device @ %s is already paired", self.address)
