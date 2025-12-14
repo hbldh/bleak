@@ -3,6 +3,7 @@
 BLE Client for CoreBluetooth on macOS
 """
 
+import functools
 import sys
 from typing import TYPE_CHECKING
 
@@ -233,6 +234,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         logger.debug("Retrieving services...")
         assert self._delegate
+        assert self._peripheral
         cb_services = await self._delegate.discover_services(self._requested_services)
 
         for service in cb_services:
@@ -258,8 +260,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     characteristic.handle(),
                     cb_uuid_to_str(characteristic.UUID()),
                     list(gatt_char_props_to_strs(characteristic.properties())),
-                    lambda: self._peripheral.maximumWriteValueLengthForType_(
-                        CBCharacteristicWriteWithoutResponse
+                    functools.partial(
+                        self._peripheral.maximumWriteValueLengthForType_,
+                        CBCharacteristicWriteWithoutResponse,
                     ),
                     serv,
                 )
@@ -365,14 +368,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        *,
-        cb: CBStartNotifyArgs,
         **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
         """
         assert self._delegate is not None
+
+        cb: CBStartNotifyArgs = kwargs["cb"]
 
         await self._delegate.start_notifications(
             characteristic.obj,

@@ -72,7 +72,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self, py_delegate: CentralManagerDelegate
     ) -> Optional[Self]:
         """macOS init function for NSObject"""
-        self = objc.super(ObjcCentralManagerDelegate, self).init()
+        self = objc.super(ObjcCentralManagerDelegate, self).init()  # type: ignore[assignment]
 
         if self is None:
             return None

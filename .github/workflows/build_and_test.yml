@@ -53,5 +53,3 @@ jobs:
           pipx run poetry run pyright
           pipx run poetry run pip install mypy
           pipx run poetry run mypy -p bleak -p tests -p examples
-        # TODO: fix typing issues on macOS and remove this condition
-        if: matrix.os != 'macos-latest'

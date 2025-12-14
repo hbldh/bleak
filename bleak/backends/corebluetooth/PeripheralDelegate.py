@@ -58,7 +58,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
 
     def initWithPyDelegate_(self, py_delegate: PeripheralDelegate) -> Optional[Self]:
         """macOS init function for NSObject"""
-        self = objc.super(ObjcPeripheralDelegate, self).init()
+        self = objc.super(ObjcPeripheralDelegate, self).init()  # type: ignore[assignment]
 
         if self is None:
             return None
