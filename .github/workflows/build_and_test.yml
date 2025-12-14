@@ -1,54 +1,54 @@
 name: Build and Test
 
 on:
-    push:
-        branches: [ master, develop ]
-        paths: [ 'bleak/**', 'tests/**' ]
-    pull_request:
-        branches: [ master, develop ]
-        paths: [ 'bleak/**', 'tests/**' ]
+  push:
+    branches: [master, develop]
+    paths: ["bleak/**", "tests/**"]
+  pull_request:
+    branches: [master, develop]
+    paths: ["bleak/**", "tests/**"]
 
 jobs:
-    build_desktop:
-        name: "Build and test"
-        runs-on: ${{ matrix.os }}
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
-                python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        steps:
-            -   uses: actions/checkout@v4
-            -   name: Set up Python ${{ matrix.python-version }}
-                uses: actions/setup-python@v5
-                id: py
-                with:
-                    python-version: ${{ matrix.python-version }}
-            -   name: Create virtual environment
-                run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
-            -   name: Install dependencies
-                # work around https://github.com/python-poetry/poetry/issues/7161
-                env:
-                    SYSTEM_VERSION_COMPAT: 0
-                run: pipx run poetry install --only main,test
-            -   name: Test with pytest
-                run: |
-                    pipx run poetry run pytest -v tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
-            -   name: Upload pytest test results
-                uses: actions/upload-artifact@v4
-                with:
-                    name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}
-                    path: junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml
-                # Use always() to always run this step to publish test results when there are test failures
-                if: ${{ always() }}
-            -   name: Type checking
-                # We don't do this in the lint job because we have conditionals
-                # on both the platform and the Python version in the code, so we
-                # need to check each matrix combination.
-                run: |
-                    pipx run poetry run pip install pyright
-                    pipx run poetry run pyright
-                    pipx run mypy --version
-                    pipx run mypy -p bleak -p tests -p examples
-                # TODO: fix typing issues on macOS and Windows and remove this condition
-                if: matrix.os == 'ubuntu-latest'
+  build_desktop:
+    name: "Build and test"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        id: py
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Create virtual environment
+        run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
+      - name: Install dependencies
+        # work around https://github.com/python-poetry/poetry/issues/7161
+        env:
+          SYSTEM_VERSION_COMPAT: 0
+        run: pipx run poetry install --only main,test
+      - name: Test with pytest
+        run: |
+          pipx run poetry run pytest -v tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}
+          path: junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
+      - name: Type checking
+        # We don't do this in the lint job because we have conditionals
+        # on both the platform and the Python version in the code, so we
+        # need to check each matrix combination.
+        run: |
+          pipx run poetry run pip install pyright
+          pipx run poetry run pyright
+          pipx run mypy --version
+          pipx run mypy -p bleak -p tests -p examples
+        # TODO: fix typing issues on macOS and Windows and remove this condition
+        if: matrix.os == 'ubuntu-latest'

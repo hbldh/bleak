@@ -1,26 +1,26 @@
 name: Format and Lint
 
 on:
-    push:
-        branches: [ master, develop ]
-    pull_request:
-        branches: [ master, develop ]
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
 
 jobs:
-    format_and_lint:
-        name: "Format and lint"
-        runs-on: ubuntu-latest
-        steps:
-            -   uses: actions/checkout@v4
-            -   name: Set up Python
-                uses: actions/setup-python@v5
-            -   name: Install development dependencies
-                run: pipx run poetry install --only docs,lint
-            -   name: Check import sort with isort
-                run: pipx run poetry run isort {.,docs} --check --diff
-            -   name: Check code formatting with black
-                run: pipx run poetry run black . --check --diff
-            -   name: Lint with flake8
-                run: pipx run poetry run flake8 . --count --show-source --statistics
-            -   name: Build docs
-                run: pipx run poetry run make -C docs html
+  format_and_lint:
+    name: "Format and lint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+      - name: Install development dependencies
+        run: pipx run poetry install --only docs,lint
+      - name: Check import sort with isort
+        run: pipx run poetry run isort {.,docs} --check --diff
+      - name: Check code formatting with black
+        run: pipx run poetry run black . --check --diff
+      - name: Lint with flake8
+        run: pipx run poetry run flake8 . --count --show-source --statistics
+      - name: Build docs
+        run: pipx run poetry run make -C docs html

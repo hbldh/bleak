@@ -1,7 +1,7 @@
-name: 'Close stale issues and PRs'
+name: "Close stale issues and PRs"
 on:
   schedule:
-    - cron: '37 1 * * 0'
+    - cron: "37 1 * * 0"
 
 jobs:
   stale:
@@ -11,6 +11,6 @@ jobs:
         with:
           days-before-stale: 500
           days-before-close: 100
-          any-of-labels: '3rd party issue, more info required'
+          any-of-labels: "3rd party issue, more info required"
           stale-issue-message: This issue has been automatically marked as stale because it has not had any activity for 500 days. It will be closed in 100 days if no further activity occurs.
           close-issue-message: This issue has been automatically closed because it has not had any activity for 100 days after being marked as stale.
