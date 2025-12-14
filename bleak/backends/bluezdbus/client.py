@@ -442,8 +442,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
-    async def _pair(self) -> None:
-        """Pair with the peripheral and return the reply."""
+    async def _pair(self) -> Message:
+        """
+        Pair with the peripheral and return the D-Bus reply.
+
+        Caller is responsible for checking reply for errors.
+        """
 
         assert self._bus is not None
         assert self._device_path is not None
@@ -451,6 +455,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # REVIST: This leaves "Trusted" property set if we
         # fail later. Probably not a big deal since we were
         # going to trust it anyway.
+        # Trusted means device is authorized
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
@@ -469,8 +474,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             Message(
                 destination=defs.BLUEZ_SERVICE,
                 interface=defs.DEVICE_INTERFACE,
-                path=self._device_path,
                 member="Pair",
+                path=self._device_path,
             )
         )
 

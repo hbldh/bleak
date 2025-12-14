@@ -24,6 +24,7 @@ class Args(argparse.Namespace):
     address: Optional[str]
     macos_use_bdaddr: bool
     characteristic: str
+    pair: bool
     debug: bool
 
 
@@ -90,14 +91,14 @@ if __name__ == "__main__":
         help="UUID of a characteristic that supports notifications",
     )
 
+    parser.add_argument("--pair", action="store_true", help="pair when connecting")
+
     parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
         help="sets the log level to debug",
     )
-
-    parser.add_argument("--pair", action="store_true", help="pair when connecting")
 
     args = parser.parse_args(namespace=Args())
 
