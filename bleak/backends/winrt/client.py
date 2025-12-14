@@ -167,6 +167,8 @@ class BleakClientWinRT(BaseBleakClient):
     ):
         super().__init__(address_or_ble_device, **kwargs)
 
+        self._device_info: int | None
+
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
             data: RawAdvData = address_or_ble_device.details
@@ -190,7 +192,7 @@ class BleakClientWinRT(BaseBleakClient):
         self._address_type = winrt.get("address_type")
         self._retry_on_services_changed = False
 
-        self._session_services_changed_token: Optional[EventRegistrationToken] = None
+        self._services_changed_token: Optional[EventRegistrationToken] = None
         self._session_status_changed_token: Optional[EventRegistrationToken] = None
         self._max_pdu_size_changed_token: Optional[EventRegistrationToken] = None
 
@@ -536,6 +538,7 @@ class BleakClientWinRT(BaseBleakClient):
     @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
+        assert self._session is not None
         return self._session.max_pdu_size
 
     @override
@@ -792,7 +795,7 @@ class BleakClientWinRT(BaseBleakClient):
                                 characteristic.characteristic_properties
                             )
                         ),
-                        lambda: self._session.max_pdu_size - 3,
+                        lambda: self.mtu_size - 3,
                         serv,
                     )
 

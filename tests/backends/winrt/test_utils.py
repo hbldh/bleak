@@ -29,7 +29,7 @@ COINIT_APARTMENTTHREADED = 0x2
 _CoInitializeEx = windll.ole32.CoInitializeEx
 _CoInitializeEx.restype = wintypes.LONG
 _CoInitializeEx.argtypes = [wintypes.LPVOID, wintypes.DWORD]
-_CoInitializeEx.errcheck = check_hresult
+_CoInitializeEx.errcheck = check_hresult  # type: ignore[assignment]
 
 # https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
 _CoUninitialize = windll.ole32.CoUninitialize

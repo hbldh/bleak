@@ -6,10 +6,11 @@ import sys
 
 import pytest
 
+if sys.platform != "linux":
+    pytest.skip("skipping linux-only tests", allow_module_level=True)
+    assert False  # HACK: work around pyright bug
 
-@pytest.mark.skipif(
-    not sys.platform.startswith("linux"), reason="requires dbus-fast on Linux"
-)
+
 def test_device_path_from_characteristic_path():
     """Test device_path_from_characteristic_path."""
     from bleak.backends.bluezdbus.utils import (  # pylint: disable=import-outside-toplevel
