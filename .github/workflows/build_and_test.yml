@@ -36,13 +36,13 @@ jobs:
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
-          flags: ${{ matrix.os }}, py${{ matrix.python-version }}
+          flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
-          flags: ${{ matrix.os }}, py${{ matrix.python-version }}
+          flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Type checking
         # We don't do this in the lint job because we have conditionals
