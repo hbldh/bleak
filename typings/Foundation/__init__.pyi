@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, NewType, Optional, TypeVar, overload
+from typing import Any, Callable, NewType, Optional, TypeVar, Union, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -11,6 +11,11 @@ if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
+
+Property = Union[
+    Callable[[], T],  # "pyobjc" style
+    T,  # "rubicon-objc" style
+]
 
 TNSObject = TypeVar("TNSObject", bound=NSObject)
 
@@ -29,15 +34,18 @@ class NSObject:
     @classmethod
     def __init_subclass__(cls, /, protocols: Sequence[Any] = []) -> None: ...
 
-class NSDictionary(NSObject, Mapping[str, Any]):
-    def __getitem__(self, key: str) -> Any: ...
-    def __iter__(self) -> Iterator[str]: ...
+K = TypeVar("K")
+V = TypeVar("V")
+
+class NSDictionary(NSObject, Mapping[K, V]):
+    def __getitem__(self, key: K) -> V: ...
+    def __iter__(self) -> Iterator[K]: ...
     def __len__(self) -> int: ...
 
 class NSUUID(NSObject):
     @classmethod
     def UUIDWithString_(cls, uuidString: str) -> NSUUID: ...
-    def UUIDString(self) -> str: ...
+    def UUIDString(self) -> NSString: ...
     def isEqualToUUID_(self, other: NSUUID) -> bool: ...
 
 class NSError(NSObject): ...
@@ -58,11 +66,14 @@ class NSArray(NSObject, Sequence[T]):
     def initWithArray_(self, array: Sequence[Any]) -> Self: ...
 
 class NSValue(NSObject): ...
+class NSNumber(NSObject): ...
+class NSString(NSObject): ...
 
 class NSBundle(NSObject):
+    @property
     @classmethod
-    def mainBundle(cls) -> NSBundle: ...
-    def bundleIdentifier(self) -> str: ...
+    def mainBundle(cls) -> Property[NSBundle]: ...  # type: ignore
+    bundleIdentifier: Property[NSString]
 
 NSKeyValueObservingOptions = NewType("NSKeyValueObservingOptions", int)
 NSKeyValueObservingOptionNew: NSKeyValueObservingOptions

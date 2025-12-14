@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING, cast
 
@@ -6,7 +8,7 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on macOS"
 
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
 from warnings import warn
 
 if sys.version_info < (3, 12):
@@ -14,9 +16,6 @@ if sys.version_info < (3, 12):
 else:
     from typing import override
 
-import objc
-from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSDictionary
 
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -27,6 +26,22 @@ from bleak.backends.scanner import (
     BaseBleakScanner,
 )
 from bleak.exc import BleakError
+
+from .objc_framework import (
+    CBUUID,
+    CBPeripheral,
+    NSBundle,
+    NSData,
+    NSDictionary,
+    NSNumber,
+    NSObject,
+    NSString,
+    get_prop,
+    macos_available,
+    to_bytes,
+    to_int,
+    to_str,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,12 +104,15 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self._manager = CentralManagerDelegate()
         self._timeout: float = kwargs.get("timeout", 5.0)
         if (
-            objc.macos_available(12, 0)
-            and not objc.macos_available(12, 3)
+            macos_available(12, 0)
+            and not macos_available(12, 3)
             and not self._service_uuids
         ):
             # See https://github.com/hbldh/bleak/issues/720
-            if NSBundle.mainBundle().bundleIdentifier() == "org.python.python":
+            if (
+                to_str(get_prop(get_prop(NSBundle.mainBundle).bundleIdentifier))
+                == "org.python.python"
+            ):
                 logger.error(
                     "macOS 12.0, 12.1 and 12.2 require non-empty service_uuids kwarg, otherwise no advertisement data will be received"
                 )
@@ -105,25 +123,44 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
         self.seen_devices = {}
 
-        def callback(p: CBPeripheral, a: NSDictionary, r: int) -> None:
-
-            service_uuids = [
-                cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
-            ]
+        def callback(
+            peripheral: CBPeripheral, advData: NSDictionary[str, NSObject], rssi: int
+        ) -> None:
+            service_uuids_raw = cast(
+                "list[CBUUID] | None",
+                advData.get("kCBAdvDataServiceUUIDs"),
+            )
+            service_uuids = (
+                [cb_uuid_to_str(uuid) for uuid in service_uuids_raw]
+                if service_uuids_raw
+                else []
+            )
 
             if not self.is_allowed_uuid(service_uuids):
                 return
 
             # Process service data
-            service_data_dict_raw = a.get("kCBAdvDataServiceData", {})
-            service_data = {
-                cb_uuid_to_str(k): bytes(v) for k, v in service_data_dict_raw.items()
-            }
+            service_data_dict_raw = cast(
+                "NSDictionary[CBUUID, NSData] | None",
+                advData.get("kCBAdvDataServiceData"),
+            )
+            service_data = (
+                {
+                    cb_uuid_to_str(key): to_bytes(value)
+                    for key, value in service_data_dict_raw.items()
+                }
+                if service_data_dict_raw
+                else {}
+            )
 
             # Process manufacturer data into a more friendly format
-            manufacturer_binary_data = a.get("kCBAdvDataManufacturerData")
+            manufacturer_binary_data_raw = cast(
+                "NSData | None",
+                advData.get("kCBAdvDataManufacturerData"),
+            )
             manufacturer_data: dict[int, bytes] = {}
-            if manufacturer_binary_data:
+            if manufacturer_binary_data_raw:
+                manufacturer_binary_data = to_bytes(manufacturer_binary_data_raw)
                 manufacturer_id = int.from_bytes(
                     manufacturer_binary_data[0:2], byteorder="little"
                 )
@@ -131,39 +168,49 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
             # set tx_power data if available
-            tx_power = a.get("kCBAdvDataTxPowerLevel")
+            tx_power_raw = cast(
+                "NSNumber | None",
+                advData.get("kCBAdvDataTxPowerLevel"),
+            )
+            tx_power = to_int(tx_power_raw) if tx_power_raw else None
+
+            local_name_raw = cast(
+                "NSString | None",
+                advData.get("kCBAdvDataLocalName"),
+            )
+            local_name = to_str(local_name_raw) if local_name_raw else None
 
             advertisement_data = AdvertisementData(
-                local_name=a.get("kCBAdvDataLocalName"),
+                local_name=local_name,
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
                 service_uuids=service_uuids,
                 tx_power=tx_power,
-                rssi=r,
-                platform_data=(p, a, r),
+                rssi=rssi,
+                platform_data=(peripheral, advData, rssi),
             )
 
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
                 address_bytes = cast(
                     Optional[bytes],
-                    self._manager.central_manager.retrieveAddressForPeripheral_(p),  # type: ignore
+                    self._manager.central_manager.retrieveAddressForPeripheral_(peripheral),  # type: ignore
                 )
                 if address_bytes is None:
                     logger.debug(
                         "Could not get Bluetooth address for %s. Ignoring this device.",
-                        p.identifier().UUIDString(),
+                        get_prop(get_prop(peripheral.identifier).UUIDString),
                     )
                     return
                 address = address_bytes.hex(":").upper()
             else:
-                address = p.identifier().UUIDString()
+                address = to_str(get_prop(get_prop(peripheral.identifier).UUIDString))
 
             device = self.create_or_update_device(
-                p.identifier().UUIDString(),
+                to_str(get_prop(get_prop(peripheral.identifier).UUIDString)),
                 address,
-                p.name(),
-                (p, self._manager),
+                to_str(get_prop(peripheral.name)),
+                (peripheral, self._manager),
                 advertisement_data,
             )
 

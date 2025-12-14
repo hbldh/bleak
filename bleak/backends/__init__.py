@@ -66,7 +66,7 @@ def get_default_backend() -> BleakBackend:
         # return "Darwin" from platform.system()
         return BleakBackend.PYTHONISTA_CB
 
-    if platform.system() == "Darwin":
+    if platform.system() == "Darwin" or sys.platform == "ios":
         return BleakBackend.CORE_BLUETOOTH
 
     if platform.system() == "Windows":

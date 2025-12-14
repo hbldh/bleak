@@ -1,17 +1,32 @@
 import sys
-from typing import Any, NewType, Optional, Protocol, TypeVar
+from typing import Any, Callable, NewType, Optional, Protocol, TypeVar, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
 
-from Foundation import NSUUID, NSArray, NSData, NSDictionary, NSError, NSObject
+from Foundation import (
+    NSUUID,
+    NSArray,
+    NSData,
+    NSDictionary,
+    NSError,
+    NSObject,
+    NSString,
+)
 from libdispatch import dispatch_queue_t
 
+T = TypeVar("T")
+
+Property = Union[
+    Callable[[], T],  # "pyobjc" style
+    T,  # "rubicon-objc" style
+]
+
 class CBManager(NSObject):
-    def state(self) -> CBManagerState: ...
-    def authorization(self) -> CBManagerAuthorization: ...
+    state: Property[CBManagerState]
+    authorization: Property[CBManagerAuthorization]
 
 TCBCentralManager = TypeVar("TCBCentralManager", bound=CBCentralManager)
 
@@ -27,12 +42,12 @@ class CBCentralManager(CBManager):
         cls,
         delegate: CBCentralManagerDelegate,
         queue: dispatch_queue_t,
-        options: NSDictionary,
+        options: NSDictionary[str, Any],
     ) -> Optional[Self]: ...
     def connectPeripheral_options_(
         self,
         peripheral: CBPeripheral,
-        options: Optional[NSDictionary],
+        options: Optional[NSDictionary[str, Any]],
     ) -> None: ...
     def cancelPeripheralConnection_(self, peripheral: CBPeripheral) -> None: ...
     def retrieveConnectedPeripheralsWithServices_(
@@ -44,7 +59,7 @@ class CBCentralManager(CBManager):
     def scanForPeripheralsWithServices_options_(
         self,
         serviceUUIDs: Optional[NSArray[CBUUID]],
-        options: Optional[NSDictionary],
+        options: Optional[NSDictionary[str, Any]],
     ) -> None: ...
     def stopScan(self) -> None: ...
     def isScanning(self) -> bool: ...
@@ -52,8 +67,12 @@ class CBCentralManager(CBManager):
     def supportsFeatures(cls, features: CBCentralManagerFeature) -> bool: ...
     def delegate(self) -> Optional[CBCentralManagerDelegate]: ...
     def registerForConnectionEventsWithOptions_(
-        self, options: NSDictionary
+        self, options: NSDictionary[str, Any]
     ) -> None: ...
+    # HACK: retrieveAddressForPeripheral_ is undocumented
+    def retrieveAddressForPeripheral_(
+        self, peripheral: CBPeripheral
+    ) -> Optional[bytes]: ...
 
 CBConnectPeripheralOptionNotifyOnConnectionKey: str
 CBConnectPeripheralOptionNotifyOnDisconnectionKey: str
@@ -98,17 +117,17 @@ CBConnectionEventMatchingOptionServiceUUIDs: CBConnectionEventMatchingOption
 class CBCentralManagerDelegate(Protocol): ...
 
 class CBPeer(NSObject):
-    def identifier(self) -> NSUUID: ...
+    identifier: Property[NSUUID]
 
 class CBPeripheral(CBPeer):
-    def name(self) -> str: ...
-    def delegate(self) -> CBPeripheralDelegate: ...
+    name: Property[NSString]
+    delegate: Property[CBPeripheralDelegate]
     def setDelegate_(self, delegate: CBPeripheralDelegate) -> None: ...
     def discoverServices_(self, serviceUUIDs: Optional[NSArray[CBUUID]]) -> None: ...
     def discoverIncludedServices_forService_(
         self, includedServiceUUIDs: NSArray[CBService], service: CBService
     ) -> None: ...
-    def services(self) -> NSArray[CBService]: ...
+    services: Property[NSArray[CBService]]
     def discoverCharacteristics_forService_(
         self, characteristicUUIDs: Optional[NSArray[CBUUID]], service: CBService
     ) -> None: ...
@@ -132,10 +151,10 @@ class CBPeripheral(CBPeer):
     def setNotifyValue_forCharacteristic_(
         self, enabled: bool, characteristic: CBCharacteristic
     ) -> None: ...
-    def state(self) -> CBPeripheralState: ...
+    state: Property[CBPeripheralState]
     def canSendWriteWithoutResponse(self) -> bool: ...
     def readRSSI(self) -> None: ...
-    def RSSI(self) -> int: ...
+    RSSI: Property[int]
 
 CBCharacteristicWriteType = NewType("CBCharacteristicWriteType", int)
 
@@ -210,15 +229,15 @@ class CBPeripheralDelegate(Protocol):
     ) -> None: ...
 
 class CBAttribute(NSObject):
-    def UUID(self) -> CBUUID: ...
+    UUID: Property[CBUUID]
 
 class CBService(CBAttribute):
-    def peripheral(self) -> CBPeripheral: ...
-    def isPrimary(self) -> bool: ...
-    def characteristics(self) -> NSArray[CBCharacteristic]: ...
-    def includedServices(self) -> Optional[NSArray[CBService]]: ...
+    peripheral: Property[CBPeripheral]
+    isPrimary: Property[bool]
+    characteristics: Property[NSArray[CBCharacteristic]]
+    includedServices: Property[Optional[NSArray[CBService]]]
     # Undocumented property
-    def startHandle(self) -> int: ...
+    startHandle: Property[int]
 
 class CBUUID(NSObject):
     @classmethod
@@ -227,17 +246,17 @@ class CBUUID(NSObject):
     def UUIDWithData_(cls, theData: NSData) -> CBUUID: ...
     @classmethod
     def UUIDWithNSUUID_(cls, theUUID: NSUUID) -> CBUUID: ...
-    def data(self) -> NSData: ...
-    def UUIDString(self) -> str: ...
+    data: Property[NSData]
+    UUIDString: Property[NSString]
 
 class CBCharacteristic(CBAttribute):
-    def service(self) -> CBService: ...
-    def value(self) -> Optional[NSData]: ...
-    def descriptors(self) -> NSArray[CBDescriptor]: ...
-    def properties(self) -> CBCharacteristicProperties: ...
-    def isNotifying(self) -> bool: ...
+    service: Property[CBService]
+    value: Property[Optional[NSData]]
+    descriptors: Property[NSArray[CBDescriptor]]
+    properties: Property[CBCharacteristicProperties]
+    isNotifying: Property[bool]
     # Undocumented property
-    def handle(self) -> int: ...
+    handle: Property[int]
 
 CBCharacteristicProperties = NewType("CBCharacteristicProperties", int)
 
@@ -253,7 +272,7 @@ CBCharacteristicPropertyNotifyEncryptionRequired: CBCharacteristicProperties
 CBCharacteristicPropertyIndicateEncryptionRequired: CBCharacteristicProperties
 
 class CBDescriptor(CBAttribute):
-    def characteristic(self) -> CBCharacteristic: ...
-    def value(self) -> Optional[Any]: ...
+    characteristic: Property[CBCharacteristic]
+    value: Property[Optional[Any]]
     # Undocumented property
-    def handle(self) -> int: ...
+    handle: Property[int]
