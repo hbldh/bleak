@@ -3,10 +3,10 @@ name: Build and Test
 on:
   push:
     branches: [master, develop]
-    paths: ["bleak/**", "tests/**"]
+    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
   pull_request:
     branches: [master, develop]
-    paths: ["bleak/**", "tests/**"]
+    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
 
 jobs:
   build_desktop:
@@ -32,15 +32,18 @@ jobs:
           SYSTEM_VERSION_COMPAT: 0
         run: pipx run poetry install --only main,test
       - name: Test with pytest
-        run: |
-          pipx run poetry run pytest -v tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
-      - name: Upload pytest test results
-        uses: actions/upload-artifact@v4
+        run: pipx run poetry run pytest -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}
-          path: junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml
-        # Use always() to always run this step to publish test results when there are test failures
-        if: ${{ always() }}
+          flags: ${{ matrix.os }}, py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          flags: ${{ matrix.os }}, py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Type checking
         # We don't do this in the lint job because we have conditionals
         # on both the platform and the Python version in the code, so we
