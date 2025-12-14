@@ -260,36 +260,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         # Calling pair will fail if we are already paired, so
                         # in that case we just call Connect.
                         if pair and not manager.is_paired(self._device_path):
-                            # Trust means device is authorized
-                            reply = await self._bus.call(
-                                Message(
-                                    destination=defs.BLUEZ_SERVICE,
-                                    path=self._device_path,
-                                    interface=defs.PROPERTIES_INTERFACE,
-                                    member="Set",
-                                    signature="ssv",
-                                    body=[
-                                        defs.DEVICE_INTERFACE,
-                                        "Trusted",
-                                        Variant("b", True),
-                                    ],
-                                )
-                            )
-                            assert_reply(reply)
-
-                            # REVIST: This leaves "Trusted" property set if we
-                            # fail later. Probably not a big deal since we were
-                            # going to trust it anyway.
-
-                            # Pairing means device is authenticated
-                            reply = await self._bus.call(
-                                Message(
-                                    destination=defs.BLUEZ_SERVICE,
-                                    interface=defs.DEVICE_INTERFACE,
-                                    path=self._device_path,
-                                    member="Pair",
-                                )
-                            )
+                            reply = await self._pair()
 
                             # For resolvable private addresses, the address will
                             # change after pairing, so we need to update that.
@@ -471,33 +442,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
-    @override
-    async def pair(self, *args: Any, **kwargs: Any) -> None:
-        """Pair with the peripheral.
-
-        You can use ConnectDevice method if you already know the MAC address of the device.
-        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+    async def _pair(self) -> Message:
         """
+        Pair with the peripheral and return the D-Bus reply.
+
+        Caller is responsible for checking reply for errors.
+        """
+
         assert self._bus is not None
         assert self._device_path is not None
 
-        # See if it is already paired.
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.PROPERTIES_INTERFACE,
-                member="Get",
-                signature="ss",
-                body=[defs.DEVICE_INTERFACE, "Paired"],
-            )
-        )
-        assert_reply(reply)
-        if reply.body[0].value:
-            logger.debug("BLE device @ %s is already paired", self.address)
-            return
-
-        # Set device as trusted.
+        # REVIST: This leaves "Trusted" property set if we
+        # fail later. Probably not a big deal since we were
+        # going to trust it anyway.
+        # Trusted means device is authorized
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
@@ -511,7 +469,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert_reply(reply)
 
         logger.debug("Pairing to BLE device @ %s", self.address)
-
+        # Pairing means device is authenticated
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
@@ -520,6 +478,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
+
+        return reply
+
+    @override
+    async def pair(self, *args: Any, **kwargs: Any) -> None:
+        """Pair with the peripheral.
+
+        You can use ConnectDevice method if you already know the MAC address of the device.
+        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+        """
+        assert self._device_path is not None
+        manager = await get_global_bluez_manager()
+        if manager.is_paired(self._device_path):
+            logger.debug("BLE device @ %s is already paired", self.address)
+            return
+
+        reply = await self._pair()
         assert_reply(reply)
 
         # For resolvable private addresses, the address will
@@ -529,7 +504,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # at the same time as Paired property change and
         # that PropertiesChanged signal is sent before the
         # "Pair" reply is sent.
-        manager = await get_global_bluez_manager()
         self.address = manager.get_device_address(self._device_path)
 
     @override
