@@ -18,9 +18,8 @@ from contextlib import AsyncExitStack
 from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
+    from typing_extensions import override
 else:
-    from collections.abc import Buffer
     from typing import override
 
 if sys.version_info < (3, 11):
@@ -34,6 +33,7 @@ from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
+from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
@@ -792,7 +792,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
+        self, characteristic: BleakGATTCharacteristic, data: SizedBuffer, response: bool
     ) -> None:
         if not self.is_connected:
             raise BleakError("Not connected")
@@ -833,7 +833,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def write_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, data: Buffer
+        self, descriptor: BleakGATTDescriptor, data: SizedBuffer
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 

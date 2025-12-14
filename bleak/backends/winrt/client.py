@@ -19,9 +19,8 @@ from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, c
 from warnings import warn
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
+    from typing_extensions import override
 else:
-    from collections.abc import Buffer
     from typing import override
 
 if sys.version_info < (3, 11):
@@ -65,9 +64,10 @@ from winrt.windows.foundation import (
     EventRegistrationToken,
     IAsyncOperation,
 )
-from winrt.windows.storage.streams import Buffer as WinBuffer
+from winrt.windows.storage.streams import Buffer
 
 from bleak import BleakScanner
+from bleak.args import SizedBuffer
 from bleak.args.winrt import WinRTClientArgs as _WinRTClientArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -909,12 +909,12 @@ class BleakClientWinRT(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
+        self, characteristic: BleakGATTCharacteristic, data: SizedBuffer, response: bool
     ) -> None:
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        buf = WinBuffer(len(data))
+        buf = Buffer(len(data))
         buf.length = buf.capacity
 
         with memoryview(buf) as mv:
@@ -937,7 +937,7 @@ class BleakClientWinRT(BaseBleakClient):
 
     @override
     async def write_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, data: Buffer
+        self, descriptor: BleakGATTDescriptor, data: SizedBuffer
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
@@ -951,7 +951,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         assert self.services
 
-        buf = WinBuffer(len(data))
+        buf = Buffer(len(data))
         buf.length = buf.capacity
 
         with memoryview(buf) as mv:
