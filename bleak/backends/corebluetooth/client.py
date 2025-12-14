@@ -15,9 +15,8 @@ import logging
 from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
+    from typing_extensions import override
 else:
-    from collections.abc import Buffer
     from typing import override
 
 from CoreBluetooth import (
@@ -30,6 +29,7 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
+from bleak.args import SizedBuffer
 from bleak.args.corebluetooth import CBStartNotifyArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -329,7 +329,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
+        self, characteristic: BleakGATTCharacteristic, data: SizedBuffer, response: bool
     ) -> None:
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         assert self._delegate
@@ -346,7 +346,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def write_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, data: Buffer
+        self, descriptor: BleakGATTDescriptor, data: SizedBuffer
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 

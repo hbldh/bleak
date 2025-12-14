@@ -3,15 +3,10 @@
 Base class for backend clients.
 """
 import abc
-import sys
 from collections.abc import Callable
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
-else:
-    from collections.abc import Buffer
-
+from bleak.args import SizedBuffer
 from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.descriptor import BleakGATTDescriptor
@@ -152,7 +147,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def write_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
+        self, characteristic: BleakGATTCharacteristic, data: SizedBuffer, response: bool
     ) -> None:
         """
         Perform a write operation on the specified GATT characteristic.
@@ -166,7 +161,7 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def write_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, data: Buffer
+        self, descriptor: BleakGATTDescriptor, data: SizedBuffer
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 

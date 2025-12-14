@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from bleak.args import SizedBuffer
+
 __author__ = """Henrik Blidh"""
 __email__ = "henrik.blidh@gmail.com"
 
@@ -15,11 +17,6 @@ import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
-
-if sys.version_info < (3, 12):
-    from typing_extensions import Buffer
-else:
-    from collections.abc import Buffer
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -718,7 +715,7 @@ class BleakClient:
     async def write_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
-        data: Buffer,
+        data: SizedBuffer,
         response: Optional[bool] = None,
     ) -> None:
         r"""
@@ -896,7 +893,7 @@ class BleakClient:
     async def write_gatt_descriptor(
         self,
         desc_specifier: Union[BleakGATTDescriptor, int],
-        data: Buffer,
+        data: SizedBuffer,
     ) -> None:
         """
         Perform a write operation on the specified GATT descriptor.

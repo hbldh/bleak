@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``bleak.args.SizedBuffer`` type for better type hinting of buffer protocol parameters.
+
 `2.0.0`_ (2025-11-22)
 =====================
 
