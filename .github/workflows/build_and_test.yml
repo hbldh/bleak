@@ -51,7 +51,7 @@ jobs:
         run: |
           pipx run poetry run pip install pyright
           pipx run poetry run pyright
-          pipx run mypy --version
-          pipx run mypy -p bleak -p tests -p examples
-        # TODO: fix typing issues on macOS and Windows and remove this condition
-        if: matrix.os == 'ubuntu-latest'
+          pipx run poetry run pip install mypy
+          pipx run poetry run mypy -p bleak -p tests -p examples
+        # TODO: fix typing issues on macOS and remove this condition
+        if: matrix.os != 'macos-latest'

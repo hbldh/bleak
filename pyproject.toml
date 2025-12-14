@@ -80,7 +80,7 @@ exclude = "(.venv|kivy|recipes)/"
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = [".venv/**", "**/kivy/**", "**/recipes/**"]
+exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

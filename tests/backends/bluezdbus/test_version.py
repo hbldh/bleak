@@ -8,6 +8,7 @@ import pytest
 
 if sys.platform != "linux":
     pytest.skip("skipping linux-only tests", allow_module_level=True)
+    assert False  # HACK: work around pyright bug
 
 from unittest.mock import AsyncMock, Mock
 
