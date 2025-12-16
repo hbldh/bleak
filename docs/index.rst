@@ -33,15 +33,48 @@ acting as GATT servers. It is designed to provide a asynchronous,
 cross-platform Python API to connect and communicate with e.g. sensors.
 
 
+Operating System Support
+------------------------
+
+Bleak aims to work on most major operating systems via platform-specific backends.
+
+Tier 1 support
+~~~~~~~~~~~~~~
+
+The following operating systems are supported and tested by the maintainers:
+
+* Linux distributions with BlueZ >= 5.55
+* Mac support via Core Bluetooth API, from at least macOS version 10.15
+* Windows 10, version 16299 (Fall Creators Update) or greater
+
+Tier 2 support
+~~~~~~~~~~~~~~
+
+The following operating systems are supported by the community, but not actively
+tested by the maintainers:
+
+* Android via Python4Android.
+
+3rd party backends
+~~~~~~~~~~~~~~~~~~
+
+The following backends are implemented and maintained by 3rd parties:
+
+* Bumble (a full Bluetooth stack implemented in Python) at `<https://github.com/vChavezB/bleak-bumble/>`_.
+* ESPHome Bluetooth Proxy at `<https://github.com/Bluetooth-Devices/bleak-esphome>`_.
+* Pythonista on iOS at `<https://github.com/o-murphy/bleak-pythonista>`_.
+
+
 Features
 --------
 
-* Supports Windows 10, version 16299 (Fall Creators Update) or greater
-* Supports Linux distributions with BlueZ >= 5.43 (See :ref:`linux-backend` for more details)
-* OS X/macOS support via Core Bluetooth API, from at least OS X version 10.15
-
-Bleak supports reading, writing and getting notifications from
-GATT servers, as well as a function for discovering BLE devices.
+* Scan for devices advertising over BLE.
+* Get name, service uuids, service data, manufacturer-specific data, transmit
+  power and RSSI from advertising packets.
+* Connect to BLE peripherals.
+* Read and write GATT characteristics and descriptors.
+* Subscribe to notifications/indications from characteristics.
+* Initiate pairing/bonding with devices (platform dependent).
 
 Contents:
 
