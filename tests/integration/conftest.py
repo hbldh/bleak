@@ -1,26 +1,47 @@
+from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
 from bumble import data_types
+from bumble.controller import Controller
 from bumble.core import AdvertisingData, DataType
 from bumble.device import Device, DeviceConfiguration
 from bumble.hci import Address
 from bumble.transport import open_transport
 from bumble.transport.common import Transport
 
+from tests.integration.bluez_controller import open_bluez_bluetooth_controller_link
+
 
 @pytest.fixture
 async def hci_transport(
     request: pytest.FixtureRequest,
+    tmp_path: Path,
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
     hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
+    bluez_hci_transport_name: str | None = request.config.getoption(
+        "--bleak-bluez-hci-transport"
+    )
 
-    if hci_transport_name is None:
-        pytest.skip("No HCI transport provided (use --bleak-hci-transport)")
-    else:
+    if (hci_transport_name is not None) and (bluez_hci_transport_name is not None):
+        raise pytest.UsageError(
+            "Cannot use --bleak-hci-transport and "
+            "--bleak-bluez-hci-transport together"
+        )
+    elif bluez_hci_transport_name is not None:
+        async with open_bluez_bluetooth_controller_link(
+            bluez_hci_transport_name
+        ) as local_link:
+            device_controller = Controller("C-DEVICE", link=local_link)
+            yield Transport(device_controller, device_controller)
+    elif hci_transport_name is not None:
         async with await open_transport(hci_transport_name) as hci_transport:
             yield hci_transport
+    else:
+        pytest.skip(
+            "No HCI transport provided (use --bleak-hci-transport or --bleak-bluez-hci-transport)"
+        )
 
 
 @pytest.fixture

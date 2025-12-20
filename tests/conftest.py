@@ -10,3 +10,10 @@ def pytest_addoption(
         default=None,
         help="Bumble HCI transport monkier",
     )
+
+    parser.addoption(
+        "--bleak-bluez-hci-transport",
+        action="store",
+        default=None,
+        help="Bumble HCI transport monkier to BlueZ",
+    )
