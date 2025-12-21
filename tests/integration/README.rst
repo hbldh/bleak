@@ -53,3 +53,13 @@ Bluetooth controllers. To use this setup you have to use the additional command 
     $ poetry run pytest --bleak-bluez-hci-transport=vhci
 
 To run the tests without root privileges, you have to give your current user access to VHCI.
+
+On Ubuntu this can be done by adding your user to the ``bluetooth`` group:
+
+    $ sudo groupadd bluetooth
+    $ sudo usermod -aG bluetooth $USER
+    $ echo 'KERNEL=="vhci", GROUP="bluetooth", MODE="0666"' | sudo tee /etc/udev/rules.d/99-vhci.rules
+    $ sudo udevadm control --reload-rules
+    $ sudo udevadm trigger
+
+After that you have to log out and log back in for the group change to take effect.
