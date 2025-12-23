@@ -12,6 +12,7 @@ from Foundation import (
     NSData,
     NSDictionary,
     NSError,
+    NSNumber,
     NSObject,
     NSString,
 )
@@ -143,7 +144,7 @@ class CBPeripheral(CBPeer):
     def state(self) -> CBPeripheralState: ...
     def canSendWriteWithoutResponse(self) -> bool: ...
     def readRSSI(self) -> None: ...
-    def RSSI(self) -> int: ...
+    def RSSI(self) -> NSNumber: ...
 
 CBCharacteristicWriteType = NewType("CBCharacteristicWriteType", int)
 
@@ -209,7 +210,7 @@ class CBPeripheralDelegate(Protocol):
     def peripheral_didReadRSSI_error_(
         self,
         peripheral: CBPeripheral,
-        rssi: int,
+        rssi: NSNumber,
         error: Optional[NSError],
     ) -> None: ...
     def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None: ...

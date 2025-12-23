@@ -46,6 +46,7 @@ from Foundation import (
     NSError,
     NSKeyValueChangeNewKey,
     NSKeyValueObservingOptionNew,
+    NSNumber,
     NSObject,
     NSString,
 )
@@ -135,7 +136,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         central: CBCentralManager,
         peripheral: CBPeripheral,
         advertisementData: NSDictionary[str, Any],
-        RSSI: int,
+        RSSI: NSNumber,
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
 
@@ -224,7 +225,7 @@ class CentralManagerDelegate:
 
         self.callbacks: dict[
             int,
-            Callable[[CBPeripheral, NSDictionary[str, Any], int], None] | None,
+            Callable[[CBPeripheral, NSDictionary[str, Any], NSNumber], None] | None,
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
@@ -382,7 +383,7 @@ class CentralManagerDelegate:
         central: CBCentralManager,
         peripheral: CBPeripheral,
         advertisementData: NSDictionary[str, Any],
-        RSSI: int,
+        RSSI: NSNumber,
     ) -> None:
         # Note: this function might be called several times for same device.
         # This can happen for instance when an active scan is done, and the

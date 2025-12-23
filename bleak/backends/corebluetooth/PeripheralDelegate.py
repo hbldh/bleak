@@ -38,7 +38,7 @@ from CoreBluetooth import (
     CBPeripheral,
     CBService,
 )
-from Foundation import NSUUID, NSArray, NSData, NSError, NSObject
+from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject
 
 from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends.client import NotifyCallback
@@ -232,14 +232,14 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     def peripheral_didReadRSSI_error_(
         self,
         peripheral: CBPeripheral,
-        rssi: int,
+        rssi: NSNumber,
         error: Optional[NSError],
     ) -> None:
         logger.debug("peripheral_didReadRSSI_error_")
 
         try:
             self.py_delegate.event_loop.call_soon_threadsafe(
-                self.py_delegate.did_read_rssi, peripheral, rssi, error
+                self.py_delegate.did_read_rssi, peripheral, int(rssi), error
             )
         except RuntimeError as e:
             # Likely caused by loop being closed

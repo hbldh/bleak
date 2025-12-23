@@ -16,7 +16,7 @@ else:
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSDictionary
+from Foundation import NSBundle, NSDictionary, NSNumber
 
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
@@ -106,7 +106,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self.seen_devices = {}
 
         def callback(
-            peripheral: CBPeripheral, adv_data: NSDictionary[str, Any], rssi: int
+            peripheral: CBPeripheral, adv_data: NSDictionary[str, Any], rssi: NSNumber
         ) -> None:
 
             service_uuids = [
@@ -141,7 +141,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 service_data=service_data,
                 service_uuids=service_uuids,
                 tx_power=tx_power,
-                rssi=rssi,
+                rssi=int(rssi),
                 platform_data=(peripheral, adv_data, rssi),
             )
 
