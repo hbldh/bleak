@@ -27,12 +27,12 @@ class CBCentralManager(CBManager):
         cls,
         delegate: CBCentralManagerDelegate,
         queue: dispatch_queue_t,
-        options: NSDictionary,
+        options: NSDictionary[str, Any],
     ) -> Optional[Self]: ...
     def connectPeripheral_options_(
         self,
         peripheral: CBPeripheral,
-        options: Optional[NSDictionary],
+        options: Optional[NSDictionary[str, Any]],
     ) -> None: ...
     def cancelPeripheralConnection_(self, peripheral: CBPeripheral) -> None: ...
     def retrieveConnectedPeripheralsWithServices_(
@@ -44,7 +44,7 @@ class CBCentralManager(CBManager):
     def scanForPeripheralsWithServices_options_(
         self,
         serviceUUIDs: Optional[NSArray[CBUUID]],
-        options: Optional[NSDictionary],
+        options: Optional[NSDictionary[str, Any]],
     ) -> None: ...
     def stopScan(self) -> None: ...
     def isScanning(self) -> bool: ...
@@ -52,7 +52,7 @@ class CBCentralManager(CBManager):
     def supportsFeatures(cls, features: CBCentralManagerFeature) -> bool: ...
     def delegate(self) -> Optional[CBCentralManagerDelegate]: ...
     def registerForConnectionEventsWithOptions_(
-        self, options: NSDictionary
+        self, options: NSDictionary[str, Any]
     ) -> None: ...
 
 CBConnectPeripheralOptionNotifyOnConnectionKey: str

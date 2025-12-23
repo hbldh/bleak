@@ -106,7 +106,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self.seen_devices = {}
 
         def callback(
-            peripheral: CBPeripheral, adv_data: NSDictionary, rssi: int
+            peripheral: CBPeripheral, adv_data: NSDictionary[str, Any], rssi: int
         ) -> None:
 
             service_uuids = [

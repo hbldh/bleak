@@ -84,7 +84,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     # User defined functions
 
     def observeValueForKeyPath_ofObject_change_context_(
-        self, keyPath: str, object: Any, change: NSDictionary, context: int
+        self, keyPath: str, object: Any, change: NSDictionary[str, Any], context: int
     ) -> None:
         logger.debug("'%s' changed", keyPath)
 
@@ -129,7 +129,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        advertisementData: NSDictionary,
+        advertisementData: NSDictionary[str, Any],
         RSSI: int,
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
@@ -219,7 +219,7 @@ class CentralManagerDelegate:
 
         self.callbacks: dict[
             int,
-            Callable[[CBPeripheral, NSDictionary, int], None] | None,
+            Callable[[CBPeripheral, NSDictionary[str, Any], int], None] | None,
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
@@ -376,7 +376,7 @@ class CentralManagerDelegate:
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        advertisementData: NSDictionary,
+        advertisementData: NSDictionary[str, Any],
         RSSI: int,
     ) -> None:
         # Note: this function might be called several times for same device.
