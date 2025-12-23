@@ -47,6 +47,7 @@ from Foundation import (
     NSKeyValueChangeNewKey,
     NSKeyValueObservingOptionNew,
     NSObject,
+    NSString,
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
@@ -84,7 +85,11 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     # User defined functions
 
     def observeValueForKeyPath_ofObject_change_context_(
-        self, keyPath: str, object: Any, change: NSDictionary[str, Any], context: int
+        self,
+        keyPath: NSString,
+        object: Any,
+        change: NSDictionary[str, Any],
+        context: int,
     ) -> None:
         logger.debug("'%s' changed", keyPath)
 
