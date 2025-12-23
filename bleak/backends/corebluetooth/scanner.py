@@ -105,23 +105,25 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
         self.seen_devices = {}
 
-        def callback(p: CBPeripheral, a: NSDictionary, r: int) -> None:
+        def callback(
+            peripheral: CBPeripheral, adv_data: NSDictionary, rssi: int
+        ) -> None:
 
             service_uuids = [
-                cb_uuid_to_str(u) for u in a.get("kCBAdvDataServiceUUIDs", [])
+                cb_uuid_to_str(u) for u in adv_data.get("kCBAdvDataServiceUUIDs", [])
             ]
 
             if not self.is_allowed_uuid(service_uuids):
                 return
 
             # Process service data
-            service_data_dict_raw = a.get("kCBAdvDataServiceData", {})
+            service_data_dict_raw = adv_data.get("kCBAdvDataServiceData", {})
             service_data = {
                 cb_uuid_to_str(k): bytes(v) for k, v in service_data_dict_raw.items()
             }
 
             # Process manufacturer data into a more friendly format
-            manufacturer_binary_data = a.get("kCBAdvDataManufacturerData")
+            manufacturer_binary_data = adv_data.get("kCBAdvDataManufacturerData")
             manufacturer_data: dict[int, bytes] = {}
             if manufacturer_binary_data:
                 manufacturer_id = int.from_bytes(
@@ -131,39 +133,39 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
             # set tx_power data if available
-            tx_power = a.get("kCBAdvDataTxPowerLevel")
+            tx_power = adv_data.get("kCBAdvDataTxPowerLevel")
 
             advertisement_data = AdvertisementData(
-                local_name=a.get("kCBAdvDataLocalName"),
+                local_name=adv_data.get("kCBAdvDataLocalName"),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
                 service_uuids=service_uuids,
                 tx_power=tx_power,
-                rssi=r,
-                platform_data=(p, a, r),
+                rssi=rssi,
+                platform_data=(peripheral, adv_data, rssi),
             )
 
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
                 address_bytes = cast(
                     Optional[bytes],
-                    self._manager.central_manager.retrieveAddressForPeripheral_(p),  # type: ignore
+                    self._manager.central_manager.retrieveAddressForPeripheral_(peripheral),  # type: ignore
                 )
                 if address_bytes is None:
                     logger.debug(
                         "Could not get Bluetooth address for %s. Ignoring this device.",
-                        p.identifier().UUIDString(),
+                        peripheral.identifier().UUIDString(),
                     )
                     return
                 address = address_bytes.hex(":").upper()
             else:
-                address = p.identifier().UUIDString()
+                address = peripheral.identifier().UUIDString()
 
             device = self.create_or_update_device(
-                p.identifier().UUIDString(),
+                peripheral.identifier().UUIDString(),
                 address,
-                p.name(),
-                (p, self._manager),
+                peripheral.name(),
+                (peripheral, self._manager),
                 advertisement_data,
             )
 
