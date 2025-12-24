@@ -44,7 +44,6 @@ from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends.client import NotifyCallback
 from bleak.exc import BleakError
 
-# logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
