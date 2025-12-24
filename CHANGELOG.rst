@@ -14,6 +14,12 @@ Added
 -----
 * Added ``bleak.args.SizedBuffer`` type for better type hinting of buffer protocol parameters.
 
+Fixed
+-----
+* Fixed calling ``logging.debug()`` in WinRT backend. Fixes #1882.
+* Fixed calling ``logging.warning()`` in BlueZ backend.
+
+
 `2.0.0`_ (2025-11-22)
 =====================
 

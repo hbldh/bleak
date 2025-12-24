@@ -7,6 +7,8 @@ from typing import Iterable
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+logger = logging.getLogger(__name__)
+
 
 class Args(argparse.Namespace):
     device1: str
@@ -43,7 +45,7 @@ async def connect_to_device(
         notify_uuid:
             The UUID of a characteristic that supports notifications.
     """
-    logging.info("starting %s task", name_or_address)
+    logger.info("starting %s task", name_or_address)
 
     try:
         async with contextlib.AsyncExitStack() as stack:
@@ -51,7 +53,7 @@ async def connect_to_device(
             # Trying to establish a connection to two devices at the same time
             # can cause errors, so use a lock to avoid this.
             async with lock:
-                logging.info("scanning for %s", name_or_address)
+                logger.info("scanning for %s", name_or_address)
 
                 if by_address:
                     device = await BleakScanner.find_device_by_address(
@@ -60,28 +62,27 @@ async def connect_to_device(
                 else:
                     device = await BleakScanner.find_device_by_name(name_or_address)
 
-                logging.info("stopped scanning for %s", name_or_address)
+                logger.info("stopped scanning for %s", name_or_address)
 
                 if device is None:
-                    logging.error("%s not found", name_or_address)
+                    logger.error("%s not found", name_or_address)
                     return
 
-                logging.info("connecting to %s", name_or_address)
+                logger.info("connecting to %s", name_or_address)
 
                 client = await stack.enter_async_context(BleakClient(device))
 
-                logging.info("connected to %s", name_or_address)
-
+                logger.info("connected to %s", name_or_address)
                 # This will be called immediately before client.__aexit__ when
                 # the stack context manager exits.
-                stack.callback(logging.info, "disconnecting from %s", name_or_address)
+                stack.callback(logger.info, "disconnecting from %s", name_or_address)
 
             # The lock is released here. The device is still connected and the
             # Bluetooth adapter is now free to scan and connect another device
             # without disconnecting this one.
 
             def callback(_: BleakGATTCharacteristic, data: bytearray) -> None:
-                logging.info("%s received %r", name_or_address, data)
+                logger.info("%s received %r", name_or_address, data)
 
             await client.start_notify(notify_uuid, callback)
             await asyncio.sleep(10.0)
@@ -89,10 +90,10 @@ async def connect_to_device(
 
         # The stack context manager exits here, triggering disconnection.
 
-        logging.info("disconnected from %s", name_or_address)
+        logger.info("disconnected from %s", name_or_address)
 
     except Exception:
-        logging.exception("error with %s", name_or_address)
+        logger.exception("error with %s", name_or_address)
 
 
 async def main(
