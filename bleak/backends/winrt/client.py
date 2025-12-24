@@ -569,7 +569,7 @@ class BleakClientWinRT(BaseBleakClient):
         )
 
         if device_information.pairing.is_paired:
-            logging.debug("Device is already paired. Skipping pairing.")
+            logger.debug("Device is already paired. Skipping pairing.")
             return
 
         if not device_information.pairing.can_pair:
