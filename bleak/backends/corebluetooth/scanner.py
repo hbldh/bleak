@@ -1,12 +1,12 @@
 import sys
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
 
 import logging
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
 from warnings import warn
 
 if sys.version_info < (3, 12):
@@ -16,11 +16,18 @@ else:
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSDictionary, NSNumber
+from Foundation import NSBundle, NSNumber
 
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
-from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
-from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.corebluetooth.CentralManagerDelegate import (
+    CBAdvertisementData,
+    CentralManagerDelegate,
+)
+from bleak.backends.corebluetooth.utils import (
+    cb_uuid_to_str,
+    to_optional_int,
+    to_optional_str,
+)
 from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
@@ -106,7 +113,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
         self.seen_devices = {}
 
         def callback(
-            peripheral: CBPeripheral, adv_data: NSDictionary[str, Any], rssi: NSNumber
+            peripheral: CBPeripheral, adv_data: CBAdvertisementData, rssi: NSNumber
         ) -> None:
 
             service_uuids = [
@@ -117,9 +124,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 return
 
             # Process service data
-            service_data_dict_raw = adv_data.get("kCBAdvDataServiceData", {})
             service_data = {
-                cb_uuid_to_str(k): bytes(v) for k, v in service_data_dict_raw.items()
+                cb_uuid_to_str(k): bytes(v)
+                for k, v in adv_data.get("kCBAdvDataServiceData", {}).items()
             }
 
             # Process manufacturer data into a more friendly format
@@ -132,15 +139,12 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 manufacturer_value = bytes(manufacturer_binary_data[2:])
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
-            # set tx_power data if available
-            tx_power = adv_data.get("kCBAdvDataTxPowerLevel")
-
             advertisement_data = AdvertisementData(
-                local_name=adv_data.get("kCBAdvDataLocalName"),
+                local_name=to_optional_str(adv_data.get("kCBAdvDataLocalName")),
                 manufacturer_data=manufacturer_data,
                 service_data=service_data,
                 service_uuids=service_uuids,
-                tx_power=tx_power,
+                tx_power=to_optional_int(adv_data.get("kCBAdvDataTxPowerLevel")),
                 rssi=int(rssi),
                 platform_data=(peripheral, adv_data, rssi),
             )

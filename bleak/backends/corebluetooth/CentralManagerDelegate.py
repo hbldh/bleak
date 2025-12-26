@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict, cast
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -42,6 +42,7 @@ from CoreBluetooth import (
 from Foundation import (
     NSUUID,
     NSArray,
+    NSData,
     NSDictionary,
     NSError,
     NSKeyValueChangeNewKey,
@@ -63,6 +64,17 @@ CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 
 
 DisconnectCallback = Callable[[], None]
+
+
+class CBAdvertisementData(TypedDict, total=False):
+    kCBAdvDataLocalName: NSString
+    kCBAdvDataManufacturerData: NSData
+    kCBAdvDataServiceData: dict[CBUUID, NSData]
+    kCBAdvDataServiceUUIDs: NSArray[CBUUID]
+    kCBAdvertisementDataOverflowServiceUUIDsKey: NSArray[CBUUID]
+    kCBAdvDataTxPowerLevel: NSNumber
+    kCBAdvertisementDataIsConnectable: NSNumber
+    kCBAdvDataOverflowServiceUUIDs: NSArray[CBUUID]
 
 
 class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate]):
@@ -225,7 +237,7 @@ class CentralManagerDelegate:
 
         self.callbacks: dict[
             int,
-            Callable[[CBPeripheral, NSDictionary[str, Any], NSNumber], None] | None,
+            Callable[[CBPeripheral, CBAdvertisementData, NSNumber], None] | None,
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
@@ -403,7 +415,7 @@ class CentralManagerDelegate:
 
         for callback in self.callbacks.values():
             if callback:
-                callback(peripheral, advertisementData, RSSI)
+                callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
 
         logger.debug(
             "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",

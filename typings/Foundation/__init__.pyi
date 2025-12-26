@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, NewType, Optional, TypeVar, overload
+from typing import Any, NewType, Optional, SupportsIndex, TypeVar, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
@@ -49,6 +49,10 @@ class NSData(NSObject, Buffer):
     def initWithBytes_length_(self, bytes: Buffer, length: int) -> Self: ...
     def length(self) -> int: ...
     def getBytes_length_(self, buffer: bytes, length: int) -> None: ...
+    @overload
+    def __getitem__(self, index: SupportsIndex) -> int: ...
+    @overload
+    def __getitem__(self, index: slice) -> memoryview: ...
 
 T = TypeVar("T")
 
