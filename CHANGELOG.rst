@@ -33,6 +33,7 @@ Changed
 * Use ``"AcquireNotify"`` rather than ``"StartNotify"`` for Linux backend on supported characteristics
 * Allow multiple calls to ``disconnect()`` on Windows to align behavior over all backends.
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
+* Added ``pairing_callbacks`` parameter to ``BleakClient()`` constructor to support the different pairing methods.
 
 Fixed
 -----
