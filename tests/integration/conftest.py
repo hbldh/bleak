@@ -14,7 +14,6 @@ from bumble.transport.common import Transport
 @pytest.fixture
 async def hci_transport(
     request: pytest.FixtureRequest,
-    tmp_path: Path,
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
     hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
