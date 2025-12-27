@@ -20,7 +20,7 @@ async def hci_transport(
     hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
     bluez_vhci_enabled: bool = request.config.getoption("--bleak-bluez-vhci")
 
-    if (hci_transport_name is not None) and bluez_vhci_enabled:
+    if hci_transport_name is not None and bluez_vhci_enabled:
         raise pytest.UsageError(
             "Cannot use --bleak-hci-transport and --bleak-bluez-vhci together"
         )
