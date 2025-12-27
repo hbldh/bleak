@@ -2,7 +2,6 @@ examples/notcommit/
 
 .idea/
 .vs/
-.alpine-vm-build/
 [Bb]in/
 [Oo]bj/
 
@@ -52,6 +51,9 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+
+# Integration test VM
+.alpine-vm-build/
 
 # Translations
 *.mo

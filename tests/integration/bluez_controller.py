@@ -27,16 +27,21 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
+BLEAK_TEST_MANUFACTURER_ID = 0xBEEF
+
 
 @contextlib.asynccontextmanager
 async def open_message_bus() -> AsyncGenerator[MessageBus, None]:
+    """
+    Open a D-Bus message bus connection.
+    """
     bus = MessageBus(bus_type=BusType.SYSTEM, auth=get_dbus_authenticator())
-    await bus.connect()
     try:
+        await bus.connect()
         yield bus
     finally:
-        if bus.connected:
-            bus.disconnect()
+        bus.disconnect()
+        await bus.wait_for_disconnect()
 
 
 async def power_on_controller(
@@ -93,7 +98,10 @@ async def wait_for_new_adapter() -> (
             if not adapter:
                 return
 
-            # New adapter found, return its path via the future
+            # Check for our test manufacturer ID to identify the adapter
+            if adapter["Manufacturer"].value != BLEAK_TEST_MANUFACTURER_ID:
+                return
+
             if not adapter_path_future.done():
                 adapter_path_future.set_result(obj_path)
 
@@ -132,23 +140,27 @@ async def open_bluez_bluetooth_controller_link(
             link = LocalLink()
 
             # Bluetooth controller that BlueZ can connect to.
-            # (This will register itself to the link.)
-            Controller(
+            # (This will register itself to the link so we don't need to keep a reference)
+            bluez_controller = Controller(
                 "BLEAK-TEST-BLUEZ",
                 host_source=hci_transport.source,
                 host_sink=hci_transport.sink,
                 link=link,
             )
+            bluez_controller.manufacturer_name = BLEAK_TEST_MANUFACTURER_ID
 
             # Wait up to 5 seconds for the new adapter to appear via InterfacesAdded
             adapter_path = await asyncio.wait_for(adapter_path_future, timeout=5.0)
             logging.info(f"New adapter detected at {adapter_path}")
 
-            # Ensure controller is powered on
+            # Ensure controller is powered on. This also ensures that BlueZ has fully
+            # initialized the adapter and it is ready for use.
             await power_on_controller(bus, adapter_path)
 
-            # Disconnect from D-Bus
+            # We dont need the bus anymore. We have done everything needed with it.
+            # Bleak will open its own D-Bus connection.
             bus.disconnect()
+            await bus.wait_for_disconnect()
 
             # Yield the local link for use in tests
             yield link

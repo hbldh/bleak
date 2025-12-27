@@ -58,8 +58,10 @@ On Ubuntu this can be done by adding your user to the ``bluetooth`` group:
 
     $ sudo groupadd bluetooth
     $ sudo usermod -aG bluetooth $USER
-    $ echo 'KERNEL=="vhci", GROUP="bluetooth", MODE="0666"' | sudo tee /etc/udev/rules.d/99-vhci.rules
+    $ echo 'KERNEL=="vhci", GROUP="bluetooth", MODE="0660"' | sudo tee /etc/udev/rules.d/99-vhci.rules
     $ sudo udevadm control --reload-rules
     $ sudo udevadm trigger
 
-After that you have to log out and log back in for the group change to take effect.
+After that you need to reload your group membership. Either log out and log back in, or run:
+
+    $ newgrp bluetooth
