@@ -12,6 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
+* Added ``bluez`` parameter to ``BleakClient.start_notify()`` to allow forcing using "StartNotify" instead of "AcquireNotify" on BlueZ backend. Fixes #1885.
 * Added ``bleak.args.SizedBuffer`` type for better type hinting of buffer protocol parameters.
 
 Fixed

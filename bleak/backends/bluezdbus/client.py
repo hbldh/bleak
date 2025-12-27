@@ -5,6 +5,8 @@ BLE Client for BlueZ on Linux
 import sys
 from typing import TYPE_CHECKING
 
+from bleak.args.bluez import BlueZNotifyArgs
+
 if TYPE_CHECKING:
     if sys.platform != "linux":
         assert False, "This backend is only available on Linux"
@@ -916,6 +918,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         Activate notifications/indications on a characteristic.
         """
+
+        bluez: BlueZNotifyArgs = kwargs["bluez"]
+        force_use_start_notify = bluez.get("use_start_notify", False)
+
         assert self._bus is not None
 
         # If using StartNotify and calling a read on the same
@@ -925,7 +931,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # However, using the preferred AcquireNotify requires that devices
         # correctly indicate "notify" and/or "indicate" properties. If they
         # don't, we fall back to StartNotify.
-        use_notify_acquire = "NotifyAcquired" in characteristic.obj[1]
+        use_notify_acquire = (
+            not force_use_start_notify and "NotifyAcquired" in characteristic.obj[1]
+        )
         logger.debug(
             'using "%s" for notifications on characteristic %d',
             "AcquireNotify" if use_notify_acquire else "StartNotify",

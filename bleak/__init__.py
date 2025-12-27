@@ -25,7 +25,7 @@ else:
     from asyncio import timeout as async_timeout
     from typing import Never, Self, Unpack, assert_never
 
-from bleak.args.bluez import BlueZScannerArgs
+from bleak.args.bluez import BlueZNotifyArgs, BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends import BleakBackend
@@ -785,6 +785,7 @@ class BleakClient:
             [BleakGATTCharacteristic, bytearray], Union[None, Awaitable[None]]
         ],
         *,
+        bluez: BlueZNotifyArgs = {},
         cb: CBStartNotifyArgs = {},
         **kwargs: Any,
     ) -> None:
@@ -809,8 +810,10 @@ class BleakClient:
             callback:
                 The function to be called on notification. Can be regular
                 function or async function.
+            bluez:
+                BlueZ backend-specific arguments.
             cb:
-                CoreBluetooth specific arguments.
+                CoreBluetooth backend-specific arguments.
 
         Raises:
             BleakCharacteristicNotFoundError: if a characteristic with the
@@ -820,8 +823,12 @@ class BleakClient:
         .. versionchanged:: 0.18
             The first argument of the callback is now a :class:`BleakGATTCharacteristic`
             instead of an ``int``.
+
         .. versionchanged:: 1.0
             Added the ``cb`` parameter.
+
+        .. versionchanged:: unreleased
+            Added the ``bluez`` parameter.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
@@ -839,7 +846,7 @@ class BleakClient:
             wrapped_callback = functools.partial(callback, characteristic)  # type: ignore
 
         await self._backend.start_notify(
-            characteristic, wrapped_callback, cb=cb, **kwargs
+            characteristic, wrapped_callback, bluez=bluez, cb=cb, **kwargs
         )
 
     async def stop_notify(
