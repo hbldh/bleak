@@ -48,12 +48,6 @@ adduser -D -s /bin/sh builder
 # Set empty password for builder (allow login without password)
 passwd -d builder
 
-# Fix home directory permissions
-mkdir -p /home/builder
-chown -R builder:builder /home/builder
-chmod 755 /home/builder || true
-chmod 711 /home/builder || true
-
 # Configure VHCI access for user "builder"
 step 'Configure VHCI access for user "builder"'
 addgroup -S bluetooth 2>/dev/null || true
@@ -63,10 +57,8 @@ addgroup builder bluetooth
 cat > /etc/local.d/vhci-permissions.start <<'EOF'
 #!/bin/sh
 # Set permissions for /dev/vhci
-if [ -e /dev/vhci ]; then
-    chgrp bluetooth /dev/vhci
-    chmod 0660 /dev/vhci
-fi
+chgrp bluetooth /dev/vhci
+chmod 0660 /dev/vhci
 EOF
 chmod +x /etc/local.d/vhci-permissions.start
 rc-update add local default

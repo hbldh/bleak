@@ -71,15 +71,12 @@ jobs:
 
       - name: Enable KVM group permissions
         run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-          ls -al /dev/kvm
+          sudo chmod 666 /dev/kvm
 
       - name: Build and boot Alpine VM
         run: ./.github/alpine-vm/start-alpine-vm.sh
 
-      - name: Install dependencies in VM
+      - name: Install Python and dependencies in VM
         run: |
           ./.github/alpine-vm/vm-ssh.sh '
             bluetoothctl --version
@@ -93,8 +90,9 @@ jobs:
         run: |
           ./.github/alpine-vm/vm-ssh.sh '
             export FORCE_COLOR=1
+            export CI=true
             export GITHUB_ACTIONS=true
-            poetry run pytest -v tests --bleak-bluez-hci-transport=vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+            poetry run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
           '
 
       - name: Upload coverage reports to Codecov

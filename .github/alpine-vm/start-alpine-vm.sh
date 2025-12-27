@@ -21,7 +21,7 @@ VM_BUILD_DIR="$REPO_ROOT/.alpine-vm-build"
 VM_IMAGE="$VM_BUILD_DIR/alpine.qcow2"
 VM_SSH_PORT="2222"
 VM_CONSOLE_LOG="vm-console.log"
-VM_PACKAGES="bluez poetry openssh git uv"
+VM_PACKAGES="bluez poetry openssh uv"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -189,7 +189,7 @@ boot_vm() {
     TAIL_PID=$!
     
     # Wait for VM to boot and SSH to be ready
-    MAX_ATTEMPTS=60
+    MAX_ATTEMPTS=12
     ATTEMPT=0
     while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
         if check_ssh; then
@@ -204,11 +204,10 @@ boot_vm() {
                 -o UserKnownHostsFile=/dev/null \
                 -p $VM_SSH_PORT \
                 builder@localhost << 'EOFSETUP'
-sudo mkdir -p /mnt/host
-sudo mount -t 9p -o trans=virtio,version=9p2000.L host0 /mnt/host || echo "Already mounted"
-sudo chown builder:builder /mnt/host
-sudo chmod 755 /mnt/host
-sudo ln -sf /mnt/host ~/repo
+sudo mkdir -p /home/builder/repo
+sudo mount -t 9p -o trans=virtio,version=9p2000.L host0 /home/builder/repo || echo "Already mounted"
+sudo chown -R builder:builder /home/builder/repo
+sudo chmod 755 /home/builder/repo
 EOFSETUP
             log_info "✓ Workspace setup complete"
                         

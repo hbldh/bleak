@@ -48,9 +48,9 @@ peripheral device and replaces the nRF Dongle from the previous chapter.
 
 This way you can run integration tests without any physical hardware, just using virtual
 Bluetooth controllers. To use this setup you have to use the additional command line option
-``--bleak-bluez-hci-transport=vhci`` to run the tests:
+``--bleak-bluez-vhci`` to run the tests:
 
-    $ poetry run pytest --bleak-bluez-hci-transport=vhci
+    $ poetry run pytest --bleak-bluez-vhci
 
 To run the tests without root privileges, you have to give your current user access to VHCI.
 

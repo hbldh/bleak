@@ -2,6 +2,7 @@ examples/notcommit/
 
 .idea/
 .vs/
+.alpine-vm-build/
 [Bb]in/
 [Oo]bj/
 
@@ -286,4 +287,3 @@ bh_unicode_properties.cache
 # Sublime-github package stores a github token in this file
 # https://packagecontrol.io/packages/sublime-github
 GitHub.sublime-settings
-.alpine-vm-build
