@@ -3,6 +3,9 @@ Integration tests
 
 This folder contains integration tests for bleak.
 
+Hardware in the loop
+~~~~~~~~~~~~~~~~~~~~
+
 To run these tests, you need two Bluetooth controllers. One that is connected to
 your OS (e.g. the builtin Bluetooth adapter of your PC/laptop) and controlled by
 ``bleak``. And one to use as a Bluetooth peripheral device that is controlled
@@ -30,3 +33,35 @@ On macOS you can find the port via:
 
 
 
+Virtual Bluetooth controllers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An alternative to using physical hardware on Linux with BlueZ is to use virtual Bluetooth
+controllers created by ``bumble`` and connected to your OS via the VHCI interface. This
+virtual controller replaces the builtin Bluetooth adapter of your PC/laptop from the 
+previous chapter. This Bluetooth controller is then controlled by ``bleak``.
+
+Then a secound virtual Bluetooth controller can be created with ``bumble`` that connects
+to the first virtual controller through a so called `LocalLink`. This is like a virtual
+RF link between multiple virtual controllers. This second virtual controller acts as the
+peripheral device and replaces the nRF Dongle from the previous chapter.
+
+This way you can run integration tests without any physical hardware, just using virtual
+Bluetooth controllers. To use this setup you have to use the additional command line option
+``--bleak-bluez-vhci`` to run the tests:
+
+    $ poetry run pytest --bleak-bluez-vhci
+
+To run the tests without root privileges, you have to give your current user access to VHCI.
+
+On Ubuntu this can be done by adding your user to the ``bluetooth`` group:
+
+    $ sudo groupadd bluetooth
+    $ sudo usermod -aG bluetooth $USER
+    $ echo 'KERNEL=="vhci", GROUP="bluetooth", MODE="0660"' | sudo tee /etc/udev/rules.d/99-vhci.rules
+    $ sudo udevadm control --reload-rules
+    $ sudo udevadm trigger
+
+After that you need to reload your group membership. Either log out and log back in, or run:
+
+    $ newgrp bluetooth

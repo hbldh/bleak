@@ -7,6 +7,7 @@ on:
   pull_request:
     branches: [master, develop]
     paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
+  workflow_dispatch:
 
 jobs:
   build_desktop:
@@ -53,3 +54,56 @@ jobs:
           pipx run poetry run pyright
           pipx run poetry run pip install mypy
           pipx run poetry run mypy -p bleak -p tests -p examples
+
+
+  integration_tests_bluez:
+    name: "BlueZ integration tests"
+    runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 qemu-utils qemu-kvm
+
+      - name: Enable KVM group permissions
+        run: |
+          sudo chmod 666 /dev/kvm
+
+      - name: Build and boot Alpine VM
+        run: ./.github/alpine-vm/start-alpine-vm.sh
+
+      - name: Install Python and dependencies in VM
+        run: |
+          ./.github/alpine-vm/vm-ssh.sh '
+            bluetoothctl --version
+            uv python install ${{ matrix.python-version }}
+            uv python pin ${{ matrix.python-version }}
+            poetry env use ${{ matrix.python-version }}
+            poetry install --only main,test
+          '
+
+      - name: Run pytest in VM
+        run: |
+          ./.github/alpine-vm/vm-ssh.sh '
+            export FORCE_COLOR=1
+            export CI=true
+            export GITHUB_ACTIONS=true
+            poetry run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+          '
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          flags: bluez-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          flags: bluez-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}

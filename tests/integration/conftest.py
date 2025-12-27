@@ -1,3 +1,4 @@
+import sys
 from typing import AsyncGenerator
 
 import pytest
@@ -15,12 +16,26 @@ async def hci_transport(
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
     hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
+    bluez_vhci_enabled: bool = request.config.getoption("--bleak-bluez-vhci")
 
-    if hci_transport_name is None:
-        pytest.skip("No HCI transport provided (use --bleak-hci-transport)")
-    else:
+    if hci_transport_name is not None and bluez_vhci_enabled:
+        raise pytest.UsageError(
+            "Cannot use --bleak-hci-transport and --bleak-bluez-vhci together"
+        )
+    elif bluez_vhci_enabled:
+        if sys.platform != "linux":
+            pytest.skip("--bleak-bluez-vhci is only supported on Linux")
+        from tests.integration.bluez_controller import open_transport_with_bluez_vhci
+
+        async with open_transport_with_bluez_vhci() as hci_transport:
+            yield hci_transport
+    elif hci_transport_name is not None:
         async with await open_transport(hci_transport_name) as hci_transport:
             yield hci_transport
+    else:
+        pytest.skip(
+            "No HCI transport provided (use --bleak-hci-transport or --bleak-bluez-vhci)"
+        )
 
 
 @pytest.fixture

@@ -52,6 +52,9 @@ coverage.xml
 *,cover
 .hypothesis/
 
+# Integration test VM
+.alpine-vm-build/
+
 # Translations
 *.mo
 *.pot
