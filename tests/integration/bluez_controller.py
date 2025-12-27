@@ -27,7 +27,7 @@ if sys.version_info < (3, 11):
 else:
     from asyncio import timeout as async_timeout
 
-BLEAK_TEST_MANUFACTURER_ID = 0xBEEF
+BLEAK_TEST_MANUFACTURER_ID = 0xB1EA
 
 
 @contextlib.asynccontextmanager
@@ -140,7 +140,7 @@ async def open_bluez_bluetooth_controller_link(
             link = LocalLink()
 
             # Bluetooth controller that BlueZ can connect to.
-            # (This will register itself to the link so we don't need to keep a reference)
+            # (This will register itself to the link.)
             bluez_controller = Controller(
                 "BLEAK-TEST-BLUEZ",
                 host_source=hci_transport.source,
