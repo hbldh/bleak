@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-from bleak.args import SizedBuffer
-
-__author__ = """Henrik Blidh"""
-__email__ = "henrik.blidh@gmail.com"
-
 import asyncio
 import functools
 import inspect
@@ -17,6 +12,7 @@ import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
+from warnings import warn
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -25,7 +21,8 @@ else:
     from asyncio import timeout as async_timeout
     from typing import Never, Self, Unpack, assert_never
 
-from bleak.args.bluez import BlueZNotifyArgs, BlueZScannerArgs
+from bleak.args import SizedBuffer
+from bleak.args.bluez import BlueZClientArgs, BlueZNotifyArgs, BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends import BleakBackend
@@ -43,6 +40,9 @@ from bleak.backends.scanner import (
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
 from bleak.uuids import normalize_uuid_str
+
+__author__ = """Henrik Blidh"""
+__email__ = "henrik.blidh@gmail.com"
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -106,6 +106,10 @@ class BleakScanner:
     .. versionchanged:: 0.18
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakScanner`.
         Added ``backend`` parameter.
+
+    .. versionchanged:: unreleased
+        Deprecated ``adapter`` keyword argument. Use ``bluez`` argument instead
+        with ``{"adapter": "<adapter_name>"}``.
     """
 
     def __init__(
@@ -124,6 +128,18 @@ class BleakScanner:
             if backend is None
             else (backend, backend.__name__)
         )
+
+        # TODO: upgrade this to FutureWarning in 2027 and remove in 2028 or so
+        adapter_kwarg = kwargs.get("adapter")
+        if adapter_kwarg is not None:
+            warn(
+                "the 'adapter' keyword argument is deprecated, use the 'bluez' kwarg instead with {'adapter': '<adapter_name>'}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if "adapter" not in bluez:
+                bluez["adapter"] = adapter_kwarg
 
         self._backend = PlatformBleakScanner(
             detection_callback,
@@ -233,9 +249,14 @@ class BleakScanner:
         Used to override the automatically selected backend (i.e. for a
             custom backend).
         """
-        adapter: str | None
+        adapter: str
         """
         Name of adapter to use (BlueZ specific), e.g. hci0.
+
+        .. versionchanged:: unreleased
+            This argument is deprecated and will be removed in a future release.
+            Use the ``bluez`` argument with ``{"adapter": "<adapter_name>"}``
+            instead.
         """
 
     @overload
@@ -467,6 +488,8 @@ class BleakClient:
             In rare cases, on other platforms, it might be necessary to pair the
             device first in order to be able to even enumerate the services during
             the connection process.
+        bluez:
+            Dictionary of BlueZ/Linux platform-specific options.
         winrt:
             Dictionary of WinRT/Windows platform-specific options.
         backend:
@@ -501,6 +524,9 @@ class BleakClient:
 
     .. versionchanged:: 1.0
         Added ``pair`` parameter.
+
+    .. versionchanged:: unreleased
+        Added ``bluez`` parameter.
     """
 
     def __init__(
@@ -511,6 +537,7 @@ class BleakClient:
         *,
         timeout: float = 10.0,
         pair: bool = False,
+        bluez: BlueZClientArgs = {},
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,
         **kwargs: Any,
@@ -520,6 +547,18 @@ class BleakClient:
             if backend is None
             else (backend, backend.__name__)
         )
+
+        # TODO: upgrade this to FutureWarning in 2027 and remove in 2028 or so
+        adapter_kwarg = kwargs.get("adapter")
+        if adapter_kwarg is not None:
+            warn(
+                "the 'adapter' keyword argument is deprecated, use the 'bluez' kwarg instead with {'adapter': '<adapter_name>'}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if "adapter" not in bluez:
+                bluez["adapter"] = adapter_kwarg
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,
@@ -532,6 +571,7 @@ class BleakClient:
                 None if services is None else set(map(normalize_uuid_str, services))
             ),
             timeout=timeout,
+            bluez=bluez,
             winrt=winrt,
             **kwargs,
         )

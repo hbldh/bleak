@@ -10,6 +10,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``adapter`` attribute to ``bleak.args.bluez.BlueZClientArgs`` and ``bleak.args.bluez.BlueZScannerArgs``.
+* Added ``bluez`` keyword argument to ``BleakClient``.
+* Added new ``bleak.args.bluez.BlueZClientArgs`` class.
+
+Changed
+-------
+* Deprecated ``adapter`` keyword argument in ``BleakScanner`` and ``BleakClient``.
+
 Removed
 -------
 * Removed undocumented/deprecated ``device`` keyword argument from ``BleakScannerBlueZDBus`` and ``BleakClientBlueZDBus``.

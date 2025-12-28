@@ -5,7 +5,7 @@ BLE Client for BlueZ on Linux
 import sys
 from typing import TYPE_CHECKING
 
-from bleak.args.bluez import BlueZNotifyArgs
+from bleak.args.bluez import BlueZClientArgs, BlueZNotifyArgs
 
 if TYPE_CHECKING:
     if sys.platform != "linux":
@@ -75,11 +75,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
+        *,
+        bluez: BlueZClientArgs,
         **kwargs: Any,
     ):
         super().__init__(address_or_ble_device, **kwargs)
 
-        self._adapter: Optional[str] = kwargs.get("adapter")
+        self._adapter = bluez.get("adapter")
         self._device_path: Optional[str]
         self._device_info: Optional[dict[str, Any]]
 
@@ -143,7 +145,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             device = await BleakScanner.find_device_by_address(
                 self.address,
                 timeout=timeout,
-                adapter=self._adapter,
+                bluez={} if self._adapter is None else {"adapter": self._adapter},
                 backend=BleakScannerBlueZDBus,
             )
 
