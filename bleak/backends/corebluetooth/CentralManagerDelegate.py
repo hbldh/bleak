@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict, cast
 
 if sys.version_info < (3, 11):
     from async_timeout import timeout as async_timeout
@@ -42,11 +42,14 @@ from CoreBluetooth import (
 from Foundation import (
     NSUUID,
     NSArray,
+    NSData,
     NSDictionary,
     NSError,
     NSKeyValueChangeNewKey,
     NSKeyValueObservingOptionNew,
+    NSNumber,
     NSObject,
+    NSString,
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
@@ -63,6 +66,17 @@ CBCentralManagerDelegate = objc.protocolNamed("CBCentralManagerDelegate")
 DisconnectCallback = Callable[[], None]
 
 
+class CBAdvertisementData(TypedDict, total=False):
+    kCBAdvDataLocalName: NSString
+    kCBAdvDataManufacturerData: NSData
+    kCBAdvDataServiceData: dict[CBUUID, NSData]
+    kCBAdvDataServiceUUIDs: NSArray[CBUUID]
+    kCBAdvertisementDataOverflowServiceUUIDsKey: NSArray[CBUUID]
+    kCBAdvDataTxPowerLevel: NSNumber
+    kCBAdvertisementDataIsConnectable: NSNumber
+    kCBAdvDataOverflowServiceUUIDs: NSArray[CBUUID]
+
+
 class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate]):
     """
     CoreBluetooth central manager delegate for bridging callbacks to asyncio.
@@ -72,7 +86,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self, py_delegate: CentralManagerDelegate
     ) -> Optional[Self]:
         """macOS init function for NSObject"""
-        self = objc.super(ObjcCentralManagerDelegate, self).init()
+        self = objc.super(ObjcCentralManagerDelegate, self).init()  # type: ignore[assignment]
 
         if self is None:
             return None
@@ -84,7 +98,11 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     # User defined functions
 
     def observeValueForKeyPath_ofObject_change_context_(
-        self, keyPath: str, object: Any, change: NSDictionary, context: int
+        self,
+        keyPath: NSString,
+        object: Any,
+        change: NSDictionary[str, Any],
+        context: int,
     ) -> None:
         logger.debug("'%s' changed", keyPath)
 
@@ -129,8 +147,8 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        advertisementData: NSDictionary,
-        RSSI: int,
+        advertisementData: NSDictionary[str, Any],
+        RSSI: NSNumber,
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
 
@@ -219,7 +237,7 @@ class CentralManagerDelegate:
 
         self.callbacks: dict[
             int,
-            Callable[[CBPeripheral, NSDictionary, int], None] | None,
+            Callable[[CBPeripheral, CBAdvertisementData, NSNumber], None] | None,
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
@@ -376,8 +394,8 @@ class CentralManagerDelegate:
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        advertisementData: NSDictionary,
-        RSSI: int,
+        advertisementData: NSDictionary[str, Any],
+        RSSI: NSNumber,
     ) -> None:
         # Note: this function might be called several times for same device.
         # This can happen for instance when an active scan is done, and the
@@ -397,7 +415,7 @@ class CentralManagerDelegate:
 
         for callback in self.callbacks.values():
             if callback:
-                callback(peripheral, advertisementData, RSSI)
+                callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
 
         logger.debug(
             "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",

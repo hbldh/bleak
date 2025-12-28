@@ -97,3 +97,23 @@ class BlueZScannerArgs(TypedDict, total=False):
 
     Only used for passive scanning.
     """
+
+
+class BlueZNotifyArgs(TypedDict, total=False):
+    """
+    :meth:`bleak.BleakClient.start_notify` method args that are specific to the
+    BlueZ backend.
+
+    .. versionadded:: 2.1
+    """
+
+    use_start_notify: bool
+    """
+    If true, use the "StartNotify" D-Bus method instead of "AcquireNotify" to
+    subscribe to notifications.
+
+    This is needed in rare cases to work around BlueZ quirks. For example, some
+    peripherals may send notifications immediately after writing to the CCCD
+    descriptor, before the write response is sent. In this case, "AcquireNotify"
+    will miss the notification, whereas "StartNotify" will work correctly.
+    """

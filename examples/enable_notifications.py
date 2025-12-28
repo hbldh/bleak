@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Notifications
 -------------
@@ -25,6 +24,7 @@ class Args(argparse.Namespace):
     address: Optional[str]
     macos_use_bdaddr: bool
     characteristic: str
+    pair: bool
     debug: bool
 
 
@@ -55,7 +55,7 @@ async def main(args: Args):
 
     logger.info("connecting to device...")
 
-    async with BleakClient(device) as client:
+    async with BleakClient(device, pair=args.pair) as client:
         logger.info("Connected")
 
         await client.start_notify(args.characteristic, notification_handler)
@@ -90,6 +90,8 @@ if __name__ == "__main__":
         metavar="<notify uuid>",
         help="UUID of a characteristic that supports notifications",
     )
+
+    parser.add_argument("--pair", action="store_true", help="pair when connecting")
 
     parser.add_argument(
         "-d",

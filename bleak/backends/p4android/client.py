@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 BLE Client for python-for-android
 """
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -52,7 +52,7 @@ class BleakClientP4Android(BaseBleakClient):
         services: Optional[set[uuid.UUID]],
         **kwargs,
     ):
-        super(BleakClientP4Android, self).__init__(address_or_ble_device, **kwargs)
+        super().__init__(address_or_ble_device, **kwargs)
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )
@@ -270,7 +270,7 @@ class BleakClientP4Android(BaseBleakClient):
                     java_characteristic,
                     java_characteristic.getInstanceId(),
                     java_characteristic.getUuid().toString(),
-                    gatt_char_props_to_strs((java_characteristic.getProperties())),
+                    gatt_char_props_to_strs(java_characteristic.getProperties()),
                     lambda: self.__mtu - 3,
                     service,
                 )

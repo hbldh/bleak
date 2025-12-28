@@ -1,43 +1,113 @@
 name: Build and Test
 
 on:
-    push:
-        branches: [ master, develop ]
-        paths: [ 'bleak/**', 'tests/**' ]
-    pull_request:
-        branches: [ master, develop ]
-        paths: [ 'bleak/**', 'tests/**' ]
+  push:
+    branches: [master, develop]
+    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
+  pull_request:
+    branches: [master, develop]
+    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
+  workflow_dispatch:
 
 jobs:
-    build_desktop:
-        name: "Build and test"
-        runs-on: ${{ matrix.os }}
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
-                python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        steps:
-            -   uses: actions/checkout@v4
-            -   name: Set up Python ${{ matrix.python-version }}
-                uses: actions/setup-python@v5
-                id: py
-                with:
-                    python-version: ${{ matrix.python-version }}
-            -   name: Create virtual environment
-                run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
-            -   name: Install dependencies
-                # work around https://github.com/python-poetry/poetry/issues/7161
-                env:
-                    SYSTEM_VERSION_COMPAT: 0
-                run: pipx run poetry install --only main,test
-            -   name: Test with pytest
-                run: |
-                    pipx run poetry run pytest -v tests --junitxml=junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml --cov=com --cov-report=xml --cov-report=html
-            -   name: Upload pytest test results
-                uses: actions/upload-artifact@v4
-                with:
-                    name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}
-                    path: junit/test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml
-                # Use always() to always run this step to publish test results when there are test failures
-                if: ${{ always() }}
+  build_desktop:
+    name: "Build and test"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        id: py
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Create virtual environment
+        run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
+      - name: Install dependencies
+        # work around https://github.com/python-poetry/poetry/issues/7161
+        env:
+          SYSTEM_VERSION_COMPAT: 0
+        run: pipx run poetry install --only main,test
+      - name: Test with pytest
+        run: pipx run poetry run pytest -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: coverage
+          flags: ${{ matrix.os }}-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: test_results
+          flags: ${{ matrix.os }}-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Type checking
+        # We don't do this in the lint job because we have conditionals
+        # on both the platform and the Python version in the code, so we
+        # need to check each matrix combination.
+        run: |
+          pipx run poetry run pip install pyright
+          pipx run poetry run pyright
+          pipx run poetry run pip install mypy
+          pipx run poetry run mypy -p bleak -p tests -p examples
+
+
+  integration_tests_bluez:
+    name: "BlueZ integration tests"
+    runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 qemu-utils qemu-kvm
+
+      - name: Enable KVM group permissions
+        run: |
+          sudo chmod 666 /dev/kvm
+
+      - name: Build and boot Alpine VM
+        run: ./.github/alpine-vm/start-alpine-vm.sh
+
+      - name: Install Python and dependencies in VM
+        run: |
+          ./.github/alpine-vm/vm-ssh.sh '
+            bluetoothctl --version
+            uv python install ${{ matrix.python-version }}
+            uv python pin ${{ matrix.python-version }}
+            poetry env use ${{ matrix.python-version }}
+            poetry install --only main,test
+          '
+
+      - name: Run pytest in VM
+        run: |
+          ./.github/alpine-vm/vm-ssh.sh '
+            export FORCE_COLOR=1
+            export CI=true
+            export GITHUB_ACTIONS=true
+            poetry run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+          '
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: coverage
+          flags: bluez-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: test_results
+          flags: bluez-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}

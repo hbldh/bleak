@@ -10,6 +10,21 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+
+`2.1.0`_ (2025-12-28)
+=====================
+
+Added
+-----
+* Added ``bluez`` parameter to ``BleakClient.start_notify()`` to allow forcing using "StartNotify" instead of "AcquireNotify" on BlueZ backend. Fixes #1885.
+* Added ``bleak.args.SizedBuffer`` type for better type hinting of buffer protocol parameters.
+
+Fixed
+-----
+* Fixed calling ``logging.debug()`` in WinRT backend. Fixes #1882.
+* Fixed calling ``logging.warning()`` in BlueZ backend.
+
+
 `2.0.0`_ (2025-11-22)
 =====================
 
@@ -1147,7 +1162,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.0.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.1.0...develop
+.. _2.1.0: https://github.com/hbldh/bleak/compare/v2.0.0...v2.1.0
 .. _2.0.0: https://github.com/hbldh/bleak/compare/v1.1.1...v2.0.0
 .. _1.1.1: https://github.com/hbldh/bleak/compare/v1.1.0...v1.1.1
 .. _1.1.0: https://github.com/hbldh/bleak/compare/v1.0.1...v1.1.0

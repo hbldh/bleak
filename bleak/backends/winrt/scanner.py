@@ -97,7 +97,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         **kwargs: Any,
     ):
-        super(BleakScannerWinRT, self).__init__(detection_callback, service_uuids)
+        super().__init__(detection_callback, service_uuids)
 
         self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
         self._advertisement_pairs: dict[str, RawAdvData] = {}
@@ -245,8 +245,9 @@ class BleakScannerWinRT(BaseBleakScanner):
         # there is nothing pumping a Windows message loop.
         await assert_mta()
 
+        # TODO: need to fix return type of get_default_async() in PyWinRT
         adapter = await BluetoothAdapter.get_default_async()
-        if adapter is None:
+        if adapter is None:  # pyright: ignore[reportUnnecessaryComparison]
             raise BleakBluetoothNotAvailableError(
                 "No Bluetooth adapter found",
                 BleakBluetoothNotAvailableReason.NO_BLUETOOTH,

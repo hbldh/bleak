@@ -124,7 +124,7 @@ class BaseBleakScanner(abc.ABC):
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[list[str]],
     ):
-        super(BaseBleakScanner, self).__init__()
+        super().__init__()
 
         self._ad_callbacks: dict[
             Hashable, Callable[[BLEDevice, AdvertisementData], None]
@@ -176,7 +176,7 @@ class BaseBleakScanner(abc.ABC):
                 task.add_done_callback(_background_tasks.discard)
 
         else:
-            detection_callback = callback
+            detection_callback = callback  # type: ignore
 
         token = object()
 
@@ -287,34 +287,40 @@ def get_platform_scanner_backend_type() -> tuple[type[BaseBleakScanner], BleakBa
     backend = get_default_backend()
     match backend:
         case BleakBackend.P4ANDROID:
-            from bleak.backends.p4android.scanner import BleakScannerP4Android
+            from bleak.backends.p4android.scanner import (
+                BleakScannerP4Android,  # type: ignore
+            )
 
-            return (BleakScannerP4Android, backend)
+            return (BleakScannerP4Android, backend)  # type: ignore
 
         case BleakBackend.BLUEZ_DBUS:
-            from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
+            from bleak.backends.bluezdbus.scanner import (
+                BleakScannerBlueZDBus,  # type: ignore
+            )
 
-            return (BleakScannerBlueZDBus, backend)
+            return (BleakScannerBlueZDBus, backend)  # type: ignore
 
         case BleakBackend.PYTHONISTA_CB:
             try:
-                from bleak_pythonista import BleakScannerPythonistaCB
+                from bleak_pythonista import BleakScannerPythonistaCB  # type: ignore
 
-                return (BleakScannerPythonistaCB, backend)
+                return (BleakScannerPythonistaCB, backend)  # type: ignore
             except ImportError as e:
                 raise ImportError(
                     "Ensure you have `bleak-pythonista` package installed."
                 ) from e
 
         case BleakBackend.CORE_BLUETOOTH:
-            from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
+            from bleak.backends.corebluetooth.scanner import (
+                BleakScannerCoreBluetooth,  # type: ignore
+            )
 
-            return (BleakScannerCoreBluetooth, backend)
+            return (BleakScannerCoreBluetooth, backend)  # type: ignore
 
         case BleakBackend.WIN_RT:
-            from bleak.backends.winrt.scanner import BleakScannerWinRT
+            from bleak.backends.winrt.scanner import BleakScannerWinRT  # type: ignore
 
-            return (BleakScannerWinRT, backend)
+            return (BleakScannerWinRT, backend)  # type: ignore
 
         case _:
             raise BleakError(f"Unsupported backend: {backend}")

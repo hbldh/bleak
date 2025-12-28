@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 BLE Client for BlueZ on Linux
 """
+
 import sys
 from typing import TYPE_CHECKING
+
+from bleak.args.bluez import BlueZNotifyArgs
 
 if TYPE_CHECKING:
     if sys.platform != "linux":
@@ -18,9 +20,8 @@ from contextlib import AsyncExitStack
 from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
+    from typing_extensions import override
 else:
-    from collections.abc import Buffer
     from typing import override
 
 if sys.version_info < (3, 11):
@@ -34,6 +35,7 @@ from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
+from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
@@ -75,10 +77,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         services: Optional[set[str]] = None,
         **kwargs: Any,
     ):
-        super(BleakClientBlueZDBus, self).__init__(address_or_ble_device, **kwargs)
+        super().__init__(address_or_ble_device, **kwargs)
         # kwarg "device" is for backwards compatibility
         self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
+        self._device_path: Optional[str]
         self._device_info: Optional[dict[str, Any]]
 
         # Backend specific, D-Bus objects and data
@@ -152,6 +155,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 raise BleakDeviceNotFoundError(
                     self.address, f"Device with address {self.address} was not found."
                 )
+
+        assert self._device_path is not None
 
         manager = await get_global_bluez_manager()
 
@@ -257,36 +262,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         # Calling pair will fail if we are already paired, so
                         # in that case we just call Connect.
                         if pair and not manager.is_paired(self._device_path):
-                            # Trust means device is authorized
-                            reply = await self._bus.call(
-                                Message(
-                                    destination=defs.BLUEZ_SERVICE,
-                                    path=self._device_path,
-                                    interface=defs.PROPERTIES_INTERFACE,
-                                    member="Set",
-                                    signature="ssv",
-                                    body=[
-                                        defs.DEVICE_INTERFACE,
-                                        "Trusted",
-                                        Variant("b", True),
-                                    ],
-                                )
-                            )
-                            assert_reply(reply)
-
-                            # REVIST: This leaves "Trusted" property set if we
-                            # fail later. Probably not a big deal since we were
-                            # going to trust it anyway.
-
-                            # Pairing means device is authenticated
-                            reply = await self._bus.call(
-                                Message(
-                                    destination=defs.BLUEZ_SERVICE,
-                                    interface=defs.DEVICE_INTERFACE,
-                                    path=self._device_path,
-                                    member="Pair",
-                                )
-                            )
+                            reply = await self._pair()
 
                             # For resolvable private addresses, the address will
                             # change after pairing, so we need to update that.
@@ -379,7 +355,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 # by using send() instead of call(), we ensure that the message
                 # gets sent, but we don't wait for a reply, which could take
                 # over one second while the device disconnects.
-                await bus.send(
+                # TODO: fix send() return type in dbus-fast so we can remove the pyright ignore
+                await bus.send(  # pyright: ignore[reportUnknownMemberType]
                     Message(
                         destination=defs.BLUEZ_SERVICE,
                         path=device_path,
@@ -467,31 +444,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self._bus is None
 
-    @override
-    async def pair(self, *args: Any, **kwargs: Any) -> None:
-        """Pair with the peripheral.
-
-        You can use ConnectDevice method if you already know the MAC address of the device.
-        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+    async def _pair(self) -> Message:
         """
-        assert self._bus
-        # See if it is already paired.
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.PROPERTIES_INTERFACE,
-                member="Get",
-                signature="ss",
-                body=[defs.DEVICE_INTERFACE, "Paired"],
-            )
-        )
-        assert_reply(reply)
-        if reply.body[0].value:
-            logger.debug("BLE device @ %s is already paired", self.address)
-            return
+        Pair with the peripheral and return the D-Bus reply.
 
-        # Set device as trusted.
+        Caller is responsible for checking reply for errors.
+        """
+
+        assert self._bus is not None
+        assert self._device_path is not None
+
+        # REVIST: This leaves "Trusted" property set if we
+        # fail later. Probably not a big deal since we were
+        # going to trust it anyway.
+        # Trusted means device is authorized
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
@@ -505,7 +471,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert_reply(reply)
 
         logger.debug("Pairing to BLE device @ %s", self.address)
-
+        # Pairing means device is authenticated
         reply = await self._bus.call(
             Message(
                 destination=defs.BLUEZ_SERVICE,
@@ -514,6 +480,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 member="Pair",
             )
         )
+
+        return reply
+
+    @override
+    async def pair(self, *args: Any, **kwargs: Any) -> None:
+        """Pair with the peripheral.
+
+        You can use ConnectDevice method if you already know the MAC address of the device.
+        Else you need to StartDiscovery, Trust, Pair and Connect in sequence.
+        """
+        assert self._device_path is not None
+        manager = await get_global_bluez_manager()
+        if manager.is_paired(self._device_path):
+            logger.debug("BLE device @ %s is already paired", self.address)
+            return
+
+        reply = await self._pair()
         assert_reply(reply)
 
         # For resolvable private addresses, the address will
@@ -523,7 +506,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # at the same time as Paired property change and
         # that PropertiesChanged signal is sent before the
         # "Pair" reply is sent.
-        manager = await get_global_bluez_manager()
         self.address = manager.get_device_address(self._device_path)
 
     @override
@@ -549,10 +531,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self._device_info = None
         self._is_connected = False
 
-        assert manager._bus
+        assert manager._bus  # pyright: ignore[reportPrivateUsage]
 
+        # TODO: should move this to manager so that we don't access its private members
         try:
-            reply = await manager._bus.call(
+            reply = await manager._bus.call(  # pyright: ignore[reportPrivateUsage]
                 Message(
                     destination=defs.BLUEZ_SERVICE,
                     path=adapter_path,
@@ -702,6 +685,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self.services is not None:
             return self.services
 
+        assert self._device_path is not None
+
         manager = await get_global_bluez_manager()
 
         self.services = await manager.get_services(
@@ -809,7 +794,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
+        self, characteristic: BleakGATTCharacteristic, data: SizedBuffer, response: bool
     ) -> None:
         if not self.is_connected:
             raise BleakError("Not connected")
@@ -850,7 +835,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def write_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, data: Buffer
+        self, descriptor: BleakGATTDescriptor, data: SizedBuffer
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
@@ -933,6 +918,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         Activate notifications/indications on a characteristic.
         """
+
+        bluez: BlueZNotifyArgs = kwargs["bluez"]
+        force_use_start_notify = bluez.get("use_start_notify", False)
+
         assert self._bus is not None
 
         # If using StartNotify and calling a read on the same
@@ -942,7 +931,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # However, using the preferred AcquireNotify requires that devices
         # correctly indicate "notify" and/or "indicate" properties. If they
         # don't, we fall back to StartNotify.
-        use_notify_acquire = "NotifyAcquired" in characteristic.obj[1]
+        use_notify_acquire = (
+            not force_use_start_notify and "NotifyAcquired" in characteristic.obj[1]
+        )
         logger.debug(
             'using "%s" for notifications on characteristic %d',
             "AcquireNotify" if use_notify_acquire else "StartNotify",

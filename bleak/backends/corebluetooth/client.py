@@ -3,6 +3,7 @@
 BLE Client for CoreBluetooth on macOS
 """
 
+import functools
 import sys
 from typing import TYPE_CHECKING
 
@@ -15,9 +16,8 @@ import logging
 from typing import Any, Optional, Union
 
 if sys.version_info < (3, 12):
-    from typing_extensions import Buffer, override
+    from typing_extensions import override
 else:
-    from collections.abc import Buffer
     from typing import override
 
 from CoreBluetooth import (
@@ -30,6 +30,7 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
+from bleak.args import SizedBuffer
 from bleak.args.corebluetooth import CBStartNotifyArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -64,7 +65,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         services: Optional[set[str]] = None,
         **kwargs: Any,
     ):
-        super(BleakClientCoreBluetooth, self).__init__(address_or_ble_device, **kwargs)
+        super().__init__(address_or_ble_device, **kwargs)
 
         self._peripheral: Optional[CBPeripheral] = None
         self._delegate: Optional[PeripheralDelegate] = None
@@ -233,6 +234,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         logger.debug("Retrieving services...")
         assert self._delegate
+        assert self._peripheral
         cb_services = await self._delegate.discover_services(self._requested_services)
 
         for service in cb_services:
@@ -258,8 +260,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                     characteristic.handle(),
                     cb_uuid_to_str(characteristic.UUID()),
                     list(gatt_char_props_to_strs(characteristic.properties())),
-                    lambda: self._peripheral.maximumWriteValueLengthForType_(
-                        CBCharacteristicWriteWithoutResponse
+                    functools.partial(
+                        self._peripheral.maximumWriteValueLengthForType_,
+                        CBCharacteristicWriteWithoutResponse,
                     ),
                     serv,
                 )
@@ -329,7 +332,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def write_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, data: Buffer, response: bool
+        self, characteristic: BleakGATTCharacteristic, data: SizedBuffer, response: bool
     ) -> None:
         value = NSData.alloc().initWithBytes_length_(data, len(data))
         assert self._delegate
@@ -346,7 +349,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def write_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, data: Buffer
+        self, descriptor: BleakGATTDescriptor, data: SizedBuffer
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.
 
@@ -365,14 +368,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         characteristic: BleakGATTCharacteristic,
         callback: NotifyCallback,
-        *,
-        cb: CBStartNotifyArgs,
         **kwargs: Any,
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
         """
         assert self._delegate is not None
+
+        cb: CBStartNotifyArgs = kwargs["cb"]
 
         await self._delegate.start_notifications(
             characteristic.obj,

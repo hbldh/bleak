@@ -52,7 +52,7 @@ class BlueZFeatures:
             # Its possible they may be running inside a container where
             # bluetoothctl is not available and they only have access to the
             # BlueZ D-Bus API.
-            logging.warning(
+            logger.warning(
                 "Could not determine BlueZ version, bluetoothctl not available, assuming 5.55+"
             )
 
