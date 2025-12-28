@@ -12,12 +12,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
+* Added ``adapter`` attribute to ``bleak.args.bluez.BlueZClientArgs`` and ``bleak.args.bluez.BlueZScannerArgs``.
+* Added ``bluez`` keyword argument to ``BleakClient``.
+* Added new ``bleak.args.bluez.BlueZClientArgs`` class.
 * Added ``bleak.exc.BleakGATTProtocolError`` and ``bleak.exc.BleakGATTProtocolErrorCode`` classes.
 * Added type hints and documentation for ``use_cached`` kwarg for ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in ``BleakClient``.
 * Added support for ``"use_cached"`` kwarg to ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in BlueZ backend.
 
 Changed
 -------
+* Deprecated ``adapter`` keyword argument in ``BleakScanner`` and ``BleakClient``.
 * Changed GATT read and write methods to raise ``BleakGATTProtocolError`` when a GATT protocol error occurs.
 * Changed start/stop scanning on CoreBluetooth so that the ``isScanning`` property is not checked anymore.
 * Changed ``BleakClient.write_gatt_descriptor()`` to raise ``ValueError`` when attempting to write to the descriptor 0x2902 (Client Characteristic Configuration Descriptor, CCCD). Use ``start_notify()`` and ``stop_notify()`` instead.
