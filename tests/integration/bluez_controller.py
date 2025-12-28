@@ -29,6 +29,8 @@ else:
 
 BLEAK_TEST_MANUFACTURER_ID = 0xB1EA
 
+logger = logging.getLogger(__name__)
+
 
 @contextlib.asynccontextmanager
 async def open_message_bus() -> AsyncGenerator[MessageBus, None]:
@@ -69,7 +71,7 @@ async def power_on_controller(
                 assert_reply(reply)
                 return
             except Exception as e:
-                logging.warning(f"Failed to power on adapter at {adapter_path}: {e}")
+                logger.debug("Failed to power on adapter at %s: %s", adapter_path, e)
                 await asyncio.sleep(0.1)
 
 
