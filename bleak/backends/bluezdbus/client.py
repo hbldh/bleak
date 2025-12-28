@@ -740,10 +740,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         value = bytearray(reply.body[0])
 
         logger.debug(
-            "Read Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.obj[0], value
-            )
+            "Read Characteristic %s | %s: %r",
+            characteristic.uuid,
+            characteristic.obj[0],
+            value,
         )
+
         return value
 
     @override

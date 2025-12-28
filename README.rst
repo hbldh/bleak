@@ -84,7 +84,7 @@ Connect to a Bluetooth device and read its model number:
     async def main(address):
         async with BleakClient(address) as client:
             model_number = await client.read_gatt_char(MODEL_NBR_UUID)
-            print("Model Number: {0}".format("".join(map(chr, model_number))))
+            print(f"Model Number: {model_number.decode()}")
 
     asyncio.run(main(address))
 
