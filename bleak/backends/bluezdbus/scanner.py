@@ -63,8 +63,6 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
         **bluez:
             Dictionary of arguments specific to the BlueZ backend.
-        **adapter (str):
-            Bluetooth adapter to use for discovery.
     """
 
     def __init__(
@@ -79,7 +77,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         super().__init__(detection_callback, service_uuids)
 
         self._scanning_mode = scanning_mode
-        self._adapter: Optional[str] = kwargs.get("adapter")
+        self._adapter = bluez.get("adapter")
 
         # callback from manager for stopping scanning if it has been started
         self._stop: Optional[Callable[[], Coroutine[Any, Any, None]]] = None

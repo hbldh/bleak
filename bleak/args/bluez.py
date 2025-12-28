@@ -84,6 +84,18 @@ class BlueZScannerArgs(TypedDict, total=False):
     :class:`BleakScanner` args that are specific to the BlueZ backend.
     """
 
+    adapter: str
+    """
+    Bluetooth adapter to use for discovery, e.g. "hci0".
+
+    .. tip:: If you have multiple Bluetooth adapters, they may not always be
+         assigned the same ``hciX`` name across reboots. In that case, you can
+         use udev to look up the name based on other properties like the USB
+         vendor and product ID.
+
+    .. versionadded:: unreleased
+    """
+
     filters: BlueZDiscoveryFilters
     """
     Filters to pass to the adapter SetDiscoveryFilter D-Bus method.
@@ -96,6 +108,24 @@ class BlueZScannerArgs(TypedDict, total=False):
     Or patterns to pass to the AdvertisementMonitor1 D-Bus interface.
 
     Only used for passive scanning.
+    """
+
+
+class BlueZClientArgs(TypedDict, total=False):
+    """
+    :class:`bleak.BleakClient` args that are specific to the BlueZ backend.
+
+    .. versionadded:: unreleased
+    """
+
+    adapter: str
+    """
+    Bluetooth adapter to use for connection, e.g. "hci0".
+
+    .. tip:: If you have multiple Bluetooth adapters, they may not always be
+         assigned the same ``hciX`` name across reboots. In that case, you can
+         use udev to look up the name based on other properties like the USB
+         vendor and product ID.
     """
 
 
