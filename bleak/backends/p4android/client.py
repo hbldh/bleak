@@ -56,8 +56,7 @@ class BleakClientP4Android(BaseBleakClient):
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )
-        # kwarg "device" is for backwards compatibility
-        self.__adapter = kwargs.get("adapter", kwargs.get("device", None))
+        self.__adapter = None
         self.__gatt = None
         self.__mtu = 23
 

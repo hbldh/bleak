@@ -78,9 +78,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
         **kwargs: Any,
     ):
         super().__init__(address_or_ble_device, **kwargs)
-        # kwarg "device" is for backwards compatibility
-        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
+        self._adapter: Optional[str] = kwargs.get("adapter")
         self._device_path: Optional[str]
         self._device_info: Optional[dict[str, Any]]
 

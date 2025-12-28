@@ -83,9 +83,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         super().__init__(detection_callback, service_uuids)
 
         self._scanning_mode = scanning_mode
-
-        # kwarg "device" is for backwards compatibility
-        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
+        self._adapter: Optional[str] = kwargs.get("adapter")
 
         # callback from manager for stopping scanning if it has been started
         self._stop: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
