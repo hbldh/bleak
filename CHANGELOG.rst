@@ -22,7 +22,6 @@ Changed
 * Changed start/stop scanning on CoreBluetooth so that the ``isScanning`` property is not checked anymore.
 * Changed ``BleakClient.write_gatt_descriptor()`` to raise ``ValueError`` when attempting to write to the descriptor 0x2902 (Client Characteristic Configuration Descriptor, CCCD). Use ``start_notify()`` and ``stop_notify()`` instead.
 
-
 Fixed
 -----
 * Fixed occasional ``EOFError`` when disconnecting in BlueZ backend. Fixes #1921.
@@ -30,6 +29,10 @@ Fixed
 * Fixed reading descriptors 0x2900, 0x2902 and 0x2903 on CoreBluetooth backend.
 * Fixed cyclic references problem in CoreBluetooth backend causing memory leaks.
 * Fixed typehint for ``BleakScanner.__aexit__()``.
+
+Removed
+-------
+* Removed undocumented/deprecated ``device`` keyword argument from ``BleakScannerBlueZDBus`` and ``BleakClientBlueZDBus``.
 
 `2.1.1`_ (2025-12-31)
 =====================
