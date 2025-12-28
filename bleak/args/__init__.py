@@ -14,6 +14,8 @@ else:
 
 
 class SizedBuffer(BufferProtocol, Sized, Protocol):
-    """Protocol for types that are both Buffer and Sized."""
+    """
+    Protocol for types that are both Buffer and Sized.
 
-    """Protocol for types that are both Buffer and Sized."""
+    .. versionadded:: 2.1
+    """
