@@ -56,7 +56,6 @@ class BleakClientP4Android(BaseBleakClient):
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )
-        self.__adapter = None
         self.__gatt = None
         self.__mtu = 23
 
@@ -72,13 +71,13 @@ class BleakClientP4Android(BaseBleakClient):
 
         loop = asyncio.get_running_loop()
 
-        self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
-        if self.__adapter is None:
+        adapter = defs.BluetoothAdapter.getDefaultAdapter()
+        if adapter is None:
             raise BleakError("Bluetooth is not supported on this hardware platform")
-        if self.__adapter.getState() != defs.BluetoothAdapter.STATE_ON:
+        if adapter.getState() != defs.BluetoothAdapter.STATE_ON:
             raise BleakError("Bluetooth is not turned on")
 
-        self.__device = self.__adapter.getRemoteDevice(self.address)
+        self.__device = adapter.getRemoteDevice(self.address)
 
         self.__callbacks = _PythonBluetoothGattCallback(self, loop)
 
