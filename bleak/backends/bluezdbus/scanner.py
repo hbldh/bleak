@@ -180,7 +180,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
             elif k == "Pattern":
                 self._filters[k] = Variant("s", v)
             else:
-                logger.warning("Filter '%s' is not currently supported." % k)
+                logger.warning("Filter '%s' is not currently supported.", k)
 
     # Helper methods
 

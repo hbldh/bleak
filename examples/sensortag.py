@@ -87,35 +87,31 @@ async def main(address: str):
         print(f"Connected: {client.is_connected}")
 
         system_id = await client.read_gatt_char(SYSTEM_ID_UUID)
-        print(
-            "System ID: {0}".format(
-                ":".join(["{:02x}".format(x) for x in system_id[::-1]])
-            )
-        )
+        print(f"System ID: {system_id[::-1].hex(':')}")
 
         model_number = await client.read_gatt_char(MODEL_NBR_UUID)
-        print("Model Number: {0}".format("".join(map(chr, model_number))))
+        print(f"Model Number: {model_number.decode()}")
 
         try:
             device_name = await client.read_gatt_char(DEVICE_NAME_UUID)
-            print("Device Name: {0}".format("".join(map(chr, device_name))))
+            print(f"Device Name: {device_name.decode()}")
         except Exception:
             pass
 
         manufacturer_name = await client.read_gatt_char(MANUFACTURER_NAME_UUID)
-        print("Manufacturer Name: {0}".format("".join(map(chr, manufacturer_name))))
+        print(f"Manufacturer Name: {manufacturer_name.decode()}")
 
         firmware_revision = await client.read_gatt_char(FIRMWARE_REV_UUID)
-        print("Firmware Revision: {0}".format("".join(map(chr, firmware_revision))))
+        print(f"Firmware Revision: {firmware_revision.decode()}")
 
         hardware_revision = await client.read_gatt_char(HARDWARE_REV_UUID)
-        print("Hardware Revision: {0}".format("".join(map(chr, hardware_revision))))
+        print(f"Hardware Revision: {hardware_revision.decode()}")
 
         software_revision = await client.read_gatt_char(SOFTWARE_REV_UUID)
-        print("Software Revision: {0}".format("".join(map(chr, software_revision))))
+        print(f"Software Revision: {software_revision.decode()}")
 
         battery_level = await client.read_gatt_char(BATTERY_LEVEL_UUID)
-        print("Battery Level: {0}%".format(int(battery_level[0])))
+        print(f"Battery Level: {battery_level[0]}%")
 
         async def notification_handler(
             characteristic: BleakGATTCharacteristic, data: bytearray
@@ -125,22 +121,22 @@ async def main(address: str):
         # Turn on the red light on the Sensor Tag by writing to I/O Data and I/O Config.
         write_value = bytearray([0x01])
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
-        print("I/O Data Pre-Write Value: {0}".format(value))
+        print(f"I/O Data Pre-Write Value: {value}")
 
         await client.write_gatt_char(IO_DATA_CHAR_UUID, write_value, response=True)
 
         value = await client.read_gatt_char(IO_DATA_CHAR_UUID)
-        print("I/O Data Post-Write Value: {0}".format(value))
+        print(f"I/O Data Post-Write Value: {value}")
         assert value == write_value
 
         write_value = bytearray([0x01])
         value = await client.read_gatt_char(IO_CONFIG_CHAR_UUID)
-        print("I/O Config Pre-Write Value: {0}".format(value))
+        print(f"I/O Config Pre-Write Value: {value}")
 
         await client.write_gatt_char(IO_CONFIG_CHAR_UUID, write_value, response=True)
 
         value = await client.read_gatt_char(IO_CONFIG_CHAR_UUID)
-        print("I/O Config Post-Write Value: {0}".format(value))
+        print(f"I/O Config Post-Write Value: {value}")
         assert value == write_value
 
         # Try notifications with key presses.
