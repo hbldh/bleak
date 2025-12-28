@@ -59,7 +59,6 @@ class BleakScannerP4Android(BaseBleakScanner):
         else:
             self.__scan_mode = defs.ScanSettings.SCAN_MODE_LOW_LATENCY
 
-        self.__adapter = None
         self.__javascanner = None
         self.__callback = None
 
@@ -100,13 +99,13 @@ class BleakScannerP4Android(BaseBleakScanner):
             )
             await permission_acknowledged
 
-            self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
-            if self.__adapter is None:
+            adapter = defs.BluetoothAdapter.getDefaultAdapter()
+            if adapter is None:
                 raise BleakError("Bluetooth is not supported on this hardware platform")
-            if self.__adapter.getState() != defs.BluetoothAdapter.STATE_ON:
+            if adapter.getState() != defs.BluetoothAdapter.STATE_ON:
                 raise BleakError("Bluetooth is not turned on")
 
-            self.__javascanner = self.__adapter.getBluetoothLeScanner()
+            self.__javascanner = adapter.getBluetoothLeScanner()
 
         BleakScannerP4Android.__scanner = self
 
@@ -188,7 +187,7 @@ class BleakScannerP4Android(BaseBleakScanner):
                 )
                 receiver.start()
                 try:
-                    self.__adapter.disable()
+                    adapter.disable()
                     await stateOffFuture
                 finally:
                     receiver.stop()
@@ -203,7 +202,7 @@ class BleakScannerP4Android(BaseBleakScanner):
                 )
                 receiver.start()
                 try:
-                    self.__adapter.enable()
+                    adapter.enable()
                     await stateOnFuture
                 finally:
                     receiver.stop()
