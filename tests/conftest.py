@@ -8,7 +8,7 @@ def pytest_addoption(
         "--bleak-hci-transport",
         action="store",
         default=None,
-        help="Bumble HCI transport monkier",
+        help="Bumble HCI transport moniker",
     )
 
     parser.addoption(
