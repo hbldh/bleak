@@ -104,13 +104,13 @@ class BlueZNotifyArgs(TypedDict, total=False):
     :meth:`bleak.BleakClient.start_notify` method args that are specific to the
     BlueZ backend.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 2.1
     """
 
     use_start_notify: bool
     """
     If true, use the "StartNotify" D-Bus method instead of "AcquireNotify" to
-    when subscribing to notifications.
+    subscribe to notifications.
 
     This is needed in rare cases to work around BlueZ quirks. For example, some
     peripherals may send notifications immediately after writing to the CCCD

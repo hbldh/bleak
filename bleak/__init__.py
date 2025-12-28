@@ -827,7 +827,7 @@ class BleakClient:
         .. versionchanged:: 1.0
             Added the ``cb`` parameter.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 2.1
             Added the ``bluez`` parameter.
         """
         if not self.is_connected:
