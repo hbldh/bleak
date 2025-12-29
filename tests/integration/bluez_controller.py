@@ -185,7 +185,7 @@ async def open_bluez_bluetooth_controller_link(
 
             # Wait up to 5 seconds for the new adapter to appear via InterfacesAdded
             adapter_path = await asyncio.wait_for(adapter_path_future, timeout=5.0)
-            logging.info(f"New adapter detected at {adapter_path}")
+            logger.info(f"New adapter detected at {adapter_path}")
 
             # Ensure controller is powered on. This also ensures that BlueZ has fully
             # initialized the adapter and it is ready for use.
