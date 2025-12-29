@@ -1,18 +1,13 @@
 import asyncio
-import sys
 
 from bumble.device import Device
 
 from bleak import BleakClient
+from bleak._compat import timeout as async_timeout
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
     find_ble_device,
 )
-
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
 
 
 async def test_connect(bumble_peripheral: Device):
@@ -63,8 +58,7 @@ async def test_disconnect_callback(bumble_peripheral: Device):
     disconnected_client_future: asyncio.Future[BleakClient] = asyncio.Future()
 
     def disconnected_callback(client: BleakClient):
-        if not disconnected_client_future.done():
-            disconnected_client_future.set_result(client)
+        disconnected_client_future.set_result(client)
 
     async with BleakClient(device, disconnected_callback) as client:
         # Disconnect from virtual device side

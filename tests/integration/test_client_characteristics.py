@@ -66,8 +66,7 @@ async def test_write_gatt_char_no_response(bumble_peripheral: Device):
     peripheral_write_callback_called: asyncio.Future[bytes] = asyncio.Future()
 
     def peripheral_write_callback(connection: Connection, value: bytes):
-        if not peripheral_write_callback_called.done():
-            peripheral_write_callback_called.set_result(value)
+        peripheral_write_callback_called.set_result(value)
 
     virtual_characteristic = Characteristic[bytes](
         WRITE_WITHOUT_RESPONSE_CHARACTERISITC_UUID,
@@ -124,7 +123,7 @@ async def test_notify_gatt_char(bumble_peripheral: Device):
         )
         assert notified_data.empty()
 
-        await bumble_peripheral.notify_subscribers(  # type: ignore
+        await bumble_peripheral.notify_subscribers(  # type: ignore  # (missing type hints in bumble)
             virtual_characteristic,
             b"1234",
         )
@@ -132,7 +131,7 @@ async def test_notify_gatt_char(bumble_peripheral: Device):
         data = await asyncio.wait_for(notified_data.get(), timeout=1)
         assert data == b"1234"
 
-        await bumble_peripheral.notify_subscribers(  # type: ignore
+        await bumble_peripheral.notify_subscribers(  # type: ignore  # (missing type hints in bumble)
             virtual_characteristic,
             b"2345",
         )
@@ -142,7 +141,7 @@ async def test_notify_gatt_char(bumble_peripheral: Device):
 
         await client.stop_notify(NOTIFY_CHARACTERISITC_UUID)
 
-        await bumble_peripheral.notify_subscribers(  # type: ignore
+        await bumble_peripheral.notify_subscribers(  # type: ignore  # (missing type hints in bumble)
             virtual_characteristic,
             b"2345",
         )

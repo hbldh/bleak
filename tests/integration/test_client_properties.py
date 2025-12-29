@@ -20,8 +20,18 @@ async def test_get_rssi(bumble_peripheral: Device):
     device = await find_ble_device(bumble_peripheral)
 
     async with BleakClient(device) as client:
-        rssi = await client._backend.get_rssi()  # type: ignore
+        from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
+
+        backend = client._backend  # pyright: ignore[reportPrivateUsage]
+        assert isinstance(backend, BleakClientCoreBluetooth)
+        rssi = await backend.get_rssi()
+
+        # Verify that this value is an integer and not some other
+        # type from a ffi binding framework.
         assert isinstance(rssi, int)
+
+        # The rssi can vary. So we only check for a plausible range.
+        assert -127 <= rssi < 0
 
 
 async def test_mtu_size(bumble_peripheral: Device):
@@ -31,6 +41,16 @@ async def test_mtu_size(bumble_peripheral: Device):
     device = await find_ble_device(bumble_peripheral)
 
     async with BleakClient(device) as client:
-        # The mtu_size is different between different platforms. So it is not possible
-        # to get a reliable value. So we only check that it is an int.
-        assert isinstance(client.mtu_size, int)
+        if client.backend_id == BleakBackend.BLUEZ_DBUS:
+            with pytest.warns(UserWarning):
+                mtu_size = client.mtu_size
+        else:
+            mtu_size = client.mtu_size
+
+        # Verify that this value is an integer and not some other
+        # type from a ffi binding framework.
+        assert isinstance(mtu_size, int)
+
+        # The mtu_size is different between different platforms. So we only check
+        # for a plausible range.
+        assert 23 <= mtu_size <= 517

@@ -93,8 +93,14 @@ async def test_adv_data_simple(bumble_peripheral: Device):
     assert found_adv_data.service_data == {}
     assert found_adv_data.service_uuids == []
     assert found_adv_data.tx_power is None
-    assert isinstance(found_adv_data.rssi, int)
     assert found_adv_data.platform_data
+
+    # Verify that this value is an integer and not some other
+    # type from a ffi binding framework.
+    assert isinstance(found_adv_data.rssi, int)
+
+    # The rssi can vary. So we only check for a plausible range.
+    assert -127 <= found_adv_data.rssi < 0
 
 
 async def test_adv_data_complex(bumble_peripheral: Device):
@@ -128,5 +134,11 @@ async def test_adv_data_complex(bumble_peripheral: Device):
     }
     assert found_adv_data.service_uuids == ["0000180f-0000-1000-8000-00805f9b34fb"]
     assert found_adv_data.tx_power == 123
-    assert isinstance(found_adv_data.rssi, int)
     assert found_adv_data.platform_data
+
+    # Verify that this value is an integer and not some other
+    # type from a ffi binding framework.
+    assert isinstance(found_adv_data.rssi, int)
+
+    # The rssi can vary. So we only check for a plausible range.
+    assert -127 <= found_adv_data.rssi < 0
