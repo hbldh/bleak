@@ -3,10 +3,10 @@ name: Build and Test
 on:
   push:
     branches: [master, develop]
-    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
+    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml", "pyproject.toml"]
   pull_request:
     branches: [master, develop]
-    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml"]
+    paths: ["bleak/**", "tests/**", ".github/workflows/build_and_test.yml", "pyproject.toml"]
   workflow_dispatch:
 
 jobs:
