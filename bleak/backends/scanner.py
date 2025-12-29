@@ -124,8 +124,6 @@ class BaseBleakScanner(abc.ABC):
         detection_callback: Optional[AdvertisementDataCallback],
         service_uuids: Optional[list[str]],
     ):
-        super().__init__()
-
         self._ad_callbacks: dict[
             Hashable, Callable[[BLEDevice, AdvertisementData], None]
         ] = {}
