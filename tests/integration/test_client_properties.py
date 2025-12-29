@@ -1,3 +1,6 @@
+import sys
+from typing import TYPE_CHECKING
+
 import pytest
 from bumble.device import Device
 
@@ -20,6 +23,9 @@ async def test_get_rssi(bumble_peripheral: Device):
     device = await find_ble_device(bumble_peripheral)
 
     async with BleakClient(device) as client:
+        if TYPE_CHECKING:
+            if sys.platform != "darwin":
+                assert False, "This backend is only available on macOS"
         from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 
         backend = client._backend  # pyright: ignore[reportPrivateUsage]
