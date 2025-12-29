@@ -19,22 +19,14 @@ from collections.abc import Callable
 from contextlib import AsyncExitStack
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
-
 from dbus_fast.aio import MessageBus
 from dbus_fast.constants import BusType, ErrorType, MessageType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
+from bleak._compat import override
+from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
