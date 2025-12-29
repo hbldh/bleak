@@ -14,6 +14,10 @@ Changed
 -------
 * Changed default connect timeout for ``BleakClient`` from 10 to 30 seconds.
 
+Fixed
+-----
+* Fixed some cases of ``BleakError: Could not get GATT services: Unreachable`` in WinRT backend by adding a retry when getting GATT services.
+
 `2.1.0`_ (2025-12-28)
 =====================
 
