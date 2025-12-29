@@ -10,12 +10,8 @@ import ctypes
 from ctypes import wintypes
 from enum import IntEnum
 
+from bleak._compat import timeout as async_timeout
 from bleak.exc import BleakError
-
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
 
 
 def _check_result(result: int, func: Any, args: Any) -> Any:

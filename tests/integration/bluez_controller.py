@@ -18,16 +18,14 @@ from bumble.transport.common import Transport
 from dbus_fast import BusType, Message, MessageType, Variant
 from dbus_fast.aio.message_bus import MessageBus
 
+from bleak._compat import timeout as async_timeout
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
-
 BLEAK_TEST_MANUFACTURER_ID = 0xB1EA
+
+logger = logging.getLogger(__name__)
 
 
 @contextlib.asynccontextmanager
@@ -69,7 +67,7 @@ async def power_on_controller(
                 assert_reply(reply)
                 return
             except Exception as e:
-                logging.warning(f"Failed to power on adapter at {adapter_path}: {e}")
+                logger.debug("Failed to power on adapter at %s: %s", adapter_path, e)
                 await asyncio.sleep(0.1)
 
 

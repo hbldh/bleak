@@ -10,11 +10,6 @@ import logging
 from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
 from winrt.windows.devices.bluetooth import BluetoothAdapter
 from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
@@ -27,6 +22,7 @@ from winrt.windows.devices.bluetooth.advertisement import (
 from winrt.windows.devices.radios import RadioState
 from winrt.windows.foundation import EventRegistrationToken
 
+from bleak._compat import override
 from bleak.assigned_numbers import AdvertisementDataType
 from bleak.backends.scanner import (
     AdvertisementData,

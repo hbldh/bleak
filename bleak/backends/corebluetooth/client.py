@@ -15,11 +15,6 @@ import asyncio
 import logging
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
 from CoreBluetooth import (
     CBUUID,
     CBCharacteristicWriteWithoutResponse,
@@ -30,6 +25,7 @@ from CoreBluetooth import (
 from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
+from bleak._compat import override
 from bleak.args import SizedBuffer
 from bleak.args.corebluetooth import CBStartNotifyArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
@@ -86,7 +82,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
     def __str__(self) -> str:
-        return "BleakClientCoreBluetooth ({})".format(self.address)
+        return f"BleakClientCoreBluetooth ({self.address})"
 
     @override
     async def connect(self, pair: bool, **kwargs: Any) -> None:
@@ -137,8 +133,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         manager = self._central_manager_delegate
         assert manager is not None
-        logger.debug("CentralManagerDelegate  at {}".format(manager))
-        logger.debug("Connecting to BLE device @ {}".format(self.address))
+        logger.debug("CentralManagerDelegate at %r", manager)
+        logger.debug("Connecting to BLE device @ %s", self.address)
         assert self._peripheral is not None
         await manager.connect(self._peripheral, disconnect_callback, timeout=timeout)
 
@@ -244,16 +240,12 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             services.add_service(serv)
 
             serviceUUID = service.UUID().UUIDString()
-            logger.debug(
-                "Retrieving characteristics for service {}".format(serviceUUID)
-            )
+            logger.debug("Retrieving characteristics for service %s", serviceUUID)
             characteristics = await self._delegate.discover_characteristics(service)
 
             for characteristic in characteristics:
                 cUUID = characteristic.UUID().UUIDString()
-                logger.debug(
-                    "Retrieving descriptors for characteristic {}".format(cUUID)
-                )
+                logger.debug("Retrieving descriptors for characteristic %s", cUUID)
 
                 char = BleakGATTCharacteristic(
                     characteristic,
@@ -300,7 +292,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             characteristic.obj, use_cached=kwargs.get("use_cached", False)
         )
         value = bytearray(output)
-        logger.debug("Read Characteristic {0} : {1}".format(characteristic.uuid, value))
+        logger.debug("Read Characteristic %s: %r", characteristic.uuid, value)
         return value
 
     @override
