@@ -504,7 +504,7 @@ class BleakClient:
         disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
         services: Optional[Iterable[str]] = None,
         *,
-        timeout: float = 10.0,
+        timeout: float = 30.0,
         pair: bool = False,
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,

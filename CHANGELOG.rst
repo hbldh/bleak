@@ -10,6 +10,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Changed default connect timeout for ``BleakClient`` from 10 to 30 seconds.
 
 `2.1.0`_ (2025-12-28)
 =====================
