@@ -18,14 +18,10 @@ from bumble.transport.common import Transport
 from dbus_fast import BusType, Message, MessageType, Variant
 from dbus_fast.aio.message_bus import MessageBus
 
+from bleak._compat import timeout as async_timeout
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
-
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
 
 BLEAK_TEST_MANUFACTURER_ID = 0xB1EA
 

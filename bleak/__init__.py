@@ -18,13 +18,8 @@ from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-    from typing_extensions import Never, Self, Unpack, assert_never
-else:
-    from asyncio import timeout as async_timeout
-    from typing import Never, Self, Unpack, assert_never
-
+from bleak._compat import Never, Self, Unpack, assert_never
+from bleak._compat import timeout as async_timeout
 from bleak.args.bluez import BlueZNotifyArgs, BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs

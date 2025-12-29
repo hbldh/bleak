@@ -10,20 +10,12 @@ import logging
 import warnings
 from typing import Literal, Optional
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
-
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
+from bleak._compat import override
+from bleak._compat import timeout as async_timeout
 from bleak.backends.p4android import defs, utils
 from bleak.backends.scanner import (
     AdvertisementData,
