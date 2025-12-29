@@ -57,7 +57,6 @@ async def test_notification_sent_before_write_response(
         ],
     )
 
-    bumble_peripheral.add_default_services()
     bumble_peripheral.add_service(Service(TEST_SERVICE_UUID, [test_characteristic]))
 
     add_default_advertising_data(bumble_peripheral)
