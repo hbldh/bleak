@@ -5,9 +5,13 @@ import pytest
 from bumble import data_types
 from bumble.core import AdvertisingData, DataType
 from bumble.device import Device, DeviceConfiguration
+from bumble.gatt import Service
 from bumble.hci import Address
 from bumble.transport import open_transport
 from bumble.transport.common import Transport
+
+from bleak import BleakScanner
+from bleak.backends.device import BLEDevice
 
 
 @pytest.fixture
@@ -72,3 +76,25 @@ def add_default_advertising_data(
     if additional_adv_data:
         adv_data.extend(additional_adv_data)
     bumble_peripheral.advertising_data = bytes(AdvertisingData(adv_data))
+
+
+async def configure_and_power_on_bumble_peripheral(
+    bumble_peripheral: Device,
+    additional_adv_data: list[DataType] | None = None,
+    services: list[Service] | None = None,
+) -> None:
+    """Configure and power on the bumble peripheral."""
+    add_default_advertising_data(bumble_peripheral, additional_adv_data)
+    if services:
+        bumble_peripheral.add_services(services)
+    await bumble_peripheral.power_on()
+    await bumble_peripheral.start_advertising()
+
+
+async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
+    """Find the BLE device corresponding to the bumble peripheral."""
+    device = await BleakScanner.find_device_by_name(bumble_peripheral.name)
+    if device is None:
+        raise RuntimeError("failed to discover device, is Bumble working?")
+
+    return device
