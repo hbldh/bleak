@@ -914,26 +914,3 @@ class BleakClient:
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
         await self._backend.write_gatt_descriptor(descriptor, data)
-
-
-def cli() -> None:
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Perform Bluetooth Low Energy device scan"
-    )
-    parser.add_argument("-i", dest="adapter", default=None, help="HCI device")
-    parser.add_argument(
-        "-t", dest="timeout", type=int, default=5, help="Duration to scan for"
-    )
-    args = parser.parse_args()
-
-    out = asyncio.run(
-        BleakScanner.discover(adapter=args.adapter, timeout=float(args.timeout))
-    )
-    for o in out:
-        print(str(o))
-
-
-if __name__ == "__main__":
-    cli()
