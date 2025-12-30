@@ -69,7 +69,7 @@ async def test_notification_sent_before_write_response(
 
     assert device is not None, "Could not find bumble peripheral device"
 
-    async with BleakClient(device) as client:
+    async with BleakClient(device, services=[TEST_SERVICE_UUID]) as client:
         notification_queue: asyncio.Queue[bytes] = asyncio.Queue()
 
         def on_notification(_: BleakGATTCharacteristic, data: bytearray) -> None:
