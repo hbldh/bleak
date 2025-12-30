@@ -1,5 +1,7 @@
 import sys
-from typing import AsyncGenerator
+import threading
+from collections.abc import Callable
+from typing import Any, AsyncGenerator
 
 import pytest
 from bumble import data_types
@@ -98,3 +100,72 @@ async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
         raise RuntimeError("failed to discover device, is Bumble working?")
 
     return device
+
+
+def enable_coverage(fn: Callable[..., Any]) -> Callable[..., Any]:
+    # Enable coverage tracing on this non-Python-created thread
+    # (https://github.com/nedbat/coveragepy/issues/686).
+
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        trace_hook = threading.gettrace()
+        if trace_hook:
+            sys.settrace(trace_hook)
+        return fn(*args, **kwargs)
+
+    return wrapped
+
+
+@pytest.fixture(autouse=True)
+def patch_core_bluetooth_delegates() -> None:
+    """
+    Patch CoreBluetooth delegates to enable coverage tracing.
+
+    The objc delegates are called from a dispatch queue thread created by
+    CoreBluetooth, which means coverage tracing is not enabled in those threads
+    by default. This patch wraps the delegate methods to enable coverage tracing
+    in those threads.
+    """
+    if sys.platform != "darwin":
+        # Patching CoreBluetooth is only necessary on macOS
+        return
+
+    from bleak.backends.corebluetooth.CentralManagerDelegate import (
+        ObjcCentralManagerDelegate,
+    )
+    from bleak.backends.corebluetooth.PeripheralDelegate import ObjcPeripheralDelegate
+
+    delegates_to_patch: list[tuple[type[Any], list[Callable[..., Any]]]] = [
+        (
+            ObjcCentralManagerDelegate,
+            [
+                ObjcCentralManagerDelegate.centralManagerDidUpdateState_,
+                ObjcCentralManagerDelegate.centralManager_didDiscoverPeripheral_advertisementData_RSSI_,
+                ObjcCentralManagerDelegate.centralManager_didConnectPeripheral_,
+                ObjcCentralManagerDelegate.centralManager_didFailToConnectPeripheral_error_,
+                ObjcCentralManagerDelegate.centralManager_didDisconnectPeripheral_error_,
+            ],
+        ),
+        (
+            ObjcPeripheralDelegate,
+            [
+                ObjcPeripheralDelegate.peripheral_didDiscoverServices_,
+                ObjcPeripheralDelegate.peripheral_didDiscoverIncludedServicesForService_error_,
+                ObjcPeripheralDelegate.peripheral_didDiscoverCharacteristicsForService_error_,
+                ObjcPeripheralDelegate.peripheral_didDiscoverDescriptorsForCharacteristic_error_,
+                ObjcPeripheralDelegate.peripheral_didUpdateValueForCharacteristic_error_,
+                ObjcPeripheralDelegate.peripheral_didUpdateValueForDescriptor_error_,
+                ObjcPeripheralDelegate.peripheral_didWriteValueForCharacteristic_error_,
+                ObjcPeripheralDelegate.peripheral_didWriteValueForDescriptor_error_,
+                ObjcPeripheralDelegate.peripheralIsReadyToSendWriteWithoutResponse_,
+                ObjcPeripheralDelegate.peripheral_didUpdateNotificationStateForCharacteristic_error_,
+                ObjcPeripheralDelegate.peripheral_didReadRSSI_error_,
+                ObjcPeripheralDelegate.peripheralDidUpdateName_,
+                ObjcPeripheralDelegate.peripheral_didModifyServices_,
+            ],
+        ),
+    ]
+
+    for delegate_class, methods in delegates_to_patch:
+        for method in methods:
+            method_name = method.__name__
+            setattr(delegate_class, method_name, enable_coverage(method))
