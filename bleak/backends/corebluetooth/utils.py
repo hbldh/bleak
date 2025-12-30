@@ -1,5 +1,6 @@
 import sys
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -68,3 +69,13 @@ def to_optional_int(value: Optional[NSNumber]) -> Optional[int]:
         return None
 
     return int(value)
+
+
+def objc_method(func: Callable[..., Any]) -> Callable[..., Any]:
+    """
+    Decorator for Objective-C methods.
+
+    This is a no-op placeholder used to mark methods as Objective-C methods to
+    overwrite in the tests to enable coverage tracing.
+    """
+    return func

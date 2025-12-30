@@ -11,6 +11,8 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
+from bleak.backends.corebluetooth.utils import objc_method
+
 if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
@@ -63,6 +65,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
 
     # Protocol Functions
 
+    @objc_method
     def peripheral_didDiscoverServices_(
         self, peripheral: CBPeripheral, error: Optional[NSError]
     ) -> None:
@@ -79,12 +82,14 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didDiscoverIncludedServicesForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverIncludedServicesForService_error_")
         # Currently not used in Bleak
 
+    @objc_method
     def peripheral_didDiscoverCharacteristicsForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
@@ -102,6 +107,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -121,6 +127,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didUpdateValueForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -141,6 +148,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didUpdateValueForDescriptor_error_(
         self,
         peripheral: CBPeripheral,
@@ -161,6 +169,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didWriteValueForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -180,6 +189,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didWriteValueForDescriptor_error_(
         self,
         peripheral: CBPeripheral,
@@ -199,12 +209,14 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheralIsReadyToSendWriteWithoutResponse_(
         self, peripheral: CBPeripheral
     ) -> None:
         logger.debug("peripheralIsReadyToSendWriteWithoutResponse_")
         # Currently not used in Bleak
 
+    @objc_method
     def peripheral_didUpdateNotificationStateForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -224,6 +236,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didReadRSSI_error_(
         self,
         peripheral: CBPeripheral,
@@ -242,6 +255,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
 
     # Bleak currently doesn't use the callbacks below other than for debug logging
 
+    @objc_method
     def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
         logger.debug("peripheralDidUpdateName_")
 
@@ -253,6 +267,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def peripheral_didModifyServices_(
         self, peripheral: CBPeripheral, invalidatedServices: NSArray[CBService]
     ) -> None:

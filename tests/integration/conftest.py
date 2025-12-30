@@ -1,3 +1,4 @@
+import functools
 import sys
 import threading
 from collections.abc import Callable
@@ -106,6 +107,7 @@ def enable_coverage(fn: Callable[..., Any]) -> Callable[..., Any]:
     # Enable coverage tracing on this non-Python-created thread
     # (https://github.com/nedbat/coveragepy/issues/686).
 
+    @functools.wraps(fn)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
         trace_hook = threading.gettrace()
         if trace_hook:
@@ -129,43 +131,6 @@ def patch_core_bluetooth_delegates() -> None:
         # Patching CoreBluetooth is only necessary on macOS
         return
 
-    from bleak.backends.corebluetooth.CentralManagerDelegate import (
-        ObjcCentralManagerDelegate,
-    )
-    from bleak.backends.corebluetooth.PeripheralDelegate import ObjcPeripheralDelegate
+    from bleak.backends.corebluetooth import utils
 
-    delegates_to_patch: list[tuple[type[Any], list[Callable[..., Any]]]] = [
-        (
-            ObjcCentralManagerDelegate,
-            [
-                ObjcCentralManagerDelegate.centralManagerDidUpdateState_,
-                ObjcCentralManagerDelegate.centralManager_didDiscoverPeripheral_advertisementData_RSSI_,
-                ObjcCentralManagerDelegate.centralManager_didConnectPeripheral_,
-                ObjcCentralManagerDelegate.centralManager_didFailToConnectPeripheral_error_,
-                ObjcCentralManagerDelegate.centralManager_didDisconnectPeripheral_error_,
-            ],
-        ),
-        (
-            ObjcPeripheralDelegate,
-            [
-                ObjcPeripheralDelegate.peripheral_didDiscoverServices_,
-                ObjcPeripheralDelegate.peripheral_didDiscoverIncludedServicesForService_error_,
-                ObjcPeripheralDelegate.peripheral_didDiscoverCharacteristicsForService_error_,
-                ObjcPeripheralDelegate.peripheral_didDiscoverDescriptorsForCharacteristic_error_,
-                ObjcPeripheralDelegate.peripheral_didUpdateValueForCharacteristic_error_,
-                ObjcPeripheralDelegate.peripheral_didUpdateValueForDescriptor_error_,
-                ObjcPeripheralDelegate.peripheral_didWriteValueForCharacteristic_error_,
-                ObjcPeripheralDelegate.peripheral_didWriteValueForDescriptor_error_,
-                ObjcPeripheralDelegate.peripheralIsReadyToSendWriteWithoutResponse_,
-                ObjcPeripheralDelegate.peripheral_didUpdateNotificationStateForCharacteristic_error_,
-                ObjcPeripheralDelegate.peripheral_didReadRSSI_error_,
-                ObjcPeripheralDelegate.peripheralDidUpdateName_,
-                ObjcPeripheralDelegate.peripheral_didModifyServices_,
-            ],
-        ),
-    ]
-
-    for delegate_class, methods in delegates_to_patch:
-        for method in methods:
-            method_name = method.__name__
-            setattr(delegate_class, method_name, enable_coverage(method))
+    utils.objc_method = lambda func: enable_coverage(func)

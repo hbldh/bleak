@@ -48,6 +48,7 @@ from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
+from bleak.backends.corebluetooth.utils import objc_method
 from bleak.exc import (
     BleakBluetoothNotAvailableError,
     BleakBluetoothNotAvailableReason,
@@ -92,6 +93,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
 
     # User defined functions
 
+    @objc_method
     def observeValueForKeyPath_ofObject_change_context_(
         self,
         keyPath: NSString,
@@ -115,6 +117,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
 
     # Protocol Functions
 
+    @objc_method
     def centralManagerDidUpdateState_(self, centralManager: CBCentralManager) -> None:
         logger.debug("centralManagerDidUpdateState_")
         if centralManager.state() == CBManagerStateUnknown:
@@ -138,6 +141,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
         self,
         central: CBCentralManager,
@@ -159,6 +163,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def centralManager_didConnectPeripheral_(
         self, central: CBCentralManager, peripheral: CBPeripheral
     ) -> None:
@@ -174,6 +179,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def centralManager_didFailToConnectPeripheral_error_(
         self,
         centralManager: CBCentralManager,
@@ -193,6 +199,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
+    @objc_method
     def centralManager_didDisconnectPeripheral_error_(
         self,
         central: CBCentralManager,
