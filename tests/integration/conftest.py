@@ -14,6 +14,7 @@ from bumble.transport import open_transport
 from bumble.transport.common import Transport
 
 from bleak import BleakScanner
+from bleak.backends import _utils
 from bleak.backends.device import BLEDevice
 
 
@@ -119,14 +120,10 @@ def enable_coverage(fn: Callable[..., Any]) -> Callable[..., Any]:
     return wrapped
 
 
-# Patch CoreBluetooth delegates to enable coverage tracing.
-# This must be done at module import time, before any CoreBluetooth code is imported,
-# to ensure the patch is in place when the delegates are created.
-if sys.platform == "darwin":
-    from bleak.backends.corebluetooth import utils
-
-    # The objc delegates are called from a dispatch queue thread created by
-    # CoreBluetooth, which means coverage tracing is not enabled in those threads
-    # by default. This patch wraps the delegate methods to enable coverage tracing
-    # in those threads.
-    utils.external_thread_callback = enable_coverage
+# Patch external thread callbacks to enable coverage tracing.
+# This must be done at module import time, before any backend code is imported,
+# to ensure the patch is in place when callbacks are created.
+# Callbacks from external (non-Python) threads don't have coverage tracing enabled
+# by default. This patch wraps such callbacks (e.g., CoreBluetooth dispatch queue
+# threads, WinRT callback threads) to enable coverage tracing.
+_utils.external_thread_callback = enable_coverage

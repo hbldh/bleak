@@ -1,6 +1,5 @@
 import sys
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -69,16 +68,3 @@ def to_optional_int(value: Optional[NSNumber]) -> Optional[int]:
         return None
 
     return int(value)
-
-
-_T = TypeVar("_T", bound=Callable[..., Any])
-
-
-def external_thread_callback(func: _T) -> _T:
-    """
-    Decorator for callbacks invoked from external non-Python thread.
-
-    This is a no-op placeholder that can be overridden in tests to enable
-    coverage tracing for external threads.
-    """
-    return func

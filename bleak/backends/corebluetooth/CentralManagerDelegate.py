@@ -48,8 +48,7 @@ from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
-from bleak.backends._utils import try_call_soon_threadsafe
-from bleak.backends.corebluetooth.utils import external_thread_callback
+from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.exc import (
     BleakBluetoothNotAvailableError,
     BleakBluetoothNotAvailableReason,

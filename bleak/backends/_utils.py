@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, TypeVar
 
 from bleak._compat import TypeVarTuple, Unpack
 
@@ -22,3 +22,16 @@ def try_call_soon_threadsafe(
     except RuntimeError:
         # Likely caused by loop being closed
         logger.debug("unraisable exception", exc_info=True)
+
+
+_T = TypeVar("_T", bound=Callable[..., Any])
+
+
+def external_thread_callback(func: _T) -> _T:
+    """
+    Decorator for callbacks invoked from external non-Python thread.
+
+    This is a no-op placeholder that can be overridden in tests to enable
+    coverage tracing for external threads.
+    """
+    return func

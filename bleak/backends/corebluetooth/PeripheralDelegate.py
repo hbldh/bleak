@@ -36,9 +36,8 @@ from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
-from bleak.backends._utils import try_call_soon_threadsafe
+from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.backends.client import NotifyCallback
-from bleak.backends.corebluetooth.utils import external_thread_callback
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
