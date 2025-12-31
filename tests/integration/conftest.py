@@ -104,8 +104,10 @@ async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
 
 
 def enable_coverage(fn: Callable[..., Any]) -> Callable[..., Any]:
-    # Enable coverage tracing on this non-Python-created thread
-    # (https://github.com/nedbat/coveragepy/issues/686).
+    """
+    Enable coverage tracing on a non-Python-created thread.
+    (https://github.com/nedbat/coveragepy/issues/686)
+    """
 
     @functools.wraps(fn)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
@@ -117,20 +119,14 @@ def enable_coverage(fn: Callable[..., Any]) -> Callable[..., Any]:
     return wrapped
 
 
-@pytest.fixture(autouse=True)
-def patch_core_bluetooth_delegates() -> None:
-    """
-    Patch CoreBluetooth delegates to enable coverage tracing.
-
-    The objc delegates are called from a dispatch queue thread created by
-    CoreBluetooth, which means coverage tracing is not enabled in those threads
-    by default. This patch wraps the delegate methods to enable coverage tracing
-    in those threads.
-    """
-    if sys.platform != "darwin":
-        # Patching CoreBluetooth is only necessary on macOS
-        return
-
+# Patch CoreBluetooth delegates to enable coverage tracing.
+# This must be done at module import time, before any CoreBluetooth code is imported,
+# to ensure the patch is in place when the delegates are created.
+if sys.platform == "darwin":
     from bleak.backends.corebluetooth import utils
 
-    utils.objc_method = lambda func: enable_coverage(func)
+    # The objc delegates are called from a dispatch queue thread created by
+    # CoreBluetooth, which means coverage tracing is not enabled in those threads
+    # by default. This patch wraps the delegate methods to enable coverage tracing
+    # in those threads.
+    utils.external_thread_callback = enable_coverage

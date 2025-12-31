@@ -37,7 +37,7 @@ from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends.client import NotifyCallback
-from bleak.backends.corebluetooth.utils import objc_method
+from bleak.backends.corebluetooth.utils import external_thread_callback
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
 
     # Protocol Functions
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didDiscoverServices_(
         self, peripheral: CBPeripheral, error: Optional[NSError]
     ) -> None:
@@ -81,14 +81,14 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didDiscoverIncludedServicesForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverIncludedServicesForService_error_")
         # Currently not used in Bleak
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didDiscoverCharacteristicsForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
@@ -106,7 +106,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -126,7 +126,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didUpdateValueForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -147,7 +147,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didUpdateValueForDescriptor_error_(
         self,
         peripheral: CBPeripheral,
@@ -168,7 +168,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didWriteValueForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -188,7 +188,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didWriteValueForDescriptor_error_(
         self,
         peripheral: CBPeripheral,
@@ -208,14 +208,14 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheralIsReadyToSendWriteWithoutResponse_(
         self, peripheral: CBPeripheral
     ) -> None:
         logger.debug("peripheralIsReadyToSendWriteWithoutResponse_")
         # Currently not used in Bleak
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didUpdateNotificationStateForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -235,7 +235,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didReadRSSI_error_(
         self,
         peripheral: CBPeripheral,
@@ -254,7 +254,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
 
     # Bleak currently doesn't use the callbacks below other than for debug logging
 
-    @objc_method
+    @external_thread_callback
     def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
         logger.debug("peripheralDidUpdateName_")
 
@@ -266,7 +266,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             # Likely caused by loop being closed
             logger.debug("unraisable exception", exc_info=e)
 
-    @objc_method
+    @external_thread_callback
     def peripheral_didModifyServices_(
         self, peripheral: CBPeripheral, invalidatedServices: NSArray[CBService]
     ) -> None:

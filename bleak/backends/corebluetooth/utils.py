@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
     if sys.platform != "darwin":
@@ -71,11 +71,14 @@ def to_optional_int(value: Optional[NSNumber]) -> Optional[int]:
     return int(value)
 
 
-def objc_method(func: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    Decorator for Objective-C methods.
+_T = TypeVar("_T", bound=Callable[..., Any])
 
-    This is a no-op placeholder used to mark methods as Objective-C methods to
-    overwrite in the tests to enable coverage tracing.
+
+def external_thread_callback(func: _T) -> _T:
+    """
+    Decorator for callbacks invoked from external non-Python thread.
+
+    This is a no-op placeholder that can be overridden in tests to enable
+    coverage tracing for external threads.
     """
     return func
