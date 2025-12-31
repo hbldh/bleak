@@ -18,16 +18,14 @@ from bumble.transport.common import Transport
 from dbus_fast import BusType, Message, MessageType, Variant
 from dbus_fast.aio.message_bus import MessageBus
 
+from bleak._compat import timeout as async_timeout
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
-
 BLEAK_TEST_MANUFACTURER_ID = 0xB1EA
+
+logger = logging.getLogger(__name__)
 
 
 @contextlib.asynccontextmanager
@@ -69,7 +67,7 @@ async def power_on_controller(
                 assert_reply(reply)
                 return
             except Exception as e:
-                logging.warning(f"Failed to power on adapter at {adapter_path}: {e}")
+                logger.debug("Failed to power on adapter at %s: %s", adapter_path, e)
                 await asyncio.sleep(0.1)
 
 
@@ -125,6 +123,12 @@ async def wait_for_new_adapter() -> (
             bus.remove_message_handler(_on_interfaces_added)
 
 
+def _clear_bit(flags: bytes, bit_pos: int) -> bytes:
+    int_flags = int.from_bytes(flags, byteorder="little")
+    int_flags &= ~(1 << bit_pos)
+    return int_flags.to_bytes(len(flags), byteorder="little")
+
+
 @contextlib.asynccontextmanager
 async def open_bluez_bluetooth_controller_link(
     hci_transport_name: str,
@@ -149,9 +153,39 @@ async def open_bluez_bluetooth_controller_link(
             )
             bluez_controller.manufacturer_name = BLEAK_TEST_MANUFACTURER_ID
 
+            # HACK: Work around Bumble missing feature combined with Linux kernel
+            # requirement. https://github.com/google/bumble/issues/841
+            #
+            # According to the Bluetooth spec:
+            #
+            #   C24: [HCI_LE_Enhanced_Connection_Complete event is] Mandatory if
+            #   the LE Controller supports Connection State and either LE Feature (LL
+            #   Privacy) or LE Feature (Extended Advertising) is supported, otherwise optional if
+            #   the LE Controller supports Connection State, otherwise excluded.
+            #
+            # And the Linux kernel enforces this in hci_le_create_conn_sync().
+            # It will get a timeout if one of these features is enabled and the
+            # Enhanced Connection Complete event is not sent.
+            #
+            # However, Bumble (as of 0.0.220) always sends HCI_LE_Connection_Complete_Event
+            # in response to HCI_LE_Create_Connection_Command even when it should
+            # be sending HCI_LE_Enhanced_Connection_Complete_Event.
+            #
+            # For now, we can work around the issue by disabling LL Privacy and
+            # Extended Advertising features in the BlueZ controller.
+            #
+            # Ideally, this should be fixed in Bumble.
+
+            bluez_controller.le_features = _clear_bit(
+                bluez_controller.le_features, 6  # LL Privacy
+            )
+            bluez_controller.le_features = _clear_bit(
+                bluez_controller.le_features, 12  # Extended Advertising
+            )
+
             # Wait up to 5 seconds for the new adapter to appear via InterfacesAdded
             adapter_path = await asyncio.wait_for(adapter_path_future, timeout=5.0)
-            logging.info(f"New adapter detected at {adapter_path}")
+            logger.info(f"New adapter detected at {adapter_path}")
 
             # Ensure controller is powered on. This also ensures that BlueZ has fully
             # initialized the adapter and it is ready for use.

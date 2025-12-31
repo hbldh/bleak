@@ -4,23 +4,21 @@ import sys
 
 import pytest
 from bumble import data_types
-from bumble.core import UUID, DataType
+from bumble.core import UUID
 from bumble.device import Device
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 from bleak.uuids import normalize_uuid_str
-from tests.integration.conftest import add_default_advertising_data
+from tests.integration.conftest import configure_and_power_on_bumble_peripheral
 
 DEFAULT_TIMEOUT = 5.0
 
 
 async def test_discover(bumble_peripheral: Device):
     """Scanner discovery is finding the device."""
-    add_default_advertising_data(bumble_peripheral)
-    await bumble_peripheral.power_on()
-    await bumble_peripheral.start_advertising()
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
 
     devices = await BleakScanner.discover(return_adv=True)
     filtered_devices = list(
@@ -43,15 +41,14 @@ async def test_discover_filter_by_service_uuid(
     service_uuid_available: bool,
 ):
     """Scanner discovery is filtering service uuids correctly."""
-    additional_adv_data: list[DataType] = []
-    if service_uuid_available:
-        additional_adv_data = [
-            data_types.IncompleteListOf16BitServiceUUIDs([UUID(0x180F)])
-        ]
-
-    add_default_advertising_data(bumble_peripheral, additional_adv_data)
-    await bumble_peripheral.power_on()
-    await bumble_peripheral.start_advertising()
+    await configure_and_power_on_bumble_peripheral(
+        bumble_peripheral,
+        additional_adv_data=(
+            [data_types.IncompleteListOf16BitServiceUUIDs([UUID(0x180F)])]
+            if service_uuid_available
+            else []
+        ),
+    )
 
     found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
 
@@ -77,9 +74,7 @@ async def test_discover_filter_by_service_uuid(
 
 async def test_adv_data_simple(bumble_peripheral: Device):
     """Simple advertising data is parsed correct."""
-    add_default_advertising_data(bumble_peripheral)
-    await bumble_peripheral.power_on()
-    await bumble_peripheral.start_advertising()
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
 
     found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
 
@@ -98,13 +93,19 @@ async def test_adv_data_simple(bumble_peripheral: Device):
     assert found_adv_data.service_data == {}
     assert found_adv_data.service_uuids == []
     assert found_adv_data.tx_power is None
-    assert isinstance(found_adv_data.rssi, int)
     assert found_adv_data.platform_data
+
+    # Verify that this value is an integer and not some other
+    # type from a ffi binding framework.
+    assert isinstance(found_adv_data.rssi, int)
+
+    # The rssi can vary. So we only check for a plausible range.
+    assert -127 <= found_adv_data.rssi < 0
 
 
 async def test_adv_data_complex(bumble_peripheral: Device):
     """Complex advertising data is parsed correct."""
-    add_default_advertising_data(
+    await configure_and_power_on_bumble_peripheral(
         bumble_peripheral,
         [
             data_types.ManufacturerSpecificData(0x1234, b"MFG"),
@@ -113,8 +114,6 @@ async def test_adv_data_complex(bumble_peripheral: Device):
             data_types.ServiceData16BitUUID(UUID(0x180F), b"SER"),
         ],
     )
-    await bumble_peripheral.power_on()
-    await bumble_peripheral.start_advertising()
 
     found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
 
@@ -135,5 +134,11 @@ async def test_adv_data_complex(bumble_peripheral: Device):
     }
     assert found_adv_data.service_uuids == ["0000180f-0000-1000-8000-00805f9b34fb"]
     assert found_adv_data.tx_power == 123
-    assert isinstance(found_adv_data.rssi, int)
     assert found_adv_data.platform_data
+
+    # Verify that this value is an integer and not some other
+    # type from a ffi binding framework.
+    assert isinstance(found_adv_data.rssi, int)
+
+    # The rssi can vary. So we only check for a plausible range.
+    assert -127 <= found_adv_data.rssi < 0

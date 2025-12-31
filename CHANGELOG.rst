@@ -10,6 +10,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`2.1.1`_ (2025-12-31)
+=====================
+
+Changed
+-------
+* Changed default connect timeout for ``BleakClient`` from 10 to 30 seconds.
+
+Fixed
+-----
+* Fixed some cases of ``BleakError: Could not get GATT services: Unreachable`` in WinRT backend by adding a retry when getting GATT services.
 
 `2.1.0`_ (2025-12-28)
 =====================
@@ -23,7 +33,6 @@ Fixed
 -----
 * Fixed calling ``logging.debug()`` in WinRT backend. Fixes #1882.
 * Fixed calling ``logging.warning()`` in BlueZ backend.
-
 
 `2.0.0`_ (2025-11-22)
 =====================
@@ -1162,7 +1171,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.1.0...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.1.1...develop
+.. _2.1.1: https://github.com/hbldh/bleak/compare/v2.1.0...v2.1.1
 .. _2.1.0: https://github.com/hbldh/bleak/compare/v2.0.0...v2.1.0
 .. _2.0.0: https://github.com/hbldh/bleak/compare/v1.1.1...v2.0.0
 .. _1.1.1: https://github.com/hbldh/bleak/compare/v1.1.0...v1.1.1

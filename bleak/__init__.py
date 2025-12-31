@@ -18,13 +18,8 @@ from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
 
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-    from typing_extensions import Never, Self, Unpack, assert_never
-else:
-    from asyncio import timeout as async_timeout
-    from typing import Never, Self, Unpack, assert_never
-
+from bleak._compat import Never, Self, Unpack, assert_never
+from bleak._compat import timeout as async_timeout
 from bleak.args.bluez import BlueZNotifyArgs, BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
@@ -459,7 +454,7 @@ class BleakClient:
             These can be 16-bit or 128-bit UUIDs.
         timeout:
             Timeout in seconds passed to the implicit ``discover`` call when
-            ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 10.0.
+            ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 30.
         pair:
             Attempt to pair with the the device before connecting, if it is not
             already paired. This has no effect on macOS since pairing is initiated
@@ -501,6 +496,9 @@ class BleakClient:
 
     .. versionchanged:: 1.0
         Added ``pair`` parameter.
+
+    .. versionchanged:: 2.1.1
+        Changed default connect timeout from 10 to 30 seconds.
     """
 
     def __init__(
@@ -509,7 +507,7 @@ class BleakClient:
         disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
         services: Optional[Iterable[str]] = None,
         *,
-        timeout: float = 10.0,
+        timeout: float = 30,
         pair: bool = False,
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,
@@ -919,26 +917,3 @@ class BleakClient:
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
         await self._backend.write_gatt_descriptor(descriptor, data)
-
-
-def cli() -> None:
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Perform Bluetooth Low Energy device scan"
-    )
-    parser.add_argument("-i", dest="adapter", default=None, help="HCI device")
-    parser.add_argument(
-        "-t", dest="timeout", type=int, default=5, help="Duration to scan for"
-    )
-    args = parser.parse_args()
-
-    out = asyncio.run(
-        BleakScanner.discover(adapter=args.adapter, timeout=float(args.timeout))
-    )
-    for o in out:
-        print(str(o))
-
-
-if __name__ == "__main__":
-    cli()

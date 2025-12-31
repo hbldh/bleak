@@ -1,6 +1,6 @@
 [project]
 name = "bleak"
-version = "2.1.0"
+version = "2.1.1"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
@@ -87,6 +87,12 @@ exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "error",
+    # There is an issue with coverage binary extensions on Python 3.10 on Linux.
+    # Not a big deal, just reduces performance a bit.
+    '''ignore:Couldn't import C tracer:coverage.exceptions.CoverageWarning''',
+]
 
 addopts = """
 --cov=bleak

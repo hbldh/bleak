@@ -19,22 +19,14 @@ from collections.abc import Callable
 from contextlib import AsyncExitStack
 from typing import Any, Optional, Union
 
-if sys.version_info < (3, 12):
-    from typing_extensions import override
-else:
-    from typing import override
-
-if sys.version_info < (3, 11):
-    from async_timeout import timeout as async_timeout
-else:
-    from asyncio import timeout as async_timeout
-
 from dbus_fast.aio import MessageBus
 from dbus_fast.constants import BusType, ErrorType, MessageType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
+from bleak._compat import override
+from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
@@ -62,13 +54,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
         services: Optional list of service UUIDs that will be used.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        disconnected_callback (callable): Callback that will be scheduled in the
-            event loop when the client is disconnected. The callable must take one
-            argument, which will be this client object.
-        adapter (str): Bluetooth adapter to use for discovery.
     """
 
     def __init__(
@@ -121,7 +106,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call.
 
         Raises:
             BleakError: If the device is already connected or if the device could not be found.
@@ -740,10 +725,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         value = bytearray(reply.body[0])
 
         logger.debug(
-            "Read Characteristic {0} | {1}: {2}".format(
-                characteristic.uuid, characteristic.obj[0], value
-            )
+            "Read Characteristic %s | %s: %r",
+            characteristic.uuid,
+            characteristic.obj[0],
+            value,
         )
+
         return value
 
     @override
