@@ -49,10 +49,6 @@ class BleakClientCoreBluetooth(BaseBleakClient):
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
         services: Optional set of service UUIDs that will be used.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-
     """
 
     def __init__(
@@ -89,7 +85,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Connect to a specified Peripheral
 
         Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call.
         """
         if pair:
             logger.debug("Explicit pairing is not available in CoreBluetooth.")

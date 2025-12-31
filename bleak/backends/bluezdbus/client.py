@@ -54,13 +54,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
     Args:
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
         services: Optional list of service UUIDs that will be used.
-
-    Keyword Args:
-        timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
-        disconnected_callback (callable): Callback that will be scheduled in the
-            event loop when the client is disconnected. The callable must take one
-            argument, which will be this client object.
-        adapter (str): Bluetooth adapter to use for discovery.
     """
 
     def __init__(
@@ -113,7 +106,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call.
 
         Raises:
             BleakError: If the device is already connected or if the device could not be found.

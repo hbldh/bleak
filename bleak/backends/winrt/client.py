@@ -144,7 +144,6 @@ class BleakClientWinRT(BaseBleakClient):
             to connect to or the ``BLEDevice`` object representing it.
         services: Optional set of service UUIDs that will be used.
         winrt (dict): A dictionary of Windows-specific configuration values.
-        **timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
     """
 
     def __init__(
@@ -218,7 +217,7 @@ class BleakClientWinRT(BaseBleakClient):
         """Connect to the specified GATT server.
 
         Keyword Args:
-            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call. Defaults to 10.0.
+            timeout (float): Timeout for required ``BleakScanner.find_device_by_address`` call.
         """
         # Try to find the desired device.
         timeout = kwargs.get("timeout", self._timeout)
