@@ -454,7 +454,7 @@ class BleakClient:
             These can be 16-bit or 128-bit UUIDs.
         timeout:
             Timeout in seconds passed to the implicit ``discover`` call when
-            ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 10.0.
+            ``address_or_ble_device`` is not a :class:`BLEDevice`. Defaults to 30.
         pair:
             Attempt to pair with the the device before connecting, if it is not
             already paired. This has no effect on macOS since pairing is initiated
@@ -496,6 +496,9 @@ class BleakClient:
 
     .. versionchanged:: 1.0
         Added ``pair`` parameter.
+
+    .. versionchanged:: 2.1.1
+        Changed default connect timeout from 10 to 30 seconds.
     """
 
     def __init__(
@@ -504,7 +507,7 @@ class BleakClient:
         disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
         services: Optional[Iterable[str]] = None,
         *,
-        timeout: float = 10.0,
+        timeout: float = 30,
         pair: bool = False,
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,

@@ -26,7 +26,7 @@ class BaseBleakClient(abc.ABC):
         address_or_ble_device (`BLEDevice` or str): The Bluetooth address of the BLE peripheral to connect to or the `BLEDevice` object representing it.
 
     Keyword Args:
-        timeout (float): Timeout for required ``discover`` call. Defaults to 10.0.
+        timeout (float): Timeout for required ``discover`` call.
         disconnected_callback (callable): Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
@@ -40,7 +40,7 @@ class BaseBleakClient(abc.ABC):
 
         self.services: Optional[BleakGATTServiceCollection] = None
 
-        self._timeout = kwargs.get("timeout", 10.0)
+        self._timeout = kwargs["timeout"]
         self._disconnected_callback: Optional[Callable[[], None]] = kwargs.get(
             "disconnected_callback"
         )

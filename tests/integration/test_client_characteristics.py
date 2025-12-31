@@ -29,7 +29,7 @@ async def test_read_gatt_char(bumble_peripheral: Device):
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(device) as client:
+    async with BleakClient(device, services=[READ_SERVICE_UUID]) as client:
         data = await client.read_gatt_char(READ_CHARACTERISITC_UUID)
         assert data == b"DATA"
 
@@ -51,7 +51,9 @@ async def test_write_gatt_char_with_response(bumble_peripheral: Device):
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(device) as client:
+    async with BleakClient(
+        device, services=[WRITE_WITH_RESPONSE_SERVICE_UUID]
+    ) as client:
         await client.write_gatt_char(
             WRITE_WITH_RESPONSE_CHARACTERISITC_UUID, b"DATA", response=True
         )
@@ -83,7 +85,9 @@ async def test_write_gatt_char_no_response(bumble_peripheral: Device):
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(device) as client:
+    async with BleakClient(
+        device, services=[WRITE_WITHOUT_RESPONSE_SERVICE_UUID]
+    ) as client:
         await client.write_gatt_char(
             WRITE_WITHOUT_RESPONSE_CHARACTERISITC_UUID, b"DATA", response=False
         )
@@ -116,7 +120,7 @@ async def test_notify_gatt_char(bumble_peripheral: Device):
         assert characteristic.uuid.lower() == NOTIFY_CHARACTERISITC_UUID
         notified_data.put_nowait(bytes(data))
 
-    async with BleakClient(device) as client:
+    async with BleakClient(device, services=[NOTIFY_SERVICE_UUID]) as client:
         await client.start_notify(
             NOTIFY_CHARACTERISITC_UUID,
             notify_callback,

@@ -1,6 +1,6 @@
 [project]
 name = "bleak"
-version = "2.1.0"
+version = "2.1.1"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"

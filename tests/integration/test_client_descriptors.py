@@ -36,7 +36,9 @@ async def test_read_gatt_descriptor(bumble_peripheral: Device):
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(device) as client:
+    async with BleakClient(
+        device, services=[READABLE_DESCRIPTOR_SERVICE_UUID]
+    ) as client:
         characteristic = client.services.get_characteristic(
             READABLE_DESCRIPTOR_CHARACTERISITC_UUID
         )
@@ -74,7 +76,9 @@ async def test_write_gatt_descriptor(bumble_peripheral: Device):
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(device) as client:
+    async with BleakClient(
+        device, services=[WRITABLE_DESCRIPTOR_SERVICE_UUID]
+    ) as client:
         characteristic = client.services.get_characteristic(
             WRITABLE_DESCRIPTOR_CHARACTERISITC_UUID
         )
