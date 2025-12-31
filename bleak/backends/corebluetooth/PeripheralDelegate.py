@@ -11,8 +11,6 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from bleak.backends.corebluetooth.utils import objc_method
-
 if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
@@ -39,6 +37,7 @@ from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends.client import NotifyCallback
+from bleak.backends.corebluetooth.utils import objc_method
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
