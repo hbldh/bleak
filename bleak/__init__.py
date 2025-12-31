@@ -497,7 +497,7 @@ class BleakClient:
     .. versionchanged:: 1.0
         Added ``pair`` parameter.
 
-    .. versionchanged:: unreleased
+    .. versionchanged:: 2.1.1
         Changed default connect timeout from 10 to 30 seconds.
     """
 
