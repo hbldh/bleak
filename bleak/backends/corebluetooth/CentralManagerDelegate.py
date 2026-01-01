@@ -48,7 +48,7 @@ from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
-from bleak.backends._utils import try_call_soon_threadsafe
+from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.exc import (
     BleakBluetoothNotAvailableError,
     BleakBluetoothNotAvailableReason,
@@ -93,6 +93,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
 
     # User defined functions
 
+    @external_thread_callback  # Just sometimes called from an external thread, e.g. when stopping Bluetooth while scanning.
     def observeValueForKeyPath_ofObject_change_context_(
         self,
         keyPath: NSString,
@@ -114,6 +115,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
 
     # Protocol Functions
 
+    @external_thread_callback
     def centralManagerDidUpdateState_(self, centralManager: CBCentralManager) -> None:
         logger.debug("centralManagerDidUpdateState_")
         if centralManager.state() == CBManagerStateUnknown:
@@ -134,6 +136,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             self.py_delegate.did_update_state_event.set,
         )
 
+    @external_thread_callback
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
         self,
         central: CBCentralManager,
@@ -152,6 +155,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             RSSI,
         )
 
+    @external_thread_callback
     def centralManager_didConnectPeripheral_(
         self, central: CBCentralManager, peripheral: CBPeripheral
     ) -> None:
@@ -164,6 +168,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             peripheral,
         )
 
+    @external_thread_callback
     def centralManager_didFailToConnectPeripheral_error_(
         self,
         centralManager: CBCentralManager,
@@ -180,6 +185,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
             error,
         )
 
+    @external_thread_callback
     def centralManager_didDisconnectPeripheral_error_(
         self,
         central: CBCentralManager,
