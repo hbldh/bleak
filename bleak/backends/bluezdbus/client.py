@@ -698,6 +698,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        if kwargs.get("use_cached", False):
+            manager = await get_global_bluez_manager()
+            return bytearray(manager.get_char_value(characteristic.obj[0]))
+
         while True:
             assert self._bus
 
@@ -747,6 +751,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         if not self.is_connected:
             raise BleakError("Not connected")
+
+        if kwargs.get("use_cached", False):
+            manager = await get_global_bluez_manager()
+            return bytearray(manager.get_desc_value(descriptor.obj[0]))
 
         while True:
             assert self._bus
