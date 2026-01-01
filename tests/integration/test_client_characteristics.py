@@ -34,6 +34,33 @@ async def test_read_gatt_char(bumble_peripheral: Device):
         assert data == b"DATA"
 
 
+async def test_read_gatt_char_use_cached(bumble_peripheral: Device):
+    """Reading a cached GATT characteristic is possible."""
+    READ_SERVICE_UUID = "2908f536-3fab-43c9-a7b2-80b6fdaae99b"
+    READ_CHARACTERISITC_UUID = "1a1af049-9c23-4b69-b763-e1096674ed18"
+    virtual_characteristic = Characteristic(
+        READ_CHARACTERISITC_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"DATA",
+    )
+    await configure_and_power_on_bumble_peripheral(
+        bumble_peripheral,
+        services=[Service(READ_SERVICE_UUID, [virtual_characteristic])],
+    )
+
+    device = await find_ble_device(bumble_peripheral)
+
+    async with BleakClient(device) as client:
+        await client.read_gatt_char(READ_CHARACTERISITC_UUID)
+        virtual_characteristic.value = b"ASDF"
+
+        data = await client.read_gatt_char(READ_CHARACTERISITC_UUID, use_cached=True)
+
+        # The data has to be the old value since we are using the cached value.
+        assert data == b"DATA"
+
+
 async def test_write_gatt_char_with_response(bumble_peripheral: Device):
     """Writing a GATT characteristic is possible."""
     WRITE_WITH_RESPONSE_SERVICE_UUID = "79a92bad-31b4-4a70-885c-e704ae2c6363"
