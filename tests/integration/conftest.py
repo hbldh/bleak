@@ -110,14 +110,13 @@ _TReturn = TypeVar("_TReturn")
 
 def enable_coverage(func: Callable[_P, _TReturn]) -> Callable[_P, _TReturn]:
     """
-    Enable coverage tracing on a non-Python-created thread.
+    Enable coverage tracing on a non-Python-created thread, if not already enabled.
     (https://github.com/nedbat/coveragepy/issues/686)
     """
 
     @functools.wraps(func)
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _TReturn:
-        trace_hook = threading.gettrace()
-        if trace_hook:
+        if sys.gettrace() is None and (trace_hook := threading.gettrace()):
             sys.settrace(trace_hook)
         return func(*args, **kwargs)
 
