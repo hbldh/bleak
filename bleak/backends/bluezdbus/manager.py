@@ -958,6 +958,46 @@ class BlueZManager:
             if not device_callbacks:
                 del condition_callbacks[device_path]
 
+    def get_char_value(self, char_path: str) -> bytes:
+        """
+        Gets the value of the "Value" property for a characteristic.
+
+        Args:
+            char_path: The D-Bus object path of the characteristic.
+        Returns:
+            The current property value.
+        """
+        try:
+            char_props = cast(
+                GattCharacteristic1,
+                self._properties[char_path][defs.GATT_CHARACTERISTIC_INTERFACE],
+            )
+            return char_props["Value"]
+        except KeyError as ex:
+            raise BleakError(
+                f"characteristic at {char_path} not found, device may be disconnected"
+            ) from ex
+
+    def get_desc_value(self, desc_path: str) -> bytes:
+        """
+        Gets the value of the "Value" property for a descriptor.
+
+        Args:
+            desc_path: The D-Bus object path of the descriptor.
+        Returns:
+            The current property value.
+        """
+        try:
+            desc_props = cast(
+                GattDescriptor1,
+                self._properties[desc_path][defs.GATT_DESCRIPTOR_INTERFACE],
+            )
+            return desc_props["Value"]
+        except KeyError as ex:
+            raise BleakError(
+                f"descriptor at {desc_path} not found, device may be disconnected"
+            ) from ex
+
     def _parse_msg(self, message: Message) -> None:
         """
         Handles callbacks from dbus_fast.
