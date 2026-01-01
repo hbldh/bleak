@@ -1,6 +1,9 @@
 import asyncio
 import contextlib
+import logging
 import sys
+import threading
+import time
 
 import pytest
 from bumble import data_types
@@ -142,3 +145,46 @@ async def test_adv_data_complex(bumble_peripheral: Device):
 
     # The rssi can vary. So we only check for a plausible range.
     assert -127 <= found_adv_data.rssi < 0
+
+
+@pytest.mark.skipif(
+    sys.platform != "darwin", reason="Test only applies to CoreBluetooth"
+)
+async def test_canceled_event_loop(
+    bumble_peripheral: Device, caplog: pytest.LogCaptureFixture
+):
+    """Test that scanner handles closed event loop gracefully."""
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    def run_in_thread():
+        # Create a new event loop that is independent of the main test loop. This is
+        # necessary because we want to close the loop while the scanner is running,
+        # and closing the main test loop would interfere with the test framework.
+        new_loop = asyncio.new_event_loop()
+        try:
+
+            async def start_scanner():
+                scanner = BleakScanner()
+
+                # Just start the scanner, without stopping it properly.
+                # This is a common mistake when not using the context manager
+                # with 'async with'.
+                await scanner.start()
+
+            new_loop.run_until_complete(start_scanner())
+
+        finally:
+            # Close loop while scanner is still running. This should cause errors
+            # in the advertisement callbacks when try to use "call_soon_threadsafe".
+            new_loop.close()
+
+        # Give advertisement callbacks a chance to arrive after loop is closed.
+        time.sleep(1)
+
+    with caplog.at_level(logging.DEBUG, logger="bleak.backends.corebluetooth.utils"):
+        thread = threading.Thread(target=run_in_thread)
+        thread.start()
+        thread.join()
+
+    # Check if the "unraisable exception" was logged
+    assert any("unraisable exception" in record.message for record in caplog.records)
