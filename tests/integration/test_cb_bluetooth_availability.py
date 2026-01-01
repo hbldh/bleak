@@ -4,6 +4,8 @@ import pytest
 
 if sys.platform != "darwin":
     pytest.skip("CoreBluetooth only tests", allow_module_level=True)
+    # unreachable, but makes the type checkers happy
+    assert False
 
 from unittest.mock import Mock
 
@@ -24,15 +26,13 @@ from bleak.exc import (
     BleakBluetoothNotAvailableReason,
 )
 
-UNCHANGED = object()
-
 
 @pytest.mark.parametrize(
     "state,authorization,expected_msg,expected_reason",
     [
         pytest.param(
             CBManagerStateUnsupported,
-            UNCHANGED,
+            None,
             "unsupported",
             BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
             id="unsupported",
@@ -60,21 +60,21 @@ UNCHANGED = object()
         ),
         pytest.param(
             CBManagerStatePoweredOff,
-            UNCHANGED,
+            None,
             "turned off",
             BleakBluetoothNotAvailableReason.POWERED_OFF,
             id="powered_off",
         ),
         pytest.param(
             CBManagerStateResetting,
-            UNCHANGED,
+            None,
             "Connection to the Bluetooth system service was lost",
             BleakBluetoothNotAvailableReason.UNKNOWN,
             id="resetting",
         ),
         pytest.param(
             CBManagerStateUnknown,
-            UNCHANGED,
+            None,
             "state is unknown",
             BleakBluetoothNotAvailableReason.UNKNOWN,
             id="unknown_state",
@@ -103,7 +103,7 @@ async def test_bluetooth_availability(
 
     mock_manager = Mock(wraps=central_manager_delegate.central_manager)
     mock_manager.state.return_value = state
-    if authorization is not UNCHANGED:
+    if authorization is not None:
         mock_manager.authorization.return_value = authorization
 
     monkeypatch.setattr(

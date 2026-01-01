@@ -293,7 +293,7 @@ class CentralManagerDelegate:
             )
         elif state != CBManagerStatePoweredOn:
             raise BleakBluetoothNotAvailableError(
-                "Bluetooth state is unknwon",
+                "Bluetooth state is unknown",
                 BleakBluetoothNotAvailableReason.UNKNOWN,
             )
 
