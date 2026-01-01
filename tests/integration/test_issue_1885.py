@@ -9,9 +9,12 @@ from bumble.gatt import (
     Service,
 )
 
-from bleak import BleakClient, BleakScanner
+from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from tests.integration.conftest import add_default_advertising_data
+from tests.integration.conftest import (
+    configure_and_power_on_bumble_peripheral,
+    find_ble_device,
+)
 
 TEST_SERVICE_UUID = "9d513f40-5c89-42dc-9688-2cfa30f2d9e7"
 TEST_CHARACTERISTIC_UUID = "e809cb2f-34e3-42a1-ba92-22db2495cd6a"
@@ -57,17 +60,11 @@ async def test_notification_sent_before_write_response(
         ],
     )
 
-    bumble_peripheral.add_service(Service(TEST_SERVICE_UUID, [test_characteristic]))
-
-    add_default_advertising_data(bumble_peripheral)
-    await bumble_peripheral.power_on()
-    await bumble_peripheral.start_advertising()
-
-    device = await BleakScanner.find_device_by_address(
-        bumble_peripheral.static_address.to_string(), cb={"use_bdaddr": True}
+    await configure_and_power_on_bumble_peripheral(
+        bumble_peripheral, services=[Service(TEST_SERVICE_UUID, [test_characteristic])]
     )
 
-    assert device is not None, "Could not find bumble peripheral device"
+    device = await find_ble_device(bumble_peripheral)
 
     async with BleakClient(device, services=[TEST_SERVICE_UUID]) as client:
         notification_queue: asyncio.Queue[bytes] = asyncio.Queue()
