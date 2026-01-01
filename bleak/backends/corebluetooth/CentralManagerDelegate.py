@@ -93,6 +93,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
 
     # User defined functions
 
+    @external_thread_callback  # Just sometimes called from an external thread, e.g. when stopping Bluetooth while scanning.
     def observeValueForKeyPath_ofObject_change_context_(
         self,
         keyPath: NSString,
