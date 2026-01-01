@@ -25,8 +25,3 @@ if sys.version_info < (3, 12):
     from typing_extensions import override as override
 else:
     from typing import override as override  # noqa: F401
-
-if sys.version_info < (3, 13):
-    from typing_extensions import ParamSpec as ParamSpec
-else:
-    from typing import ParamSpec as ParamSpec  # noqa: F401

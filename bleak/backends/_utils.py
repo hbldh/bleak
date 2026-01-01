@@ -1,9 +1,9 @@
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
-from bleak._compat import ParamSpec, TypeVarTuple, Unpack
+from bleak._compat import TypeVarTuple, Unpack
 
 _Ts = TypeVarTuple("_Ts")
 

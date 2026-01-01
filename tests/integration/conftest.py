@@ -2,7 +2,7 @@ import functools
 import sys
 import threading
 from collections.abc import Callable
-from typing import AsyncGenerator, TypeVar
+from typing import AsyncGenerator, ParamSpec, TypeVar
 
 import pytest
 from bumble import data_types
@@ -14,7 +14,6 @@ from bumble.transport import open_transport
 from bumble.transport.common import Transport
 
 from bleak import BleakScanner
-from bleak._compat import ParamSpec
 from bleak.backends import _utils
 from bleak.backends.device import BLEDevice
 
