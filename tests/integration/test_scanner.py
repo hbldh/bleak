@@ -35,6 +35,16 @@ async def test_discover(bumble_peripheral: Device):
         assert filtered_devices[0][0].address == str(bumble_peripheral.static_address)
 
 
+async def test_find_by_address(bumble_peripheral: Device):
+    """Scanner is finding the device by address."""
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    device = await BleakScanner.find_device_by_address(
+        bumble_peripheral.static_address.to_string(), cb={"use_bdaddr": True}
+    )
+    assert device is not None
+
+
 @pytest.mark.parametrize("service_uuid_available", [True, False])
 async def test_discover_filter_by_service_uuid(
     bumble_peripheral: Device,
