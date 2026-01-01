@@ -291,7 +291,11 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -302,6 +306,10 @@ class BleakClientP4Android(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if use_cached:
+            logger.debug(
+                "Reading cached characteristic values is not implemented on Android"
+            )
 
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readCharacteristic,
@@ -316,16 +324,26 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
+            use_cached: Whether to use cached value.
 
         Returns:
             The read data.
         """
+        if use_cached:
+            logger.debug(
+                "Reading cached descriptor values is not implemented on Android"
+            )
+
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readDescriptor,
             dispatchParams=(descriptor.obj,),

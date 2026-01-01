@@ -272,7 +272,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -285,7 +289,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         assert self._delegate
         output = await self._delegate.read_characteristic(
-            characteristic.obj, use_cached=kwargs.get("use_cached", False)
+            characteristic.obj, use_cached=use_cached
         )
         value = bytearray(output)
         logger.debug("Read Characteristic %s: %r", characteristic.uuid, value)
@@ -293,7 +297,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
@@ -307,7 +315,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """
         assert self._delegate
         output = await self._delegate.read_descriptor(
-            descriptor.obj, use_cached=kwargs.get("use_cached", False)
+            descriptor.obj, use_cached=use_cached
         )
         if isinstance(
             output, str
