@@ -21,10 +21,7 @@ from CoreBluetooth import (
 
 from bleak import BleakScanner
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
-from bleak.exc import (
-    BleakBluetoothNotAvailableError,
-    BleakBluetoothNotAvailableReason,
-)
+from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
 
 
 @pytest.mark.parametrize(
