@@ -2,7 +2,7 @@ import functools
 import sys
 import threading
 from collections.abc import Callable
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator, TypeVar
 
 import pytest
 from bumble import data_types
@@ -14,6 +14,7 @@ from bumble.transport import open_transport
 from bumble.transport.common import Transport
 
 from bleak import BleakScanner
+from bleak._compat import ParamSpec
 from bleak.backends import _utils
 from bleak.backends.device import BLEDevice
 
@@ -104,18 +105,22 @@ async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
     return device
 
 
-def enable_coverage(fn: Callable[..., Any]) -> Callable[..., Any]:
+_P = ParamSpec("_P")
+_TReturn = TypeVar("_TReturn")
+
+
+def enable_coverage(func: Callable[_P, _TReturn]) -> Callable[_P, _TReturn]:
     """
     Enable coverage tracing on a non-Python-created thread.
     (https://github.com/nedbat/coveragepy/issues/686)
     """
 
-    @functools.wraps(fn)
-    def wrapped(*args: Any, **kwargs: Any) -> Any:
+    @functools.wraps(func)
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _TReturn:
         trace_hook = threading.gettrace()
         if trace_hook:
             sys.settrace(trace_hook)
-        return fn(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapped
 

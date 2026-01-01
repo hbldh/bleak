@@ -3,7 +3,7 @@ import logging
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from bleak._compat import TypeVarTuple, Unpack
+from bleak._compat import ParamSpec, TypeVarTuple, Unpack
 
 _Ts = TypeVarTuple("_Ts")
 
@@ -24,10 +24,11 @@ def try_call_soon_threadsafe(
         logger.debug("unraisable exception", exc_info=True)
 
 
-_T = TypeVar("_T", bound=Callable[..., Any])
+_P = ParamSpec("_P")
+_TReturn = TypeVar("_TReturn")
 
 
-def external_thread_callback(func: _T) -> _T:
+def external_thread_callback(func: Callable[_P, _TReturn]) -> Callable[_P, _TReturn]:
     """
     Decorator for callbacks invoked from external non-Python thread.
 
