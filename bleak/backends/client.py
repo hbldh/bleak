@@ -117,12 +117,17 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
         Args:
             characteristic (BleakGATTCharacteristic): The characteristic to read from.
+            use_cached: If True, read the cached value instead of performing a read from the device.
 
         Returns:
             (bytearray) The read data.
@@ -132,12 +137,17 @@ class BaseBleakClient(abc.ABC):
 
     @abc.abstractmethod
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
+            use_cached: If True, read the cached value instead of performing a read from the device.
 
         Returns:
             The read data.

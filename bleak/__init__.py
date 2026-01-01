@@ -688,6 +688,8 @@ class BleakClient:
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        *,
+        use_cached: bool = False,
         **kwargs: Any,
     ) -> bytearray:
         """
@@ -698,6 +700,9 @@ class BleakClient:
                 The characteristic to read from, specified by either integer
                 handle, UUID or directly by the BleakGATTCharacteristic object
                 representing it.
+            use_cached:
+                If ``True``, the cached value will be returned instead of
+                performing a new read operation. May be ignored by some backends.
 
         Returns:
             The read data.
@@ -708,7 +713,9 @@ class BleakClient:
             backend-specific exceptions: if the read operation failed.
         """
         characteristic = _resolve_characteristic(char_specifier, self.services)
-        return await self._backend.read_gatt_char(characteristic, **kwargs)
+        return await self._backend.read_gatt_char(
+            characteristic, use_cached=use_cached, **kwargs
+        )
 
     async def write_gatt_char(
         self,
@@ -874,6 +881,8 @@ class BleakClient:
     async def read_gatt_descriptor(
         self,
         desc_specifier: Union[BleakGATTDescriptor, int],
+        *,
+        use_cached: bool = False,
         **kwargs: Any,
     ) -> bytearray:
         """
@@ -883,6 +892,9 @@ class BleakClient:
             desc_specifier:
                 The descriptor to read from, specified by either integer handle
                 or directly by the BleakGATTDescriptor object representing it.
+            use_cached:
+                If ``True``, the cached value will be returned instead of
+                performing a new read operation. May be ignored by some backends.
 
         Raises:
             BleakError: if the descriptor could not be found.
@@ -893,7 +905,9 @@ class BleakClient:
 
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
-        return await self._backend.read_gatt_descriptor(descriptor, **kwargs)
+        return await self._backend.read_gatt_descriptor(
+            descriptor, use_cached=use_cached, **kwargs
+        )
 
     async def write_gatt_descriptor(
         self,

@@ -849,7 +849,11 @@ class BleakClientWinRT(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -868,8 +872,6 @@ class BleakClientWinRT(BaseBleakClient):
             raise BleakError("Not connected")
 
         assert self.services
-
-        use_cached = kwargs.get("use_cached", False)
 
         gatt_char = cast(GattCharacteristic, characteristic.obj)
 
@@ -891,14 +893,16 @@ class BleakClientWinRT(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
-
-        Keyword Args:
             use_cached (bool): `False` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to `False`.
 
@@ -911,7 +915,6 @@ class BleakClientWinRT(BaseBleakClient):
 
         assert self.services
 
-        use_cached = kwargs.get("use_cached", False)
         gatt_desc = cast(GattDescriptor, descriptor.obj)
 
         value = bytearray(

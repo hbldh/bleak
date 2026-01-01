@@ -684,7 +684,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -698,7 +702,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if kwargs.get("use_cached", False):
+        if use_cached:
             manager = await get_global_bluez_manager()
             return bytearray(manager.get_char_value(characteristic.obj[0]))
 
@@ -739,12 +743,17 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
+            use_cached: Whether to use cached value.
 
         Returns:
             The read data.
@@ -752,7 +761,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
-        if kwargs.get("use_cached", False):
+        if use_cached:
             manager = await get_global_bluez_manager()
             return bytearray(manager.get_desc_value(descriptor.obj[0]))
 
