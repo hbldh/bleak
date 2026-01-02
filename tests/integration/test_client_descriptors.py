@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from bumble.core import UUID
 from bumble.device import Device
 from bumble.gatt import (
     GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
@@ -41,12 +42,15 @@ DESCR_TEST_SERVICE_UUID = "0d15eded-4e68-4718-bedf-736847b68e72"
 READABLE_DESCR_CHAR_UUID = "25c614ab-1560-46da-94bc-c146addfc359"
 WRITABLE_DESCR_CHAR_UUID = "822afd2f-c2b2-4302-9edb-09850a93b707"
 
+CUSTOM_BINARY_DESCRIPTOR_UUID = UUID("a1b2c3d4-e5f6-7890-1234-56789abcdef0")
+
 
 @dataclasses.dataclass
 class DescrTestPeripheral:
     bleak_client: BleakClient
     bumble_peripheral: Device
-    readable_descr: Descriptor
+    readable_string_descr: Descriptor
+    readable_binary_descr: Descriptor
     writable_descr: Descriptor
 
 
@@ -55,17 +59,22 @@ async def descr_test_peripheral(
     bumble_peripheral: Device,
 ) -> AsyncGenerator[DescrTestPeripheral, None]:
 
-    readable_descr = Descriptor(
+    readable_string_descr = Descriptor(
         GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
         Descriptor.READABLE,
-        "Description".encode(),
+        b"",
+    )
+    readable_binary_descr = Descriptor(
+        CUSTOM_BINARY_DESCRIPTOR_UUID,
+        Descriptor.READABLE,
+        b"",
     )
     readable_descr_char = Characteristic(
         READABLE_DESCR_CHAR_UUID,
         Characteristic.Properties.READ,
         Characteristic.Permissions.READABLE,
         b"",
-        [readable_descr],
+        [readable_string_descr, readable_binary_descr],
     )
 
     writable_descr = Descriptor(
@@ -100,14 +109,15 @@ async def descr_test_peripheral(
         yield DescrTestPeripheral(
             bumble_peripheral=bumble_peripheral,
             bleak_client=client,
-            readable_descr=readable_descr,
+            readable_string_descr=readable_string_descr,
+            readable_binary_descr=readable_binary_descr,
             writable_descr=writable_descr,
         )
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_read_gatt_descriptor(descr_test_peripheral: DescrTestPeripheral):
-    """Reading a GATT descriptor is possible."""
+async def test_read_gatt_string_descriptor(descr_test_peripheral: DescrTestPeripheral):
+    """Reading a string GATT descriptor is possible."""
 
     characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
         READABLE_DESCR_CHAR_UUID
@@ -119,9 +129,33 @@ async def test_read_gatt_descriptor(descr_test_peripheral: DescrTestPeripheral):
     )
     assert descriptor
 
-    descr_test_peripheral.readable_descr.value = b"Description"
+    descr_test_peripheral.readable_string_descr.value = b"Description"
     data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
     assert data == b"Description"
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_read_gatt_binary_descriptor(descr_test_peripheral: DescrTestPeripheral):
+    """
+    Reading a binary GATT descriptor is possible.
+
+    In CoreBluetooth there are differeces between descriptors. Some are returned as NSString
+    and some as NSData. This test ensures that binary descriptors (NSData) can be read correctly.
+    """
+
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        READABLE_DESCR_CHAR_UUID
+    )
+    assert characteristic
+
+    descriptor = characteristic.get_descriptor(
+        CUSTOM_BINARY_DESCRIPTOR_UUID.to_hex_str()
+    )
+    assert descriptor
+
+    descr_test_peripheral.readable_binary_descr.value = b"\x01\x02\x03\x04"
+    data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
+    assert data == b"\x01\x02\x03\x04"
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -139,11 +173,11 @@ async def test_read_gatt_descriptor_use_cached(
     )
     assert descriptor
 
-    descr_test_peripheral.readable_descr.value = b"Original"
+    descr_test_peripheral.readable_string_descr.value = b"Original"
     data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
     assert data == b"Original"
 
-    descr_test_peripheral.readable_descr.value = b"Changed"
+    descr_test_peripheral.readable_string_descr.value = b"Changed"
     data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(
         descriptor, use_cached=True
     )
