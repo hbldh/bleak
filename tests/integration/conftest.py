@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import sys
 import threading
@@ -20,6 +21,15 @@ from bleak.backends.device import BLEDevice
 
 @pytest.fixture
 async def hci_transport(
+    request: pytest.FixtureRequest,
+) -> AsyncGenerator[Transport, None]:
+    """Create a bumble HCI Transport."""
+    async with create_hci_transport(request) as hci_transport:
+        yield hci_transport
+
+
+@contextlib.asynccontextmanager
+async def create_hci_transport(
     request: pytest.FixtureRequest,
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
@@ -47,10 +57,13 @@ async def hci_transport(
 
 
 @pytest.fixture
-def bumble_peripheral(hci_transport: Transport) -> Device:
-    """
-    Create a BLE peripheral device with bumble.
-    """
+async def bumble_peripheral(hci_transport: Transport) -> Device:
+    """Create a BLE peripheral device with bumble."""
+    return create_bumble_peripheral(hci_transport)
+
+
+def create_bumble_peripheral(hci_transport: Transport) -> Device:
+    """Create a BLE peripheral device with bumble."""
     config = DeviceConfiguration(
         name="Bleak",
         # use random static address to avoid device caching issues, when characteristics change between test runs
