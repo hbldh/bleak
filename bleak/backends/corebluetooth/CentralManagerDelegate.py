@@ -6,7 +6,6 @@ manage CoreBluetooth services and resources on the Central End
 from __future__ import annotations
 
 import sys
-import weakref
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -38,8 +37,6 @@ from Foundation import (
     NSData,
     NSDictionary,
     NSError,
-    NSKeyValueChangeNewKey,
-    NSKeyValueObservingOptionNew,
     NSNumber,
     NSObject,
     NSString,
@@ -90,28 +87,6 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self.py_delegate = py_delegate
 
         return self
-
-    # User defined functions
-
-    @external_thread_callback  # Just sometimes called from an external thread, e.g. when stopping Bluetooth while scanning.
-    def observeValueForKeyPath_ofObject_change_context_(
-        self,
-        keyPath: NSString,
-        object: Any,
-        change: NSDictionary[str, Any],
-        context: int,
-    ) -> None:
-        logger.debug("'%s' changed", keyPath)
-
-        if keyPath != "isScanning":
-            return
-
-        is_scanning = bool(change[NSKeyValueChangeNewKey])
-        try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.changed_is_scanning,
-            is_scanning,
-        )
 
     # Protocol Functions
 
@@ -233,19 +208,6 @@ class CentralManagerDelegate:
             dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL),
         )
 
-        self.central_manager.addObserver_forKeyPath_options_context_(
-            self.objc_delegate, "isScanning", NSKeyValueObservingOptionNew, 0
-        )
-        weakref.finalize(
-            self,
-            self.central_manager.removeObserver_forKeyPath_,
-            self.objc_delegate,
-            "isScanning",
-        )
-
-        self._did_start_scanning_event: Optional[asyncio.Event] = None
-        self._did_stop_scanning_event: Optional[asyncio.Event] = None
-
     # User defined functions
     @objc.python_method
     async def wait_until_ready(self):
@@ -310,18 +272,8 @@ class CentralManagerDelegate:
             _service_uuids, None
         )
 
-        event = asyncio.Event()
-        self._did_start_scanning_event = event
-        if not self.central_manager.isScanning():
-            await event.wait()
-
     async def stop_scan(self) -> None:
         self.central_manager.stopScan()
-
-        event = asyncio.Event()
-        self._did_stop_scanning_event = event
-        if self.central_manager.isScanning():
-            await event.wait()
 
     async def connect(
         self,
@@ -364,14 +316,6 @@ class CentralManagerDelegate:
             await future
         finally:
             del self._disconnect_futures[peripheral.identifier()]
-
-    def changed_is_scanning(self, is_scanning: bool) -> None:
-        if is_scanning:
-            if self._did_start_scanning_event:
-                self._did_start_scanning_event.set()
-        else:
-            if self._did_stop_scanning_event:
-                self._did_stop_scanning_event.set()
 
     # Protocol Functions
 

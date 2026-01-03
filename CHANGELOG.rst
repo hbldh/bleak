@@ -16,6 +16,14 @@ Added
 * Added type hints and documentation for ``use_cached`` kwarg for ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in ``BleakClient``.
 * Added support for ``"use_cached"`` kwarg to ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in BlueZ backend.
 
+Changed
+-------
+* Changed start/stop scanning on CoreBluetooth so that the ``isScanning`` property is not checked anymore.
+
+Fixed
+-----
+* Fixed a potential deadlock when turning off Bluetooth manually while starting scanning on CoreBluetooth.
+
 `2.1.1`_ (2025-12-31)
 =====================
 
