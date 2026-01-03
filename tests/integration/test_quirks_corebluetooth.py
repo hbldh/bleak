@@ -20,8 +20,22 @@ from CoreBluetooth import (
 )
 
 from bleak import BleakScanner
+from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
+
+
+def get_central_manager_delegate(
+    scanner: BleakScanner,
+) -> CentralManagerDelegate:
+    """Get the private CentralManagerDelegate Object from the scanner."""
+    backend = scanner._backend  # pyright: ignore[reportPrivateUsage]
+    assert isinstance(
+        backend,
+        BleakScannerCoreBluetooth,
+    )
+    central_manager_delegate = backend._manager  # pyright: ignore[reportPrivateUsage]
+    return central_manager_delegate
 
 
 @pytest.mark.parametrize(
@@ -91,13 +105,7 @@ async def test_bluetooth_availability(
 
     # Unfortunately it is not possible to modify the bluetooth state on a macOS pro
     # programmatically. Therefore, we use mocking to emulate various states.
-    backend = scanner._backend  # pyright: ignore[reportPrivateUsage]
-    assert isinstance(
-        backend,
-        BleakScannerCoreBluetooth,
-    )
-    central_manager_delegate = backend._manager  # pyright: ignore[reportPrivateUsage]
-
+    central_manager_delegate = get_central_manager_delegate(scanner)
     mock_manager = Mock(wraps=central_manager_delegate.central_manager)
     mock_manager.state.return_value = state
     if authorization is not None:
@@ -115,3 +123,31 @@ async def test_bluetooth_availability(
             pass
 
     assert exc_info.value.reason == expected_reason
+
+
+async def test_isScanning_observer(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """
+    Normally in the integration tests, the 'CBCentralManager.isScanning()' flag always
+    is set correctly after calling 'scanForPeripheralsWithServices_options_' or 'stopScan'.
+    But there may be cases, where the 'isScanning' flag is not updated immediately and we have
+    to wait until the 'isScanning' observer is called. This test ensures that the observer is called
+    correctly in such cases.
+    """
+
+    scanner = BleakScanner()
+
+    central_manager_delegate = get_central_manager_delegate(scanner)
+    mock_manager = Mock(wraps=central_manager_delegate.central_manager)
+    monkeypatch.setattr(
+        central_manager_delegate,
+        "central_manager",
+        mock_manager,
+    )
+
+    # Simulate that isScanning is alway False, so that the future from the observer is awaited
+    mock_manager.isScanning.return_value = False
+    async with scanner:
+        # Simulate that isScanning is alway True, so that the future from the observer is awaited
+        mock_manager.isScanning.return_value = True
