@@ -56,7 +56,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         self = objc.super(ObjcPeripheralDelegate, self).init()  # type: ignore[assignment]
 
         if self is None:
-            return None
+            return None  # pragma: no cover
 
         self.py_delegate = py_delegate
 
@@ -79,7 +79,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         )
 
     @external_thread_callback
-    def peripheral_didDiscoverIncludedServicesForService_error_(
+    def peripheral_didDiscoverIncludedServicesForService_error_(  # pragma: no cover
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverIncludedServicesForService_error_")
@@ -188,7 +188,7 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
         )
 
     @external_thread_callback
-    def peripheralIsReadyToSendWriteWithoutResponse_(
+    def peripheralIsReadyToSendWriteWithoutResponse_(  # pragma: no cover
         self, peripheral: CBPeripheral
     ) -> None:
         logger.debug("peripheralIsReadyToSendWriteWithoutResponse_")
@@ -228,31 +228,25 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
             error,
         )
 
-    # Bleak currently doesn't use the callbacks below other than for debug logging
-
     @external_thread_callback
-    def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
+    def peripheralDidUpdateName_(  # pragma: no cover
+        self, peripheral: CBPeripheral
+    ) -> None:
         logger.debug("peripheralDidUpdateName_")
-
-        try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_name,
-            peripheral,
-            peripheral.name(),
+        logger.debug(
+            f"name of {peripheral.identifier()} changed to {peripheral.name()}"
         )
+        # Currently not used in Bleak
 
     @external_thread_callback
-    def peripheral_didModifyServices_(
+    def peripheral_didModifyServices_(  # pragma: no cover
         self, peripheral: CBPeripheral, invalidatedServices: NSArray[CBService]
     ) -> None:
         logger.debug("peripheral_didModifyServices_")
-
-        try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_modify_services,
-            peripheral,
-            invalidatedServices,
+        logger.debug(
+            f"{peripheral.identifier()} invalidated services: {invalidatedServices}"
         )
+        # Currently not used in Bleak
 
 
 class PeripheralDelegate:
@@ -683,15 +677,3 @@ class PeripheralDelegate:
             future.set_exception(exception)
         else:
             future.set_result(rssi)
-
-    # Bleak currently doesn't use the callbacks below other than for debug logging
-
-    def did_update_name(self, peripheral: CBPeripheral, name: str) -> None:
-        logger.debug(f"name of {peripheral.identifier()} changed to {name}")
-
-    def did_modify_services(
-        self, peripheral: CBPeripheral, invalidated_services: NSArray[CBService]
-    ) -> None:
-        logger.debug(
-            f"{peripheral.identifier()} invalidated services: {invalidated_services}"
-        )

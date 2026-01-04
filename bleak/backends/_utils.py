@@ -21,7 +21,7 @@ def try_call_soon_threadsafe(
         event_loop.call_soon_threadsafe(callback, *args)
     except RuntimeError:
         # Likely caused by loop being closed
-        logger.debug("unraisable exception", exc_info=True)
+        logger.debug("unraisable exception", exc_info=True)  # pragma: no cover
 
 
 _P = ParamSpec("_P")
