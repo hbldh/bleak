@@ -34,7 +34,11 @@ from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
-from bleak.backends.corebluetooth.utils import cb_uuid_to_str
+from bleak.backends.corebluetooth.utils import (
+    cb_uuid_to_str,
+    is_descriptor_nsnumber,
+    is_descriptor_nsstring,
+)
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
@@ -317,12 +321,14 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         output = await self._delegate.read_descriptor(
             descriptor.obj, use_cached=use_cached
         )
-        if isinstance(
-            output, str
-        ):  # Sometimes a `pyobjc_unicode`or `__NSCFString` is returned and they can be used as regular Python strings.
-            value = bytearray(output.encode("utf-8"))
-        else:  # _NSInlineData
-            value = bytearray(output)  # value.getBytes_length_(None, len(value))
+
+        if is_descriptor_nsnumber(output, descriptor.uuid):
+            value = bytearray(int(output).to_bytes(2, byteorder="little"))
+        elif is_descriptor_nsstring(output, descriptor.uuid):
+            value = bytearray(output.encode())
+        else:
+            value = bytearray(output)
+
         logger.debug("Read Descriptor %d : %r", descriptor.handle, value)
         return value
 
