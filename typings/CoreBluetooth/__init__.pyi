@@ -266,3 +266,11 @@ class CBDescriptor(CBAttribute):
     def value(self) -> Optional[Any]: ...
     # Undocumented property
     def handle(self) -> int: ...
+
+CBUUIDCharacteristicExtendedPropertiesString: NSString
+CBUUIDCharacteristicUserDescriptionString: NSString
+CBUUIDClientCharacteristicConfigurationString: NSString
+CBUUIDServerCharacteristicConfigurationString: NSString
+CBUUIDCharacteristicFormatString: NSString
+CBUUIDCharacteristicAggregateFormatString: NSString
+CBUUIDL2CAPPSMCharacteristicString: NSString

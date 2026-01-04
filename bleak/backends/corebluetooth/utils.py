@@ -5,9 +5,15 @@ if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
 
-from typing import Optional, overload
+from typing import Any, Optional, TypeGuard, overload
 
-from CoreBluetooth import CBUUID
+from CoreBluetooth import (
+    CBUUID,
+    CBUUIDCharacteristicExtendedPropertiesString,
+    CBUUIDCharacteristicUserDescriptionString,
+    CBUUIDClientCharacteristicConfigurationString,
+    CBUUIDServerCharacteristicConfigurationString,
+)
 from Foundation import NSNumber, NSString
 
 from bleak.uuids import normalize_uuid_str
@@ -68,3 +74,26 @@ def to_optional_int(value: Optional[NSNumber]) -> Optional[int]:
         return None
 
     return int(value)
+
+
+# Most descriptors are returned as NSData (raw bytes), but some of them
+# are returned as NSNumber or NSString.
+# See: https://developer.apple.com/documentation/corebluetooth/characteristic-descriptors
+_DESCRIPTOR_TYPE_NSNUMBER = (
+    normalize_uuid_str(CBUUIDCharacteristicExtendedPropertiesString),  # 0x2900
+    normalize_uuid_str(CBUUIDClientCharacteristicConfigurationString),  # 0x2902
+    normalize_uuid_str(CBUUIDServerCharacteristicConfigurationString),  # 0x2903
+)
+_DESCRIPTOR_TYPE_NSSTRING = (
+    normalize_uuid_str(CBUUIDCharacteristicUserDescriptionString),  # 0x2901
+)
+
+
+def is_descriptor_nsnumber(value: Any, descriptor_uuid: str) -> TypeGuard[NSNumber]:
+    """Check if descriptor value is returned as NSNumber by CoreBluetooth."""
+    return descriptor_uuid in _DESCRIPTOR_TYPE_NSNUMBER
+
+
+def is_descriptor_nsstring(value: Any, descriptor_uuid: str) -> TypeGuard[NSString]:
+    """Check if descriptor value is returned as NSString by CoreBluetooth."""
+    return descriptor_uuid in _DESCRIPTOR_TYPE_NSSTRING
