@@ -82,7 +82,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self = objc.super(ObjcCentralManagerDelegate, self).init()  # type: ignore[assignment]
 
         if self is None:
-            return None
+            return None  # pragma: no cover
 
         self.py_delegate = py_delegate
 
