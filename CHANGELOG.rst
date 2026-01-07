@@ -19,6 +19,8 @@ Added
 Changed
 -------
 * Changed start/stop scanning on CoreBluetooth so that the ``isScanning`` property is not checked anymore.
+* Changed ``BleakClient.write_gatt_descriptor()`` to raise ``ValueError`` when attempting to write to the descriptor 0x2902 (Client Characteristic Configuration Descriptor, CCCD). Use ``start_notify()`` and ``stop_notify()`` instead.
+
 
 Fixed
 -----
