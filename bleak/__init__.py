@@ -37,7 +37,7 @@ from bleak.backends.scanner import (
 )
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
-from bleak.uuids import normalize_uuid_str
+from bleak.uuids import normalize_uuid_16, normalize_uuid_str
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -926,8 +926,20 @@ class BleakClient:
 
         Raises:
             BleakError: if the descriptor could not be found.
+            ValueError: if attempting to write to the Client Characteristic
+                Configuration Descriptor (CCCD, UUID 0x2902).
             backend-specific exceptions: if the read operation failed.
 
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
+
+        # Some backends do not allow allowing writing Client Characteristic
+        # Configuration Descriptor (CCCD) directly and will raise an OS-specific
+        # error. Instead we check for this here and raise a common exception for
+        # consistent cross-platform behavior.
+        if descriptor.uuid == normalize_uuid_16(0x2902):
+            raise ValueError(
+                "Cannot write to CCCD (0x2902) directly. Use start_notify() or stop_notify() instead."
+            )
+
         await self._backend.write_gatt_descriptor(descriptor, data)
