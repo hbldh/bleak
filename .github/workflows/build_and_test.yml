@@ -83,10 +83,12 @@ jobs:
         run: |
           ./.github/alpine-vm/vm-ssh.sh '
             bluetoothctl --version
+            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> ~/.profile
+            source ~/.profile
             uv python install ${{ matrix.python-version }}
             uv python pin ${{ matrix.python-version }}
-            poetry env use ${{ matrix.python-version }}
-            poetry install --only main,test
+            uv tool install tox --with tox-uv
+            uv tool install poetry
           '
 
       - name: Run pytest in VM
@@ -95,7 +97,7 @@ jobs:
             export FORCE_COLOR=1
             export CI=true
             export GITHUB_ACTIONS=true
-            poetry run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+            tox -e py -- --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
           '
 
       - name: Upload coverage reports to Codecov
