@@ -9,6 +9,13 @@ from typing import Any, Optional, TypeGuard, overload
 
 from CoreBluetooth import (
     CBUUID,
+    CBManagerState,
+    CBManagerStatePoweredOff,
+    CBManagerStatePoweredOn,
+    CBManagerStateResetting,
+    CBManagerStateUnauthorized,
+    CBManagerStateUnknown,
+    CBManagerStateUnsupported,
     CBUUIDCharacteristicExtendedPropertiesString,
     CBUUIDCharacteristicUserDescriptionString,
     CBUUIDClientCharacteristicConfigurationString,
@@ -97,3 +104,20 @@ def is_descriptor_nsnumber(value: Any, descriptor_uuid: str) -> TypeGuard[NSNumb
 def is_descriptor_nsstring(value: Any, descriptor_uuid: str) -> TypeGuard[NSString]:
     """Check if descriptor value is returned as NSString by CoreBluetooth."""
     return descriptor_uuid in _DESCRIPTOR_TYPE_NSSTRING
+
+
+_CB_MANAGER_STATE_MESSAGE = {
+    CBManagerStateUnknown: "Bluetooth in unknown state",
+    CBManagerStateResetting: "Bluetooth is resetting",
+    CBManagerStateUnsupported: "Bluetooth is unsupported",
+    CBManagerStateUnauthorized: "Bluetooth is unauthorized",
+    CBManagerStatePoweredOff: "Bluetooth powered off",
+    CBManagerStatePoweredOn: "Bluetooth powered on",
+}
+
+
+def cb_manager_state_message(state: CBManagerState) -> str:
+    """Get log message for CoreBluetooth manager state."""
+    return _CB_MANAGER_STATE_MESSAGE.get(
+        state, f"Unknown CBManagerState value: {state}"
+    )
