@@ -393,18 +393,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
-        logger.debug("Disconnecting ({%s})", self._device_path)
+        logger.debug("Disconnecting (%s)", self._device_path)
 
         if self._bus is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the D-Bus
             # connection.
-            logger.debug("already disconnected ({%s})", self._device_path)
+            logger.debug("already disconnected (%s)", self._device_path)
             return
 
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
-            logger.debug("already in progress ({%s})", self._device_path)
+            logger.debug("already in progress (%s)", self._device_path)
             async with async_timeout(10):
                 await self._disconnecting_event.wait()
         elif self.is_connected:
