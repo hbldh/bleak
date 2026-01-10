@@ -27,7 +27,6 @@ from CoreBluetooth import (
     CBManagerStatePoweredOn,
     CBManagerStateResetting,
     CBManagerStateUnauthorized,
-    CBManagerStateUnknown,
     CBManagerStateUnsupported,
     CBPeripheral,
 )
@@ -46,6 +45,7 @@ from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
 from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
+from bleak.backends.corebluetooth.utils import cb_manager_state_message
 from bleak.exc import (
     BleakBluetoothNotAvailableError,
     BleakBluetoothNotAvailableReason,
@@ -93,18 +93,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     @external_thread_callback
     def centralManagerDidUpdateState_(self, centralManager: CBCentralManager) -> None:
         logger.debug("centralManagerDidUpdateState_")
-        if centralManager.state() == CBManagerStateUnknown:
-            logger.debug("Cannot detect bluetooth device")
-        elif centralManager.state() == CBManagerStateResetting:
-            logger.debug("Bluetooth is resetting")
-        elif centralManager.state() == CBManagerStateUnsupported:
-            logger.debug("Bluetooth is unsupported")
-        elif centralManager.state() == CBManagerStateUnauthorized:
-            logger.debug("Bluetooth is unauthorized")
-        elif centralManager.state() == CBManagerStatePoweredOff:
-            logger.debug("Bluetooth powered off")
-        elif centralManager.state() == CBManagerStatePoweredOn:
-            logger.debug("Bluetooth powered on")
+        logger.debug(cb_manager_state_message(centralManager.state()))
 
         try_call_soon_threadsafe(
             self.py_delegate.event_loop,
