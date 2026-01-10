@@ -186,7 +186,7 @@ class CentralManagerDelegate:
 
         self.callbacks: dict[
             int,
-            Callable[[CBPeripheral, CBAdvertisementData, NSNumber], None] | None,
+            Callable[[CBPeripheral, CBAdvertisementData, NSNumber], None],
         ] = {}
         self._disconnect_callbacks: dict[NSUUID, DisconnectCallback] = {}
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
@@ -332,8 +332,7 @@ class CentralManagerDelegate:
         uuid_string = peripheral.identifier().UUIDString()
 
         for callback in self.callbacks.values():
-            if callback:
-                callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
+            callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
 
         logger.debug(
             "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
