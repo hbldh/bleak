@@ -48,81 +48,99 @@ class DescrTestPeripheral:
     bleak_client: BleakClient
     bumble_peripheral: Device
     readable_descr: dict[UUID, Descriptor]
-    writable_descr: Descriptor
+    writable_descr: dict[UUID, Descriptor]
 
 
-STANDARD_DESCRIPTORS: list[tuple[UUID, bytes]] = [
+STANDARD_DESCRIPTORS: list[tuple[UUID, bytes, bytes]] = [
     (
         gatt.GATT_CHARACTERISTIC_EXTENDED_PROPERTIES_DESCRIPTOR,
         b"\x03\x00",  # Reliable Write + Writable Auxiliaries
+        b"\x01\x00",  # Only Reliable Write
     ),
     (
         gatt.GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
         "🚀 Description".encode(),  # Test Description
+        "🔄 Updated".encode(),  # Alternative Description
     ),
     (
         gatt.GATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR,
         b"\x01\x00",  # Notifications enabled
+        b"\x02\x00",  # Indications enabled
     ),
     (
         gatt.GATT_SERVER_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR,
         b"\x01\x00",  # Broadcasts enabled
+        b"\x00\x00",  # Broadcasts disabled
     ),
     (
         gatt.GATT_CHARACTERISTIC_PRESENTATION_FORMAT_DESCRIPTOR,
         b"\x04\x00\xad\x27\x01\x00\x00",  # uint8, exponent 0, unit temperature celsius
+        b"\x06\x00\x72\x27\x01\x00\x00",  # uint16, exponent 0, unit temperature celsius
     ),
     (
         gatt.GATT_CHARACTERISTIC_AGGREGATE_FORMAT_DESCRIPTOR,
         b"\x0a\x00\x0b\x00",  # Handles to two characteristics
+        b"\x0c\x00\x0d\x00\x0e\x00",  # Handles to three characteristics
     ),
     (
         gatt.GATT_VALID_RANGE_DESCRIPTOR,
         b"\x00\x00\x64\x00",  # Min: 0, Max: 100
+        b"\x0a\x00\x32\x00",  # Min: 10, Max: 50
     ),
     (
         gatt.GATT_EXTERNAL_REPORT_DESCRIPTOR,
         b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f",  # Example UUID
+        b"\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\x07\x06\x05\x04\x03\x02\x01\x00",  # Different UUID
     ),
     (
         gatt.GATT_REPORT_REFERENCE_DESCRIPTOR,
         b"\x01\x01",  # Report ID: 1, Report Type: Input
+        b"\x02\x02",  # Report ID: 2, Report Type: Output
     ),
     (
         gatt.GATT_NUMBER_OF_DIGITALS_DESCRIPTOR,
         b"\x08",  # 8 digital values
+        b"\x10",  # 16 digital values
     ),
     (
         gatt.GATT_VALUE_TRIGGER_SETTING_DESCRIPTOR,
         b"\x01\x00\x00",  # Condition: None, value: 0
+        b"\x02\x32\x00",  # Condition: different, value: 50
     ),
     (
         gatt.GATT_ENVIRONMENTAL_SENSING_CONFIGURATION_DESCRIPTOR,
         b"\x01",  # Trigger logic: OR
+        b"\x02",  # Trigger logic: AND
     ),
     (
         gatt.GATT_ENVIRONMENTAL_SENSING_MEASUREMENT_DESCRIPTOR,
         b"\x01\x00\x00",  # Flags: 0x01, Sampling Function: Unspecified, Measurement Period: 0
+        b"\x02\x01\x0a",  # Flags: 0x02, Sampling Function: Instantaneous, Measurement Period: 10
     ),
     (
         gatt.GATT_ENVIRONMENTAL_SENSING_TRIGGER_DESCRIPTOR,
         b"\x01\x00\x00",  # Flags: 0x01
+        b"\x02\x00\x00",  # Flags: 0x02
     ),
     (
         gatt.GATT_TIME_TRIGGER_DESCRIPTOR,
         b"\x01\x00\x00",  # Condition: None, value: 0
+        b"\x02\x3c\x00",  # Condition: different, value: 60
     ),
     (
         gatt.GATT_VALID_RANGE_AND_ACCURACY_DESCRIPTOR,
         b"\x00\x00\x64\x00\x01\x00",  # Min: 0, Max: 100, Accuracy: 1
+        b"\x14\x00\x50\x00\x02\x00",  # Min: 20, Max: 80, Accuracy: 2
     ),
     (
         CUSTOM_BINARY_DESCRIPTOR_UUID,
         b"\x01\x02\x03\x04",  # Custom binary data
+        b"\xaa\xbb\xcc\xdd",  # Different custom binary data
     ),
     (
         L2CAPPPSM_DESCRIPTOR_UUID,
         b"\x56\x30",  # PSM value 0x3056 in little-endian
+        b"\x78\x40",  # PSM value 0x4078 in little-endian
     ),
 ]
 
@@ -133,7 +151,7 @@ async def descr_test_peripheral(
 ) -> AsyncGenerator[DescrTestPeripheral, None]:
     readable_descriptors = {
         descr_uuid: Descriptor(descr_uuid, Descriptor.READABLE, descr_data)
-        for descr_uuid, descr_data in STANDARD_DESCRIPTORS
+        for descr_uuid, descr_data, _ in STANDARD_DESCRIPTORS
     }
 
     readable_descr_char = Characteristic(
@@ -144,18 +162,18 @@ async def descr_test_peripheral(
         list(readable_descriptors.values()),
     )
 
-    writable_descr = Descriptor(
-        gatt.GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
-        Descriptor.WRITEABLE,
-        b"-----------",
-    )
+    writable_descr = {
+        descr_uuid: Descriptor(descr_uuid, Descriptor.WRITEABLE, descr_data)
+        for descr_uuid, descr_data, _ in STANDARD_DESCRIPTORS
+    }
     writable_descr_char = Characteristic(
         WRITABLE_DESCR_CHAR_UUID,
         Characteristic.Properties.READ,
         Characteristic.Permissions.READABLE,
         b"",
-        [writable_descr],
+        list(writable_descr.values()),
     )
+
     await configure_and_power_on_bumble_peripheral(
         bumble_peripheral,
         services=[
@@ -180,10 +198,22 @@ async def descr_test_peripheral(
         )
 
 
-@pytest.mark.parametrize("descr_uuid,descr_data", STANDARD_DESCRIPTORS)
+@pytest.mark.parametrize(
+    "descr_uuid,descr_data",
+    [
+        pytest.param(
+            descr_uuid,
+            descr_data,
+            id=descr_uuid.to_hex_str(),
+        )
+        for descr_uuid, descr_data, _ in STANDARD_DESCRIPTORS
+    ],
+)
 @pytest.mark.asyncio(loop_scope="module")
 async def test_read_gatt_descriptor(
-    descr_test_peripheral: DescrTestPeripheral, descr_uuid: UUID, descr_data: bytes
+    descr_test_peripheral: DescrTestPeripheral,
+    descr_uuid: UUID,
+    descr_data: bytes,
 ):
     """
     Reading a string GATT descriptor is possible.
@@ -247,8 +277,25 @@ async def test_read_gatt_descriptor_use_cached(
     assert data == b"Original"
 
 
+@pytest.mark.parametrize(
+    "descr_uuid,descr_data_1,descr_data_2",
+    [
+        pytest.param(
+            descr_uuid,
+            descr_data_1,
+            descr_data_2,
+            id=descr_uuid.to_hex_str(),
+        )
+        for descr_uuid, descr_data_1, descr_data_2 in STANDARD_DESCRIPTORS
+    ],
+)
 @pytest.mark.asyncio(loop_scope="module")
-async def test_write_gatt_descriptor(descr_test_peripheral: DescrTestPeripheral):
+async def test_write_gatt_descriptor(
+    descr_test_peripheral: DescrTestPeripheral,
+    descr_uuid: UUID,
+    descr_data_1: bytes,
+    descr_data_2: bytes,
+):
     """Writing a GATT descriptor is possible."""
 
     characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
@@ -256,17 +303,22 @@ async def test_write_gatt_descriptor(descr_test_peripheral: DescrTestPeripheral)
     )
     assert characteristic
 
-    descriptor = characteristic.get_descriptor(
-        gatt.GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR.to_hex_str()
-    )
+    descriptor = characteristic.get_descriptor(descr_uuid.to_hex_str())
     assert descriptor
 
     # Set data to a known value
-    descr_test_peripheral.writable_descr.value = b"Original"
+    descr_test_peripheral.writable_descr[descr_uuid].value = descr_data_1
 
-    await descr_test_peripheral.bleak_client.write_gatt_descriptor(
-        descriptor, b"Changed"
-    )
+    if descr_uuid == gatt.GATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR:
+        # writing CCCD should raise ValueError
+        with pytest.raises(ValueError, match="Cannot write to CCCD"):
+            await descr_test_peripheral.bleak_client.write_gatt_descriptor(
+                descriptor, descr_data_2
+            )
+    else:
+        await descr_test_peripheral.bleak_client.write_gatt_descriptor(
+            descriptor, descr_data_2
+        )
 
-    # Verify the data is as expected
-    assert descr_test_peripheral.writable_descr.value == b"Changed"  # type: ignore  # (missing type hints in bumble)
+        # Verify the data is as expected
+        assert descr_test_peripheral.writable_descr[descr_uuid].value == descr_data_2  # type: ignore  # (missing type hints in bumble)
