@@ -60,8 +60,8 @@ Get Started!
 
 Ready to contribute? Here's how to set up ``bleak`` for local development.
 
-You will need `Git <https://git-scm.com>`_ and `Poetry <https://python-poetry.org>`_
-and your favorite text editor. And Python of course.
+You will need `Git <https://git-scm.com>`_, `Poetry <https://python-poetry.org>`_,
+`Tox <https://tox.wiki>`_ and your favorite text editor. And Python of course.
 
 1. Fork the ``bleak`` repo on GitHub.
 2. Clone your fork locally::
@@ -79,17 +79,25 @@ and your favorite text editor. And Python of course.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass linting and the tests::
+5. When you're done making changes, check that your changes pass linting, type checking and the tests::
+ 
+    $ tox
 
-    $ poetry run isort .
-    $ poetry run black .
-    $ poetry run flake8
-    $ poetry run pytest
+   Alternatively, you can run the checks manually::
+
+    $ tox -e typecheck
+    $ tox -e lint
+    $ tox -e py310  # or any other supported Python version
 
 6. Additionally, you can run integration tests by adding the ``--bleak-hci-transport`` argument to ``pytest``.
 For more information, see `tests/integration/README.rst <tests/integration/README.rst>`_.
 
-  $ poetry run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+    $ tox -- --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+
+   Alternatively, you can run the checks only for one Python version, because integration tests are slow::
+
+    $ tox -e py310 -- --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+
 
 7. Commit your changes and push your branch to GitHub::
 

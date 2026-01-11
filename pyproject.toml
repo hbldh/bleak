@@ -63,6 +63,10 @@ pytest-asyncio = "^1.2.0"
 pytest-cov = "^7.0.0 "
 bumble = "^0.0.220"
 
+[tool.poetry.group.typecheck.dependencies]
+mypy = "^1.19.1"
+pyright = "^1.1.408"
+
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -76,12 +80,13 @@ extend_skip = [".buildozer", "docs"]
 [tool.mypy]
 python_version = "3.10"
 disable_error_code = ["import-not-found"]
-exclude = "(.venv|kivy|recipes)/"
+exclude = "(.venv|kivy|recipes|.tox)/"
 mypy_path = "typings"
+packages = ["bleak", "tests", "examples"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
+exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", ".tox/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
