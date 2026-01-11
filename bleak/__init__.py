@@ -930,6 +930,9 @@ class BleakClient:
                 Configuration Descriptor (CCCD, UUID 0x2902).
             backend-specific exceptions: if the read operation failed.
 
+        .. versionchanged: unreleased
+            Now raises ``ValueError`` when attempting to write to the CCCD
+            instead of backend-specific errors.
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
 
