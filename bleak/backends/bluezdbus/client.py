@@ -31,7 +31,11 @@ from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
-from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
+from bleak.backends.bluezdbus.utils import (
+    assert_gatt_reply,
+    assert_reply,
+    get_dbus_authenticator,
+)
 from bleak.backends.bluezdbus.version import BlueZFeatures
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
@@ -722,7 +726,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         value = bytearray(reply.body[0])
@@ -781,7 +785,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         value = bytearray(reply.body[0])
@@ -822,7 +826,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         logger.debug(
@@ -867,7 +871,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         logger.debug(

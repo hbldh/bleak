@@ -6,13 +6,20 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on Linux"
 
 import os
+import re
 from typing import Optional
 
 from dbus_fast.auth import AuthExternal
 from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
-from bleak.exc import BleakDBusError, BleakError
+from bleak.backends.bluezdbus import defs
+from bleak.exc import (
+    BleakDBusError,
+    BleakError,
+    BleakGATTProtocolError,
+    BleakGATTProtocolErrorCode,
+)
 
 
 def assert_reply(reply: Message) -> None:
@@ -26,6 +33,75 @@ def assert_reply(reply: Message) -> None:
         assert reply.error_name
         raise BleakDBusError(reply.error_name, reply.body)
     assert reply.message_type == MessageType.METHOD_RETURN
+
+
+def assert_gatt_reply(reply: Message) -> None:
+    """
+    Checks that a D-Bus message is a valid reply.
+
+    Like :func:`assert_reply`, but has special handling for GATT protocol errors.
+
+    Raises:
+        BleakGATTProtocolError: for specific GATT protocol errors.
+        BleakDBusError: if the message type is ``MessageType.ERROR``
+        AssertionError: if the message type is not ``MessageType.METHOD_RETURN``
+    """
+
+    # BlueZ has specific errors for some GATT protocol errors, so we
+    # have to turn them back into the generic BleakGATTProtocolError
+    # with the correct code.
+
+    if reply.error_name == defs.BLUEZ_ERROR_NOT_PERMITTED:
+        # Same error is used for both read and write not permitted, so we have
+        # to use the message to discriminate.
+        if reply.body and reply.body[0].startswith("Read"):
+            raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.READ_NOT_PERMITTED)
+
+        raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.WRITE_NOT_PERMITTED)
+
+    if reply.error_name == defs.BLUEZ_ERROR_NOT_SUPPORTED:
+        raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.REQUEST_NOT_SUPPORTED)
+
+    if reply.error_name == defs.BLUEZ_ERROR_NOT_AUTHORIZED:
+        raise BleakGATTProtocolError(
+            BleakGATTProtocolErrorCode.INSUFFICIENT_AUTHORIZATION
+        )
+
+    if (
+        # According to BlueZ docs, we are supposed to get
+        # BLUEZ_ERROR_INVALID_VALUE_LENGTH, but in practice, we seem
+        # to get BLUEZ_ERROR_INVALID_ARGUMENT instead.
+        # BLUEZ_ERROR_INVALID_ARGUMENT could also be INVALID_OFFSET
+        # though.
+        reply.error_name == defs.BLUEZ_ERROR_INVALID_ARGUMENT
+        or reply.error_name == defs.BLUEZ_ERROR_INVALID_VALUE_LENGTH
+    ):
+        raise BleakGATTProtocolError(
+            BleakGATTProtocolErrorCode.INVALID_ATTRIBUTE_VALUE_LENGTH
+        )
+
+    if reply.error_name == defs.BLUEZ_ERROR_IMPROPERLY_CONFIGURED:
+        raise BleakGATTProtocolError(
+            BleakGATTProtocolErrorCode.CCCD_IMPROPERLY_CONFIGURED
+        )
+
+    if (
+        reply.error_name == defs.BLUEZ_ERROR_FAILED
+        and reply.body
+        and (
+            # Unfortunately, BlueZ makes us scrape the string to get the
+            # error code in this case.
+            match := re.match(
+                r"^Operation failed with ATT error: (0x[0-9a-fA-F]+)",
+                reply.body[0],
+            )
+        )
+    ):
+        raise BleakGATTProtocolError(
+            BleakGATTProtocolErrorCode(int(match.group(1), 16))
+        )
+
+    assert_reply(reply)
 
 
 def extract_service_handle_from_path(path: str) -> int:
@@ -56,6 +132,11 @@ def get_dbus_authenticator() -> Optional[AuthExternal]:
     except ValueError:
         pass
 
+    auth = None
+    if uid is not None:
+        auth = AuthExternal(uid=uid)
+
+    return auth
     auth = None
     if uid is not None:
         auth = AuthExternal(uid=uid)
