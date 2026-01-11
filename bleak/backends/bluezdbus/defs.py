@@ -21,6 +21,11 @@ GATT_SERVICE_INTERFACE = "org.bluez.GattService1"
 GATT_CHARACTERISTIC_INTERFACE = "org.bluez.GattCharacteristic1"
 GATT_DESCRIPTOR_INTERFACE = "org.bluez.GattDescriptor1"
 
+# BlueZ error names
+BLUEZ_ERROR_DOES_NOT_EXIST = "org.bluez.Error.DoesNotExist"
+BLUEZ_ERROR_FAILED = "org.bluez.Error.Failed"
+BLUEZ_ERROR_IN_PROGRESS = "org.bluez.Error.InProgress"
+BLUEZ_ERROR_NOT_READY = "org.bluez.Error.NotReady"
 
 # D-Bus properties for interfaces
 # https://github.com/bluez/bluez/blob/master/doc/org.bluez.Adapter.rst
