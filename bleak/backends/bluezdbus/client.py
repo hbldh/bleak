@@ -150,11 +150,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 async with AsyncExitStack() as stack:
                     # Each BLE connection session needs a new D-Bus connection to avoid a
                     # BlueZ quirk where notifications are automatically enabled on reconnect.
-                    self._bus = await MessageBus(
+                    self._bus = MessageBus(
                         bus_type=BusType.SYSTEM,
                         negotiate_unix_fd=True,
                         auth=get_dbus_authenticator(),
-                    ).connect()
+                    )
+                    # dbus-fast is weird and requires disconnect to be called
+                    # even if connect fails.
+                    stack.callback(self._bus.disconnect)
+                    await self._bus.connect()
 
                     stack.callback(self._cleanup_all)
 
@@ -367,23 +371,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             logger.debug("already disconnected (%s)", self._device_path)
             return
 
-        # Try to disconnect the System Bus.
-        try:
-            self._bus.disconnect()
-        except Exception as e:
-            logger.error(
-                "Attempt to disconnect system bus failed (%s): %s",
-                self._device_path,
-                e,
-            )
-        else:
-            # Critical to remove the `self._bus` object here to since it was
-            # closed above. If not, calls made to it later could lead to
-            # a stuck client.
-            self._bus = None
-
-            # Reset all stored services.
-            self.services = None
+        # Reset all stored services.
+        self.services = None
 
     @override
     async def disconnect(self) -> None:
@@ -407,27 +396,33 @@ class BleakClientBlueZDBus(BaseBleakClient):
             logger.debug("already in progress (%s)", self._device_path)
             async with async_timeout(10):
                 await self._disconnecting_event.wait()
-        elif self.is_connected:
+        else:
             self._disconnecting_event = asyncio.Event()
             try:
-                # Try to disconnect the actual device/peripheral
-                reply = await self._bus.call(
-                    Message(
-                        destination=defs.BLUEZ_SERVICE,
-                        path=self._device_path,
-                        interface=defs.DEVICE_INTERFACE,
-                        member="Disconnect",
+                if self.is_connected:
+                    # Try to disconnect the actual device/peripheral
+                    reply = await self._bus.call(
+                        Message(
+                            destination=defs.BLUEZ_SERVICE,
+                            path=self._device_path,
+                            interface=defs.DEVICE_INTERFACE,
+                            member="Disconnect",
+                        )
                     )
-                )
-                assert_reply(reply)
-                async with async_timeout(10):
-                    await self._disconnecting_event.wait()
+                    assert_reply(reply)
+
+                    async with async_timeout(10):
+                        await self._disconnecting_event.wait()
             finally:
                 self._disconnecting_event = None
 
+            self._bus.disconnect()
+            await self._bus.wait_for_disconnect()
+            self._bus = None
+
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
-        assert self._bus is None
+        assert self.services is None
 
     async def _pair(self) -> Message:
         """
