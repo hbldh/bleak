@@ -503,7 +503,7 @@ class BlueZManager:
                         try:
                             assert_reply(reply)
                         except BleakDBusError as ex:
-                            if ex.dbus_error != "org.bluez.Error.NotReady":
+                            if ex.dbus_error != defs.BLUEZ_ERROR_NOT_READY:
                                 raise
                         else:
                             # remove the filters

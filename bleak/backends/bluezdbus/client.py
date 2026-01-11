@@ -277,7 +277,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             # cases, retrying will connect successfully.
                             # Note: this error was added in BlueZ 6.62.
                             if (
-                                reply.error_name == "org.bluez.Error.Failed"
+                                reply.error_name == defs.BLUEZ_ERROR_FAILED
                                 and reply.body
                                 and reply.body[0] == "le-connection-abort-by-local"
                             ):
@@ -527,7 +527,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
             assert_reply(reply)
         except BleakDBusError as e:
-            if e.dbus_error == "org.bluez.Error.DoesNotExist":
+            if e.dbus_error == defs.BLUEZ_ERROR_DOES_NOT_EXIST:
                 raise BleakDeviceNotFoundError(
                     self.address, f"Device with address {self.address} was not found."
                 ) from e
@@ -715,7 +715,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying characteristic ReadValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
@@ -774,7 +774,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying descriptor ReadValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
@@ -815,7 +815,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying characteristic WriteValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
@@ -860,7 +860,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying descriptor WriteValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
