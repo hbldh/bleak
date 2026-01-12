@@ -24,6 +24,7 @@ from typing import Any, Optional
 import objc
 from CoreBluetooth import (
     CBUUID,
+    CBATTErrorDomain,
     CBCharacteristic,
     CBCharacteristicWriteType,
     CBCharacteristicWriteWithResponse,
@@ -38,7 +39,7 @@ from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.backends.client import NotifyCallback
-from bleak.exc import BleakError
+from bleak.exc import BleakError, BleakGATTProtocolError
 
 logger = logging.getLogger(__name__)
 
@@ -576,7 +577,11 @@ class PeripheralDelegate:
             return
 
         if error is not None:
-            exception = BleakError(f"Failed to read characteristic {c_handle}: {error}")
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(f"Failed to read characteristic {c_handle}: {error}")
+            )
             future.set_exception(exception)
         else:
             logger.debug("Read characteristic value")
@@ -595,8 +600,12 @@ class PeripheralDelegate:
             logger.warning("Unexpected event didUpdateValueForDescriptor")
             return
         if error is not None:
-            exception = BleakError(
-                f"Failed to read descriptor {descriptor.handle()}: {error}"
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(
+                    f"Failed to read descriptor {descriptor.handle()}: {error}"
+                )
             )
             future.set_exception(exception)
         else:
@@ -614,8 +623,12 @@ class PeripheralDelegate:
         if not future:
             return  # event only expected on write with response
         if error is not None:
-            exception = BleakError(
-                f"Failed to write characteristic {characteristic.handle()}: {error}"
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(
+                    f"Failed to write characteristic {characteristic.handle()}: {error}"
+                )
             )
             future.set_exception(exception)
         else:
@@ -633,9 +646,14 @@ class PeripheralDelegate:
             logger.warning("Unexpected event didWriteValueForDescriptor")
             return
         if error is not None:
-            exception = BleakError(
-                f"Failed to write descriptor {descriptor.handle()}: {error}"
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(
+                    f"Failed to write descriptor {descriptor.handle()}: {error}"
+                )
             )
+
             future.set_exception(exception)
         else:
             logger.debug("Write Descriptor Value")

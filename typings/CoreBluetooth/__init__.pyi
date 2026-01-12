@@ -12,11 +12,15 @@ from Foundation import (
     NSData,
     NSDictionary,
     NSError,
+    NSErrorDomain,
     NSNumber,
     NSObject,
     NSString,
 )
 from libdispatch import dispatch_queue_t
+
+CBErrorDomain: NSErrorDomain
+CBATTErrorDomain: NSErrorDomain
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...
