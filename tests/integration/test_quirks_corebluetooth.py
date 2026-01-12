@@ -7,8 +7,10 @@ if sys.platform != "darwin":
     # unreachable, but makes the type checkers happy
     assert False
 
+from typing import Any, Optional, cast
 from unittest.mock import Mock
 
+from bumble.device import Device
 from CoreBluetooth import (
     CBManagerAuthorizationDenied,
     CBManagerAuthorizationRestricted,
@@ -17,11 +19,31 @@ from CoreBluetooth import (
     CBManagerStateUnauthorized,
     CBManagerStateUnknown,
     CBManagerStateUnsupported,
+    CBPeripheral,
 )
+from Foundation import NSDictionary
 
-from bleak import BleakScanner
+from bleak import BleakClient, BleakScanner
+from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
 from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
+from tests.integration.conftest import (
+    configure_and_power_on_bumble_peripheral,
+    find_ble_device,
+)
+
+
+def get_central_manager_delegate(
+    scanner: BleakScanner,
+) -> CentralManagerDelegate:
+    """Get the private CentralManagerDelegate Object from the scanner."""
+    backend = scanner._backend  # pyright: ignore[reportPrivateUsage]
+    assert isinstance(
+        backend,
+        BleakScannerCoreBluetooth,
+    )
+    central_manager_delegate = backend._manager  # pyright: ignore[reportPrivateUsage]
+    return central_manager_delegate
 
 
 @pytest.mark.parametrize(
@@ -91,13 +113,7 @@ async def test_bluetooth_availability(
 
     # Unfortunately it is not possible to modify the bluetooth state on a macOS pro
     # programmatically. Therefore, we use mocking to emulate various states.
-    backend = scanner._backend  # pyright: ignore[reportPrivateUsage]
-    assert isinstance(
-        backend,
-        BleakScannerCoreBluetooth,
-    )
-    central_manager_delegate = backend._manager  # pyright: ignore[reportPrivateUsage]
-
+    central_manager_delegate = get_central_manager_delegate(scanner)
     mock_manager = Mock(wraps=central_manager_delegate.central_manager)
     mock_manager.state.return_value = state
     if authorization is not None:
@@ -115,3 +131,44 @@ async def test_bluetooth_availability(
             pass
 
     assert exc_info.value.reason == expected_reason
+
+
+async def test_didFailToConnectPeripheral_error(
+    bumble_peripheral: Device,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """
+    Connecting to a BLE device fails when didFailToConnectPeripheral is called.
+
+    According to Apple's documentation, this delegate is called to indicate "transient
+    issues". Unfortunately it is not possible to create this "transient issues" with a
+    standard HCI like the one used for the integration tests. Therefore, a mock is used
+    to simulate this behavior.
+    """
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    device = await find_ble_device(bumble_peripheral)
+
+    central_manager_delegate = cast(CentralManagerDelegate, device.details[1])
+    mock_manager = Mock(wraps=central_manager_delegate.central_manager)
+    monkeypatch.setattr(
+        central_manager_delegate,
+        "central_manager",
+        mock_manager,
+    )
+
+    def simulate_connection_failure(
+        peripheral: CBPeripheral, options: Optional[NSDictionary[str, Any]]
+    ):
+        # Simulate connection failure by calling the delegate method
+        central_manager_delegate.objc_delegate.centralManager_didFailToConnectPeripheral_error_(
+            mock_manager,
+            peripheral,
+            Mock(localizedDescription="Simulated connection error"),
+        )
+
+    mock_manager.connectPeripheral_options_.side_effect = simulate_connection_failure
+
+    with pytest.raises(Exception, match="failed to connect"):
+        async with BleakClient(device):
+            pass
