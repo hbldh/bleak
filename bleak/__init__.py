@@ -710,7 +710,12 @@ class BleakClient:
         Raises:
             BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
-            backend-specific exceptions: if the read operation failed.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+            backend-specific exceptions: in rare cases
+
+        .. versionchanged:: unreleased
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
         """
         characteristic = _resolve_characteristic(char_specifier, self.services)
         return await self._backend.read_gatt_char(
@@ -761,10 +766,16 @@ class BleakClient:
         Raises:
             BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
-            backend-specific exceptions: if the write operation failed.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+                Only applies when ``response=True``.
+            backend-specific exceptions: in rare cases.
 
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
+
+        .. versionchanged:: unreleased
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
 
         Example::
 
@@ -896,13 +907,17 @@ class BleakClient:
                 If ``True``, the cached value will be returned instead of
                 performing a new read operation. May be ignored by some backends.
 
-        Raises:
-            BleakError: if the descriptor could not be found.
-            backend-specific exceptions: if the read operation failed.
-
         Returns:
             The read data.
 
+        Raises:
+            BleakError: if the descriptor could not be found.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+            backend-specific exceptions: in rare cases.
+
+        .. versionchanged:: unreleased
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
         return await self._backend.read_gatt_descriptor(
@@ -928,11 +943,16 @@ class BleakClient:
             BleakError: if the descriptor could not be found.
             ValueError: if attempting to write to the Client Characteristic
                 Configuration Descriptor (CCCD, UUID 0x2902).
-            backend-specific exceptions: if the read operation failed.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+            backend-specific exceptions: in rare cases.
 
-        .. versionchanged: unreleased
+        .. versionchanged:: unreleased
             Now raises ``ValueError`` when attempting to write to the CCCD
-            instead of backend-specific errors.
+            instead of backend-specific exceptions.
+
+        .. versionchanged:: unreleased
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
 
