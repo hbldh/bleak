@@ -9,6 +9,7 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 from __future__ import annotations
 
 import sys
+import weakref
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -52,7 +53,9 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     CoreBluetooth peripheral manager delegate for bridging callbacks to asyncio.
     """
 
-    def initWithPyDelegate_(self, py_delegate: PeripheralDelegate) -> Optional[Self]:
+    def initWithPyDelegate_(
+        self, py_delegate: weakref.ReferenceType["PeripheralDelegate"]
+    ) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(ObjcPeripheralDelegate, self).init()  # type: ignore[assignment]
 
@@ -71,9 +74,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didDiscoverServices_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_services,
+            py_delegate.event_loop,
+            py_delegate.did_discover_services,
             peripheral,
             peripheral.services(),
             error,
@@ -92,9 +98,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didDiscoverCharacteristicsForService_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_characteristics_for_service,
+            py_delegate.event_loop,
+            py_delegate.did_discover_characteristics_for_service,
             peripheral,
             service,
             service.characteristics(),
@@ -110,9 +119,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didDiscoverDescriptorsForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_descriptors_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_discover_descriptors_for_characteristic,
             peripheral,
             characteristic,
             error,
@@ -127,9 +139,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didUpdateValueForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_value_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_update_value_for_characteristic,
             peripheral,
             characteristic,
             characteristic.value(),
@@ -145,9 +160,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didUpdateValueForDescriptor_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_value_for_descriptor,
+            py_delegate.event_loop,
+            py_delegate.did_update_value_for_descriptor,
             peripheral,
             descriptor,
             descriptor.value(),
@@ -163,9 +181,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didWriteValueForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_write_value_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_write_value_for_characteristic,
             peripheral,
             characteristic,
             error,
@@ -180,9 +201,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didWriteValueForDescriptor_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_write_value_for_descriptor,
+            py_delegate.event_loop,
+            py_delegate.did_write_value_for_descriptor,
             peripheral,
             descriptor,
             error,
@@ -204,9 +228,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didUpdateNotificationStateForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_notification_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_update_notification_for_characteristic,
             peripheral,
             characteristic,
             error,
@@ -221,9 +248,12 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didReadRSSI_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_read_rssi,
+            py_delegate.event_loop,
+            py_delegate.did_read_rssi,
             peripheral,
             int(rssi),
             error,
@@ -254,7 +284,7 @@ class PeripheralDelegate:
     """macOS conforming python class for managing the PeripheralDelegate for BLE"""
 
     def __init__(self, peripheral: CBPeripheral) -> None:
-        delegate = ObjcPeripheralDelegate.alloc().initWithPyDelegate_(self)
+        delegate = ObjcPeripheralDelegate.alloc().initWithPyDelegate_(weakref.ref(self))
         assert delegate is not None
         self.objc_delegate = delegate
 

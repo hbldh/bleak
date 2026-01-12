@@ -6,6 +6,7 @@ manage CoreBluetooth services and resources on the Central End
 from __future__ import annotations
 
 import sys
+import weakref
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -76,7 +77,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     """
 
     def initWithPyDelegate_(
-        self, py_delegate: CentralManagerDelegate
+        self, py_delegate: weakref.ReferenceType["CentralManagerDelegate"]
     ) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(ObjcCentralManagerDelegate, self).init()  # type: ignore[assignment]
@@ -95,9 +96,12 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         logger.debug("centralManagerDidUpdateState_")
         logger.debug(cb_manager_state_message(centralManager.state()))
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_state_event.set,
+            py_delegate.event_loop,
+            py_delegate.did_update_state_event.set,
         )
 
     @external_thread_callback
@@ -110,9 +114,12 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     ) -> None:
         logger.debug("centralManager_didDiscoverPeripheral_advertisementData_RSSI_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_peripheral,
+            py_delegate.event_loop,
+            py_delegate.did_discover_peripheral,
             central,
             peripheral,
             advertisementData,
@@ -125,9 +132,12 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     ) -> None:
         logger.debug("centralManager_didConnectPeripheral_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_connect_peripheral,
+            py_delegate.event_loop,
+            py_delegate.did_connect_peripheral,
             central,
             peripheral,
         )
@@ -141,9 +151,12 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     ) -> None:
         logger.debug("centralManager_didFailToConnectPeripheral_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_fail_to_connect_peripheral,
+            py_delegate.event_loop,
+            py_delegate.did_fail_to_connect_peripheral,
             centralManager,
             peripheral,
             error,
@@ -158,9 +171,12 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     ) -> None:
         logger.debug("centralManager_didDisconnectPeripheral_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_disconnect_peripheral,
+            py_delegate.event_loop,
+            py_delegate.did_disconnect_peripheral,
             central,
             peripheral,
             error,
@@ -177,7 +193,9 @@ class CentralManagerDelegate:
 
     def __init__(self) -> None:
         """macOS init function for NSObject"""
-        delegate = ObjcCentralManagerDelegate.alloc().initWithPyDelegate_(self)
+        delegate = ObjcCentralManagerDelegate.alloc().initWithPyDelegate_(
+            weakref.ref(self)
+        )
         assert delegate is not None
         self.objc_delegate = delegate
 
