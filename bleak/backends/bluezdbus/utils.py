@@ -49,15 +49,20 @@ def assert_gatt_reply(reply: Message) -> None:
 
     # BlueZ has specific errors for some GATT protocol errors, so we
     # have to turn them back into the generic BleakGATTProtocolError
-    # with the correct code.
+    # with the correct code. See create_gatt_dbus_error() in BlueZ source.
 
     if reply.error_name == defs.BLUEZ_ERROR_NOT_PERMITTED:
         # Same error is used for both read and write not permitted, so we have
         # to use the message to discriminate.
-        if reply.body and reply.body[0].startswith("Read"):
+        if reply.body and reply.body[0] == "Read not permitted":
             raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.READ_NOT_PERMITTED)
 
-        raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.WRITE_NOT_PERMITTED)
+        if reply.body and reply.body[0] == "Write not permitted":
+            raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.WRITE_NOT_PERMITTED)
+
+        # REVISIT: could also be "Not paired" which could be any of:
+        # INSUFFICIENT_AUTHENTICATION, INSUFFICIENT_ENCRYPTION, or
+        # INSUFFICIENT_ENCRYPTION_KEY_SIZE
 
     if reply.error_name == defs.BLUEZ_ERROR_NOT_SUPPORTED:
         raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.REQUEST_NOT_SUPPORTED)
@@ -67,18 +72,14 @@ def assert_gatt_reply(reply: Message) -> None:
             BleakGATTProtocolErrorCode.INSUFFICIENT_AUTHORIZATION
         )
 
-    if (
-        # According to BlueZ docs, we are supposed to get
-        # BLUEZ_ERROR_INVALID_VALUE_LENGTH, but in practice, we seem
-        # to get BLUEZ_ERROR_INVALID_ARGUMENT instead.
-        # BLUEZ_ERROR_INVALID_ARGUMENT could also be INVALID_OFFSET
-        # though.
-        reply.error_name == defs.BLUEZ_ERROR_INVALID_ARGUMENT
-        or reply.error_name == defs.BLUEZ_ERROR_INVALID_VALUE_LENGTH
-    ):
-        raise BleakGATTProtocolError(
-            BleakGATTProtocolErrorCode.INVALID_ATTRIBUTE_VALUE_LENGTH
-        )
+    if reply.error_name == defs.BLUEZ_ERROR_INVALID_ARGUMENT:
+        if reply.body and reply.body[0] == "Invalid offset":
+            raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.INVALID_OFFSET)
+
+        if reply.body and reply.body[0] == "Invalid Length":
+            raise BleakGATTProtocolError(
+                BleakGATTProtocolErrorCode.INVALID_ATTRIBUTE_VALUE_LENGTH
+            )
 
     if reply.error_name == defs.BLUEZ_ERROR_IMPROPERLY_CONFIGURED:
         raise BleakGATTProtocolError(
