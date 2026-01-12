@@ -953,7 +953,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     signature="a{sv}",
                 )
             )
-            assert_reply(reply)
+            assert_gatt_reply(reply)
 
             unix_fd = reply.unix_fds[0]
             self._notification_fds[characteristic.obj[0]] = unix_fd
@@ -968,7 +968,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="StartNotify",
                 )
             )
-            assert_reply(reply)
+            assert_gatt_reply(reply)
 
     @override
     async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
