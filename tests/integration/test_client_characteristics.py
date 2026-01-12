@@ -1,15 +1,18 @@
 import asyncio
 import dataclasses
+import sys
 from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from bumble.att import ATT_Error, ErrorCode
 from bumble.device import Connection, Device
 from bumble.gatt import Characteristic, CharacteristicValue, Service
 from bumble.transport.common import Transport
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.exc import BleakGATTProtocolError
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
     create_bumble_peripheral,
@@ -108,6 +111,34 @@ async def char_test_peripheral(
         )
 
 
+GATT_ERRORS = [
+    # These error codes are explicitly called out as possible errors from
+    # ATT_WRITE_REQ in the Bluetooth Core Specification. Commented-out codes
+    # are not possible to test, e.g. causes BlueZ to disconnect rather than
+    # return an error.
+    ErrorCode.INVALID_ATTRIBUTE_LENGTH,
+    ErrorCode.INSUFFICIENT_AUTHORIZATION,
+    # ErrorCode.INSUFFICIENT_AUTHENTICATION,
+    # ErrorCode.INSUFFICIENT_ENCRYPTION_KEY_SIZE,
+    # ErrorCode.INSUFFICIENT_ENCRYPTION,
+    ErrorCode.INVALID_HANDLE,
+    #
+    # Then these are specifically handled by BlueZ, so assumed to be
+    # possible in the wild. INVALID_OFFSET seems to trigger .InvalidArgs
+    # which is the same as INVALID_ATTRIBUTE_LENGTH, so not tested here.
+    ErrorCode.REQUEST_NOT_SUPPORTED,
+    # ErrorCode.INVALID_OFFSET,
+    ErrorCode.CCCD_IMPROPERLY_CONFIGURED,
+    #
+    # And allows custom error codes from higher layers.
+    ErrorCode(0xC0),  # Application Error
+    ErrorCode(0xE0),  # Common Profile or Service Error Codes
+]
+
+GATT_READ_ERRORS = GATT_ERRORS + [ErrorCode.READ_NOT_PERMITTED]
+GATT_WRITE_ERRORS = GATT_ERRORS + [ErrorCode.WRITE_NOT_PERMITTED]
+
+
 @pytest.mark.asyncio(loop_scope="module")
 async def test_read_gatt_char(
     char_test_peripheral: CharTestPeripheral,
@@ -141,6 +172,35 @@ async def test_read_gatt_char_use_cached(char_test_peripheral: CharTestPeriphera
     assert data == b"ORIGINAL"
 
 
+@pytest.mark.parametrize("gatt_error", GATT_READ_ERRORS)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_read_gatt_char_error(
+    char_test_peripheral: CharTestPeripheral, gatt_error: ErrorCode
+):
+    """
+    Reading a GATT characteristic passes back GATT errors correctly.
+    """
+
+    # TODO: should add a test option to allow not skipping if user is available
+    # to click through any permission prompts.
+    if sys.platform == "darwin" and gatt_error == ErrorCode.INSUFFICIENT_AUTHORIZATION:
+        pytest.skip(
+            "Apple asks for user permission via a prompt, which cannot be handled automatically."
+        )
+
+    def error_on_read(connection: Connection) -> bytes:
+        raise ATT_Error(gatt_error)
+
+    char_test_peripheral.read_characteristic.value = CharacteristicValue(
+        read=error_on_read
+    )
+
+    with pytest.raises(BleakGATTProtocolError) as exc_info:
+        await char_test_peripheral.bleak_client.read_gatt_char(READ_CHAR_UUID)
+
+    assert exc_info.value.code == gatt_error
+
+
 @pytest.mark.asyncio(loop_scope="module")
 async def test_write_gatt_char_with_response(char_test_peripheral: CharTestPeripheral):
     """Writing a GATT characteristic is possible."""
@@ -154,6 +214,37 @@ async def test_write_gatt_char_with_response(char_test_peripheral: CharTestPerip
 
     # Verify the new data was written correctly
     assert char_test_peripheral.write_characteristic.value == b"DATA"
+
+
+@pytest.mark.parametrize("gatt_error", GATT_WRITE_ERRORS)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_write_gatt_char_with_response_error(
+    char_test_peripheral: CharTestPeripheral, gatt_error: ErrorCode
+):
+    """
+    Writing a GATT characteristic propagates error codes correctly.
+    """
+
+    # TODO: should add a test option to allow not skipping if user is available
+    # to click through any permission prompts.
+    if sys.platform == "darwin" and gatt_error == ErrorCode.INSUFFICIENT_AUTHORIZATION:
+        pytest.skip(
+            "Apple asks for user permission via a prompt, which cannot be handled automatically."
+        )
+
+    def error_on_write(connection: Connection, value: bytes):
+        raise ATT_Error(gatt_error)
+
+    char_test_peripheral.write_characteristic.value = CharacteristicValue(
+        write=error_on_write
+    )
+
+    with pytest.raises(BleakGATTProtocolError) as exc_info:
+        await char_test_peripheral.bleak_client.write_gatt_char(
+            WRITE_WITH_RESPONSE_CHAR_UUID, b"DATA", response=True
+        )
+
+    assert exc_info.value.code == gatt_error
 
 
 @pytest.mark.asyncio(loop_scope="module")
