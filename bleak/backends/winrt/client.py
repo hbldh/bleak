@@ -66,7 +66,7 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
-from bleak.exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
+from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolError
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +122,7 @@ def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
 
     if status == GattCommunicationStatus.PROTOCOL_ERROR:
         assert result.protocol_error is not None
-        err = PROTOCOL_ERROR_CODES.get(result.protocol_error, "Unknown")
-        raise BleakError(
-            f"{fail_msg}: Protocol Error 0x{result.protocol_error:02X}: {err}"
-        )
+        raise BleakGATTProtocolError(result.protocol_error)
 
     if status == GattCommunicationStatus.ACCESS_DENIED:
         raise BleakError(f"{fail_msg}: Access Denied")
