@@ -2330,6 +2330,19 @@ lint = ["mypy (==1.15.0)", "pyright (==1.1.394)", "ruff (==0.9.7)"]
 test = ["pytest (>=8)"]
 
 [[package]]
+name = "rubicon-objc"
+version = "0.5.3"
+description = "A bridge between an Objective C runtime environment and Python."
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"rubicon\""
+files = [
+    {file = "rubicon_objc-0.5.3-py3-none-any.whl", hash = "sha256:31dedcda9be38435f5ec067906e1eea5d0ddb790330e98a22e94ff424758b415"},
+    {file = "rubicon_objc-0.5.3.tar.gz", hash = "sha256:74c25920c5951a05db9d3a1aac31d23816ec7dacc841a5b124d911b99ea71b9a"},
+]
+
+[[package]]
 name = "snowballstemmer"
 version = "3.0.1"
 description = "This package provides 32 stemmers for 30 languages generated from Snowball algorithms."
@@ -3145,8 +3158,9 @@ propcache = ">=0.2.1"
 
 [extras]
 pythonista = ["bleak-pythonista"]
+rubicon = ["rubicon-objc"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "96a8718628a2b26a26d1ec706ae19ca790327c4452a0aaf51e6d720fa6585dd5"
+content-hash = "a99e5adc9c4cd325a858b11f98a39f7a96e44c1334f8c3c3afc16ca6362b8872"

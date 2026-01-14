@@ -1,32 +1,62 @@
 import sys
-from typing import Any, NewType, Optional, Protocol, TypeVar
+from typing import Any, NewType, Optional, Protocol
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
 
-from Foundation import (
-    NSUUID,
-    NSArray,
-    NSData,
-    NSDictionary,
-    NSError,
-    NSErrorDomain,
-    NSNumber,
-    NSObject,
-    NSString,
-)
-from libdispatch import dispatch_queue_t
+from rubicon.objc.api import NSArray, NSData, NSDictionary, NSNumber, NSObject, NSString
+
+from .Foundation import NSUUID, NSError, NSErrorDomain
+from .libdispatch import dispatch_queue_t
 
 CBErrorDomain: NSErrorDomain
 CBATTErrorDomain: NSErrorDomain
 
+CBManagerState = NewType("CBManagerState", int)
+CBManagerStateUnknown: CBManagerState
+CBManagerStateResetting: CBManagerState
+CBManagerStateUnsupported: CBManagerState
+CBManagerStateUnauthorized: CBManagerState
+CBManagerStatePoweredOff: CBManagerState
+CBManagerStatePoweredOn: CBManagerState
+
+CBManagerAuthorization = NewType("CBManagerAuthorization", int)
+CBManagerAuthorizationNotDetermined: CBManagerAuthorization
+CBManagerAuthorizationRestricted: CBManagerAuthorization
+CBManagerAuthorizationDenied: CBManagerAuthorization
+CBManagerAuthorizationAllowedAlways: CBManagerAuthorization
+
+CBCharacteristicWriteType = NewType("CBCharacteristicWriteType", int)
+CBCharacteristicWriteWithResponse: CBCharacteristicWriteType
+CBCharacteristicWriteWithoutResponse: CBCharacteristicWriteType
+
+CBPeripheralState = NewType("CBPeripheralState", int)
+CBPeripheralStateDisconnected: CBPeripheralState
+CBPeripheralStateConnecting: CBPeripheralState
+CBPeripheralStateConnected: CBPeripheralState
+CBPeripheralStateDisconnecting: CBPeripheralState
+
+class CBUUID(NSObject):
+    @classmethod
+    def UUIDWithString_(cls, theString: str) -> CBUUID: ...
+    @classmethod
+    def UUIDWithData_(cls, theData: NSData) -> CBUUID: ...
+    @classmethod
+    def UUIDWithNSUUID_(cls, theUUID: NSUUID) -> CBUUID: ...
+    @property
+    def data(self) -> NSData: ...
+    @property
+    def UUIDString(self) -> NSString: ...
+
 class CBManager(NSObject):
+    @property
     def state(self) -> CBManagerState: ...
+    @property
     def authorization(self) -> CBManagerAuthorization: ...
 
-TCBCentralManager = TypeVar("TCBCentralManager", bound=CBCentralManager)
+CBCentralManagerFeature = NewType("CBCentralManagerFeature", int)
 
 class CBCentralManager(CBManager):
     @classmethod
@@ -60,6 +90,7 @@ class CBCentralManager(CBManager):
         options: Optional[NSDictionary[str, Any]],
     ) -> None: ...
     def stopScan(self) -> None: ...
+    @property
     def isScanning(self) -> bool: ...
     @classmethod
     def supportsFeatures(cls, features: CBCentralManagerFeature) -> bool: ...
@@ -72,59 +103,51 @@ class CBCentralManager(CBManager):
         self, peripheral: CBPeripheral
     ) -> Optional[NSData]: ...
 
-CBConnectPeripheralOptionNotifyOnConnectionKey: str
-CBConnectPeripheralOptionNotifyOnDisconnectionKey: str
-CBConnectPeripheralOptionNotifyOnNotificationKey: str
-CBConnectPeripheralOptionEnableTransportBridgingKey: str
-CBConnectPeripheralOptionRequiresANCS: str
-CBConnectPeripheralOptionStartDelayKey: str
+class CBAttribute(NSObject):
+    @property
+    def UUID(self) -> CBUUID: ...
 
-CBCentralManagerScanOptionAllowDuplicatesKey: str
-CBCentralManagerScanOptionSolicitedServiceUUIDsKey: str
+CBCharacteristicProperties = NewType("CBCharacteristicProperties", int)
 
-CBCentralManagerFeature = NewType("CBCentralManagerFeature", int)
+class CBCharacteristic(CBAttribute):
+    @property
+    def service(self) -> CBService: ...
+    @property
+    def value(self) -> Optional[NSData]: ...
+    @property
+    def descriptors(self) -> NSArray[CBDescriptor]: ...
+    @property
+    def properties(self) -> CBCharacteristicProperties: ...
+    @property
+    def isNotifying(self) -> bool: ...
+    # Undocumented property
+    @property
+    def handle(self) -> int: ...
 
-CBCentralManagerFeatureExtendedScanAndConnect: CBCentralManagerFeature
-
-CBManagerState = NewType("CBManagerState", int)
-
-CBManagerStatePoweredOff: CBManagerState
-CBManagerStatePoweredOn: CBManagerState
-CBManagerStateResetting: CBManagerState
-CBManagerStateUnauthorized: CBManagerState
-CBManagerStateUnknown: CBManagerState
-CBManagerStateUnsupported: CBManagerState
-
-CBManagerAuthorization = NewType("CBManagerAuthorization", int)
-
-CBManagerAuthorizationAllowedAlways: CBManagerAuthorization
-CBManagerAuthorizationDenied: CBManagerAuthorization
-CBManagerAuthorizationNotDetermined: CBManagerAuthorization
-CBManagerAuthorizationRestricted: CBManagerAuthorization
-
-CBConnectionEvent = NewType("CBConnectionEvent", int)
-
-CBConnectionEventPeerConnected: CBConnectionEvent
-CBConnectionEventPeerDisconnected: CBConnectionEvent
-
-class CBConnectionEventMatchingOption(str): ...
-
-CBConnectionEventMatchingOptionPeripheralUUIDs: CBConnectionEventMatchingOption
-CBConnectionEventMatchingOptionServiceUUIDs: CBConnectionEventMatchingOption
-
-class CBCentralManagerDelegate(Protocol): ...
+class CBDescriptor(CBAttribute):
+    @property
+    def characteristic(self) -> CBCharacteristic: ...
+    @property
+    def value(self) -> Optional[Any]: ...
+    # Undocumented property
+    @property
+    def handle(self) -> int: ...
 
 class CBPeer(NSObject):
+    @property
     def identifier(self) -> NSUUID: ...
 
 class CBPeripheral(CBPeer):
+    @property
     def name(self) -> NSString: ...
+    @property
     def delegate(self) -> CBPeripheralDelegate: ...
     def setDelegate_(self, delegate: CBPeripheralDelegate) -> None: ...
     def discoverServices_(self, serviceUUIDs: Optional[NSArray[CBUUID]]) -> None: ...
     def discoverIncludedServices_forService_(
         self, includedServiceUUIDs: NSArray[CBService], service: CBService
     ) -> None: ...
+    @property
     def services(self) -> NSArray[CBService]: ...
     def discoverCharacteristics_forService_(
         self, characteristicUUIDs: Optional[NSArray[CBUUID]], service: CBService
@@ -149,22 +172,52 @@ class CBPeripheral(CBPeer):
     def setNotifyValue_forCharacteristic_(
         self, enabled: bool, characteristic: CBCharacteristic
     ) -> None: ...
+    @property
     def state(self) -> CBPeripheralState: ...
     def canSendWriteWithoutResponse(self) -> bool: ...
     def readRSSI(self) -> None: ...
-    def RSSI(self) -> NSNumber: ...
+    @property
+    def RSSI(self) -> int: ...
 
-CBCharacteristicWriteType = NewType("CBCharacteristicWriteType", int)
+class CBService(CBAttribute):
+    @property
+    def peripheral(self) -> CBPeripheral: ...
+    @property
+    def isPrimary(self) -> bool: ...
+    @property
+    def characteristics(self) -> NSArray[CBCharacteristic]: ...
+    @property
+    def includedServices(self) -> Optional[NSArray[CBService]]: ...
+    # Undocumented property
+    @property
+    def startHandle(self) -> int: ...
 
-CBCharacteristicWriteWithResponse: CBCharacteristicWriteType
-CBCharacteristicWriteWithoutResponse: CBCharacteristicWriteType
-
-CBPeripheralState = NewType("CBPeripheralState", int)
-
-CBPeripheralStateDisconnected: CBPeripheralState
-CBPeripheralStateConnecting: CBPeripheralState
-CBPeripheralStateConnected: CBPeripheralState
-CBPeripheralStateDisconnecting: CBPeripheralState
+class CBCentralManagerDelegate(Protocol):
+    def centralManagerDidUpdateState_(
+        self, centralManager: CBCentralManager
+    ) -> None: ...
+    def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
+        self,
+        central: CBCentralManager,
+        peripheral: CBPeripheral,
+        advertisementData: NSDictionary[str, Any],
+        RSSI: NSNumber,
+    ) -> None: ...
+    def centralManager_didConnectPeripheral_(
+        self, central: CBCentralManager, peripheral: CBPeripheral
+    ) -> None: ...
+    def centralManager_didFailToConnectPeripheral_error_(
+        self,
+        centralManager: CBCentralManager,
+        peripheral: CBPeripheral,
+        error: Optional[NSError],
+    ) -> None: ...
+    def centralManager_didDisconnectPeripheral_error_(
+        self,
+        central: CBCentralManager,
+        peripheral: CBPeripheral,
+        error: Optional[NSError],
+    ) -> None: ...
 
 class CBPeripheralDelegate(Protocol):
     def peripheral_didDiscoverServices_(
@@ -225,55 +278,6 @@ class CBPeripheralDelegate(Protocol):
     def peripheral_didModifyServices_(
         self, peripheral: CBPeripheral, invalidatedServices: NSArray[CBService]
     ) -> None: ...
-
-class CBAttribute(NSObject):
-    def UUID(self) -> CBUUID: ...
-
-class CBService(CBAttribute):
-    def peripheral(self) -> CBPeripheral: ...
-    def isPrimary(self) -> bool: ...
-    def characteristics(self) -> NSArray[CBCharacteristic]: ...
-    def includedServices(self) -> Optional[NSArray[CBService]]: ...
-    # Undocumented property
-    def startHandle(self) -> int: ...
-
-class CBUUID(NSObject):
-    @classmethod
-    def UUIDWithString_(cls, theString: str) -> CBUUID: ...
-    @classmethod
-    def UUIDWithData_(cls, theData: NSData) -> CBUUID: ...
-    @classmethod
-    def UUIDWithNSUUID_(cls, theUUID: NSUUID) -> CBUUID: ...
-    def data(self) -> NSData: ...
-    def UUIDString(self) -> NSString: ...
-
-class CBCharacteristic(CBAttribute):
-    def service(self) -> CBService: ...
-    def value(self) -> Optional[NSData]: ...
-    def descriptors(self) -> NSArray[CBDescriptor]: ...
-    def properties(self) -> CBCharacteristicProperties: ...
-    def isNotifying(self) -> bool: ...
-    # Undocumented property
-    def handle(self) -> int: ...
-
-CBCharacteristicProperties = NewType("CBCharacteristicProperties", int)
-
-CBCharacteristicPropertyBroadcast: CBCharacteristicProperties
-CBCharacteristicPropertyRead: CBCharacteristicProperties
-CBCharacteristicPropertyWriteWithoutResponse: CBCharacteristicProperties
-CBCharacteristicPropertyWrite: CBCharacteristicProperties
-CBCharacteristicPropertyNotify: CBCharacteristicProperties
-CBCharacteristicPropertyIndicate: CBCharacteristicProperties
-CBCharacteristicPropertyAuthenticatedSignedWrites: CBCharacteristicProperties
-CBCharacteristicPropertyExtendedProperties: CBCharacteristicProperties
-CBCharacteristicPropertyNotifyEncryptionRequired: CBCharacteristicProperties
-CBCharacteristicPropertyIndicateEncryptionRequired: CBCharacteristicProperties
-
-class CBDescriptor(CBAttribute):
-    def characteristic(self) -> CBCharacteristic: ...
-    def value(self) -> Optional[Any]: ...
-    # Undocumented property
-    def handle(self) -> int: ...
 
 CBUUIDCharacteristicExtendedPropertiesString: NSString
 CBUUIDCharacteristicUserDescriptionString: NSString

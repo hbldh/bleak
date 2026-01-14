@@ -44,6 +44,7 @@ dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
 
 [project.optional-dependencies]
 pythonista = ["bleak-pythonista>=0.1.1"]
+rubicon = ["rubicon-objc>=0.5.3"]
 
 [tool.poetry.group.docs]
 optional = true
