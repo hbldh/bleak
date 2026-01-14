@@ -18,28 +18,31 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    env:
+      FORCE_COLOR: "1"
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        id: py
+
+      - name: Install uv and set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Create virtual environment
-        run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
+
       - name: Install dependencies
-        # work around https://github.com/python-poetry/poetry/issues/7161
-        env:
-          SYSTEM_VERSION_COMPAT: 0
-        run: pipx run poetry install --only main,test
+        run: |
+          uv tool install tox --with tox-uv
+          uv tool install poetry
+
       - name: Test with pytest
-        run: pipx run poetry run pytest -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: tox -e py -- -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           report_type: coverage
           flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
@@ -47,15 +50,13 @@ jobs:
           report_type: test_results
           flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Type checking
         # We don't do this in the lint job because we have conditionals
         # on both the platform and the Python version in the code, so we
         # need to check each matrix combination.
         run: |
-          pipx run poetry run pip install pyright
-          pipx run poetry run pyright
-          pipx run poetry run pip install mypy
-          pipx run poetry run mypy -p bleak -p tests -p examples
+          tox -e typecheck
 
 
   integration_tests_bluez:
