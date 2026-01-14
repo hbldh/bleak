@@ -12,13 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install development dependencies
-        run: pipx run poetry install --only docs,lint
-      - name: Check import sort with isort
-        run: pipx run poetry run isort {.,docs} --check --diff
-      - name: Check code formatting with black
-        run: pipx run poetry run black . --check --diff
-      - name: Lint with flake8
-        run: pipx run poetry run flake8 . --count --show-source --statistics
+
+      - name: Install uv and set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          uv tool install tox --with tox-uv
+          uv tool install poetry
+
+      - name: Check import sort with isort, code formatting with black, and lint with flake8
+        run: tox -e lint-checkonly
+
       - name: Build docs
-        run: pipx run poetry run make -C docs html
+        run: tox -e docs
+
