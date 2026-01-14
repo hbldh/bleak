@@ -1,0 +1,14 @@
+{
+  "typeCheckingMode": "strict",
+  "exclude": [
+    "**/.venv/**",
+    "**/kivy/**",
+    "**/recipes/**",
+    ".tox",
+    "bleak/backends/corebluetooth/_rubicon_objc/**"
+  ],
+  "defineConstant": {
+    "BLEAK_OBJC_FRAMEWORK_IS_PYOBJC": true,
+    "BLEAK_OBJC_FRAMEWORK_IS_RUBICON": false
+  }
+}

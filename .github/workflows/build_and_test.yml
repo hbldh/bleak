@@ -34,7 +34,7 @@ jobs:
           uv tool install poetry
 
       - name: Test with pytest
-        run: tox -e py -- -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: tox -m py${{ matrix.python-version }} -- -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -56,7 +56,7 @@ jobs:
         # on both the platform and the Python version in the code, so we
         # need to check each matrix combination.
         run: |
-          tox -e typecheck
+          tox -m typecheck
 
 
   integration_tests_bluez:

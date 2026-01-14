@@ -1,0 +1,13 @@
+{
+  "typeCheckingMode": "strict",
+  "exclude": [
+    "**/.venv/**",
+    "**/kivy/**",
+    "**/recipes/**",
+    ".tox"
+  ],
+  "defineConstant": {
+    "BLEAK_OBJC_FRAMEWORK_IS_PYOBJC": false,
+    "BLEAK_OBJC_FRAMEWORK_IS_RUBICON": true
+  }
+}

@@ -78,17 +78,6 @@ py_version=310
 src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer", "docs"]
 
-[tool.mypy]
-python_version = "3.10"
-disable_error_code = ["import-not-found"]
-exclude = "(.venv|kivy|recipes|.tox)/"
-mypy_path = "typings"
-packages = ["bleak", "tests", "examples"]
-
-[tool.pyright]
-typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", ".tox/**"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
