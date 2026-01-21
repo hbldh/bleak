@@ -42,6 +42,7 @@ READ_CHAR_UUID = "1a1af049-9c23-4b69-b763-e1096674ed18"
 WRITE_WITH_RESPONSE_CHAR_UUID = "79a92bad-31b4-4a70-885c-e704ae2c6363"
 WRITE_WITHOUT_RESPONSE_CHAR_UUID = "2a07f6ea-6401-45d7-838c-0f459a7edb7f"
 NOTIFY_CHAR_UUID = "d4c6dad3-76f1-4034-8871-0a6345be6cfc"
+INDICATE_CHAR_UUID = "b1f7c8d4-9e2a-4f6b-8d3a-1234567890ab"
 
 
 @dataclasses.dataclass
@@ -52,6 +53,7 @@ class CharTestPeripheral:
     write_characteristic: Characteristic[bytes]
     write_without_response_characteristic: Characteristic[bytes]
     notify_characteristic: Characteristic[bytes]
+    indicate_characteristic: Characteristic[bytes]
 
 
 @pytest_asyncio.fixture(loop_scope="module", scope="module")
@@ -82,6 +84,12 @@ async def char_test_peripheral(
         Characteristic.Permissions.READABLE,
         b"----",
     )
+    indicate_characteristic = Characteristic[bytes](
+        INDICATE_CHAR_UUID,
+        Characteristic.Properties.READ | Characteristic.Properties.INDICATE,
+        Characteristic.Permissions.READABLE,
+        b"----",
+    )
 
     await configure_and_power_on_bumble_peripheral(
         bumble_peripheral,
@@ -93,6 +101,7 @@ async def char_test_peripheral(
                     write_characteristic,
                     write_without_response_characteristic,
                     notify_characteristic,
+                    indicate_characteristic,
                 ],
             ),
         ],
@@ -108,6 +117,7 @@ async def char_test_peripheral(
             write_characteristic=write_characteristic,
             write_without_response_characteristic=write_without_response_characteristic,
             notify_characteristic=notify_characteristic,
+            indicate_characteristic=indicate_characteristic,
         )
 
 
@@ -308,3 +318,56 @@ async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
     # Verify no notification was received
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(notified_data.get(), timeout=1)
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
+    """Ensure indications are delivered and received by the client."""
+
+    virtual_connection = list(
+        char_test_peripheral.bumble_peripheral.connections.values()
+    )[0]
+
+    indicated_data: asyncio.Queue[bytes] = asyncio.Queue()
+
+    def indicate_callback(characteristic: BleakGATTCharacteristic, data: bytearray):
+        assert characteristic.uuid.lower() == INDICATE_CHAR_UUID
+        indicated_data.put_nowait(bytes(data))
+
+    await char_test_peripheral.bleak_client.start_notify(
+        INDICATE_CHAR_UUID,
+        indicate_callback,
+    )
+    assert indicated_data.empty()
+
+    await char_test_peripheral.bumble_peripheral.indicate_subscriber(  # type: ignore  # (missing type hints in bumble)
+        virtual_connection,
+        char_test_peripheral.indicate_characteristic,
+        b"ind1",
+    )
+
+    # dont wait since 'indicate_subscriber' waits for ack from client
+    data = indicated_data.get_nowait()
+    assert data == b"ind1"
+
+    await char_test_peripheral.bumble_peripheral.indicate_subscriber(  # type: ignore  # (missing type hints in bumble)
+        virtual_connection,
+        char_test_peripheral.indicate_characteristic,
+        b"ind2",
+    )
+
+    # dont wait since 'indicate_subscriber' waits for ack from client
+    data = indicated_data.get_nowait()
+    assert data == b"ind2"
+
+    await char_test_peripheral.bleak_client.stop_notify(INDICATE_CHAR_UUID)
+
+    await char_test_peripheral.bumble_peripheral.indicate_subscriber(  # type: ignore  # (missing type hints in bumble)
+        virtual_connection,
+        char_test_peripheral.indicate_characteristic,
+        b"ind2",
+    )
+
+    # Verify no indication was received after stop
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(indicated_data.get(), timeout=1)
