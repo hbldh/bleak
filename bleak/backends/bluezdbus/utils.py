@@ -137,8 +137,3 @@ def get_dbus_authenticator() -> Optional[AuthExternal]:
         auth = AuthExternal(uid=uid)
 
     return auth
-    auth = None
-    if uid is not None:
-        auth = AuthExternal(uid=uid)
-
-    return auth
