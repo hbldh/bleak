@@ -42,23 +42,22 @@ Issues = "https://github.com/hbldh/bleak/issues"
 [project.optional-dependencies]
 pythonista = ["bleak-pythonista>=0.1.1"]
 
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-Sphinx = { version = ">=8.2.3", python = ">=3.11" }
-sphinx-rtd-theme = { version = ">=3.0.2", python = ">=3.11" }
-
-[tool.poetry.group.lint.dependencies]
-black = ">=24.3,<25.0"
-flake8 = "^7.1.1"
-isort = "^5.13.2"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.2.1"
-pytest-asyncio = "^1.2.0"
-pytest-cov = "^7.0.0 "
-bumble = "^0.0.220"
+[dependency-groups]
+docs = [
+    "Sphinx>=8.2.3; python_version>='3.11'",
+    "sphinx-rtd-theme>=3.0.2; python_version>='3.11'",
+]
+lint = [
+    "black>=24.3,<25.0",
+    "flake8>=7.1.1,<8.0.0",
+    "isort>=5.13.2,<6.0.0",
+]
+test = [
+    "pytest>=8.2.1,<9.0.0",
+    "pytest-asyncio>=1.2.0,<2.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "bumble>=0.0.220,<0.1.0",
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
