@@ -77,23 +77,15 @@ jobs:
       - name: Build and boot Alpine VM
         run: ./.github/alpine-vm/start-alpine-vm.sh
 
-      - name: Install Python and dependencies in VM
-        run: |
-          ./.github/alpine-vm/vm-ssh.sh '
-            bluetoothctl --version
-            uv python install ${{ matrix.python-version }}
-            uv python pin ${{ matrix.python-version }}
-            poetry env use ${{ matrix.python-version }}
-            poetry install --only main,test
-          '
-
       - name: Run pytest in VM
         run: |
           ./.github/alpine-vm/vm-ssh.sh '
+            bluetoothctl --version
+            export UV_PROJECT_ENVIRONMENT=../.venv  # We are in an mounted folder, so to speed things up put the venv outside the mount
             export FORCE_COLOR=1
             export CI=true
             export GITHUB_ACTIONS=true
-            poetry run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+            uv run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
           '
 
       - name: Upload coverage reports to Codecov
