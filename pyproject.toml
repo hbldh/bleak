@@ -6,16 +6,6 @@ authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
 readme = "README.rst"
 requires-python = ">=3.10"
-dynamic = ["classifiers", "dependencies"]
-
-[project.urls]
-"Homepage"      = "https://github.com/hbldh/bleak"
-"Documentation" = "https://bleak.readthedocs.io"
-"Changelog"     =  "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst"
-"Support"       =  "https://github.com/hbldh/bleak/discussions"
-"Issues"        =  "https://github.com/hbldh/bleak/issues"
-
-[tool.poetry]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
@@ -24,23 +14,30 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Android",
 ]
+dependencies = [
+    "async-timeout>=3.0.0; python_version<'3.11'",
+    "typing-extensions>=4.7.0; python_version<'3.12'",
+    "pyobjc-core>=10.3; platform_system=='Darwin'",
+    "pyobjc-framework-CoreBluetooth>=10.3; platform_system=='Darwin'",
+    "pyobjc-framework-libdispatch>=10.3; platform_system=='Darwin'",
+    "winrt-runtime>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Bluetooth>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Bluetooth.Advertisement>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Bluetooth.GenericAttributeProfile>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Enumeration>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Radios>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Foundation>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Foundation.Collections>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Storage.Streams>=3.1; platform_system=='Windows'",
+    "dbus-fast>=1.83.0; platform_system=='Linux'",
+]
 
-[tool.poetry.dependencies]
-async-timeout = { version = ">=3.0.0", python = "<3.11" }
-typing-extensions = { version = ">=4.7.0", python = "<3.12" }
-pyobjc-core = { version = ">=10.3", markers = "platform_system=='Darwin'" }
-pyobjc-framework-CoreBluetooth = { version = ">=10.3", markers = "platform_system=='Darwin'" }
-pyobjc-framework-libdispatch = { version = ">=10.3", markers = "platform_system=='Darwin'" }
-"winrt-runtime" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Bluetooth" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Enumeration" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Radios" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Foundation" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Foundation.Collections" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Storage.Streams" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
+[project.urls]
+Homepage = "https://github.com/hbldh/bleak"
+Documentation = "https://bleak.readthedocs.io"
+Changelog = "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst"
+Support = "https://github.com/hbldh/bleak/discussions"
+Issues = "https://github.com/hbldh/bleak/issues"
 
 [project.optional-dependencies]
 pythonista = ["bleak-pythonista>=0.1.1"]
