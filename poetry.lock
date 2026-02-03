@@ -2991,4 +2991,4 @@ pythonista = ["bleak-pythonista"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "277cf286ef89e354f3f0506e61fcf4803da6b83f06d5305445cb2c0373aea9dd"
+content-hash = "4d9c2eb023dd55ae4e62aa281223d093d57a770e58589176296fb9fe74e0c257"
