@@ -58,6 +58,11 @@ test = [
     "pytest-cov>=7.0.0,<8.0.0",
     "bumble>=0.0.220,<0.1.0",
 ]
+dev = [
+    { include-group = "docs" },
+    { include-group = "lint" },
+    { include-group = "test" },
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
