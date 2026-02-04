@@ -12,15 +12,13 @@ build:
     python: "3.12"
   jobs:
     post_create_environment:
-      # Install poetry
-      # https://python-poetry.org/docs/#installing-manually
-      - pip install poetry
+      # Install uv
+      # https://docs.astral.sh/uv/
+      - pip install uv
     post_install:
       # Install dependencies with 'docs' dependency group
-      # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
-      # VIRTUAL_ENV needs to be set manually for now.
-      # See https://github.com/readthedocs/readthedocs.org/pull/11152/
-      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --only docs
+      # https://docs.astral.sh/uv/concepts/projects/dependencies/
+      - uv sync --only-group docs
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
