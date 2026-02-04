@@ -25,7 +25,7 @@ information see the `bumble documentation <https://google.github.io/bumble/trans
 
 It looks for example like this on macOS::
 
-    $ poetry run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+    $ uv run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
 
 On macOS you can find the port via::
 
@@ -58,7 +58,7 @@ This way you can run integration tests without any physical hardware, just using
 Bluetooth controllers. To use this setup you have to use the additional command line option
 ``--bleak-bluez-vhci`` to run the tests::
 
-    $ poetry run pytest --bleak-bluez-vhci
+    $ uv run pytest --bleak-bluez-vhci
 
 You may need to load the kernel module first::
 

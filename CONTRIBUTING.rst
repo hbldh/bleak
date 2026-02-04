@@ -60,7 +60,7 @@ Get Started!
 
 Ready to contribute? Here's how to set up ``bleak`` for local development.
 
-You will need `Git <https://git-scm.com>`_ and `Poetry <https://python-poetry.org>`_
+You will need `Git <https://git-scm.com>`_ and `uv <https://docs.astral.sh/uv/>`_
 and your favorite text editor. And Python of course.
 
 1. Fork the ``bleak`` repo on GitHub.
@@ -71,7 +71,7 @@ and your favorite text editor. And Python of course.
 3. Set up the Python environment::
 
     $ cd bleak/
-    $ poetry install
+    $ uv sync
 
 4. Create a branch for local development, originating from the ``develop`` branch::
 
@@ -81,15 +81,15 @@ and your favorite text editor. And Python of course.
 
 5. When you're done making changes, check that your changes pass linting and the tests::
 
-    $ poetry run isort .
-    $ poetry run black .
-    $ poetry run flake8
-    $ poetry run pytest
+    $ uv run isort .
+    $ uv run black .
+    $ uv run flake8
+    $ uv run pytest
 
 6. Additionally, you can run integration tests by adding the ``--bleak-hci-transport`` argument to ``pytest``.
 For more information, see `tests/integration/README.rst <tests/integration/README.rst>`_.
 
-  $ poetry run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+  $ uv run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
 
 7. Commit your changes and push your branch to GitHub::
 
