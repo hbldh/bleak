@@ -12,13 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install development dependencies
-        run: pipx run poetry install --only docs,lint
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          activate-environment: true
+
       - name: Check import sort with isort
-        run: pipx run poetry run isort {.,docs} --check --diff
+        run: uv run isort {.,docs} --check --diff
+
       - name: Check code formatting with black
-        run: pipx run poetry run black . --check --diff
+        run: uv run black . --check --diff
+
       - name: Lint with flake8
-        run: pipx run poetry run flake8 . --count --show-source --statistics
+        run: uv run flake8 . --count --show-source --statistics
+
       - name: Build docs
-        run: pipx run poetry run make -C docs html
+        run: uv run make -C docs html
