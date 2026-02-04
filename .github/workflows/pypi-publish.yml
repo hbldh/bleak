@@ -13,10 +13,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          activate-environment: true
+
       - name: Build
-        run: pipx run poetry build
+        run: uv build
+
       - name: Publish
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: pipx run twine upload dist/*
+        run: uvx twine upload dist/*
