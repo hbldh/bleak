@@ -9,4 +9,4 @@ ssh -o StrictHostKeyChecking=no \
     -o LogLevel=ERROR \
     -p 2222 \
     builder@localhost \
-    "cd ~/repo && $*"
+    "sh -l -c 'cd ~/repo && $*'"
