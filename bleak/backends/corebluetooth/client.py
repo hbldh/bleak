@@ -3,6 +3,8 @@
 BLE Client for CoreBluetooth on macOS
 """
 
+from __future__ import annotations
+
 import functools
 import sys
 from typing import TYPE_CHECKING
@@ -14,15 +16,6 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from typing import Any, Optional, Union
-
-from CoreBluetooth import (
-    CBUUID,
-    CBCharacteristicWriteWithoutResponse,
-    CBCharacteristicWriteWithResponse,
-    CBPeripheral,
-    CBPeripheralStateConnected,
-)
-from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
 from bleak._compat import override
@@ -43,6 +36,20 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.exc import BleakDeviceNotFoundError, BleakError
+
+from ._objc_compat import (
+    CBUUID,
+    CBCharacteristicWriteWithoutResponse,
+    CBCharacteristicWriteWithResponse,
+    CBPeripheral,
+    CBPeripheralStateConnected,
+    NSArray,
+    NSData,
+    get_prop,
+    to_bytes,
+    to_int,
+    to_str,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +80,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 self._central_manager_delegate,
             ) = address_or_ble_device.details
 
-        self._requested_services = (
-            NSArray[CBUUID]
-            .alloc()
-            .initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
+        self._requested_services: NSArray[CBUUID] | None = (
+            NSArray.alloc().initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
             if services
             else None
         )
@@ -146,7 +151,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Disconnect from the peripheral device"""
         if (
             self._peripheral is None
-            or self._peripheral.state() != CBPeripheralStateConnected
+            or get_prop(self._peripheral.state) != CBPeripheralStateConnected
         ):
             return
 
@@ -160,7 +165,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         return (
             False
             if self._peripheral is None
-            else self._peripheral.state() == CBPeripheralStateConnected
+            else get_prop(self._peripheral.state) == CBPeripheralStateConnected
         )
 
     @property
@@ -169,7 +174,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         """Get the name of the connected peripheral"""
         if self._peripheral is None:
             raise BleakError("Not connected")
-        return self._peripheral.name()
+        return to_str(get_prop(self._peripheral.name))
 
     @property
     @override
@@ -235,23 +240,25 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
         for service in cb_services:
             serv = BleakGATTService(
-                service, service.startHandle(), cb_uuid_to_str(service.UUID())
+                service,
+                get_prop(service.startHandle),
+                cb_uuid_to_str(get_prop(service.UUID)),
             )
             services.add_service(serv)
 
-            serviceUUID = service.UUID().UUIDString()
+            serviceUUID = get_prop(get_prop(service.UUID).UUIDString)
             logger.debug("Retrieving characteristics for service %s", serviceUUID)
             characteristics = await self._delegate.discover_characteristics(service)
 
             for characteristic in characteristics:
-                cUUID = characteristic.UUID().UUIDString()
+                cUUID = get_prop(get_prop(characteristic.UUID).UUIDString)
                 logger.debug("Retrieving descriptors for characteristic %s", cUUID)
 
                 char = BleakGATTCharacteristic(
                     characteristic,
-                    characteristic.handle(),
-                    cb_uuid_to_str(characteristic.UUID()),
-                    list(gatt_char_props_to_strs(characteristic.properties())),
+                    get_prop(characteristic.handle),
+                    cb_uuid_to_str(get_prop(characteristic.UUID)),
+                    list(gatt_char_props_to_strs(get_prop(characteristic.properties))),
                     functools.partial(
                         self._peripheral.maximumWriteValueLengthForType_,
                         CBCharacteristicWriteWithoutResponse,
@@ -264,8 +271,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
                 for descriptor in descriptors:
                     desc = BleakGATTDescriptor(
                         descriptor,
-                        int(descriptor.handle()),
-                        cb_uuid_to_str(descriptor.UUID()),
+                        get_prop(descriptor.handle),
+                        cb_uuid_to_str(get_prop(descriptor.UUID)),
                         char,
                     )
                     services.add_descriptor(desc)
@@ -295,7 +302,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         output = await self._delegate.read_characteristic(
             characteristic.obj, use_cached=use_cached
         )
-        value = bytearray(output)
+        value = bytearray(to_bytes(output))
         logger.debug("Read Characteristic %s: %r", characteristic.uuid, value)
         return value
 
@@ -323,11 +330,11 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         )
 
         if is_descriptor_nsnumber(output, descriptor.uuid):
-            value = bytearray(int(output).to_bytes(2, byteorder="little"))
+            value = bytearray(to_int(output).to_bytes(2, byteorder="little"))
         elif is_descriptor_nsstring(output, descriptor.uuid):
-            value = bytearray(output.encode())
+            value = bytearray(to_str(output).encode())
         else:
-            value = bytearray(output)
+            value = bytearray(to_bytes(output))
 
         logger.debug("Read Descriptor %d : %r", descriptor.handle, value)
         return value

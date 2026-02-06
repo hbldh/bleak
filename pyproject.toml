@@ -44,6 +44,7 @@ dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
 
 [project.optional-dependencies]
 pythonista = ["bleak-pythonista>=0.1.1"]
+rubicon = ["rubicon-objc>=0.5.3"]
 
 [tool.poetry.group.docs]
 optional = true
@@ -63,6 +64,10 @@ pytest-asyncio = "^1.2.0"
 pytest-cov = "^7.0.0 "
 bumble = "^0.0.220"
 
+[tool.poetry.group.typecheck.dependencies]
+mypy = "^1.19.1"
+pyright = "^1.1.408"
+
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -72,16 +77,6 @@ profile = "black"
 py_version=310
 src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer", "docs"]
-
-[tool.mypy]
-python_version = "3.10"
-disable_error_code = ["import-not-found"]
-exclude = "(.venv|kivy|recipes)/"
-mypy_path = "typings"
-
-[tool.pyright]
-typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

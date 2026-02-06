@@ -12,7 +12,11 @@ import weakref
 from unittest.mock import Mock
 
 from bumble.device import Device
-from CoreBluetooth import (
+
+from bleak import BleakClient, BleakScanner
+from bleak.backends.corebluetooth._objc_compat import (
+    BLEAK_OBJC_FRAMEWORK_IS_PYOBJC,
+    BLEAK_OBJC_FRAMEWORK_IS_RUBICON,
     CBManagerAuthorizationDenied,
     CBManagerAuthorizationRestricted,
     CBManagerStatePoweredOff,
@@ -21,8 +25,6 @@ from CoreBluetooth import (
     CBManagerStateUnknown,
     CBManagerStateUnsupported,
 )
-
-from bleak import BleakClient, BleakScanner
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
@@ -32,6 +34,13 @@ from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
     find_ble_device,
 )
+
+
+def objc_prop_mock(value: object) -> object:
+    if BLEAK_OBJC_FRAMEWORK_IS_PYOBJC:
+        return lambda: value
+    if BLEAK_OBJC_FRAMEWORK_IS_RUBICON:
+        return value
 
 
 def get_central_manager_delegate(
@@ -130,9 +139,9 @@ async def test_bluetooth_availability(
     # programmatically. Therefore, we use mocking to emulate various states.
     central_manager_delegate = get_central_manager_delegate(scanner)
     mock_manager = Mock(wraps=central_manager_delegate.central_manager)
-    mock_manager.state.return_value = state
+    mock_manager.state = objc_prop_mock(state)
     if authorization is not None:
-        mock_manager.authorization.return_value = authorization
+        mock_manager.authorization = objc_prop_mock(authorization)
 
     monkeypatch.setattr(
         central_manager_delegate,
