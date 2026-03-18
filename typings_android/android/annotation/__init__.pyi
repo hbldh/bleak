@@ -1,0 +1,16 @@
+import java.chaquopy
+import java.lang
+import java.lang.annotation
+
+class FlaggedApi(java.lang.annotation.Annotation):
+    def value(self) -> str: ...
+
+class NonNull(java.lang.annotation.Annotation): ...
+
+class Nullable(java.lang.annotation.Annotation): ...
+
+class SuppressLint(java.lang.annotation.Annotation):
+    def value(self) -> java.chaquopy.JavaArray[java.lang.String]: ...
+
+class TargetApi(java.lang.annotation.Annotation):
+    def value(self) -> int: ...

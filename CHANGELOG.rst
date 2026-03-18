@@ -15,6 +15,7 @@ Added
 * Added ``bleak.exc.BleakGATTProtocolError`` and ``bleak.exc.BleakGATTProtocolErrorCode`` classes.
 * Added type hints and documentation for ``use_cached`` kwarg for ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in ``BleakClient``.
 * Added support for ``"use_cached"`` kwarg to ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in BlueZ backend.
+* Added new Android backend using Chaquopy/briefcase.
 
 Changed
 -------

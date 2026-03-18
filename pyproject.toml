@@ -59,10 +59,18 @@ test = [
     "pytest-cov>=7.0.0,<8.0.0",
     "bumble==0.0.226",
 ]
+test-android = [
+    "bumble==0.0.226",
+    "fastapi>=0.128.0",
+    "uvicorn>=0.40.0",
+    "uiautomator2>=3.5.0; python_version<'4.0'",
+    "briefcase>=0.4.0",
+]
 dev = [
     { include-group = "docs" },
     { include-group = "lint" },
     { include-group = "test" },
+    { include-group = "test-android" },
 ]
 
 [build-system]
@@ -73,6 +81,9 @@ build-backend = "uv_build"
 module-name = "bleak"
 module-root = ""
 
+[tool.black]
+extend_exclude = "typings_android/(android|java)/"
+
 [tool.isort]
 profile = "black"
 py_version=310
@@ -82,12 +93,12 @@ extend_skip = [".buildozer", "docs"]
 [tool.mypy]
 python_version = "3.10"
 disable_error_code = ["import-not-found"]
-exclude = "(.venv|kivy|recipes)/"
+exclude = "(.venv|kivy|recipes|typings_android|examples/briefcase)/"
 mypy_path = "typings"
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
+exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", "typings_android/**", "examples/briefcase/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

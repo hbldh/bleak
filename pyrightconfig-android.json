@@ -1,0 +1,18 @@
+{
+  "pythonPlatform": "Android",
+  "typeCheckingMode": "strict",
+  "exclude": [
+    "**/.venv/**",
+    "**/kivy/**",
+    "**/recipes/**",
+    "**/typings_android/**",
+    "**/examples/briefcase/**",
+    "**/typings/**",
+    "bleak/backends/p4android/**",
+  ],
+  "extraPaths": [
+    "examples/briefcase/build/bleak_example/android/gradle/app/build/python/pip/debug/common"
+  ],
+  "stubPath": "typings_android",
+  "reportMissingModuleSource": "none"
+}
