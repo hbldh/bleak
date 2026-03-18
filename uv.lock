@@ -324,7 +324,7 @@ provides-extras = ["pythonista"]
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=24.3,<25.0" },
-    { name = "bumble", specifier = "==0.0.220" },
+    { name = "bumble", specifier = "==0.0.226" },
     { name = "flake8", specifier = ">=7.1.1,<8.0.0" },
     { name = "isort", specifier = ">=5.13.2,<6.0.0" },
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
@@ -343,7 +343,7 @@ lint = [
     { name = "isort", specifier = ">=5.13.2,<6.0.0" },
 ]
 test = [
-    { name = "bumble", specifier = "==0.0.220" },
+    { name = "bumble", specifier = "==0.0.226" },
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.2.0,<2.0.0" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8.0.0" },
@@ -364,7 +364,7 @@ wheels = [
 
 [[package]]
 name = "bumble"
-version = "0.0.220"
+version = "0.0.226"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp", marker = "sys_platform != 'emscripten'" },
@@ -373,7 +373,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "grpcio", marker = "sys_platform != 'emscripten'" },
     { name = "humanize", marker = "sys_platform != 'emscripten'" },
-    { name = "libusb-package", marker = "sys_platform != 'emscripten'" },
+    { name = "libusb-package", marker = "sys_platform != 'android' and sys_platform != 'emscripten'" },
     { name = "libusb1", marker = "sys_platform != 'emscripten'" },
     { name = "platformdirs", marker = "sys_platform != 'emscripten'" },
     { name = "prettytable", marker = "sys_platform != 'emscripten'" },
@@ -383,11 +383,12 @@ dependencies = [
     { name = "pyserial", marker = "sys_platform != 'emscripten'" },
     { name = "pyserial-asyncio", marker = "sys_platform != 'emscripten'" },
     { name = "pyusb", marker = "sys_platform != 'emscripten'" },
+    { name = "tomli", marker = "python_full_version < '3.11' and sys_platform != 'emscripten'" },
     { name = "websockets", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a1/a5/d03099fd1098c7b8aa0a97ad8bcbd4025c28184d5a5884f35df474eb2fd0/bumble-0.0.220.tar.gz", hash = "sha256:3ffb36148e4a558ea21253f7593d23d6250090b0af2920a82fcbfeacc6970fe9", size = 2362122, upload-time = "2025-11-18T06:41:46.08Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/a8/0fcd8858b0bdcc16b0137a0424abb26180eaa8b234e45e73c02cbdcdb3b3/bumble-0.0.226.tar.gz", hash = "sha256:e96f62c282a7376ab56b2f799e232d0985a8965e049030c50a59c4ff0b10f592", size = 2393394, upload-time = "2026-03-02T10:17:17.045Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6e/d8/8d9f5578aae75720e91590e49ec2f296434964d222d410f7f5306aa16967/bumble-0.0.220-py3-none-any.whl", hash = "sha256:e2a269d4171a2b91ad4186b32efbdd9bba842b9c2c65253fe15f40f663268269", size = 666662, upload-time = "2025-11-18T06:41:43.985Z" },
+    { url = "https://files.pythonhosted.org/packages/68/f4/0bd411e2de1afbc2435fce564945038b0b23e9ed5b36bff4803c52f4d5c4/bumble-0.0.226-py3-none-any.whl", hash = "sha256:1438c1713e7652bf42d794ee7e70e37af01ab7b5ffe1559e28c1faed9f2c5ca7", size = 687069, upload-time = "2026-03-02T10:17:14.915Z" },
 ]
 
 [[package]]
