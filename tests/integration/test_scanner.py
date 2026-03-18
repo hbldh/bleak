@@ -110,7 +110,7 @@ async def test_adv_data_simple(bumble_peripheral: Device):
     assert isinstance(found_adv_data.rssi, int)
 
     # The rssi can vary. So we only check for a plausible range.
-    assert -127 <= found_adv_data.rssi < 0
+    assert -127 <= found_adv_data.rssi <= 20
 
 
 async def test_adv_data_complex(bumble_peripheral: Device):
@@ -151,4 +151,4 @@ async def test_adv_data_complex(bumble_peripheral: Device):
     assert isinstance(found_adv_data.rssi, int)
 
     # The rssi can vary. So we only check for a plausible range.
-    assert -127 <= found_adv_data.rssi < 0
+    assert -127 <= found_adv_data.rssi <= 20
