@@ -11,6 +11,7 @@ import contextlib
 import logging
 from typing import AsyncGenerator
 
+from bumble import hci
 from bumble.controller import Controller
 from bumble.link import LocalLink
 from bumble.transport import open_transport
@@ -123,12 +124,6 @@ async def wait_for_new_adapter() -> (
             bus.remove_message_handler(_on_interfaces_added)
 
 
-def _clear_bit(flags: bytes, bit_pos: int) -> bytes:
-    int_flags = int.from_bytes(flags, byteorder="little")
-    int_flags &= ~(1 << bit_pos)
-    return int_flags.to_bytes(len(flags), byteorder="little")
-
-
 @contextlib.asynccontextmanager
 async def open_bluez_bluetooth_controller_link(
     hci_transport_name: str,
@@ -151,7 +146,9 @@ async def open_bluez_bluetooth_controller_link(
                 host_sink=hci_transport.sink,
                 link=link,
             )
-            bluez_controller.manufacturer_name = BLEAK_TEST_MANUFACTURER_ID
+            bluez_controller.manufacturer_company_identifier = (
+                BLEAK_TEST_MANUFACTURER_ID
+            )
 
             # HACK: Work around Bumble missing feature combined with Linux kernel
             # requirement. https://github.com/google/bumble/issues/841
@@ -175,12 +172,8 @@ async def open_bluez_bluetooth_controller_link(
             # Extended Advertising features in the BlueZ controller.
             #
             # Ideally, this should be fixed in Bumble.
-
-            bluez_controller.le_features = _clear_bit(
-                bluez_controller.le_features, 6  # LL Privacy
-            )
-            bluez_controller.le_features = _clear_bit(
-                bluez_controller.le_features, 12  # Extended Advertising
+            bluez_controller.le_features &= ~(
+                hci.LeFeatureMask.LL_PRIVACY | hci.LeFeatureMask.LE_EXTENDED_ADVERTISING
             )
 
             # Wait up to 5 seconds for the new adapter to appear via InterfacesAdded
