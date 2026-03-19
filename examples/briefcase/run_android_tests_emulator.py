@@ -288,14 +288,10 @@ def main() -> None:
         stop_event.set()
         worker.join()
 
+    DEVICE_FILES_DIR = "/storage/emulated/0/Android/data/com.bleak.briefcaseexample.bleak_example/files"
     log("Pulling coverage results from device")
-    adb.call_adb(
-        [
-            "pull",
-            "/storage/emulated/0/Android/data/com.bleak.briefcaseexample.bleak_example/files/htmlcov",
-            ".",
-        ]
-    )
+    for artifact in ["htmlcov", "coverage.xml", "junit.xml"]:
+        adb.call_adb(["pull", f"{DEVICE_FILES_DIR}/{artifact}", "."])
 
     if args.ci:
         # Stop the emulator if we started in CI mode, so that it is started fresh on the next run.

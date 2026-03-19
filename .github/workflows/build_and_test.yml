@@ -153,6 +153,21 @@ jobs:
       - name: Run App
         run: uv run examples/briefcase/run_android_tests_emulator.py --ci
 
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: coverage
+          flags: android-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: test_results
+          flags: android-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Type checking
         # We don't do this in the lint job because we have conditionals
         # on both the platform and the Python version in the code, so we

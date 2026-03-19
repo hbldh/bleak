@@ -55,6 +55,10 @@ def run_tests(cov: coverage.Coverage):
             # Overwrite the cache directory to somewhere writable
             "-o",
             f"cache_dir={temp_dir}/.pytest_cache",
+            # JUnit XML report
+            f"--junitxml={cov_dir / 'junit.xml'}",
+            "-o",
+            "junit_family=legacy",
         ]
         + args,
     )
@@ -62,6 +66,7 @@ def run_tests(cov: coverage.Coverage):
     cov.stop()
     cov.save()
     cov.html_report(directory=str(cov_dir / "htmlcov"), ignore_errors=True)
+    cov.xml_report(outfile=str(cov_dir / "coverage.xml"), ignore_errors=True)
 
     print(f">>>>>>>>>> EXIT {returncode} <<<<<<<<<<")
 

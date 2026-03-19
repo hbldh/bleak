@@ -99,7 +99,7 @@ forwards data to and from the serial port of the dongle, and sets up an ADB
 reverse-port tunnel so that the Android device can reach that TCP server. This allows the
 tests running on the Android device to communicate with the dongle over Bluetooth::
 
-    $ uv run examples/briefcase/run_android_tests_real_device.py --bleak-hci-transport=serial:/dev/tty.usbmodem11401
+    $ uv run --python 3.13 examples/briefcase/run_android_tests_real_device.py --bleak-hci-transport=serial:/dev/tty.usbmodem11401
 
 .. note::
 
@@ -117,4 +117,4 @@ headlessly, for example in GitHub Actions.
 
 ::
 
-    $ uv run examples/briefcase/run_android_tests_emulator.py
+    $ uv run --python 3.13 examples/briefcase/run_android_tests_emulator.py
