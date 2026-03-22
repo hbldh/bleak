@@ -5,7 +5,7 @@ BLE Client for BlueZ on Linux
 import sys
 from typing import TYPE_CHECKING
 
-from bleak.args.bluez import BlueZNotifyArgs
+from bleak.args.bluez import BlueZClientArgs, BlueZNotifyArgs
 
 if TYPE_CHECKING:
     if sys.platform != "linux":
@@ -31,7 +31,11 @@ from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
-from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
+from bleak.backends.bluezdbus.utils import (
+    assert_gatt_reply,
+    assert_reply,
+    get_dbus_authenticator,
+)
 from bleak.backends.bluezdbus.version import BlueZFeatures
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
@@ -60,12 +64,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
+        *,
+        bluez: BlueZClientArgs,
         **kwargs: Any,
     ):
         super().__init__(address_or_ble_device, **kwargs)
-        # kwarg "device" is for backwards compatibility
-        self._adapter: Optional[str] = kwargs.get("adapter", kwargs.get("device"))
 
+        self._adapter = bluez.get("adapter")
         self._device_path: Optional[str]
         self._device_info: Optional[dict[str, Any]]
 
@@ -129,7 +134,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             device = await BleakScanner.find_device_by_address(
                 self.address,
                 timeout=timeout,
-                adapter=self._adapter,
+                bluez={} if self._adapter is None else {"adapter": self._adapter},
                 backend=BleakScannerBlueZDBus,
             )
 
@@ -150,11 +155,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 async with AsyncExitStack() as stack:
                     # Each BLE connection session needs a new D-Bus connection to avoid a
                     # BlueZ quirk where notifications are automatically enabled on reconnect.
-                    self._bus = await MessageBus(
+                    self._bus = MessageBus(
                         bus_type=BusType.SYSTEM,
                         negotiate_unix_fd=True,
                         auth=get_dbus_authenticator(),
-                    ).connect()
+                    )
+                    # dbus-fast is weird and requires disconnect to be called
+                    # even if connect fails.
+                    stack.callback(self._bus.disconnect)
+                    await self._bus.connect()
 
                     stack.callback(self._cleanup_all)
 
@@ -273,7 +282,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             # cases, retrying will connect successfully.
                             # Note: this error was added in BlueZ 6.62.
                             if (
-                                reply.error_name == "org.bluez.Error.Failed"
+                                reply.error_name == defs.BLUEZ_ERROR_FAILED
                                 and reply.body
                                 and reply.body[0] == "le-connection-abort-by-local"
                             ):
@@ -367,23 +376,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             logger.debug("already disconnected (%s)", self._device_path)
             return
 
-        # Try to disconnect the System Bus.
-        try:
-            self._bus.disconnect()
-        except Exception as e:
-            logger.error(
-                "Attempt to disconnect system bus failed (%s): %s",
-                self._device_path,
-                e,
-            )
-        else:
-            # Critical to remove the `self._bus` object here to since it was
-            # closed above. If not, calls made to it later could lead to
-            # a stuck client.
-            self._bus = None
-
-            # Reset all stored services.
-            self.services = None
+        # Reset all stored services.
+        self.services = None
 
     @override
     async def disconnect(self) -> None:
@@ -393,41 +387,47 @@ class BleakClientBlueZDBus(BaseBleakClient):
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
         """
-        logger.debug("Disconnecting ({%s})", self._device_path)
+        logger.debug("Disconnecting (%s)", self._device_path)
 
         if self._bus is None:
             # No connection exists. Either one hasn't been created or
             # we have already called disconnect and closed the D-Bus
             # connection.
-            logger.debug("already disconnected ({%s})", self._device_path)
+            logger.debug("already disconnected (%s)", self._device_path)
             return
 
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
-            logger.debug("already in progress ({%s})", self._device_path)
+            logger.debug("already in progress (%s)", self._device_path)
             async with async_timeout(10):
                 await self._disconnecting_event.wait()
-        elif self.is_connected:
+        else:
             self._disconnecting_event = asyncio.Event()
             try:
-                # Try to disconnect the actual device/peripheral
-                reply = await self._bus.call(
-                    Message(
-                        destination=defs.BLUEZ_SERVICE,
-                        path=self._device_path,
-                        interface=defs.DEVICE_INTERFACE,
-                        member="Disconnect",
+                if self.is_connected:
+                    # Try to disconnect the actual device/peripheral
+                    reply = await self._bus.call(
+                        Message(
+                            destination=defs.BLUEZ_SERVICE,
+                            path=self._device_path,
+                            interface=defs.DEVICE_INTERFACE,
+                            member="Disconnect",
+                        )
                     )
-                )
-                assert_reply(reply)
-                async with async_timeout(10):
-                    await self._disconnecting_event.wait()
+                    assert_reply(reply)
+
+                    async with async_timeout(10):
+                        await self._disconnecting_event.wait()
             finally:
                 self._disconnecting_event = None
 
+            self._bus.disconnect()
+            await self._bus.wait_for_disconnect()
+            self._bus = None
+
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
-        assert self._bus is None
+        assert self.services is None
 
     async def _pair(self) -> Message:
         """
@@ -532,7 +532,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             )
             assert_reply(reply)
         except BleakDBusError as e:
-            if e.dbus_error == "org.bluez.Error.DoesNotExist":
+            if e.dbus_error == defs.BLUEZ_ERROR_DOES_NOT_EXIST:
                 raise BleakDeviceNotFoundError(
                     self.address, f"Device with address {self.address} was not found."
                 ) from e
@@ -684,7 +684,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -697,6 +701,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         """
         if not self.is_connected:
             raise BleakError("Not connected")
+
+        if use_cached:
+            manager = await get_global_bluez_manager()
+            return bytearray(manager.get_char_value(characteristic.obj[0]))
 
         while True:
             assert self._bus
@@ -712,14 +720,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying characteristic ReadValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         value = bytearray(reply.body[0])
@@ -735,18 +743,27 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
+            use_cached: Whether to use cached value.
 
         Returns:
             The read data.
         """
         if not self.is_connected:
             raise BleakError("Not connected")
+
+        if use_cached:
+            manager = await get_global_bluez_manager()
+            return bytearray(manager.get_desc_value(descriptor.obj[0]))
 
         while True:
             assert self._bus
@@ -762,14 +779,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying descriptor ReadValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         value = bytearray(reply.body[0])
@@ -803,14 +820,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying characteristic WriteValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         logger.debug(
@@ -848,14 +865,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
                 )
             )
 
-            if reply.error_name == "org.bluez.Error.InProgress":
+            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
                 logger.debug("retrying descriptor WriteValue due to InProgress")
                 # Avoid calling in a tight loop. There is no dbus signal to
                 # indicate ready, so unfortunately, we have to poll.
                 await asyncio.sleep(0.01)
                 continue
 
-            assert_reply(reply)
+            assert_gatt_reply(reply)
             break
 
         logger.debug(
@@ -937,7 +954,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     signature="a{sv}",
                 )
             )
-            assert_reply(reply)
+            assert_gatt_reply(reply)
 
             unix_fd = reply.unix_fds[0]
             self._notification_fds[characteristic.obj[0]] = unix_fd
@@ -952,7 +969,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="StartNotify",
                 )
             )
-            assert_reply(reply)
+            assert_gatt_reply(reply, start_notify=True)
 
     @override
     async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:

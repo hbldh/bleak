@@ -129,6 +129,7 @@ autodoc_mock_imports = [
     "typing_extensions",
     "bleak.backends.corebluetooth.CentralManagerDelegate",
     "bleak.backends.corebluetooth.PeripheralDelegate",
+    "bleak.backends.corebluetooth.utils",
 ]
 
 # -- Options for HTML output -------------------------------------------

@@ -12,11 +12,15 @@ from Foundation import (
     NSData,
     NSDictionary,
     NSError,
+    NSErrorDomain,
     NSNumber,
     NSObject,
     NSString,
 )
 from libdispatch import dispatch_queue_t
+
+CBErrorDomain: NSErrorDomain
+CBATTErrorDomain: NSErrorDomain
 
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...
@@ -266,3 +270,11 @@ class CBDescriptor(CBAttribute):
     def value(self) -> Optional[Any]: ...
     # Undocumented property
     def handle(self) -> int: ...
+
+CBUUIDCharacteristicExtendedPropertiesString: NSString
+CBUUIDCharacteristicUserDescriptionString: NSString
+CBUUIDClientCharacteristicConfigurationString: NSString
+CBUUIDServerCharacteristicConfigurationString: NSString
+CBUUIDCharacteristicFormatString: NSString
+CBUUIDCharacteristicAggregateFormatString: NSString
+CBUUIDL2CAPPSMCharacteristicString: NSString

@@ -66,7 +66,7 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
-from bleak.exc import PROTOCOL_ERROR_CODES, BleakDeviceNotFoundError, BleakError
+from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolError
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +122,7 @@ def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
 
     if status == GattCommunicationStatus.PROTOCOL_ERROR:
         assert result.protocol_error is not None
-        err = PROTOCOL_ERROR_CODES.get(result.protocol_error, "Unknown")
-        raise BleakError(
-            f"{fail_msg}: Protocol Error 0x{result.protocol_error:02X}: {err}"
-        )
+        raise BleakGATTProtocolError(result.protocol_error)
 
     if status == GattCommunicationStatus.ACCESS_DENIED:
         raise BleakError(f"{fail_msg}: Access Denied")
@@ -849,7 +846,11 @@ class BleakClientWinRT(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -868,8 +869,6 @@ class BleakClientWinRT(BaseBleakClient):
             raise BleakError("Not connected")
 
         assert self.services
-
-        use_cached = kwargs.get("use_cached", False)
 
         gatt_char = cast(GattCharacteristic, characteristic.obj)
 
@@ -891,14 +890,16 @@ class BleakClientWinRT(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
-
-        Keyword Args:
             use_cached (bool): `False` forces Windows to read the value from the
                 device again and not use its own cached value. Defaults to `False`.
 
@@ -911,7 +912,6 @@ class BleakClientWinRT(BaseBleakClient):
 
         assert self.services
 
-        use_cached = kwargs.get("use_cached", False)
         gatt_desc = cast(GattDescriptor, descriptor.obj)
 
         value = bytearray(

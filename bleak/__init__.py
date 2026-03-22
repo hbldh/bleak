@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-from bleak.args import SizedBuffer
-
-__author__ = """Henrik Blidh"""
-__email__ = "henrik.blidh@gmail.com"
-
 import asyncio
 import functools
 import inspect
@@ -17,10 +12,12 @@ import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
 from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
+from warnings import warn
 
 from bleak._compat import Never, Self, Unpack, assert_never
 from bleak._compat import timeout as async_timeout
-from bleak.args.bluez import BlueZNotifyArgs, BlueZScannerArgs
+from bleak.args import SizedBuffer
+from bleak.args.bluez import BlueZClientArgs, BlueZNotifyArgs, BlueZScannerArgs
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends import BleakBackend
@@ -37,7 +34,10 @@ from bleak.backends.scanner import (
 )
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
-from bleak.uuids import normalize_uuid_str
+from bleak.uuids import normalize_uuid_16, normalize_uuid_str
+
+__author__ = """Henrik Blidh"""
+__email__ = "henrik.blidh@gmail.com"
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -101,6 +101,10 @@ class BleakScanner:
     .. versionchanged:: 0.18
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakScanner`.
         Added ``backend`` parameter.
+
+    .. versionchanged:: unreleased
+        Deprecated ``adapter`` keyword argument. Use ``bluez`` argument instead
+        with ``{"adapter": "<adapter_name>"}``.
     """
 
     def __init__(
@@ -119,6 +123,18 @@ class BleakScanner:
             if backend is None
             else (backend, backend.__name__)
         )
+
+        # TODO: upgrade this to FutureWarning in 2027 and remove in 2028 or so
+        adapter_kwarg = kwargs.get("adapter")
+        if adapter_kwarg is not None:
+            warn(
+                "the 'adapter' keyword argument is deprecated, use the 'bluez' kwarg instead with {'adapter': '<adapter_name>'}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if "adapter" not in bluez:
+                bluez["adapter"] = adapter_kwarg
 
         self._backend = PlatformBleakScanner(
             detection_callback,
@@ -148,9 +164,9 @@ class BleakScanner:
 
     async def __aexit__(
         self,
-        exc_type: type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         await self.stop()
 
@@ -228,9 +244,14 @@ class BleakScanner:
         Used to override the automatically selected backend (i.e. for a
             custom backend).
         """
-        adapter: str | None
+        adapter: str
         """
         Name of adapter to use (BlueZ specific), e.g. hci0.
+
+        .. versionchanged:: unreleased
+            This argument is deprecated and will be removed in a future release.
+            Use the ``bluez`` argument with ``{"adapter": "<adapter_name>"}``
+            instead.
         """
 
     @overload
@@ -462,6 +483,8 @@ class BleakClient:
             In rare cases, on other platforms, it might be necessary to pair the
             device first in order to be able to even enumerate the services during
             the connection process.
+        bluez:
+            Dictionary of BlueZ/Linux platform-specific options.
         winrt:
             Dictionary of WinRT/Windows platform-specific options.
         backend:
@@ -499,6 +522,9 @@ class BleakClient:
 
     .. versionchanged:: 2.1.1
         Changed default connect timeout from 10 to 30 seconds.
+
+    .. versionchanged:: unreleased
+        Added ``bluez`` parameter.
     """
 
     def __init__(
@@ -509,6 +535,7 @@ class BleakClient:
         *,
         timeout: float = 30,
         pair: bool = False,
+        bluez: BlueZClientArgs = {},
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,
         **kwargs: Any,
@@ -518,6 +545,18 @@ class BleakClient:
             if backend is None
             else (backend, backend.__name__)
         )
+
+        # TODO: upgrade this to FutureWarning in 2027 and remove in 2028 or so
+        adapter_kwarg = kwargs.get("adapter")
+        if adapter_kwarg is not None:
+            warn(
+                "the 'adapter' keyword argument is deprecated, use the 'bluez' kwarg instead with {'adapter': '<adapter_name>'}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if "adapter" not in bluez:
+                bluez["adapter"] = adapter_kwarg
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,
@@ -530,6 +569,7 @@ class BleakClient:
                 None if services is None else set(map(normalize_uuid_str, services))
             ),
             timeout=timeout,
+            bluez=bluez,
             winrt=winrt,
             **kwargs,
         )
@@ -688,6 +728,8 @@ class BleakClient:
     async def read_gatt_char(
         self,
         char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        *,
+        use_cached: bool = False,
         **kwargs: Any,
     ) -> bytearray:
         """
@@ -698,6 +740,9 @@ class BleakClient:
                 The characteristic to read from, specified by either integer
                 handle, UUID or directly by the BleakGATTCharacteristic object
                 representing it.
+            use_cached:
+                If ``True``, the cached value will be returned instead of
+                performing a new read operation. May be ignored by some backends.
 
         Returns:
             The read data.
@@ -705,10 +750,17 @@ class BleakClient:
         Raises:
             BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
-            backend-specific exceptions: if the read operation failed.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+            backend-specific exceptions: in rare cases
+
+        .. versionchanged:: 3.0
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
         """
         characteristic = _resolve_characteristic(char_specifier, self.services)
-        return await self._backend.read_gatt_char(characteristic, **kwargs)
+        return await self._backend.read_gatt_char(
+            characteristic, use_cached=use_cached, **kwargs
+        )
 
     async def write_gatt_char(
         self,
@@ -754,10 +806,16 @@ class BleakClient:
         Raises:
             BleakCharacteristicNotFoundError: if a characteristic with the
                 handle or UUID specified by ``char_specifier`` could not be found.
-            backend-specific exceptions: if the write operation failed.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+                Only applies when ``response=True``.
+            backend-specific exceptions: in rare cases.
 
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
+
+        .. versionchanged:: 3.0
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
 
         Example::
 
@@ -874,6 +932,8 @@ class BleakClient:
     async def read_gatt_descriptor(
         self,
         desc_specifier: Union[BleakGATTDescriptor, int],
+        *,
+        use_cached: bool = False,
         **kwargs: Any,
     ) -> bytearray:
         """
@@ -883,17 +943,26 @@ class BleakClient:
             desc_specifier:
                 The descriptor to read from, specified by either integer handle
                 or directly by the BleakGATTDescriptor object representing it.
-
-        Raises:
-            BleakError: if the descriptor could not be found.
-            backend-specific exceptions: if the read operation failed.
+            use_cached:
+                If ``True``, the cached value will be returned instead of
+                performing a new read operation. May be ignored by some backends.
 
         Returns:
             The read data.
 
+        Raises:
+            BleakError: if the descriptor could not be found.
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+            backend-specific exceptions: in rare cases.
+
+        .. versionchanged:: 3.0
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
-        return await self._backend.read_gatt_descriptor(descriptor, **kwargs)
+        return await self._backend.read_gatt_descriptor(
+            descriptor, use_cached=use_cached, **kwargs
+        )
 
     async def write_gatt_descriptor(
         self,
@@ -912,8 +981,28 @@ class BleakClient:
 
         Raises:
             BleakError: if the descriptor could not be found.
-            backend-specific exceptions: if the read operation failed.
+            ValueError: if attempting to write to the Client Characteristic
+                Configuration Descriptor (CCCD, UUID 0x2902).
+            BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
+            backend-specific exceptions: in rare cases.
 
+        .. versionchanged:: 3.0
+            Now raises ``ValueError`` when attempting to write to the CCCD
+            instead of backend-specific exceptions.
+
+        .. versionchanged:: 3.0
+            Now raises ``BleakGATTProtocolError`` when possible instead of
+            backend-specific exceptions.
         """
         descriptor = _resolve_descriptor(desc_specifier, self.services)
+
+        # Some backends do not allow allowing writing Client Characteristic
+        # Configuration Descriptor (CCCD) directly and will raise an OS-specific
+        # error. Instead we check for this here and raise a common exception for
+        # consistent cross-platform behavior.
+        if descriptor.uuid == normalize_uuid_16(0x2902):
+            raise ValueError(
+                "Cannot write to CCCD (0x2902) directly. Use start_notify() or stop_notify() instead."
+            )
+
         await self._backend.write_gatt_descriptor(descriptor, data)

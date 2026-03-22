@@ -1,5 +1,9 @@
+import contextlib
+import functools
 import sys
-from typing import AsyncGenerator
+import threading
+from collections.abc import Callable
+from typing import AsyncGenerator, ParamSpec, TypeVar
 
 import pytest
 from bumble import data_types
@@ -11,11 +15,21 @@ from bumble.transport import open_transport
 from bumble.transport.common import Transport
 
 from bleak import BleakScanner
+from bleak.backends import _utils
 from bleak.backends.device import BLEDevice
 
 
 @pytest.fixture
 async def hci_transport(
+    request: pytest.FixtureRequest,
+) -> AsyncGenerator[Transport, None]:
+    """Create a bumble HCI Transport."""
+    async with create_hci_transport(request) as hci_transport:
+        yield hci_transport
+
+
+@contextlib.asynccontextmanager
+async def create_hci_transport(
     request: pytest.FixtureRequest,
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
@@ -43,10 +57,13 @@ async def hci_transport(
 
 
 @pytest.fixture
-def bumble_peripheral(hci_transport: Transport) -> Device:
-    """
-    Create a BLE peripheral device with bumble.
-    """
+async def bumble_peripheral(hci_transport: Transport) -> Device:
+    """Create a BLE peripheral device with bumble."""
+    return create_bumble_peripheral(hci_transport)
+
+
+def create_bumble_peripheral(hci_transport: Transport) -> Device:
+    """Create a BLE peripheral device with bumble."""
     config = DeviceConfiguration(
         name="Bleak",
         # use random static address to avoid device caching issues, when characteristics change between test runs
@@ -98,3 +115,31 @@ async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
         raise RuntimeError("failed to discover device, is Bumble working?")
 
     return device
+
+
+_P = ParamSpec("_P")
+_TReturn = TypeVar("_TReturn")
+
+
+def enable_coverage(func: Callable[_P, _TReturn]) -> Callable[_P, _TReturn]:
+    """
+    Enable coverage tracing on a non-Python-created thread, if not already enabled.
+    (https://github.com/nedbat/coveragepy/issues/686)
+    """
+
+    @functools.wraps(func)
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _TReturn:
+        if sys.gettrace() is None and (trace_hook := threading.gettrace()):
+            sys.settrace(trace_hook)
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
+# Patch external thread callbacks to enable coverage tracing.
+# This must be done at module import time, before any backend code is imported,
+# to ensure the patch is in place when callbacks are created.
+# Callbacks from external (non-Python) threads don't have coverage tracing enabled
+# by default. This patch wraps such callbacks (e.g., CoreBluetooth dispatch queue
+# threads, WinRT callback threads) to enable coverage tracing.
+_utils.external_thread_callback = enable_coverage

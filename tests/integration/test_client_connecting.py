@@ -1,5 +1,6 @@
 import asyncio
 
+import pytest
 from bumble.device import Device
 
 from bleak import BleakClient
@@ -33,6 +34,19 @@ async def test_connect_multiple_times(bumble_peripheral: Device):
 
     async with BleakClient(device):
         pass
+
+
+async def test_connect_timeout(bumble_peripheral: Device):
+    """Connecting to a removed BLE device times out."""
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    device = await find_ble_device(bumble_peripheral)
+
+    await bumble_peripheral.stop_advertising()
+
+    with pytest.raises(asyncio.TimeoutError):
+        async with BleakClient(device, timeout=1.0):
+            pass
 
 
 async def test_is_connected(bumble_peripheral: Device):

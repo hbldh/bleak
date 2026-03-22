@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import uuid
 from typing import Any, Optional, Union
@@ -237,9 +239,106 @@ PROTOCOL_ERROR_CODES = {
     0x11: "Insufficient Resource",
     0x12: "Database Out Of Sync",
     0x13: "Value Not Allowed",
-    # REVISIT: do we need Application Errors 0x80-0x9F?
+    0x80: "Application-specific Error 0x80",
+    0x81: "Application-specific Error 0x81",
+    0x82: "Application-specific Error 0x82",
+    0x83: "Application-specific Error 0x83",
+    0x84: "Application-specific Error 0x84",
+    0x85: "Application-specific Error 0x85",
+    0x86: "Application-specific Error 0x86",
+    0x87: "Application-specific Error 0x87",
+    0x88: "Application-specific Error 0x88",
+    0x89: "Application-specific Error 0x89",
+    0x8A: "Application-specific Error 0x8A",
+    0x8B: "Application-specific Error 0x8B",
+    0x8C: "Application-specific Error 0x8C",
+    0x8D: "Application-specific Error 0x8D",
+    0x8E: "Application-specific Error 0x8E",
+    0x8F: "Application-specific Error 0x8F",
+    0x90: "Application-specific Error 0x90",
+    0x91: "Application-specific Error 0x91",
+    0x92: "Application-specific Error 0x92",
+    0x93: "Application-specific Error 0x93",
+    0x94: "Application-specific Error 0x94",
+    0x95: "Application-specific Error 0x95",
+    0x96: "Application-specific Error 0x96",
+    0x97: "Application-specific Error 0x97",
+    0x98: "Application-specific Error 0x98",
+    0x99: "Application-specific Error 0x99",
+    0x9A: "Application-specific Error 0x9A",
+    0x9B: "Application-specific Error 0x9B",
+    0x9C: "Application-specific Error 0x9C",
+    0x9D: "Application-specific Error 0x9D",
+    0x9E: "Application-specific Error 0x9E",
+    0x9F: "Application-specific Error 0x9F",
     0xFC: "Write Request Rejected",
     0xFD: "Client Characteristic Configuration Descriptor Improperly Configured",
     0xFE: "Procedure Already in Progress",
     0xFF: "Out of Range",
 }
+
+
+class BleakGATTProtocolErrorCode(enum.IntEnum):
+    """
+    Enumeration of GATT protocol error codes.
+
+    .. versionadded:: 3.0
+    """
+
+    INVALID_HANDLE = 0x01
+    READ_NOT_PERMITTED = 0x02
+    WRITE_NOT_PERMITTED = 0x03
+    INVALID_PDU = 0x04
+    INSUFFICIENT_AUTHENTICATION = 0x05
+    REQUEST_NOT_SUPPORTED = 0x06
+    INVALID_OFFSET = 0x07
+    INSUFFICIENT_AUTHORIZATION = 0x08
+    PREPARE_QUEUE_FULL = 0x09
+    ATTRIBUTE_NOT_FOUND = 0x0A
+    ATTRIBUTE_NOT_LONG = 0x0B
+    INSUFFICIENT_ENCRYPTION_KEY_SIZE = 0x0C
+    INVALID_ATTRIBUTE_VALUE_LENGTH = 0x0D
+    UNLIKELY_ERROR = 0x0E
+    INSUFFICIENT_ENCRYPTION = 0x0F
+    UNSUPPORTED_GROUP_TYPE = 0x10
+    INSUFFICIENT_RESOURCE = 0x11
+    DATABASE_OUT_OF_SYNC = 0x12
+    VALUE_NOT_ALLOWED = 0x13
+    WRITE_REQUEST_REJECTED = 0xFC
+    CCCD_IMPROPERLY_CONFIGURED = 0xFD
+    PROCEDURE_ALREADY_IN_PROGRESS = 0xFE
+    OUT_OF_RANGE = 0xFF
+
+    @classmethod
+    def _missing_(cls, value: Any) -> BleakGATTProtocolErrorCode | None:
+        try:
+            obj = int.__new__(cls, value)
+        except TypeError:  # pragma: no cover
+            return None
+
+        obj._value_ = value
+        obj._name_ = f"{cls.__name__}[{value}]"
+        return obj
+
+
+class BleakGATTProtocolError(BleakError):
+    """
+    Exception which is raised if a GATT protocol error occurs.
+
+    .. versionadded:: 3.0
+    """
+
+    def __init__(self, error_code: int) -> None:
+        """
+        Args:
+            error_code (int): The GATT protocol error code.
+        """
+        error_message = PROTOCOL_ERROR_CODES.get(error_code, "Unknown code")
+        super().__init__(error_code, f"GATT Protocol Error: {error_message}")
+
+    @property
+    def code(self) -> BleakGATTProtocolErrorCode:
+        """
+        Gets the GATT protocol error code.
+        """
+        return BleakGATTProtocolErrorCode(self.args[0])

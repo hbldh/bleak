@@ -374,10 +374,14 @@ You will need to sign up for an Apple Developer account to obtain this software.
     logging profile from the Apple develop `Profiles and Logs`_ page. Follow the
     instruction provided in the link, then continue with the steps below.
 
-    .. tip:: After installing the ``Bluetooth_macOS.mobileconfig`` file, the
-             profile can be found in *System Settings* under *Privacy and Security*
-             > *Others* > *Profiles*. You have to go there to actually install
-             the profile. Then reboot your computer.
+    .. tip:: After installing the ``Bluetooth_macOS.mobileconfig`` file, 
+            the profile can be found in *System Settings* under *Device
+            Management* > *Downloaded*. There you can double-click to review
+            and install it. You have to go there to actually install the profile.
+            Then reboot your computer.
+            
+            If you are on macOS 14.x, the profile can be found on *System Settings*
+            under *Privacy and Security* > *Others* > *Profiles*.
 
     If you have an older version of macOS, you can skip this step.
 

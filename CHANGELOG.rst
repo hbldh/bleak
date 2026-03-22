@@ -10,6 +10,37 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`3.0.0`_ (2026-03-22)
+=====================
+
+Added
+-----
+* Added ``adapter`` attribute to ``bleak.args.bluez.BlueZClientArgs`` and ``bleak.args.bluez.BlueZScannerArgs``.
+* Added ``bluez`` keyword argument to ``BleakClient``.
+* Added new ``bleak.args.bluez.BlueZClientArgs`` class.
+* Added ``bleak.exc.BleakGATTProtocolError`` and ``bleak.exc.BleakGATTProtocolErrorCode`` classes.
+* Added type hints and documentation for ``use_cached`` kwarg for ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in ``BleakClient``.
+* Added support for ``"use_cached"`` kwarg to ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in BlueZ backend.
+
+Changed
+-------
+* Deprecated ``adapter`` keyword argument in ``BleakScanner`` and ``BleakClient``.
+* Changed GATT read and write methods to raise ``BleakGATTProtocolError`` when a GATT protocol error occurs.
+* Changed start/stop scanning on CoreBluetooth so that the ``isScanning`` property is not checked anymore.
+* Changed ``BleakClient.write_gatt_descriptor()`` to raise ``ValueError`` when attempting to write to the descriptor 0x2902 (Client Characteristic Configuration Descriptor, CCCD). Use ``start_notify()`` and ``stop_notify()`` instead.
+
+Fixed
+-----
+* Fixed occasional ``EOFError`` when disconnecting in BlueZ backend. Fixes #1921.
+* Fixed a potential deadlock when turning off Bluetooth manually while starting scanning on CoreBluetooth.
+* Fixed reading descriptors 0x2900, 0x2902 and 0x2903 on CoreBluetooth backend.
+* Fixed cyclic references problem in CoreBluetooth backend causing memory leaks.
+* Fixed typehint for ``BleakScanner.__aexit__()``.
+
+Removed
+-------
+* Removed undocumented/deprecated ``device`` keyword argument from ``BleakScannerBlueZDBus`` and ``BleakClientBlueZDBus``.
+
 `2.1.1`_ (2025-12-31)
 =====================
 
@@ -1171,7 +1202,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.1.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.0.0...develop
+.. _3.0.0: https://github.com/hbldh/bleak/compare/v2.1.1...v3.0.0
 .. _2.1.1: https://github.com/hbldh/bleak/compare/v2.1.0...v2.1.1
 .. _2.1.0: https://github.com/hbldh/bleak/compare/v2.0.0...v2.1.0
 .. _2.0.0: https://github.com/hbldh/bleak/compare/v1.1.1...v2.0.0

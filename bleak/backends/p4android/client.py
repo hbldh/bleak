@@ -52,8 +52,6 @@ class BleakClientP4Android(BaseBleakClient):
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )
-        # kwarg "device" is for backwards compatibility
-        self.__adapter = kwargs.get("adapter", kwargs.get("device", None))
         self.__gatt = None
         self.__mtu = 23
 
@@ -69,13 +67,13 @@ class BleakClientP4Android(BaseBleakClient):
 
         loop = asyncio.get_running_loop()
 
-        self.__adapter = defs.BluetoothAdapter.getDefaultAdapter()
-        if self.__adapter is None:
+        adapter = defs.BluetoothAdapter.getDefaultAdapter()
+        if adapter is None:
             raise BleakError("Bluetooth is not supported on this hardware platform")
-        if self.__adapter.getState() != defs.BluetoothAdapter.STATE_ON:
+        if adapter.getState() != defs.BluetoothAdapter.STATE_ON:
             raise BleakError("Bluetooth is not turned on")
 
-        self.__device = self.__adapter.getRemoteDevice(self.address)
+        self.__device = adapter.getRemoteDevice(self.address)
 
         self.__callbacks = _PythonBluetoothGattCallback(self, loop)
 
@@ -291,7 +289,11 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def read_gatt_char(
-        self, characteristic: BleakGATTCharacteristic, **kwargs: Any
+        self,
+        characteristic: BleakGATTCharacteristic,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT characteristic.
 
@@ -302,6 +304,10 @@ class BleakClientP4Android(BaseBleakClient):
             (bytearray) The read data.
 
         """
+        if use_cached:
+            logger.debug(
+                "Reading cached characteristic values is not implemented on Android"
+            )
 
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readCharacteristic,
@@ -316,16 +322,26 @@ class BleakClientP4Android(BaseBleakClient):
 
     @override
     async def read_gatt_descriptor(
-        self, descriptor: BleakGATTDescriptor, **kwargs: Any
+        self,
+        descriptor: BleakGATTDescriptor,
+        *,
+        use_cached: bool = False,
+        **kwargs: Any,
     ) -> bytearray:
         """Perform read operation on the specified GATT descriptor.
 
         Args:
             descriptor: The descriptor to read from.
+            use_cached: Whether to use cached value.
 
         Returns:
             The read data.
         """
+        if use_cached:
+            logger.debug(
+                "Reading cached descriptor values is not implemented on Android"
+            )
+
         (value,) = await self.__callbacks.perform_and_wait(
             dispatchApi=self.__gatt.readDescriptor,
             dispatchParams=(descriptor.obj,),

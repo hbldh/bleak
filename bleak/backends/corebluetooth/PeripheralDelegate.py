@@ -9,6 +9,7 @@ Created by kevincar <kevincarrolldavis@gmail.com>
 from __future__ import annotations
 
 import sys
+import weakref
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -24,6 +25,7 @@ from typing import Any, Optional
 import objc
 from CoreBluetooth import (
     CBUUID,
+    CBATTErrorDomain,
     CBCharacteristic,
     CBCharacteristicWriteType,
     CBCharacteristicWriteWithResponse,
@@ -36,9 +38,9 @@ from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
-from bleak.backends._utils import try_call_soon_threadsafe
+from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.backends.client import NotifyCallback
-from bleak.exc import BleakError
+from bleak.exc import BleakError, BleakGATTProtocolError
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +53,14 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     CoreBluetooth peripheral manager delegate for bridging callbacks to asyncio.
     """
 
-    def initWithPyDelegate_(self, py_delegate: PeripheralDelegate) -> Optional[Self]:
+    def initWithPyDelegate_(
+        self, py_delegate: weakref.ReferenceType["PeripheralDelegate"]
+    ) -> Optional[Self]:
         """macOS init function for NSObject"""
         self = objc.super(ObjcPeripheralDelegate, self).init()  # type: ignore[assignment]
 
         if self is None:
-            return None
+            return None  # pragma: no cover
 
         self.py_delegate = py_delegate
 
@@ -64,39 +68,49 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
 
     # Protocol Functions
 
+    @external_thread_callback
     def peripheral_didDiscoverServices_(
         self, peripheral: CBPeripheral, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverServices_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_services,
+            py_delegate.event_loop,
+            py_delegate.did_discover_services,
             peripheral,
             peripheral.services(),
             error,
         )
 
-    def peripheral_didDiscoverIncludedServicesForService_error_(
+    @external_thread_callback
+    def peripheral_didDiscoverIncludedServicesForService_error_(  # pragma: no cover
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverIncludedServicesForService_error_")
         # Currently not used in Bleak
 
+    @external_thread_callback
     def peripheral_didDiscoverCharacteristicsForService_error_(
         self, peripheral: CBPeripheral, service: CBService, error: Optional[NSError]
     ) -> None:
         logger.debug("peripheral_didDiscoverCharacteristicsForService_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_characteristics_for_service,
+            py_delegate.event_loop,
+            py_delegate.did_discover_characteristics_for_service,
             peripheral,
             service,
             service.characteristics(),
             error,
         )
 
+    @external_thread_callback
     def peripheral_didDiscoverDescriptorsForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -105,14 +119,18 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didDiscoverDescriptorsForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_discover_descriptors_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_discover_descriptors_for_characteristic,
             peripheral,
             characteristic,
             error,
         )
 
+    @external_thread_callback
     def peripheral_didUpdateValueForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -121,15 +139,19 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didUpdateValueForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_value_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_update_value_for_characteristic,
             peripheral,
             characteristic,
             characteristic.value(),
             error,
         )
 
+    @external_thread_callback
     def peripheral_didUpdateValueForDescriptor_error_(
         self,
         peripheral: CBPeripheral,
@@ -138,15 +160,19 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didUpdateValueForDescriptor_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_value_for_descriptor,
+            py_delegate.event_loop,
+            py_delegate.did_update_value_for_descriptor,
             peripheral,
             descriptor,
             descriptor.value(),
             error,
         )
 
+    @external_thread_callback
     def peripheral_didWriteValueForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -155,14 +181,18 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didWriteValueForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_write_value_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_write_value_for_characteristic,
             peripheral,
             characteristic,
             error,
         )
 
+    @external_thread_callback
     def peripheral_didWriteValueForDescriptor_error_(
         self,
         peripheral: CBPeripheral,
@@ -171,20 +201,25 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didWriteValueForDescriptor_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_write_value_for_descriptor,
+            py_delegate.event_loop,
+            py_delegate.did_write_value_for_descriptor,
             peripheral,
             descriptor,
             error,
         )
 
-    def peripheralIsReadyToSendWriteWithoutResponse_(
+    @external_thread_callback
+    def peripheralIsReadyToSendWriteWithoutResponse_(  # pragma: no cover
         self, peripheral: CBPeripheral
     ) -> None:
         logger.debug("peripheralIsReadyToSendWriteWithoutResponse_")
         # Currently not used in Bleak
 
+    @external_thread_callback
     def peripheral_didUpdateNotificationStateForCharacteristic_error_(
         self,
         peripheral: CBPeripheral,
@@ -193,14 +228,18 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didUpdateNotificationStateForCharacteristic_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_notification_for_characteristic,
+            py_delegate.event_loop,
+            py_delegate.did_update_notification_for_characteristic,
             peripheral,
             characteristic,
             error,
         )
 
+    @external_thread_callback
     def peripheral_didReadRSSI_error_(
         self,
         peripheral: CBPeripheral,
@@ -209,44 +248,43 @@ class ObjcPeripheralDelegate(NSObject, protocols=[CBPeripheralDelegate]):
     ) -> None:
         logger.debug("peripheral_didReadRSSI_error_")
 
+        if (py_delegate := self.py_delegate()) is None:
+            return
+
         try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_read_rssi,
+            py_delegate.event_loop,
+            py_delegate.did_read_rssi,
             peripheral,
             int(rssi),
             error,
         )
 
-    # Bleak currently doesn't use the callbacks below other than for debug logging
-
-    def peripheralDidUpdateName_(self, peripheral: CBPeripheral) -> None:
+    @external_thread_callback
+    def peripheralDidUpdateName_(  # pragma: no cover
+        self, peripheral: CBPeripheral
+    ) -> None:
         logger.debug("peripheralDidUpdateName_")
-
-        try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_update_name,
-            peripheral,
-            peripheral.name(),
+        logger.debug(
+            f"name of {peripheral.identifier()} changed to {peripheral.name()}"
         )
+        # Currently not used in Bleak
 
-    def peripheral_didModifyServices_(
+    @external_thread_callback
+    def peripheral_didModifyServices_(  # pragma: no cover
         self, peripheral: CBPeripheral, invalidatedServices: NSArray[CBService]
     ) -> None:
         logger.debug("peripheral_didModifyServices_")
-
-        try_call_soon_threadsafe(
-            self.py_delegate.event_loop,
-            self.py_delegate.did_modify_services,
-            peripheral,
-            invalidatedServices,
+        logger.debug(
+            f"{peripheral.identifier()} invalidated services: {invalidatedServices}"
         )
+        # Currently not used in Bleak
 
 
 class PeripheralDelegate:
     """macOS conforming python class for managing the PeripheralDelegate for BLE"""
 
     def __init__(self, peripheral: CBPeripheral) -> None:
-        delegate = ObjcPeripheralDelegate.alloc().initWithPyDelegate_(self)
+        delegate = ObjcPeripheralDelegate.alloc().initWithPyDelegate_(weakref.ref(self))
         assert delegate is not None
         self.objc_delegate = delegate
 
@@ -569,7 +607,11 @@ class PeripheralDelegate:
             return
 
         if error is not None:
-            exception = BleakError(f"Failed to read characteristic {c_handle}: {error}")
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(f"Failed to read characteristic {c_handle}: {error}")
+            )
             future.set_exception(exception)
         else:
             logger.debug("Read characteristic value")
@@ -588,8 +630,12 @@ class PeripheralDelegate:
             logger.warning("Unexpected event didUpdateValueForDescriptor")
             return
         if error is not None:
-            exception = BleakError(
-                f"Failed to read descriptor {descriptor.handle()}: {error}"
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(
+                    f"Failed to read descriptor {descriptor.handle()}: {error}"
+                )
             )
             future.set_exception(exception)
         else:
@@ -607,8 +653,12 @@ class PeripheralDelegate:
         if not future:
             return  # event only expected on write with response
         if error is not None:
-            exception = BleakError(
-                f"Failed to write characteristic {characteristic.handle()}: {error}"
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(
+                    f"Failed to write characteristic {characteristic.handle()}: {error}"
+                )
             )
             future.set_exception(exception)
         else:
@@ -626,9 +676,14 @@ class PeripheralDelegate:
             logger.warning("Unexpected event didWriteValueForDescriptor")
             return
         if error is not None:
-            exception = BleakError(
-                f"Failed to write descriptor {descriptor.handle()}: {error}"
+            exception = (
+                BleakGATTProtocolError(error.code())
+                if error.domain() == CBATTErrorDomain
+                else BleakError(
+                    f"Failed to write descriptor {descriptor.handle()}: {error}"
+                )
             )
+
             future.set_exception(exception)
         else:
             logger.debug("Write Descriptor Value")
@@ -670,15 +725,3 @@ class PeripheralDelegate:
             future.set_exception(exception)
         else:
             future.set_result(rssi)
-
-    # Bleak currently doesn't use the callbacks below other than for debug logging
-
-    def did_update_name(self, peripheral: CBPeripheral, name: str) -> None:
-        logger.debug(f"name of {peripheral.identifier()} changed to {name}")
-
-    def did_modify_services(
-        self, peripheral: CBPeripheral, invalidated_services: NSArray[CBService]
-    ) -> None:
-        logger.debug(
-            f"{peripheral.identifier()} invalidated services: {invalidated_services}"
-        )

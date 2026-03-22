@@ -1,93 +1,473 @@
-from bumble.device import Device
-from bumble.gatt import (
-    GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
-    Characteristic,
-    Descriptor,
-    Service,
-)
+import dataclasses
+import sys
+from collections.abc import AsyncGenerator
+
+import pytest
+import pytest_asyncio
+from bumble import gatt
+from bumble.att import ATT_Error, AttributeValue, ErrorCode
+from bumble.core import UUID
+from bumble.device import Connection, Device
+from bumble.gatt import Characteristic, Descriptor, Service
+from bumble.transport.common import Transport
 
 from bleak import BleakClient
+from bleak.backends import BleakBackend
+from bleak.exc import BleakDBusError, BleakGATTProtocolError
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
+    create_bumble_peripheral,
+    create_hci_transport,
     find_ble_device,
 )
 
 
-async def test_read_gatt_descriptor(bumble_peripheral: Device):
-    """Reading a GATT descriptor is possible."""
-    READABLE_DESCRIPTOR_SERVICE_UUID = "0d15eded-4e68-4718-bedf-736847b68e72"
-    READABLE_DESCRIPTOR_CHARACTERISITC_UUID = "25c614ab-1560-46da-94bc-c146addfc359"
-    virtual_descriptor = Descriptor(
-        GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
-        Descriptor.READABLE,
-        "Description".encode(),
-    )
-    virtual_characteristic = Characteristic(
-        READABLE_DESCRIPTOR_CHARACTERISITC_UUID,
+@pytest_asyncio.fixture(loop_scope="module", scope="module")
+async def hci_transport(
+    request: pytest.FixtureRequest,
+) -> AsyncGenerator[Transport, None]:
+    """Create a bumble HCI Transport."""
+    async with create_hci_transport(request) as hci_transport:
+        yield hci_transport
+
+
+@pytest_asyncio.fixture(loop_scope="module", scope="module")
+async def bumble_peripheral(hci_transport: Transport) -> Device:
+    """Create a BLE peripheral device with bumble."""
+    return create_bumble_peripheral(hci_transport)
+
+
+DESCR_TEST_SERVICE_UUID = "0d15eded-4e68-4718-bedf-736847b68e72"
+
+READABLE_DESCR_CHAR_UUID = "25c614ab-1560-46da-94bc-c146addfc359"
+WRITABLE_DESCR_CHAR_UUID = "822afd2f-c2b2-4302-9edb-09850a93b707"
+
+CUSTOM_BINARY_DESCRIPTOR_UUID = UUID("a1b2c3d4-e5f6-7890-1234-56789abcdef0")
+# CoreBluetooth specific UUID
+L2CAPPPSM_DESCRIPTOR_UUID = UUID("ABDD3056-28FA-441D-A470-55A75A52553A")
+
+
+@dataclasses.dataclass
+class DescrTestPeripheral:
+    bleak_client: BleakClient
+    bumble_peripheral: Device
+    readable_descr: dict[UUID, Descriptor]
+    writable_descr: dict[UUID, Descriptor]
+
+
+STANDARD_DESCRIPTORS: list[tuple[UUID, bytes, bytes]] = [
+    (
+        gatt.GATT_CHARACTERISTIC_EXTENDED_PROPERTIES_DESCRIPTOR,
+        b"\x03\x00",  # Reliable Write + Writable Auxiliaries
+        b"\x01\x00",  # Only Reliable Write
+    ),
+    (
+        gatt.GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
+        "🚀 Description".encode(),  # Test Description
+        "🔄 Updated".encode(),  # Alternative Description
+    ),
+    (
+        gatt.GATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR,
+        b"\x01\x00",  # Notifications enabled
+        b"\x02\x00",  # Indications enabled
+    ),
+    (
+        gatt.GATT_SERVER_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR,
+        b"\x01\x00",  # Broadcasts enabled
+        b"\x00\x00",  # Broadcasts disabled
+    ),
+    (
+        gatt.GATT_CHARACTERISTIC_PRESENTATION_FORMAT_DESCRIPTOR,
+        b"\x04\x00\xad\x27\x01\x00\x00",  # uint8, exponent 0, unit temperature celsius
+        b"\x06\x00\x72\x27\x01\x00\x00",  # uint16, exponent 0, unit temperature celsius
+    ),
+    (
+        gatt.GATT_CHARACTERISTIC_AGGREGATE_FORMAT_DESCRIPTOR,
+        b"\x0a\x00\x0b\x00",  # Handles to two characteristics
+        b"\x0c\x00\x0d\x00\x0e\x00",  # Handles to three characteristics
+    ),
+    (
+        gatt.GATT_VALID_RANGE_DESCRIPTOR,
+        b"\x00\x00\x64\x00",  # Min: 0, Max: 100
+        b"\x0a\x00\x32\x00",  # Min: 10, Max: 50
+    ),
+    (
+        gatt.GATT_EXTERNAL_REPORT_DESCRIPTOR,
+        b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f",  # Example UUID
+        b"\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\x07\x06\x05\x04\x03\x02\x01\x00",  # Different UUID
+    ),
+    (
+        gatt.GATT_REPORT_REFERENCE_DESCRIPTOR,
+        b"\x01\x01",  # Report ID: 1, Report Type: Input
+        b"\x02\x02",  # Report ID: 2, Report Type: Output
+    ),
+    (
+        gatt.GATT_NUMBER_OF_DIGITALS_DESCRIPTOR,
+        b"\x08",  # 8 digital values
+        b"\x10",  # 16 digital values
+    ),
+    (
+        gatt.GATT_VALUE_TRIGGER_SETTING_DESCRIPTOR,
+        b"\x01\x00\x00",  # Condition: None, value: 0
+        b"\x02\x32\x00",  # Condition: different, value: 50
+    ),
+    (
+        gatt.GATT_ENVIRONMENTAL_SENSING_CONFIGURATION_DESCRIPTOR,
+        b"\x01",  # Trigger logic: OR
+        b"\x02",  # Trigger logic: AND
+    ),
+    (
+        gatt.GATT_ENVIRONMENTAL_SENSING_MEASUREMENT_DESCRIPTOR,
+        b"\x01\x00\x00",  # Flags: 0x01, Sampling Function: Unspecified, Measurement Period: 0
+        b"\x02\x01\x0a",  # Flags: 0x02, Sampling Function: Instantaneous, Measurement Period: 10
+    ),
+    (
+        gatt.GATT_ENVIRONMENTAL_SENSING_TRIGGER_DESCRIPTOR,
+        b"\x01\x00\x00",  # Flags: 0x01
+        b"\x02\x00\x00",  # Flags: 0x02
+    ),
+    (
+        gatt.GATT_TIME_TRIGGER_DESCRIPTOR,
+        b"\x01\x00\x00",  # Condition: None, value: 0
+        b"\x02\x3c\x00",  # Condition: different, value: 60
+    ),
+    (
+        gatt.GATT_VALID_RANGE_AND_ACCURACY_DESCRIPTOR,
+        b"\x00\x00\x64\x00\x01\x00",  # Min: 0, Max: 100, Accuracy: 1
+        b"\x14\x00\x50\x00\x02\x00",  # Min: 20, Max: 80, Accuracy: 2
+    ),
+    (
+        CUSTOM_BINARY_DESCRIPTOR_UUID,
+        b"\x01\x02\x03\x04",  # Custom binary data
+        b"\xaa\xbb\xcc\xdd",  # Different custom binary data
+    ),
+    (
+        L2CAPPPSM_DESCRIPTOR_UUID,
+        b"\x56\x30",  # PSM value 0x3056 in little-endian
+        b"\x78\x40",  # PSM value 0x4078 in little-endian
+    ),
+]
+
+
+@pytest_asyncio.fixture(loop_scope="module", scope="module")
+async def descr_test_peripheral(
+    bumble_peripheral: Device,
+) -> AsyncGenerator[DescrTestPeripheral, None]:
+    readable_descriptors = {
+        descr_uuid: Descriptor(descr_uuid, Descriptor.READABLE, descr_data)
+        for descr_uuid, descr_data, _ in STANDARD_DESCRIPTORS
+    }
+
+    readable_descr_char = Characteristic(
+        READABLE_DESCR_CHAR_UUID,
         Characteristic.Properties.READ,
         Characteristic.Permissions.READABLE,
         b"",
-        [virtual_descriptor],
+        list(readable_descriptors.values()),
     )
+
+    writable_descr = {
+        descr_uuid: Descriptor(descr_uuid, Descriptor.WRITEABLE, descr_data)
+        for descr_uuid, descr_data, _ in STANDARD_DESCRIPTORS
+    }
+    writable_descr_char = Characteristic(
+        WRITABLE_DESCR_CHAR_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"",
+        list(writable_descr.values()),
+    )
+
     await configure_and_power_on_bumble_peripheral(
         bumble_peripheral,
-        services=[Service(READABLE_DESCRIPTOR_SERVICE_UUID, [virtual_characteristic])],
+        services=[
+            Service(
+                DESCR_TEST_SERVICE_UUID,
+                [
+                    readable_descr_char,
+                    writable_descr_char,
+                ],
+            ),
+        ],
     )
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(
-        device, services=[READABLE_DESCRIPTOR_SERVICE_UUID]
-    ) as client:
-        characteristic = client.services.get_characteristic(
-            READABLE_DESCRIPTOR_CHARACTERISITC_UUID
+    async with BleakClient(device, services=[DESCR_TEST_SERVICE_UUID]) as client:
+        yield DescrTestPeripheral(
+            bumble_peripheral=bumble_peripheral,
+            bleak_client=client,
+            readable_descr=readable_descriptors,
+            writable_descr=writable_descr,
         )
-        assert characteristic
 
-        descriptor = characteristic.get_descriptor(
-            GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR.to_hex_str()
+
+GATT_ERRORS = [
+    # These error codes are explicitly called out as possible errors from
+    # ATT_WRITE_REQ in the Bluetooth Core Specification. Commented-out codes
+    # are not possible to test, e.g. causes BlueZ to disconnect rather than
+    # return an error.
+    ErrorCode.INVALID_ATTRIBUTE_LENGTH,
+    ErrorCode.INSUFFICIENT_AUTHORIZATION,
+    # ErrorCode.INSUFFICIENT_AUTHENTICATION,
+    # ErrorCode.INSUFFICIENT_ENCRYPTION_KEY_SIZE,
+    # ErrorCode.INSUFFICIENT_ENCRYPTION,
+    ErrorCode.INVALID_HANDLE,
+    #
+    # Then these are specifically handled by BlueZ, so assumed to be
+    # possible in the wild. INVALID_OFFSET seems to trigger .InvalidArgs
+    # which is the same as INVALID_ATTRIBUTE_LENGTH, so not tested here.
+    ErrorCode.REQUEST_NOT_SUPPORTED,
+    # ErrorCode.INVALID_OFFSET,
+    ErrorCode.CCCD_IMPROPERLY_CONFIGURED,
+    #
+    # And allows custom error codes from higher layers.
+    ErrorCode(0xC0),  # Application Error
+    ErrorCode(0xE0),  # Common Profile or Service Error Codes
+]
+
+GATT_READ_ERRORS = GATT_ERRORS + [ErrorCode.READ_NOT_PERMITTED]
+GATT_WRITE_ERRORS = GATT_ERRORS + [ErrorCode.WRITE_NOT_PERMITTED]
+
+
+@pytest.mark.parametrize(
+    "descr_uuid,descr_data",
+    [
+        pytest.param(
+            descr_uuid,
+            descr_data,
+            id=descr_uuid.to_hex_str(),
         )
-        assert descriptor
+        for descr_uuid, descr_data, _ in STANDARD_DESCRIPTORS
+    ],
+)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_read_gatt_descriptor(
+    descr_test_peripheral: DescrTestPeripheral,
+    descr_uuid: UUID,
+    descr_data: bytes,
+):
+    """
+    Reading a string GATT descriptor is possible.
 
-        data = await client.read_gatt_descriptor(descriptor)
-        assert data == b"Description"
+    On CoreBluetooth some descriptors are returned as NSString or NSNumber instead of NSData.
+    This test ensures that all standard descriptors can be read correctly.
+    """
+
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        READABLE_DESCR_CHAR_UUID
+    )
+    assert characteristic
+
+    descriptor = characteristic.get_descriptor(descr_uuid.to_hex_str())
+    assert descriptor
+
+    # Set data to a known value (other tests may have modified it)
+    descr_test_peripheral.readable_descr[descr_uuid].value = descr_data
+
+    data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
+
+    # Verify the data is as expected
+    assert data == descr_data
 
 
-async def test_write_gatt_descriptor(bumble_peripheral: Device):
+@pytest.mark.asyncio(loop_scope="module")
+async def test_read_gatt_descriptor_use_cached(
+    descr_test_peripheral: DescrTestPeripheral,
+):
+    """Reading a cached GATT descriptor is possible."""
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        READABLE_DESCR_CHAR_UUID
+    )
+    assert characteristic
+
+    descriptor = characteristic.get_descriptor(
+        gatt.GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR.to_hex_str()
+    )
+    assert descriptor
+
+    bumble_descr = descr_test_peripheral.readable_descr[
+        gatt.GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR
+    ]
+
+    # Set data to a known value (other tests may have modified it)
+    bumble_descr.value = b"Original"
+
+    data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
+
+    # Verify the data is as expected
+    assert data == b"Original"
+
+    # Change the value in the peripheral
+    bumble_descr.value = b"Changed"
+
+    data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(
+        descriptor, use_cached=True
+    )
+
+    # The data has to be the original value since we are using the cached value.
+    assert data == b"Original"
+
+
+@pytest.mark.parametrize("gatt_error", GATT_READ_ERRORS)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_read_gatt_descriptor_error(
+    descr_test_peripheral: DescrTestPeripheral, gatt_error: ErrorCode
+):
+    """
+    Reading a string GATT passes error correctly.
+    """
+
+    # TODO: should add a test option to allow not skipping if user is available
+    # to click through any permission prompts.
+    if sys.platform == "darwin" and gatt_error == ErrorCode.INSUFFICIENT_AUTHORIZATION:
+        pytest.skip(
+            "Apple asks for user permission via a prompt, which cannot be handled automatically."
+        )
+
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        READABLE_DESCR_CHAR_UUID
+    )
+    assert characteristic
+
+    descriptor = characteristic.get_descriptor(
+        CUSTOM_BINARY_DESCRIPTOR_UUID.to_hex_str()
+    )
+    assert descriptor
+
+    def error_on_read(connection: Connection) -> bytes:
+        raise ATT_Error(gatt_error)
+
+    # Set data to a known value
+    descr_test_peripheral.readable_descr[CUSTOM_BINARY_DESCRIPTOR_UUID].value = (
+        AttributeValue(read=error_on_read)
+    )
+
+    with pytest.raises(BleakGATTProtocolError) as exc_info:
+        await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
+
+    assert exc_info.value.code == gatt_error
+
+
+@pytest.mark.parametrize(
+    "descr_uuid,descr_data_1,descr_data_2",
+    [
+        pytest.param(
+            descr_uuid,
+            descr_data_1,
+            descr_data_2,
+            id=descr_uuid.to_hex_str(),
+        )
+        for descr_uuid, descr_data_1, descr_data_2 in STANDARD_DESCRIPTORS
+    ],
+)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_write_gatt_descriptor(
+    descr_test_peripheral: DescrTestPeripheral,
+    descr_uuid: UUID,
+    descr_data_1: bytes,
+    descr_data_2: bytes,
+):
     """Writing a GATT descriptor is possible."""
-    WRITABLE_DESCRIPTOR_SERVICE_UUID = "bef6dc41-8986-4c32-b746-6e2b10ca06e0"
-    WRITABLE_DESCRIPTOR_CHARACTERISITC_UUID = "822afd2f-c2b2-4302-9edb-09850a93b707"
-    virtual_descriptor = Descriptor(
-        GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR,
-        Descriptor.WRITEABLE,
-        b"-----------",
-    )
-    virtual_characteristic = Characteristic(
-        WRITABLE_DESCRIPTOR_CHARACTERISITC_UUID,
-        Characteristic.Properties.READ,
-        Characteristic.Permissions.READABLE,
-        b"",
-        [virtual_descriptor],
-    )
-    await configure_and_power_on_bumble_peripheral(
-        bumble_peripheral,
-        services=[Service(WRITABLE_DESCRIPTOR_SERVICE_UUID, [virtual_characteristic])],
-    )
 
-    device = await find_ble_device(bumble_peripheral)
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        WRITABLE_DESCR_CHAR_UUID
+    )
+    assert characteristic
 
-    async with BleakClient(
-        device, services=[WRITABLE_DESCRIPTOR_SERVICE_UUID]
-    ) as client:
-        characteristic = client.services.get_characteristic(
-            WRITABLE_DESCRIPTOR_CHARACTERISITC_UUID
+    descriptor = characteristic.get_descriptor(descr_uuid.to_hex_str())
+    assert descriptor
+
+    # Set data to a known value
+    descr_test_peripheral.writable_descr[descr_uuid].value = descr_data_1
+
+    if descr_uuid == gatt.GATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR:
+        # writing CCCD should raise ValueError
+        with pytest.raises(ValueError, match="Cannot write to CCCD"):
+            await descr_test_peripheral.bleak_client.write_gatt_descriptor(
+                descriptor, descr_data_2
+            )
+    else:
+        await descr_test_peripheral.bleak_client.write_gatt_descriptor(
+            descriptor, descr_data_2
         )
-        assert characteristic
 
-        descriptor = characteristic.get_descriptor(
-            GATT_CHARACTERISTIC_USER_DESCRIPTION_DESCRIPTOR.to_hex_str()
+        # Verify the data is as expected
+        assert descr_test_peripheral.writable_descr[descr_uuid].value == descr_data_2  # type: ignore  # (missing type hints in bumble)
+
+
+@pytest.mark.parametrize("gatt_error", GATT_WRITE_ERRORS)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_write_gatt_descriptor_error(
+    descr_test_peripheral: DescrTestPeripheral, gatt_error: ErrorCode
+):
+    """
+    Writing a string GATT passes error correctly.
+    """
+
+    # TODO: should add a test option to allow not skipping if user is available
+    # to click through any permission prompts.
+    if sys.platform == "darwin" and gatt_error == ErrorCode.INSUFFICIENT_AUTHORIZATION:
+        pytest.skip(
+            "Apple asks for user permission via a prompt, which cannot be handled automatically."
         )
-        assert descriptor
 
-        await client.write_gatt_descriptor(descriptor, b"Description")
-        assert virtual_descriptor.value == b"Description"  # type: ignore  # (missing type hints in bumble)
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        WRITABLE_DESCR_CHAR_UUID
+    )
+    assert characteristic
+
+    descriptor = characteristic.get_descriptor(
+        CUSTOM_BINARY_DESCRIPTOR_UUID.to_hex_str()
+    )
+    assert descriptor
+
+    def error_on_write(connection: Connection, data: bytes) -> None:
+        raise ATT_Error(gatt_error)
+
+    # Set data to a known value
+    descr_test_peripheral.writable_descr[CUSTOM_BINARY_DESCRIPTOR_UUID].value = (
+        AttributeValue(write=error_on_write)
+    )
+
+    with pytest.raises(BleakGATTProtocolError) as exc_info:
+        await descr_test_peripheral.bleak_client.write_gatt_descriptor(descriptor, b"")
+
+    assert exc_info.value.code == gatt_error
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_notify_gatt_char_error(descr_test_peripheral: DescrTestPeripheral):
+    """
+    Failing to enable notifications passes error correctly.
+
+    The CCCD descriptor can't be written directly, so we have to use the
+    start_notify() method to trigger the write.
+    """
+
+    client = descr_test_peripheral.bleak_client
+
+    # BlueZ will just disconnect the device instead of passing along any error
+    # when enabling notifications fails. It seems the best we can do is just
+    # check a BlueZ quirk where if a characteristic doesn't have the notify
+    # property, we get a D-Bus error without doing any I/O.
+
+    if client.backend_id != BleakBackend.BLUEZ_DBUS:
+        # TODO: See how other backends respond to similar errors.
+        pytest.skip("This test relies on a BlueZ-specific quirk.")
+
+    characteristic = client.services.get_characteristic(WRITABLE_DESCR_CHAR_UUID)
+    assert characteristic
+
+    def error_on_write(connection: Connection, data: bytes) -> None:
+        raise ATT_Error(ErrorCode.INSUFFICIENT_ENCRYPTION)
+
+    # Set data to a known value
+    descr_test_peripheral.writable_descr[
+        gatt.GATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR
+    ].value = AttributeValue(write=error_on_write)
+
+    with pytest.raises(BleakDBusError) as exc_info:
+        await client.start_notify(characteristic, lambda c, d: None)
+
+    assert exc_info.value.dbus_error == "org.bluez.Error.NotSupported"
