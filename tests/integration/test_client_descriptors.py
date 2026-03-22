@@ -12,7 +12,8 @@ from bumble.gatt import Characteristic, Descriptor, Service
 from bumble.transport.common import Transport
 
 from bleak import BleakClient
-from bleak.exc import BleakGATTProtocolError
+from bleak.backends import BleakBackend
+from bleak.exc import BleakDBusError, BleakGATTProtocolError
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
     create_bumble_peripheral,
@@ -433,3 +434,40 @@ async def test_write_gatt_descriptor_error(
         await descr_test_peripheral.bleak_client.write_gatt_descriptor(descriptor, b"")
 
     assert exc_info.value.code == gatt_error
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_notify_gatt_char_error(descr_test_peripheral: DescrTestPeripheral):
+    """
+    Failing to enable notifications passes error correctly.
+
+    The CCCD descriptor can't be written directly, so we have to use the
+    start_notify() method to trigger the write.
+    """
+
+    client = descr_test_peripheral.bleak_client
+
+    # BlueZ will just disconnect the device instead of passing along any error
+    # when enabling notifications fails. It seems the best we can do is just
+    # check a BlueZ quirk where if a characteristic doesn't have the notify
+    # property, we get a D-Bus error without doing any I/O.
+
+    if client.backend_id != BleakBackend.BLUEZ_DBUS:
+        # TODO: See how other backends respond to similar errors.
+        pytest.skip("This test relies on a BlueZ-specific quirk.")
+
+    characteristic = client.services.get_characteristic(WRITABLE_DESCR_CHAR_UUID)
+    assert characteristic
+
+    def error_on_write(connection: Connection, data: bytes) -> None:
+        raise ATT_Error(ErrorCode.INSUFFICIENT_ENCRYPTION)
+
+    # Set data to a known value
+    descr_test_peripheral.writable_descr[
+        gatt.GATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR
+    ].value = AttributeValue(write=error_on_write)
+
+    with pytest.raises(BleakDBusError) as exc_info:
+        await client.start_notify(characteristic, lambda c, d: None)
+
+    assert exc_info.value.dbus_error == "org.bluez.Error.NotSupported"

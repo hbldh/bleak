@@ -968,7 +968,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     member="StartNotify",
                 )
             )
-            assert_gatt_reply(reply)
+            assert_gatt_reply(reply, start_notify=True)
 
     @override
     async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
