@@ -282,7 +282,7 @@ class BleakGATTProtocolErrorCode(enum.IntEnum):
     """
     Enumeration of GATT protocol error codes.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 3.0
     """
 
     INVALID_HANDLE = 0x01
@@ -325,7 +325,7 @@ class BleakGATTProtocolError(BleakError):
     """
     Exception which is raised if a GATT protocol error occurs.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 3.0
     """
 
     def __init__(self, error_code: int) -> None:
