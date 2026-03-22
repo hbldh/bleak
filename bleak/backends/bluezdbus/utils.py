@@ -35,11 +35,15 @@ def assert_reply(reply: Message) -> None:
     assert reply.message_type == MessageType.METHOD_RETURN
 
 
-def assert_gatt_reply(reply: Message) -> None:
+def assert_gatt_reply(reply: Message, start_notify: bool = False) -> None:
     """
     Checks that a D-Bus message is a valid reply.
 
     Like :func:`assert_reply`, but has special handling for GATT protocol errors.
+
+    Args:
+        reply: The D-Bus message to check.
+        start_notify: Whether this reply is for a StartNotify call.
 
     Raises:
         BleakGATTProtocolError: for specific GATT protocol errors.
@@ -64,7 +68,10 @@ def assert_gatt_reply(reply: Message) -> None:
         # INSUFFICIENT_AUTHENTICATION, INSUFFICIENT_ENCRYPTION, or
         # INSUFFICIENT_ENCRYPTION_KEY_SIZE
 
-    if reply.error_name == defs.BLUEZ_ERROR_NOT_SUPPORTED:
+    # "StartNotify" will return BLUEZ_ERROR_NOT_SUPPORTED if the characteristic
+    # does not support notifications before even trying, so it is not a GATT
+    # error in this case.
+    if not start_notify and reply.error_name == defs.BLUEZ_ERROR_NOT_SUPPORTED:
         raise BleakGATTProtocolError(BleakGATTProtocolErrorCode.REQUEST_NOT_SUPPORTED)
 
     if reply.error_name == defs.BLUEZ_ERROR_NOT_AUTHORIZED:
