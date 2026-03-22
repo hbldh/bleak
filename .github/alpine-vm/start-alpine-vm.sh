@@ -21,7 +21,7 @@ VM_BUILD_DIR="$REPO_ROOT/.alpine-vm-build"
 VM_IMAGE="$VM_BUILD_DIR/alpine.qcow2"
 VM_SSH_PORT="2222"
 VM_CONSOLE_LOG="vm-console.log"
-VM_PACKAGES="bluez poetry openssh uv"
+VM_PACKAGES="bluez openssh uv"
 
 # Colors for output
 GREEN='\033[0;32m'

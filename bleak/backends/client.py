@@ -2,6 +2,7 @@
 """
 Base class for backend clients.
 """
+
 import abc
 from collections.abc import Callable
 from typing import Any, Optional, Union
@@ -224,6 +225,11 @@ def get_platform_client_backend_type() -> tuple[type[BaseBleakClient], BleakBack
             )
 
             return (BleakClientP4Android, backend)  # type: ignore
+
+        case BleakBackend.ANDROID:
+            from bleak.backends.android.client import BleakClientAndroid  # type: ignore
+
+            return (BleakClientAndroid, backend)  # type: ignore
 
         case BleakBackend.BLUEZ_DBUS:
             from bleak.backends.bluezdbus.client import (

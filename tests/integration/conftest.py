@@ -43,6 +43,7 @@ async def create_hci_transport(
     elif bluez_vhci_enabled:
         if sys.platform != "linux":
             pytest.skip("--bleak-bluez-vhci is only supported on Linux")
+            return  # skip raises an exception, but mypy can't infer that
         from tests.integration.bluez_controller import open_transport_with_bluez_vhci
 
         async with open_transport_with_bluez_vhci() as hci_transport:

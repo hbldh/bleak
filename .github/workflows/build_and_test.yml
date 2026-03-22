@@ -20,26 +20,24 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        id: py
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "latest"
           python-version: ${{ matrix.python-version }}
-      - name: Create virtual environment
-        run: pipx run poetry env use '${{ steps.py.outputs.python-path }}'
-      - name: Install dependencies
-        # work around https://github.com/python-poetry/poetry/issues/7161
-        env:
-          SYSTEM_VERSION_COMPAT: 0
-        run: pipx run poetry install --only main,test
+          activate-environment: true
+
       - name: Test with pytest
-        run: pipx run poetry run pytest -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: uv run pytest -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           report_type: coverage
           flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
@@ -47,15 +45,16 @@ jobs:
           report_type: test_results
           flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Type checking
         # We don't do this in the lint job because we have conditionals
         # on both the platform and the Python version in the code, so we
         # need to check each matrix combination.
         run: |
-          pipx run poetry run pip install pyright
-          pipx run poetry run pyright
-          pipx run poetry run pip install mypy
-          pipx run poetry run mypy -p bleak -p tests -p examples
+          uv tool install pyright
+          pyright
+          uv tool install mypy
+          mypy -p bleak -p tests -p examples
 
 
   integration_tests_bluez:
@@ -78,23 +77,15 @@ jobs:
       - name: Build and boot Alpine VM
         run: ./.github/alpine-vm/start-alpine-vm.sh
 
-      - name: Install Python and dependencies in VM
-        run: |
-          ./.github/alpine-vm/vm-ssh.sh '
-            bluetoothctl --version
-            uv python install ${{ matrix.python-version }}
-            uv python pin ${{ matrix.python-version }}
-            poetry env use ${{ matrix.python-version }}
-            poetry install --only main,test
-          '
-
       - name: Run pytest in VM
         run: |
           ./.github/alpine-vm/vm-ssh.sh '
+            bluetoothctl --version
+            export UV_PROJECT_ENVIRONMENT=../.venv  # We are in an mounted folder, so to speed things up put the venv outside the mount
             export FORCE_COLOR=1
             export CI=true
             export GITHUB_ACTIONS=true
-            poetry run pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+            uv run --python ${{ matrix.python-version }} pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
           '
 
       - name: Upload coverage reports to Codecov
@@ -111,3 +102,80 @@ jobs:
           report_type: test_results
           flags: bluez-integration-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  integration_tests_android:
+    name: "Android integration tests"
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [
+          "3.13",
+          # some binary dependencies of bumble are not yet available for 3.14, like cryptography or aiohttp
+          # "3.14"
+        ]
+    env:
+      FORCE_COLOR: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+
+      - name: Setup Environment
+        run: |
+          # Use GitHub's preinstalled JDK 17 for Android builds
+          echo JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME_17_arm64}" | tee -a ${GITHUB_ENV}
+          # Enable KVM permissions for the emulator
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/briefcase
+            ~/.gradle/wrapper/dists
+            ~/.gradle/caches
+            /usr/local/lib/android/sdk/cmdline-tools/19.0
+            /usr/local/lib/android/sdk/emulator
+            /usr/local/lib/android/sdk/system-images/android-31
+          key: build-deps-${{ runner.os }}-${{ hashFiles('examples/briefcase/pyproject.toml') }}
+          restore-keys: |
+            build-deps-${{ runner.os }}-
+
+      - name: Run App
+        run: uv run examples/briefcase/run_android_tests_emulator.py --ci
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: coverage
+          flags: android-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: test_results
+          flags: android-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Type checking
+        # We don't do this in the lint job because we have conditionals
+        # on both the platform and the Python version in the code, so we
+        # need to check each matrix combination.
+        run: |
+          # For pyright a new release is missing that includes https://github.com/microsoft/pyright/pull/11221
+          # When building pyright from main locally, it works.
+          # uv tool install pyright
+          # pyright --project pyrightconfig-android.json
+          uv tool install mypy
+          mypy --config-file=mypy-android.ini

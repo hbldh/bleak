@@ -4,18 +4,9 @@ version = "3.0.0"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.rst"
 requires-python = ">=3.10"
-dynamic = ["classifiers", "dependencies"]
-
-[project.urls]
-"Homepage"      = "https://github.com/hbldh/bleak"
-"Documentation" = "https://bleak.readthedocs.io"
-"Changelog"     =  "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst"
-"Support"       =  "https://github.com/hbldh/bleak/discussions"
-"Issues"        =  "https://github.com/hbldh/bleak/issues"
-
-[tool.poetry]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
@@ -24,48 +15,74 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Android",
 ]
+dependencies = [
+    "async-timeout>=3.0.0; python_version<'3.11'",
+    "typing-extensions>=4.7.0; python_version<'3.12'",
+    "pyobjc-core>=10.3; platform_system=='Darwin'",
+    "pyobjc-framework-CoreBluetooth>=10.3; platform_system=='Darwin'",
+    "pyobjc-framework-libdispatch>=10.3; platform_system=='Darwin'",
+    "winrt-runtime>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Bluetooth>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Bluetooth.Advertisement>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Bluetooth.GenericAttributeProfile>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Enumeration>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Devices.Radios>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Foundation>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Foundation.Collections>=3.1; platform_system=='Windows'",
+    "winrt-Windows.Storage.Streams>=3.1; platform_system=='Windows'",
+    "dbus-fast>=1.83.0; platform_system=='Linux'",
+]
 
-[tool.poetry.dependencies]
-async-timeout = { version = ">=3.0.0", python = "<3.11" }
-typing-extensions = { version = ">=4.7.0", python = "<3.12" }
-pyobjc-core = { version = ">=10.3", markers = "platform_system=='Darwin'" }
-pyobjc-framework-CoreBluetooth = { version = ">=10.3", markers = "platform_system=='Darwin'" }
-pyobjc-framework-libdispatch = { version = ">=10.3", markers = "platform_system=='Darwin'" }
-"winrt-runtime" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Bluetooth" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Bluetooth.Advertisement" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Bluetooth.GenericAttributeProfile" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Enumeration" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Devices.Radios" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Foundation" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Foundation.Collections" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-"winrt-Windows.Storage.Streams" = { version = ">=3.1", markers = "platform_system=='Windows'" }
-dbus-fast = { version = ">=1.83.0", markers = "platform_system == 'Linux'" }
+[project.urls]
+Homepage = "https://github.com/hbldh/bleak"
+Documentation = "https://bleak.readthedocs.io"
+Changelog = "https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst"
+Support = "https://github.com/hbldh/bleak/discussions"
+Issues = "https://github.com/hbldh/bleak/issues"
 
 [project.optional-dependencies]
 pythonista = ["bleak-pythonista>=0.1.1"]
 
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-Sphinx = { version = ">=8.2.3", python = ">=3.11" }
-sphinx-rtd-theme = { version = ">=3.0.2", python = ">=3.11" }
-
-[tool.poetry.group.lint.dependencies]
-black = ">=24.3,<25.0"
-flake8 = "^7.1.1"
-isort = "^5.13.2"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.2.1"
-pytest-asyncio = "^1.2.0"
-pytest-cov = "^7.0.0 "
-bumble = "^0.0.220"
+[dependency-groups]
+docs = [
+    "Sphinx>=8.2.3; python_version>='3.11'",
+    "sphinx-rtd-theme>=3.0.2; python_version>='3.11'",
+]
+lint = [
+    "black>=24.3,<25.0",
+    "flake8>=7.1.1,<8.0.0",
+    "isort>=5.13.2,<6.0.0",
+]
+test = [
+    "pytest>=8.2.1,<9.0.0",
+    "pytest-asyncio>=1.2.0,<2.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "bumble==0.0.226",
+]
+test-android = [
+    "bumble==0.0.226",
+    "fastapi>=0.128.0",
+    "uvicorn>=0.40.0",
+    "uiautomator2>=3.5.0; python_version<'4.0'",
+    "briefcase>=0.4.0",
+]
+dev = [
+    { include-group = "docs" },
+    { include-group = "lint" },
+    { include-group = "test" },
+    { include-group = "test-android" },
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.9.29,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "bleak"
+module-root = ""
+
+[tool.black]
+extend_exclude = "typings_android/(android|java)/"
 
 [tool.isort]
 profile = "black"
@@ -76,12 +93,12 @@ extend_skip = [".buildozer", "docs"]
 [tool.mypy]
 python_version = "3.10"
 disable_error_code = ["import-not-found"]
-exclude = "(.venv|kivy|recipes)/"
+exclude = "(.venv|kivy|recipes|typings_android|examples/briefcase)/"
 mypy_path = "typings"
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
+exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", "typings_android/**", "examples/briefcase/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
