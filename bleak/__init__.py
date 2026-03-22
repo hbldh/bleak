@@ -753,7 +753,7 @@ class BleakClient:
             BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
             backend-specific exceptions: in rare cases
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 3.0
             Now raises ``BleakGATTProtocolError`` when possible instead of
             backend-specific exceptions.
         """
@@ -813,7 +813,7 @@ class BleakClient:
         .. versionchanged:: 0.21
             The default behavior when ``response=`` is omitted was changed.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 3.0
             Now raises ``BleakGATTProtocolError`` when possible instead of
             backend-specific exceptions.
 
@@ -955,7 +955,7 @@ class BleakClient:
             BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
             backend-specific exceptions: in rare cases.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 3.0
             Now raises ``BleakGATTProtocolError`` when possible instead of
             backend-specific exceptions.
         """
@@ -986,11 +986,11 @@ class BleakClient:
             BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
             backend-specific exceptions: in rare cases.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 3.0
             Now raises ``ValueError`` when attempting to write to the CCCD
             instead of backend-specific exceptions.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 3.0
             Now raises ``BleakGATTProtocolError`` when possible instead of
             backend-specific exceptions.
         """

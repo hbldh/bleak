@@ -10,6 +10,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`3.0.0`_ (2026-03-22)
+=====================
+
 Added
 -----
 * Added ``adapter`` attribute to ``bleak.args.bluez.BlueZClientArgs`` and ``bleak.args.bluez.BlueZScannerArgs``.
@@ -1199,7 +1202,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v2.1.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.0.0...develop
+.. _3.0.0: https://github.com/hbldh/bleak/compare/v2.1.1...v3.0.0
 .. _2.1.1: https://github.com/hbldh/bleak/compare/v2.1.0...v2.1.1
 .. _2.1.0: https://github.com/hbldh/bleak/compare/v2.0.0...v2.1.0
 .. _2.0.0: https://github.com/hbldh/bleak/compare/v1.1.1...v2.0.0
