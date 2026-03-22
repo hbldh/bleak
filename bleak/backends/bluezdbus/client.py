@@ -920,6 +920,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
+
+        Args:
+            characteristic (BleakGATTCharacteristic): The characteristic to activate notification/indication on.
+            callback (NotifyCallback): The callback to call when a notification/indication is received.
+            use_start_notify (bool, optional): Force using StartNotify instead of AcquireNotify for notifications,
+                even if AcquireNotify is supported by the characteristic. This can be used to work around issues with
+                some devices that don't properly support AcquireNotify. Defaults to False.
         """
 
         bluez: BlueZNotifyArgs = kwargs["bluez"]
