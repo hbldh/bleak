@@ -26,7 +26,6 @@ jobs:
         with:
           version: "latest"
           python-version: ${{ matrix.python-version }}
-          activate-environment: true
 
       - name: Test with pytest
         run: uv run pytest -v --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
@@ -50,11 +49,16 @@ jobs:
         # We don't do this in the lint job because we have conditionals
         # on both the platform and the Python version in the code, so we
         # need to check each matrix combination.
+        #
+        # We want always the latest version of pyright and mypy, to catch
+        # any breakage as soon as we can. That is why they are not dev
+        # dependencies in the pyproject.toml, because that would lock them to
+        # a specific version. Instead we install the latest version as tool.
         run: |
           uv tool install pyright
-          pyright
+          uv run pyright
           uv tool install mypy
-          mypy -p bleak -p tests -p examples
+          uv run mypy -p bleak -p tests -p examples
 
 
   integration_tests_bluez:
