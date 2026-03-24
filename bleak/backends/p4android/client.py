@@ -435,7 +435,7 @@ class BleakClientP4Android(BaseBleakClient):
             )
 
         await self.write_gatt_descriptor(
-            characteristic.notification_descriptor,
+            characteristic.get_descriptor(defs.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID),
             defs.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
         )
 
@@ -449,7 +449,7 @@ class BleakClientP4Android(BaseBleakClient):
 
         """
         await self.write_gatt_descriptor(
-            characteristic.notification_descriptor,
+            characteristic.get_descriptor(defs.CLIENT_CHARACTERISTIC_CONFIGURATION_UUID),
             defs.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE,
         )
 
