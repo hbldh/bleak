@@ -159,7 +159,7 @@ boot_vm() {
     
     # Start QEMU with serial console output to file and 9p filesystem sharing
     qemu-system-x86_64 \
-        -m 512 \
+        -m 2G \
         -smp 2 \
         $KVM_FLAGS \
         -display none \
