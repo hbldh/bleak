@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* Fixed ``AttributeError`` in ``start_notify()`` and ``stop_notify()`` on Android. Fixes #1834.
+
 `3.0.0`_ (2026-03-22)
 =====================
 
