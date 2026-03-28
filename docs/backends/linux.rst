@@ -19,6 +19,18 @@ return the cached services without waiting for them to be resolved again. This
 is useful when you know services have not changed, and you want to use the
 services immediately, but don't want to wait for them to be resolved again.
 
+.. _linux-start-notify:
+
+Enabling notification/indication with ``start_notify``
+------------------------------------------------------
+Calling ``start_notify`` will by default adhere to the properties reported by
+the device assuming it correctly indicates "notify" and/or "indicate" properties.
+Some devices do not properly support AcquireNotify although reported. In such
+cases, you can force using StartNotify instead of AcquireNotify for notifications,
+even if AcquireNotify is supported by the characteristic. You can do so, by setting
+``{"use_start_notify": True}`` to the ``bluez`` parameter.
+
+
 Parallel Access
 ---------------
 
