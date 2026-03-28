@@ -49,7 +49,7 @@ docs = [
     "sphinx-rtd-theme>=3.0.2; python_version>='3.11'",
 ]
 lint = [
-    "black>=24.3,<25.0",
+    "black>=24.3,<27.0",
     "flake8>=7.1.1,<8.0.0",
     "isort>=5.13.2,<6.0.0",
 ]
