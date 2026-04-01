@@ -19,7 +19,8 @@ Contents:
    windows
    linux
    macos
-   android
+   android-beeware
+   android-p4a
    pythonista
 
 Backend selection

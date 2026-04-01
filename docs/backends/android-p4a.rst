@@ -1,5 +1,8 @@
-Android backend
-===============
+Android backend (Python-for-Android)
+====================================
+
+**Warning: This backend is not tested regularly and may contain bugs! If you want to use a
+more stable backend switch to the Android BeeWare backend.**
 
 For an example of building an android bluetooth app, see 
 `the example folder <https://github.com/hbldh/bleak/tree/develop/examples/kivy>`_

@@ -291,6 +291,13 @@ def get_platform_scanner_backend_type() -> tuple[type[BaseBleakScanner], BleakBa
 
             return (BleakScannerP4Android, backend)  # type: ignore
 
+        case BleakBackend.ANDROID:
+            from bleak.backends.android.scanner import (
+                BleakScannerAndroid,  # type: ignore
+            )
+
+            return (BleakScannerAndroid, backend)  # type: ignore
+
         case BleakBackend.BLUEZ_DBUS:
             from bleak.backends.bluezdbus.scanner import (
                 BleakScannerBlueZDBus,  # type: ignore

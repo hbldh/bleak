@@ -78,3 +78,43 @@ If you weren't already in the ``bluetooth`` group, then you need to reload your
 group membership. Either log out and log back in, or run::
 
     $ newgrp bluetooth  # warning, this will start a new shell
+
+
+Android
+~~~~~~~
+
+The Android backend integration tests are run inside a dedicated Android testbed app that
+executes the pytest test suite directly on the device. This app is generated with
+`Briefcase <https://briefcase.beeware.org/en/stable/>`_ and can be found in the 
+``testbed`` folder.
+
+Tests can be run either on a real Android device or on an emulator.
+
+Real Device
+^^^^^^^^^^^
+
+To run the integration tests on a real device, connect the nRF52840 Dongle to the host PC
+and start the tests with the following command. The script starts a TCP server that transparently
+forwards data to and from the serial port of the dongle, and sets up an ADB
+reverse-port tunnel so that the Android device can reach that TCP server. This allows the
+tests running on the Android device to communicate with the dongle over Bluetooth::
+
+    $ uv run --python 3.13 testbed/run_android_tests_real_device.py --bleak-hci-transport=serial:/dev/tty.usbmodem11401
+
+.. note::
+
+   Some tests (permissions, pairing) will show system dialogs on the Android device that
+   must be confirmed manually.
+
+Emulator
+^^^^^^^^
+
+The integration tests can also be run entirely without physical hardware using the Android
+Emulator together with Android's built-in Bluetooth simulator (netsim). System dialogs for
+Bluetooth permissions and pairing are automatically confirmed via ADB
+automation, so the tests run without any manual interaction. This setup works
+headlessly, for example in GitHub Actions.
+
+::
+
+    $ uv run --python 3.13 testbed/run_android_tests_emulator.py
