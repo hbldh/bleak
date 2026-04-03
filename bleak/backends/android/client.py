@@ -70,7 +70,7 @@ class ConnectObjects:
 
 
 class BleakClientAndroid(BaseBleakClient):
-    """A python-for-android Bleak Client
+    """Android Bleak Client using Chaquopy/BeeWare.
 
     Args:
         address_or_ble_device:

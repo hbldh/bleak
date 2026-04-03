@@ -87,8 +87,7 @@ class ScanObjects:
 
 
 class BleakScannerAndroid(BaseBleakScanner):
-    """
-    The python-for-android Bleak BLE Scanner.
+    """Android Bleak BLE Scanner using Chaquopy/BeeWare.
 
     Args:
         detection_callback:
