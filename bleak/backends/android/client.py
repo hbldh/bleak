@@ -106,7 +106,11 @@ class BleakClientAndroid(BaseBleakClient):
         timeout = kwargs.get("timeout", self._timeout)
 
         adapter = BluetoothAdapter.getDefaultAdapter()
-        assert adapter is not None
+        if adapter is None:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth is not available",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+            )
         if adapter.getState() != BluetoothAdapter.STATE_ON:
             raise BleakBluetoothNotAvailableError(
                 "Bluetooth is not turned on",
