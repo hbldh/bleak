@@ -43,6 +43,7 @@ from bleak.backends.android.client_callback import (
     PythonBluetoothGattCallback,
 )
 from bleak.backends.android.dispatcher import dispatch_func
+from bleak.backends.android.permissions import check_for_permissions
 from bleak.backends.android.utils import bitwise_or, context
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
@@ -104,6 +105,8 @@ class BleakClientAndroid(BaseBleakClient):
             logger.warning("Pairing during connect is not implemented on Android")
 
         timeout = kwargs.get("timeout", self._timeout)
+
+        await check_for_permissions(self._loop)
 
         adapter = BluetoothAdapter.getDefaultAdapter()
         if adapter is None:
