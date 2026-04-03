@@ -188,9 +188,6 @@ class BleakScannerAndroid(BaseBleakScanner):
             callback_api=OnScanCallback(),
             dispatch_result_indicates_status=False,
         )
-        self._scan_objs.javascanner.flushPendingScanResults(
-            self._scan_objs.callback.java
-        )
 
         try:
             # Wait a short time to check if "onScanFailed" is called.
