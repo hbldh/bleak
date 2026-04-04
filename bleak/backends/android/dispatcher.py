@@ -104,7 +104,10 @@ class CallbackDispatcher:
             dispatch_func, callback_api, dispatch_result_indicates_status
         )
 
-        callback_result = await state
+        try:
+            callback_result = await state
+        finally:
+            self.futures.pop(callback_api, None)
 
         logger.debug(f"{callback_api} succeeded {callback_result}")
 
