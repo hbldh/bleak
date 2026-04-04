@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 import asyncio
 import dataclasses
 import logging
-import warnings
 from typing import Any, Callable, Generic, Literal, ParamSpec, TypeVar, overload
 
 from bleak.exc import BleakError
@@ -169,17 +168,11 @@ class CallbackDispatcher:
                 future.set_exception(exception)
         else:
             if exception is not None:
-                # an error happened with nothing waiting for it
-                namedfutures = [
-                    namedfuture
-                    for namedfuture in self.futures.items()
-                    if not namedfuture[1].done()
-                ]
-                if len(namedfutures):
-                    # send it on existing requests
-                    for name, future in namedfutures:
-                        warnings.warn(f"Redirecting error without home to {name}")
-                        future.set_exception(exception)
-                else:
-                    # send it on the event thread
-                    raise exception
+                # An error arrived for a callback that nobody is waiting for.
+                # This can theoretically happen, but currently there is no way
+                # to reproduce this. If it does happen, we log it as a warning
+                # but otherwise ignore it, since there is no way to propagate the
+                # error to any caller.
+                logger.warning(
+                    f"Ignoring error for {callback_api} with no waiting future: {exception}"
+                )
