@@ -231,7 +231,12 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
     ):
         logger.debug(f"onDescriptorRead {status=}")
         uuid = str(descriptor.getUuid())
-        value = descriptor.getValue()
+        if len(args) == 0:
+            # On API level 32 (Android 12) and below
+            value = descriptor.getValue()
+        else:
+            # On API level 33 (Android 13) and above
+            value = args[0]  # pragma: no cover  # (CI is running on API level below 33)
         self.dispatcher.result_state_threadsafe(
             BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
             OnDescriptorReadCallback(uuid),
