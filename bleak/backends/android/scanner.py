@@ -146,6 +146,11 @@ class BleakScannerAndroid(BaseBleakScanner):
                 )
 
             javascanner = adapter.getBluetoothLeScanner()
+            if javascanner is None:
+                raise BleakBluetoothNotAvailableError(
+                    "Bluetooth LE scanning is not available",
+                    BleakBluetoothNotAvailableReason.POWERED_OFF,
+                )
 
             self._scan_objs = ScanObjects(
                 adapter=adapter,
