@@ -22,9 +22,7 @@ TEST_SERVICE_UUID = "9d513f40-5c89-42dc-9688-2cfa30f2d9e7"
 TEST_CHARACTERISTIC_UUID = "e809cb2f-34e3-42a1-ba92-22db2495cd6a"
 
 
-@pytest.mark.skipif(
-    sys.platform == "android", reason="On Android this tests times out."
-)
+@pytest.mark.skipif(sys.platform == "android", reason="On Android this test times out.")
 async def test_notification_sent_before_write_response(
     bumble_peripheral: Device,
 ) -> None:
