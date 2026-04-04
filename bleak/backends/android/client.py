@@ -168,7 +168,7 @@ class BleakClientAndroid(BaseBleakClient):
                 dispatch_func=dispatch_func(gatt.requestMtu, 517),
                 callback_api=OnMtuChangedCallback(),
             )
-            self.__mtu = result.mtu
+            self._mtu = result.mtu
 
             logger.debug("discovering services...")
             await callbacks.dispatcher.perform_and_wait(
@@ -327,7 +327,7 @@ class BleakClientAndroid(BaseBleakClient):
     @property
     @override
     def mtu_size(self) -> int:
-        return self.__mtu
+        return self._mtu
 
     # GATT services methods
 
@@ -369,7 +369,7 @@ class BleakClientAndroid(BaseBleakClient):
                     java_characteristic.getInstanceId(),
                     str(java_characteristic.getUuid()),
                     list(gatt_char_props_to_strs(java_characteristic.getProperties())),
-                    lambda: self.__mtu - 3,
+                    lambda: self._mtu - 3,
                     service,
                 )
                 services.add_characteristic(characteristic)
