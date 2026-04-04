@@ -1,7 +1,7 @@
 Android backend (BeeWare)
 =========================
 
-This backend is intendet for Android apps using the `BeeWare <https://beeware.org/>`_ toolchain:
+This backend is intended for Android apps using the `BeeWare <https://beeware.org/>`_ toolchain:
 
 `Briefcase <https://briefcase.readthedocs.io/en/latest/>`_ is used to build the application. 
 Under the hood, it uses `Chaquopy <https://chaquo.com/chaquopy/>`_ to package the Python 
