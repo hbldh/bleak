@@ -11,12 +11,7 @@ import asyncio
 import dataclasses
 import logging
 import warnings
-from typing import Any, Callable, Generic, Literal, TypeVar, overload
-
-if sys.version_info < (3, 12):
-    from typing_extensions import ParamSpec
-else:
-    from typing import ParamSpec
+from typing import Any, Callable, Generic, Literal, ParamSpec, TypeVar, overload
 
 from bleak.exc import BleakError
 
