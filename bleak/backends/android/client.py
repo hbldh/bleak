@@ -23,6 +23,7 @@ from android.bluetooth import (
     BluetoothProfile,
 )
 from android.content import Context, Intent
+from android.os import Build
 from java import jbyte
 from java.chaquopy import jarray
 from java.util import UUID
@@ -481,21 +482,35 @@ class BleakClientAndroid(BaseBleakClient):
             raise BleakError("Not connected")
         assert isinstance(characteristic.obj, BluetoothGattCharacteristic)
 
-        if response:
-            characteristic.obj.setWriteType(
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-            )
-        else:
-            characteristic.obj.setWriteType(
-                BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-            )
+        write_type = (
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            if response
+            else BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+        )
 
-        characteristic.obj.setValue(jarray(jbyte)(bytes(data)))
+        gatt = self._conn_objs.gatt
+        payload = jarray(jbyte)(bytes(data))
+
+        if Build.VERSION.SDK_INT >= 33:
+
+            def _do_write_char():  # pragma: no cover  # (CI is running on API level below 33)
+                # On API level 33 (Android 13) and above writeCharacteristic returns int (GATT_SUCCESS=0 on success).
+                # Convert to bool so dispatch_result_indicates_status=True works correctly.
+                return (
+                    gatt.writeCharacteristic(characteristic.obj, payload, write_type)
+                    == 0
+                )
+
+        else:
+
+            def _do_write_char():
+                # On API level 32 (Android 12) and below writeCharacteristic returns boolean success.
+                characteristic.obj.setWriteType(write_type)
+                characteristic.obj.setValue(payload)
+                return gatt.writeCharacteristic(characteristic.obj)
 
         await self._conn_objs.callbacks.dispatcher.perform_and_wait(
-            dispatch_func=dispatch_func(
-                self._conn_objs.gatt.writeCharacteristic, characteristic.obj
-            ),
+            dispatch_func=_do_write_char,
             callback_api=OnCharacteristicWriteCallback(
                 handle=characteristic.handle,
             ),
@@ -520,12 +535,25 @@ class BleakClientAndroid(BaseBleakClient):
         assert self.services
         assert isinstance(descriptor.obj, BluetoothGattDescriptor)
 
-        descriptor.obj.setValue(jarray(jbyte)(bytes(data)))
+        gatt = self._conn_objs.gatt
+        payload = jarray(jbyte)(bytes(data))
+
+        if Build.VERSION.SDK_INT >= 33:
+
+            def _do_write_desc():  # pragma: no cover  # (CI is running on API level below 33)
+                # On API level 33 (Android 13) and above writeDescriptor returns int (GATT_SUCCESS=0 on success).
+                # Convert to bool so dispatch_result_indicates_status=True works correctly.
+                return gatt.writeDescriptor(descriptor.obj, payload) == 0
+
+        else:
+
+            def _do_write_desc():
+                # On API level 32 (Android 12) and below writeDescriptor returns boolean success.
+                descriptor.obj.setValue(payload)
+                return gatt.writeDescriptor(descriptor.obj)
 
         await self._conn_objs.callbacks.dispatcher.perform_and_wait(
-            dispatch_func=dispatch_func(
-                self._conn_objs.gatt.writeDescriptor, descriptor.obj
-            ),
+            dispatch_func=_do_write_desc,
             callback_api=OnDescriptorWriteCallback(uuid=descriptor.uuid),
         )
 
