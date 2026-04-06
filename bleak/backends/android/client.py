@@ -573,17 +573,8 @@ class BleakClientAndroid(BaseBleakClient):
         """
         if self._conn_objs is None:
             raise BleakError("Not connected")
-        self._conn_objs.subscriptions[characteristic.handle] = callback
 
-        assert self._conn_objs.gatt is not None
         assert isinstance(characteristic.obj, BluetoothGattCharacteristic)
-
-        if not self._conn_objs.gatt.setCharacteristicNotification(
-            characteristic.obj, True
-        ):
-            raise BleakError(
-                f"Failed to enable notification for characteristic {characteristic.uuid}"
-            )
 
         cccd = characteristic.get_descriptor(CCCD_DESCRIPTOR_UUID)
         if cccd is None:
@@ -609,10 +600,22 @@ class BleakClientAndroid(BaseBleakClient):
                 f"Characteristic {characteristic.uuid} does not support Notify or Indicate"
             )
 
-        await self.write_gatt_descriptor(
-            cccd,
-            cccd_value,
-        )
+        self._conn_objs.subscriptions[characteristic.handle] = callback
+        try:
+            if not self._conn_objs.gatt.setCharacteristicNotification(
+                characteristic.obj, True
+            ):
+                raise BleakError(
+                    f"Failed to enable notification for characteristic {characteristic.uuid}"
+                )
+
+            await self.write_gatt_descriptor(
+                cccd,
+                cccd_value,
+            )
+        except Exception:
+            self._conn_objs.subscriptions.pop(characteristic.handle, None)
+            raise
 
     @override
     async def stop_notify(self, characteristic: BleakGATTCharacteristic) -> None:
@@ -643,4 +646,5 @@ class BleakClientAndroid(BaseBleakClient):
             raise BleakError(
                 f"Failed to disable notification for characteristic {characteristic.uuid}"
             )
-        del self._conn_objs.subscriptions[characteristic.handle]
+
+        self._conn_objs.subscriptions.pop(characteristic.handle, None)
