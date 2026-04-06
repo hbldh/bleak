@@ -201,6 +201,13 @@ class BleakScannerAndroid(BaseBleakScanner):
             # If the scan started successfully but no device is found in the
             # short waiting period, a timeout occurs. This is not an error.
             pass
+        except Exception:
+            # startScan failed (e.g. onScanFailed was called). Reset state so
+            # subsequent calls are not blocked and the callback/scanner are not
+            # leaked.
+            BleakScannerAndroid.__scanner = None
+            self._scan_objs = None
+            raise
 
     @override
     async def stop(self) -> None:
