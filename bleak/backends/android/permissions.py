@@ -69,12 +69,17 @@ def _required_ble_permissions() -> list[str]:
     This depends on the Android API Version.
     """
     api_level = Build.VERSION.SDK_INT
+
+    # On API Level 29 and 30 ACCESS_BACKGROUND_LOCATION may also be required. But this is probably only needed
+    # in rare cases, so it is not included in the default required permissions.
+    # If an app needs this permission, it has to request this permission manually.
+    # See https://developer.android.com/guide/topics/connectivity/bluetooth/permissions#background-location for more details.
+
     if (
         api_level >= 23 and api_level <= 30
     ):  # pragma: no cover  # Can not be tested in CI, because netsim requires min. API 31
         return [
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION,  # optional: only if scanning BLE devices in background
         ]
     elif api_level > 30:
         return [
