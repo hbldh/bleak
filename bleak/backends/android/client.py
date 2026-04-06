@@ -138,6 +138,10 @@ class BleakClientAndroid(BaseBleakClient):
             callback_api=OnConnectionStateChangeCallback(),
             dispatch_result_indicates_status=False,
         )
+        if gatt is None:
+            raise BleakError(
+                f"Failed to initiate connection to device @ {self.address}"
+            )
         try:
             conn_result = await asyncio.wait_for(conn_future, timeout=timeout)
             if conn_result.new_state != BluetoothProfile.STATE_CONNECTED:

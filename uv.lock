@@ -631,11 +631,11 @@ wheels = [
 
 [[package]]
 name = "chaquopy-stubs-android"
-version = "36.20260404"
+version = "36.20260406"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/19/f5/11b934a66a611f4e931791bf30df7450a1b83fa86ef1cee1aebf228b7098/chaquopy_stubs_android-36.20260404.tar.gz", hash = "sha256:87fe0df62ef54c292a6b2a5a02cb04367e11eaf238aa19d8ab4dff2322167fe4", size = 848861, upload-time = "2026-04-04T20:53:58.833Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6f/1c/dd844cf8415148c49647f6c86d23a13902787da73d8b54bf34791b869950/chaquopy_stubs_android-36.20260406.tar.gz", hash = "sha256:192f0367fb19779d63c0c227645737179d7b4d33d82e044520e0f7e5f136c6d7", size = 848990, upload-time = "2026-04-06T16:00:49.037Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/ca/9ffd9cee7e2e578e569cc390b93849a48e68c70e0bd9b2409ead9c8c37b0/chaquopy_stubs_android-36.20260404-py3-none-any.whl", hash = "sha256:3805658423d7ceb6a054ffc9eb8d339b4b362b05aec61c7d096b38afd52d299e", size = 971732, upload-time = "2026-04-04T20:53:54.817Z" },
+    { url = "https://files.pythonhosted.org/packages/43/1c/f7c2465dc2c9b2080ac81c449399f98ea011f8606f151daa0e52710425ab/chaquopy_stubs_android-36.20260406-py3-none-any.whl", hash = "sha256:5e18511ccb7ae519d8c4643408cf16262fa5f20eb1d1a7e97cfe28de16e12008", size = 971734, upload-time = "2026-04-06T16:00:46.595Z" },
 ]
 
 [[package]]
