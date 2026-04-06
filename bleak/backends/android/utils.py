@@ -22,10 +22,5 @@ def iterate_java_obj(java_iterable: Iterable[T]) -> Iterator[T]:
         yield iterator.next()
 
 
-def bitwise_or(a: bytes, b: bytes) -> bytes:
-    """Bitwise OR two byte sequences per byte."""
-    return bytes((x | y) for x, y in zip(a, b))
-
-
 activity = MainActivity.singletonThis
 context = activity.getApplicationContext()

@@ -45,7 +45,7 @@ from bleak.backends.android.client_callback import (
 )
 from bleak.backends.android.dispatcher import dispatch_func
 from bleak.backends.android.permissions import check_for_permissions
-from bleak.backends.android.utils import bitwise_or, context
+from bleak.backends.android.utils import context
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor, normalize_uuid_16
@@ -587,18 +587,10 @@ class BleakClientAndroid(BaseBleakClient):
             )
 
         props = characteristic.obj.getProperties()
-        if (
-            props & BluetoothGattCharacteristic.PROPERTY_INDICATE
-            and props & BluetoothGattCharacteristic.PROPERTY_NOTIFY
-        ):
-            cccd_value = bitwise_or(
-                bytes(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE),
-                bytes(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE),
-            )
+        if props & BluetoothGattCharacteristic.PROPERTY_NOTIFY:
+            cccd_value = bytes(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
         elif props & BluetoothGattCharacteristic.PROPERTY_INDICATE:
             cccd_value = bytes(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
-        elif props & BluetoothGattCharacteristic.PROPERTY_NOTIFY:
-            cccd_value = bytes(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
         else:
             raise BleakError(
                 f"Characteristic {characteristic.uuid} does not support Notify or Indicate"
