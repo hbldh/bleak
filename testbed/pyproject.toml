@@ -52,10 +52,9 @@ requires = [
     # This bugfix https://github.com/beeware/toga/pull/4083 is needed. 
     # The current version Toga v0.5.3 does not include this fix.
     # It is needed so that grpcio can be used on Android.
-    # "git+https://github.com/beeware/toga.git@main",
-    "git+https://github.com/beeware/toga.git#egg=travertino&subdirectory=travertino",
-    "git+https://github.com/beeware/toga.git#egg=toga-android&subdirectory=android",
-    "git+https://github.com/beeware/toga.git#egg=toga-core&subdirectory=core",
+    "git+https://github.com/beeware/toga.git@199b0fa751d944b9c83c5d29602c263a2fda3cd2#egg=travertino&subdirectory=travertino",
+    "git+https://github.com/beeware/toga.git@199b0fa751d944b9c83c5d29602c263a2fda3cd2#egg=toga-android&subdirectory=android",
+    "git+https://github.com/beeware/toga.git@199b0fa751d944b9c83c5d29602c263a2fda3cd2#egg=toga-core&subdirectory=core",
     # "toga-android~=0.5.0",
 
 ]
