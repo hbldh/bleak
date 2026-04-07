@@ -280,6 +280,15 @@ def main() -> None:
         else None
     )
 
+    if moniker is not None:
+        log(f"Checking serial port {moniker.device} ...")
+        try:
+            ser = serial.Serial(moniker.device, baudrate=moniker.speed, timeout=0.1)
+            ser.close()
+        except serial.SerialException as exc:
+            log(f"Failed to open serial port {moniker.device}: {exc}")
+            sys.exit(1)
+
     # Resolve ADB early so we fail fast if it is missing
     adb = ADB()
     log(f"Using adb: {adb.adb_executable}")
