@@ -12,6 +12,11 @@ Bluetooth permissions.
 The BeeWare backend classes are located in the ``bleak.backends.android`` package and are 
 automatically selected when the application is built with Briefcase.
 
+This backend requires Python 3.13 or later, as Android is only officially supported since that
+version (see `PEP 738 <https://peps.python.org/pep-0738/>`_) and only since then can an Android
+environment be reliably detected via ``sys.platform == "android"`` at runtime or via
+`environment markers <https://peps.python.org/pep-0508/#environment-markers>`_
+(``sys_platform == "android"``) for dependency resolution.
 
 Briefcase Configuration
 -----------------------
@@ -44,8 +49,9 @@ to the app (available since Briefcase v0.3.26):
 This will automatically add the Bluetooth permissions to the application's ``AndroidManifest.xml``.
 But this only means that the app *can* request Bluetooth permissions, not that the app automatically
 has them. The app must still check for and request the permissions at runtime from the user. This is
-done automatically by Bleak when the ``BleakScanner`` is used for the first time. If the app does not
-yet have Bluetooth permission, it will be automatically requested via a popup dialog by the Android OS:
+done automatically by Bleak when the ``BleakScanner`` or ``BleakClient`` is used for the first time. 
+If the app does not yet have Bluetooth permission, it will be automatically requested via a popup dialog
+by the Android OS:
 
 .. image:: ../images/android-permission-request.png
    :alt: Android Bluetooth permission request dialog
