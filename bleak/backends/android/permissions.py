@@ -114,11 +114,16 @@ async def check_for_permissions(loop: asyncio.AbstractEventLoop):
                 permission_acknowledged.set_result,
                 grant_results,
             )
-        else:
-            loop.call_soon_threadsafe(  # pragma: no cover  # Difficult to test user denial in CI. This would require a second run of the test suite with different user interaction.
+        else:  # pragma: no cover  # Difficult to test user denial in CI. This would require a second run of the test suite with different user interaction.
+            denied_permissions = [
+                str(permission)
+                for permission, granted in zip(permissions, grant_results)
+                if not granted
+            ]
+            loop.call_soon_threadsafe(
                 permission_acknowledged.set_exception,
                 BleakBluetoothNotAvailableError(
-                    f"User denied access to {permissions}",
+                    f"User denied access to {denied_permissions}",
                     BleakBluetoothNotAvailableReason.DENIED_BY_USER,
                 ),
             )
