@@ -2,7 +2,7 @@
 project_name = "Bleak-Testbed"
 bundle = "com.bleak.testbed"
 version = "0.0.1"
-license.file = "LICENSE"
+license = "MIT"
 
 [tool.briefcase.app.bleak_testbed]
 formal_name = "Bleak-Testbed"

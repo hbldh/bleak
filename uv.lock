@@ -412,7 +412,7 @@ provides-extras = ["pythonista"]
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=24.3,<25.0" },
-    { name = "briefcase", specifier = ">=0.4.0" },
+    { name = "briefcase", git = "https://github.com/beeware/briefcase.git?rev=5610048a07ff79ebaf2048d28c7fdc9bda9b327c" },
     { name = "bumble", specifier = "==0.0.226" },
     { name = "chaquopy-stubs-android", specifier = "~=36.0" },
     { name = "fastapi", specifier = ">=0.128.0" },
@@ -442,7 +442,7 @@ test = [
     { name = "pytest-cov", specifier = ">=7.0.0,<8.0.0" },
 ]
 test-android = [
-    { name = "briefcase", specifier = ">=0.4.0" },
+    { name = "briefcase", git = "https://github.com/beeware/briefcase.git?rev=5610048a07ff79ebaf2048d28c7fdc9bda9b327c" },
     { name = "chaquopy-stubs-android", specifier = "~=36.0" },
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "uiautomator2", marker = "python_full_version < '4'", specifier = ">=3.5.0" },
@@ -464,8 +464,8 @@ wheels = [
 
 [[package]]
 name = "briefcase"
-version = "0.4.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.4.2.dev41+g5610048a0"
+source = { git = "https://github.com/beeware/briefcase.git?rev=5610048a07ff79ebaf2048d28c7fdc9bda9b327c#5610048a07ff79ebaf2048d28c7fdc9bda9b327c" }
 dependencies = [
     { name = "binaryornot" },
     { name = "build" },
@@ -481,15 +481,12 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "rich" },
     { name = "setuptools" },
+    { name = "tenacity" },
     { name = "tomli", version = "2.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' and sys_platform != 'emscripten'" },
     { name = "tomli", version = "2.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' and sys_platform == 'emscripten'" },
     { name = "tomli-w" },
     { name = "truststore" },
     { name = "wheel" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/ae/59bc57a89a19a736aec626a39399fcdd59da49c9b6a09a9f02c57c0cca6c/briefcase-0.4.1.tar.gz", hash = "sha256:8064649697a3eb50f700109e7baea1c735a38e610fca1e6df499abebd610cb0a", size = 2629267, upload-time = "2026-03-09T04:31:47.808Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/c5/acce3f462a48c736dede5c2d0f119ca28633a915a6b8585f6a69dc50fb11/briefcase-0.4.1-py3-none-any.whl", hash = "sha256:e302b088cc0c3c3bb73f9e200f60c82bbc5a820970a74a8f2d9cabc62c8d6540", size = 270442, upload-time = "2026-03-09T04:31:44.459Z" },
 ]
 
 [[package]]
@@ -2840,6 +2837,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/81/69/17425771797c36cded50b7fe44e850315d039f28b15901ab44839e70b593/starlette-1.0.0.tar.gz", hash = "sha256:6a4beaf1f81bb472fd19ea9b918b50dc3a77a6f2e190a12954b25e6ed5eea149", size = 2655289, upload-time = "2026-03-22T18:29:46.779Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/c9/584bc9651441b4ba60cc4d557d8a547b5aff901af35bda3a4ee30c819b82/starlette-1.0.0-py3-none-any.whl", hash = "sha256:d3ec55e0bb321692d275455ddfd3df75fff145d009685eb40dc91fc66b03d38b", size = 72651, upload-time = "2026-03-22T18:29:45.111Z" },
+]
+
+[[package]]
+name = "tenacity"
+version = "9.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/c6/ee486fd809e357697ee8a44d3d69222b344920433d3b6666ccd9b374630c/tenacity-9.1.4.tar.gz", hash = "sha256:adb31d4c263f2bd041081ab33b498309a57c77f9acf2db65aadf0898179cf93a", size = 49413, upload-time = "2026-02-07T10:45:33.841Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/c1/eb8f9debc45d3b7918a32ab756658a0904732f75e555402972246b0b8e71/tenacity-9.1.4-py3-none-any.whl", hash = "sha256:6095a360c919085f28c6527de529e76a06ad89b23659fa881ae0649b867a9d55", size = 28926, upload-time = "2026-02-07T10:45:32.24Z" },
 ]
 
 [[package]]

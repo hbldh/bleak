@@ -262,7 +262,7 @@ def main() -> None:
                 "--update",
                 "--update-requirements",
                 "--device",
-                f'{{"avd":"{AVD_NAME}"}}',
+                f'{{"avd":"{AVD_NAME}", "device_type": "pixel"}}',
                 *(
                     [
                         "--Xemulator=-no-window",

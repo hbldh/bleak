@@ -63,7 +63,10 @@ test-android = [
     "fastapi>=0.128.0",
     "uvicorn>=0.40.0",
     "uiautomator2>=3.5.0; python_version<'4.0'",
-    "briefcase>=0.4.0",
+    # There are currently errors while downloading the android emulator skin, that is
+    # fixed in https://github.com/beeware/briefcase/pull/2788, but that is not yet released.
+    # So we just use the latest commit that includes the fix.
+    "briefcase @ git+https://github.com/beeware/briefcase.git@5610048a07ff79ebaf2048d28c7fdc9bda9b327c",
     "chaquopy-stubs-android~=36.0",
 ]
 dev = [
