@@ -166,8 +166,12 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
 
         conn_objs = self._client._conn_objs  # pyright: ignore[reportPrivateUsage]
         if conn_objs is not None:
+            callback = conn_objs.subscriptions.get(handle)
+            if callback is None:
+                logger.debug("Ignoring notification for unsubscribed handle %s", handle)
+                return
             self._loop.call_soon_threadsafe(
-                conn_objs.subscriptions[handle],
+                callback,
                 bytearray(value),
             )
 
