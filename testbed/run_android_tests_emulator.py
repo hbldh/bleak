@@ -69,24 +69,18 @@ AVD_NAME = "beePhone"
 
 def _find_emulator_serial(adb: ADB, avd_name: str) -> str | None:
     """Return the ADB serial for the running AVD with the given name, or None."""
-    try:
-        output = adb.call_adb(["devices"])
-        for line in output.splitlines():
-            parts = line.split()
-            if (
-                len(parts) >= 2
-                and parts[1] == "device"
-                and parts[0].startswith("emulator-")
-            ):
-                serial = parts[0]
-                try:
-                    name_output = adb.call_adb(["-s", serial, "emu", "avd", "name"])
-                    if name_output.splitlines()[0].strip() == avd_name:
-                        return serial
-                except Exception:
-                    pass
-    except Exception:
-        pass
+    output = adb.call_adb(["devices"])
+    for line in output.splitlines():
+        parts = line.split()
+        if (
+            len(parts) >= 2
+            and parts[1] == "device"
+            and parts[0].startswith("emulator-")
+        ):
+            serial = parts[0]
+            name_output = adb.call_adb(["-s", serial, "emu", "avd", "name"])
+            if name_output.splitlines()[0].strip() == avd_name:
+                return serial
     return None
 
 
@@ -98,15 +92,12 @@ def _wait_for_emulator_boot(
     while not stop_event.is_set():
         serial = _find_emulator_serial(adb, avd_name)
         if serial is not None:
-            try:
-                boot_prop = adb.call_adb(
-                    ["-s", serial, "shell", "getprop", "sys.boot_completed"]
-                )
-                if boot_prop.strip() == "1":
-                    log(f"Emulator '{avd_name}' ({serial}) is fully booted.")
-                    return serial
-            except Exception:
-                pass
+            boot_prop = adb.call_adb(
+                ["-s", serial, "shell", "getprop", "sys.boot_completed"]
+            )
+            if boot_prop.strip() == "1":
+                log(f"Emulator '{avd_name}' ({serial}) is fully booted.")
+                return serial
         stop_event.wait(2.0)
     return None
 
