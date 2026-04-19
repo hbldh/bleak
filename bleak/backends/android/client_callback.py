@@ -162,7 +162,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
             value = characteristic.getValue()
         else:
             # On API level 33 (Android 13) and above
-            value = args[0]  # pragma: no cover  # (CI is running on API level below 33)
+            value = args[0]
 
         conn_objs = self._client._conn_objs  # pyright: ignore[reportPrivateUsage]
         if conn_objs is not None:
@@ -197,7 +197,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
             value = characteristic.getValue()
         else:
             # On API level 33 (Android 13) and above
-            value = args[0]  # pragma: no cover  # (CI is running on API level below 33)
+            value = args[0]
         self.dispatcher.result_state_threadsafe(
             BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
             OnCharacteristicReadCallback(handle),
@@ -240,7 +240,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
             value = descriptor.getValue()
         else:
             # On API level 33 (Android 13) and above
-            value = args[0]  # pragma: no cover  # (CI is running on API level below 33)
+            value = args[0]
         self.dispatcher.result_state_threadsafe(
             BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
             OnDescriptorReadCallback(uuid),

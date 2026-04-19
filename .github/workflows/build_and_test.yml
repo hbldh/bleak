@@ -110,6 +110,7 @@ jobs:
   integration_tests_android:
     name: "Android integration tests"
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -118,6 +119,7 @@ jobs:
           # some binary dependencies of bumble are not yet available for 3.14, like cryptography or aiohttp
           # "3.14"
         ]
+        api-level: [31, 33]
     env:
       FORCE_COLOR: "1"
     steps:
@@ -149,19 +151,19 @@ jobs:
             ~/.gradle/caches
             /usr/local/lib/android/sdk/cmdline-tools/19.0
             /usr/local/lib/android/sdk/emulator
-            /usr/local/lib/android/sdk/system-images/android-31
-          key: build-deps-${{ runner.os }}-${{ hashFiles('testbed/pyproject.toml') }}
+            /usr/local/lib/android/sdk/system-images/android-${{ matrix.api-level }}
+          key: build-deps-${{ runner.os }}-api${{ matrix.api-level }}-${{ hashFiles('testbed/pyproject.toml') }}
           restore-keys: |
-            build-deps-${{ runner.os }}-
+            build-deps-${{ runner.os }}-api${{ matrix.api-level }}-
 
       - name: Run App
-        run: uv run testbed/run_android_tests_emulator.py --ci
+        run: uv run testbed/run_android_tests_emulator.py --ci --api-level ${{ matrix.api-level }}
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           report_type: coverage
-          flags: android-integration-py${{ matrix.python-version }}
+          flags: android-integration-py${{ matrix.python-version }}-api${{ matrix.api-level }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results to Codecov
@@ -169,7 +171,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           report_type: test_results
-          flags: android-integration-py${{ matrix.python-version }}
+          flags: android-integration-py${{ matrix.python-version }}-api${{ matrix.api-level }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Type checking

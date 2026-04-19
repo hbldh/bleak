@@ -497,7 +497,7 @@ class BleakClientAndroid(BaseBleakClient):
 
         if Build.VERSION.SDK_INT >= 33:
 
-            def _do_write_char():  # pragma: no cover  # (CI is running on API level below 33)
+            def _do_write_char():
                 # On API level 33 (Android 13) and above writeCharacteristic returns int (GATT_SUCCESS=0 on success).
                 # Convert to bool so dispatch_result_indicates_status=True works correctly.
                 return (
@@ -544,7 +544,7 @@ class BleakClientAndroid(BaseBleakClient):
 
         if Build.VERSION.SDK_INT >= 33:
 
-            def _do_write_desc():  # pragma: no cover  # (CI is running on API level below 33)
+            def _do_write_desc():
                 # On API level 33 (Android 13) and above writeDescriptor returns int (GATT_SUCCESS=0 on success).
                 # Convert to bool so dispatch_result_indicates_status=True works correctly.
                 return gatt.writeDescriptor(descriptor.obj, payload) == 0

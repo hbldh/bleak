@@ -115,6 +115,7 @@ Bluetooth permissions and pairing are automatically confirmed via ADB
 automation, so the tests run without any manual interaction. This setup works
 headlessly, for example in GitHub Actions.
 
-::
+    $ uv run --python 3.13 testbed/run_android_tests_emulator.py --api-level 31
 
-    $ uv run --python 3.13 testbed/run_android_tests_emulator.py
+This is working from Android API level 31 and above. On API level 30 and below ``netsim``
+is not available.

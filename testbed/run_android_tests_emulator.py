@@ -4,6 +4,7 @@
 import argparse
 import contextlib
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -59,12 +60,42 @@ class ADB:
             raise Exception(f"ADB command failed: {error_output}") from exc
 
 
+def get_emulator_abi() -> str:
+    """Return the Android emulator ABI for the current host machine.
+
+    Equivalent to the ``emulator_abi`` property in Briefcase's AndroidSDK:
+    https://github.com/beeware/briefcase/blob/0332fe66e22d094d938dc24ceb4ba9431ce76558/src/briefcase/integrations/android_sdk.py#L155-L175
+    """
+    abi = (
+        {
+            "Linux": {
+                "x86_64": "x86_64",
+                "aarch64": "arm64-v8a",
+            },
+            "Darwin": {
+                "x86_64": "x86_64",
+                "arm64": "arm64-v8a",
+            },
+            "Windows": {
+                "AMD64": "x86_64",
+            },
+        }
+        .get(platform.system(), {})
+        .get(platform.machine())
+    )
+    if abi is None:
+        raise RuntimeError(
+            f"The Android emulator does not support "
+            f"{platform.system()} {platform.machine()} hardware."
+        )
+    return abi
+
+
 # ---------------------------------------------------------------------------
 # Background worker threads
 # ---------------------------------------------------------------------------
 
 NETSIM_DEVICE_PORT = 8000
-AVD_NAME = "beePhone"
 
 
 def _find_emulator_serial(adb: ADB, avd_name: str) -> str | None:
@@ -110,38 +141,53 @@ def _accept_permissions(d: u2.Device) -> None:
     for rid in ALLOW_PERMISSION_IDENTIFIERS:
         btn = d(resourceId=rid)
         if btn.exists:
+            time.sleep(2)
             log(f"Clicking allow permission button {rid}...")
             btn.click()  # pyright: ignore[reportUnknownMemberType]
 
 
-def _accept_pairing(d: u2.Device) -> None:
-    if not d(descriptionContains="Pairing request").exists:
-        return
+def _accept_pairing(d: u2.Device, api_level: int) -> None:
+    if api_level <= 33:
+        # On API 31-33 only a small "Pair" dialog pops up. To see the "full" pairing dialog
+        # with the "Pair & Connect" button, we need to click the pairing notification.
+        if not d(descriptionContains="Pairing request").exists:
+            return
 
-    log("Pairing request detected, opening notification bar...")
-    d.open_notification()
+        log("Pairing request detected, opening notification bar...")
+        d.open_notification()
 
-    time.sleep(2)
+        time.sleep(2)
 
-    button = d(text="PAIR & CONNECT")
-    if button.exists:
-        time.sleep(0.5)
-        log("Clicking pairing notification button...")
-        button.click()  # pyright: ignore[reportUnknownMemberType]
+        button = d(text="PAIR & CONNECT")
+        if button.exists:
+            time.sleep(0.5)
+            log("Clicking pairing notification button...")
+            button.click()  # pyright: ignore[reportUnknownMemberType]
 
-    log("Closing notification bar...")
-    d.press("back")  # pyright: ignore[reportUnknownMemberType]
+        log("Closing notification bar...")
+        d.press("back")  # pyright: ignore[reportUnknownMemberType]
 
-    # Wait for the "Pair with Bleak?" confirmation popup
-    deadline = time.time() + 3.0
-    while time.time() < deadline:
+        # Wait for the "Pair with Bleak?" confirmation popup
+        deadline = time.time() + 3.0
+        while time.time() < deadline:
+            pair_btn = d(text="PAIR")
+            if pair_btn.exists:
+                time.sleep(0.5)
+                log("Clicking PAIR button...")
+                pair_btn.click()  # pyright: ignore[reportUnknownMemberType]
+                break
+            time.sleep(0.25)
+
+    else:
+        # On API Level 34-36 the normal pairing dialog directly opens, without
+        # the need to click the notification first.
+
+        # Check if the "Pair with Bleak?" confirmation popup is open
         pair_btn = d(text="PAIR")
         if pair_btn.exists:
             time.sleep(0.5)
-            log("Clicking PAIR button...")
+            log("Pairing request detected, clicking PAIR button...")
             pair_btn.click()  # pyright: ignore[reportUnknownMemberType]
-            break
-        time.sleep(0.25)
 
     # wait a little, so that all menus/popups are fully closed
     time.sleep(2)
@@ -191,9 +237,11 @@ def _netsim_forwarding(
                 log(f"Failed to remove ADB reverse forwarding: {e}")
 
 
-def _background_worker(adb: ADB, stop_event: threading.Event) -> None:
+def _background_worker(
+    adb: ADB, stop_event: threading.Event, api_level: int, avd_name: str
+) -> None:
     """Wait for the emulator to boot, forward netsim, then accept permissions and pairings."""
-    device_serial = _wait_for_emulator_boot(adb, AVD_NAME, stop_event)
+    device_serial = _wait_for_emulator_boot(adb, avd_name, stop_event)
     if device_serial is None:
         return  # stop_event was set before boot
 
@@ -208,7 +256,7 @@ def _background_worker(adb: ADB, stop_event: threading.Event) -> None:
             except Exception as e:
                 log(f"Error in permission accept: {e}")
             try:
-                _accept_pairing(d)
+                _accept_pairing(d, api_level)
             except Exception as e:
                 log(f"Error in pairing accept: {e}")
             stop_event.wait(0.25)
@@ -226,7 +274,19 @@ def main() -> None:
         action="store_true",
         help="Run in CI mode (headless emulator, shutdown on exit)",
     )
+    parser.add_argument(
+        "--api-level",
+        type=int,
+        default=31,
+        help="Android API level to use (default: 31)",
+    )
     args = parser.parse_args()
+
+    api_level = args.api_level
+    avd_name = f"beePhone-api-{api_level}"
+    emulator_abi = get_emulator_abi()
+    system_image = f"system-images;android-{api_level};default;{emulator_abi}"
+    log(f"Using system image: {system_image}")
 
     # Resolve ADB early so we fail fast if it is missing
     adb = ADB()
@@ -235,7 +295,7 @@ def main() -> None:
     stop_event = threading.Event()
     worker = threading.Thread(
         target=_background_worker,
-        args=(adb, stop_event),
+        args=(adb, stop_event, api_level, avd_name),
         name="android-background-worker",
     )
     worker.start()
@@ -253,7 +313,7 @@ def main() -> None:
                 "--update",
                 "--update-requirements",
                 "--device",
-                f'{{"avd":"{AVD_NAME}", "device_type": "pixel"}}',
+                f'{{"avd":"{avd_name}", "device_type": "pixel", "system_image": "{system_image}"}}',
                 *(
                     [
                         "--Xemulator=-no-window",
