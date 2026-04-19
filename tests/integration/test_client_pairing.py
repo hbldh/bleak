@@ -28,7 +28,7 @@ async def test_pairing_unavailable(bumble_peripheral: Device):
 
 @pytest.mark.skipif(
     get_default_backend() != BleakBackend.ANDROID,
-    reason="pairing is only possible on Android backend",
+    reason="testing pairing is currently only implemented for the Android backend",
 )
 async def test_pairing_android(bumble_peripheral: Device):
     """Test pairing on Android backend."""
