@@ -271,7 +271,11 @@ def main() -> None:
                         "--Xemulator=-no-boot-anim",
                     ]
                     if args.ci
-                    else []
+                    else [
+                        # Starting from a snapshot causes a "D/BluetoothAdapter: onBluetoothServiceDown" message in the first integration test.
+                        # So we disable snapshots to ensure a clean start.
+                        "--Xemulator=-no-snapshot",
+                    ]
                 ),
                 "--revoke-permission=android.permission.BLUETOOTH_SCAN",
                 "--revoke-permission=android.permission.BLUETOOTH_CONNECT",
