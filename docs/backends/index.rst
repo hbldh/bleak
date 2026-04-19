@@ -19,7 +19,7 @@ Contents:
    windows
    linux
    macos
-   android-beeware
+   android
    android-p4a
    pythonista
 
