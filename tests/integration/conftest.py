@@ -34,7 +34,7 @@ async def create_hci_transport(
 ) -> AsyncGenerator[Transport, None]:
     """Create a bumble HCI Transport."""
     hci_transport_name: str | None = request.config.getoption("--bleak-hci-transport")
-    bluez_vhci_enabled: bool = request.config.getoption("--bleak-bluez-vhci")
+    bluez_vhci_enabled: bool | None = request.config.getoption("--bleak-bluez-vhci")
 
     if hci_transport_name is not None and bluez_vhci_enabled:
         raise pytest.UsageError(
