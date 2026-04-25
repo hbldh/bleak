@@ -91,3 +91,8 @@ async def test_notification_sent_before_write_response(
         else:
             with pytest.raises(asyncio.TimeoutError):
                 await asyncio.wait_for(notification_queue.get(), timeout=3)
+
+        # Normally we don't bother with calling stop_notify() but we are doing
+        # it here just to get code coverage since this is the only test where
+        # we are setting use_start_notify.
+        await client.stop_notify(TEST_CHARACTERISTIC_UUID)
