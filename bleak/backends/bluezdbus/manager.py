@@ -1187,9 +1187,11 @@ class BlueZManager:
 # Bleak is designed to run in a single event loop for the duration of an
 # application. Starting a new manager is a very expensive operation because it
 # has to read all of the properties of all known Bluetooth devices over the bus.
-# This dict maps each event loop to its associated BlueZManager instance so that
-# multiple callers in the same loop share one manager. Entries for closed loops
-# are removed lazily when a new manager is requested.
+# So even though this technically supports more than one run loop, we don't
+# recommend doing that. This dict maps each event loop to its associated
+# BlueZManager instance so that multiple callers in the same loop share one
+# manager. Entries for closed loops are removed lazily when a new manager is
+# requested.
 _global_instances: dict[asyncio.AbstractEventLoop, BlueZManager] = {}
 
 
@@ -1200,16 +1202,19 @@ async def get_global_bluez_manager() -> BlueZManager:
     """
 
     loop = asyncio.get_running_loop()
+    try:
+        instance = _global_instances[loop]
+    except KeyError:
+        # Clean up any entries whose event loop has been closed.
+        closed_loops = [
+            event_loop
+            for event_loop in _global_instances
+            if event_loop.is_closed()
+        ]
+        for closed_loop in closed_loops:
+            del _global_instances[closed_loop]
 
-    # Clean up any entries whose event loop has been closed.
-    closed_loops = [event_loop for event_loop in _global_instances if event_loop.is_closed()]
-    for closed_loop in closed_loops:
-        del _global_instances[closed_loop]
-
-    if loop not in _global_instances:
-        _global_instances[loop] = BlueZManager()
-
-    instance = _global_instances[loop]
+        instance = _global_instances[loop] = BlueZManager()
 
     await instance.async_init()
 
