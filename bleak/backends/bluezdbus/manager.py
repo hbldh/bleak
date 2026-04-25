@@ -1211,8 +1211,8 @@ async def get_global_bluez_manager() -> BlueZManager:
         ]
         for closed_loop in closed_loops:
             manager = _global_instances.pop(closed_loop)
-            if manager._bus is not None:
-                manager._bus._finalize(None)
+            if manager._bus is not None:  # pyright: ignore[reportPrivateUsage]
+                manager._bus._finalize(None)  # pyright: ignore[reportPrivateUsage]
 
         instance = _global_instances[loop] = BlueZManager()
 
