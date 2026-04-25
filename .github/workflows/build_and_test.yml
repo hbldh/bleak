@@ -45,21 +45,23 @@ jobs:
           flags: ${{ matrix.os }}-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Type checking
-        # We don't do this in the lint job because we have conditionals
-        # on both the platform and the Python version in the code, so we
-        # need to check each matrix combination.
-        #
-        # We want always the latest version of pyright and mypy, to catch
-        # any breakage as soon as we can. That is why they are not dev
-        # dependencies in the pyproject.toml, because that would lock them to
-        # a specific version. Instead we install the latest version as tool.
+      # We don't do type checking in the lint job because we have conditionals
+      # on both the platform and the Python version in the code, so we
+      # need to check each matrix combination.
+      #
+      # We want always the latest version of pyright and mypy, to catch
+      # any breakage as soon as we can. That is why they are not dev
+      # dependencies in the pyproject.toml, because that would lock them to
+      # a specific version. Instead we install the latest version as tool.
+      - name: Type checking (pyright)
         run: |
           uv tool install pyright
           uv run pyright
+
+      - name: Type checking (mypy)
+        run: |
           uv tool install mypy
           uv run mypy -p bleak -p tests -p examples
-
 
   integration_tests_bluez:
     name: "BlueZ integration tests"
