@@ -1210,7 +1210,8 @@ async def get_global_bluez_manager() -> BlueZManager:
             event_loop for event_loop in _global_instances if event_loop.is_closed()
         ]
         for closed_loop in closed_loops:
-            _global_instances[closed_loop].bus._finalize()
+            if (bus := _global_instances[closed_loop]._bus) is not None:
+                bus._finalize(None)
             del _global_instances[closed_loop]
 
         instance = _global_instances[loop] = BlueZManager()
