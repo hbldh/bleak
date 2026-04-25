@@ -139,11 +139,9 @@ class BlueZNotifyArgs(TypedDict, total=False):
 
     use_start_notify: bool
     """
-    If true, use the "StartNotify" D-Bus method instead of "AcquireNotify" to
-    subscribe to notifications.
+    If false, use the "AcquireNotify" D-Bus method instead of "StartNotify" to
+    subscribe to notifications. The default is to use "StartNotify" for better
+    compatibility with most BLE devices.
 
-    This is needed in rare cases to work around BlueZ quirks. For example, some
-    peripherals may send notifications immediately after writing to the CCCD
-    descriptor, before the write response is sent. In this case, "AcquireNotify"
-    will miss the notification, whereas "StartNotify" will work correctly.
+    see :ref:`linux-start-notify` for more details.
     """

@@ -923,25 +923,28 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Activate notifications/indications on a characteristic.
 
         Args:
-            characteristic (BleakGATTCharacteristic): The characteristic to activate notification/indication on.
-            callback (NotifyCallback): The callback to call when a notification/indication is received.
+            characteristic: The characteristic to activate notification/indication on.
+            callback: The callback to call when a notification/indication is received.
 
         Keyword Args:
-            bluez (dict): dictionary of additional parameters, see :ref:`linux-start-notify` for more details.
+            bluez (BlueZNotifyArgs): dictionary of additional parameters.
         """
 
         bluez: BlueZNotifyArgs = kwargs["bluez"]
-        force_use_start_notify = bluez.get("use_start_notify", False)
+        # A number of devices have issues with AcquireNotify, so we use StartNotify
+        # by default. For cases where AcquireNotify does work, users can set
+        # "use_start_notify" to False.
+        force_use_start_notify = bluez.get("use_start_notify", True)
 
         assert self._bus is not None
 
-        # If using StartNotify and calling a read on the same
-        # characteristic, BlueZ will return the response as
-        # both a notification and read, duplicating the message.
-        # Using AcquireNotify on supported characteristics avoids this.
-        # However, using the preferred AcquireNotify requires that devices
-        # correctly indicate "notify" and/or "indicate" properties. If they
-        # don't, we fall back to StartNotify.
+        # If using StartNotify and calling a read on the same characteristic,
+        # BlueZ will return the response as both a notification and read,
+        # duplicating the message. Using AcquireNotify on supported
+        # characteristics avoids this. However, using the preferred
+        # AcquireNotify requires that devices correctly indicate "notify"
+        # and/or "indicate" properties. If they don't, we fall back to
+        # StartNotify anyway.
         use_notify_acquire = (
             not force_use_start_notify and "NotifyAcquired" in characteristic.obj[1]
         )

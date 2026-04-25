@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Changed default value of ``BlueZNotifyArgs.use_start_notify`` to ``False``. Fixes #1951.
+
 `3.0.1`_ (2026-03-25)
 =====================
 

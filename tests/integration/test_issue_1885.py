@@ -1,5 +1,6 @@
 import asyncio
 
+import pytest
 from bumble.att import Attribute, AttributeValue
 from bumble.device import Connection, Device
 from bumble.gatt import (
@@ -20,7 +21,9 @@ TEST_SERVICE_UUID = "9d513f40-5c89-42dc-9688-2cfa30f2d9e7"
 TEST_CHARACTERISTIC_UUID = "e809cb2f-34e3-42a1-ba92-22db2495cd6a"
 
 
+@pytest.mark.parametrize("use_start_notify", [True, False])
 async def test_notification_sent_before_write_response(
+    use_start_notify: bool,
     bumble_peripheral: Device,
 ) -> None:
     """
@@ -73,12 +76,18 @@ async def test_notification_sent_before_write_response(
             notification_queue.put_nowait(bytes(data))
 
         await client.start_notify(
-            TEST_CHARACTERISTIC_UUID, on_notification, bluez={"use_start_notify": True}
+            TEST_CHARACTERISTIC_UUID,
+            on_notification,
+            bluez={"use_start_notify": use_start_notify},
         )
 
         # In BlueZ, the notification is not received when using "AcquireNotify"
         # causing this to timeout.
 
-        data = await asyncio.wait_for(notification_queue.get(), timeout=3)
+        if use_start_notify:
+            data = await asyncio.wait_for(notification_queue.get(), timeout=3)
 
-        assert data == b"test"
+            assert data == b"test"
+        else:
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(notification_queue.get(), timeout=3)
