@@ -994,28 +994,27 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         assert self._bus is not None
 
-        if "NotifyAcquired" in characteristic.obj[1]:
+        # If we have a notification fd for this characteristic, then we know we
+        # used AcquireNotify, otherwise we used StartNotify.
+
+        if (fd := self._notification_fds.get(characteristic.obj[0])) is not None:
             logger.debug(
                 "Closing notification fd for characteristic %d", characteristic.handle
             )
-            fd = self._notification_fds.pop(characteristic.obj[0], None)
 
-            if fd is None:
-                logger.debug(
-                    "No notification fd found for characteristic %d",
-                    characteristic.handle,
-                )
-            else:
-                loop = asyncio.get_running_loop()
-                try:
-                    loop.remove_reader(fd)
-                except RuntimeError:
-                    # Run loop is closed
-                    pass
-                try:
-                    os.close(fd)
-                except OSError as e:
-                    logger.debug("Failed to remove file descriptor %d: %s", fd, e)
+            loop = asyncio.get_running_loop()
+            try:
+                loop.remove_reader(fd)
+            except RuntimeError:
+                # Run loop is closed
+                pass
+            try:
+                os.close(fd)
+            except OSError as e:
+                logger.debug("Failed to remove file descriptor %d: %s", fd, e)
+
+            self._notification_fds.pop(characteristic.obj[0], None)
+
         else:
             logger.debug(
                 "Calling StopNotify for characteristic %d", characteristic.handle
