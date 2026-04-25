@@ -1207,11 +1207,10 @@ async def get_global_bluez_manager() -> BlueZManager:
     except KeyError:
         # Clean up any entries whose event loop has been closed.
         closed_loops = [
-            event_loop
-            for event_loop in _global_instances
-            if event_loop.is_closed()
+            event_loop for event_loop in _global_instances if event_loop.is_closed()
         ]
         for closed_loop in closed_loops:
+            _global_instances[closed_loop].bus._finalize()
             del _global_instances[closed_loop]
 
         instance = _global_instances[loop] = BlueZManager()
