@@ -25,7 +25,6 @@ Changed
 
 Fixed
 -----
-* Fixed parameter documentation for ``bleak.backends.bluezdbus.client.BleakClientBlueZDBus.start_notify()``
 * Fixed occasional ``EOFError`` when disconnecting in BlueZ backend. Fixes #1921.
 * Fixed a potential deadlock when turning off Bluetooth manually while starting scanning on CoreBluetooth.
 * Fixed reading descriptors 0x2900, 0x2902 and 0x2903 on CoreBluetooth backend.
