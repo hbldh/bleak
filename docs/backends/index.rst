@@ -20,6 +20,7 @@ Contents:
    linux
    macos
    android
+   android-p4a
    pythonista
 
 Backend selection

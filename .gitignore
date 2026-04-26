@@ -51,6 +51,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+junit.xml
 
 # Integration test VM
 .alpine-vm-build/

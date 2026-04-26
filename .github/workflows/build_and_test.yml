@@ -91,7 +91,7 @@ jobs:
             export FORCE_COLOR=1
             export CI=true
             export GITHUB_ACTIONS=true
-            uv run --python ${{ matrix.python-version }} pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --cov-report=html:../.htmlcov --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
+            uv run --python ${{ matrix.python-version }} --no-dev --group test pytest -v tests --bleak-bluez-vhci -v --cov-report=xml --cov-report=html:../.htmlcov --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
           '
 
       - name: Upload coverage reports to Codecov
@@ -108,3 +108,83 @@ jobs:
           report_type: test_results
           flags: bluez-integration-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  integration_tests_android:
+    name: "Android integration tests"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [
+          "3.13",
+          # some binary dependencies of bumble are not yet available for 3.14, like cryptography or aiohttp
+          # "3.14"
+        ]
+        api-level: [31, 33]
+    env:
+      FORCE_COLOR: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+
+      - name: Setup Environment
+        run: |
+          # Use GitHub's preinstalled JDK 17 for Android builds
+          echo JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME_17_arm64}" | tee -a ${GITHUB_ENV}
+          # Enable KVM permissions for the Android emulator as recommended in
+          # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/briefcase
+            ~/.gradle/wrapper/dists
+            ~/.gradle/caches
+            /usr/local/lib/android/sdk/cmdline-tools/19.0
+            /usr/local/lib/android/sdk/emulator
+            /usr/local/lib/android/sdk/system-images/android-${{ matrix.api-level }}
+          key: build-deps-${{ runner.os }}-api${{ matrix.api-level }}-${{ hashFiles('testbed/pyproject.toml') }}
+          restore-keys: |
+            build-deps-${{ runner.os }}-api${{ matrix.api-level }}-
+
+      - name: Run App
+        run: uv run testbed/run_android_tests_emulator.py --ci --api-level ${{ matrix.api-level }}
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: coverage
+          flags: android-integration-py${{ matrix.python-version }}-api${{ matrix.api-level }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: test_results
+          flags: android-integration-py${{ matrix.python-version }}-api${{ matrix.api-level }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Type checking
+        # We don't do this in the lint job because we have conditionals
+        # on both the platform and the Python version in the code, so we
+        # need to check each matrix combination.
+        run: |
+          # For pyright a new release is missing that includes https://github.com/microsoft/pyright/pull/11221
+          # When building pyright from main locally, it works.
+          # uv tool install pyright
+          # uv run pyright --project pyrightconfig-android.json
+          uv tool install mypy
+          uv run mypy --config-file=mypy-android.ini

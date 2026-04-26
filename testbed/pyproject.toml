@@ -1,0 +1,92 @@
+[tool.briefcase]
+project_name = "Bleak-Testbed"
+bundle = "com.bleak.testbed"
+version = "0.0.1"
+license = "MIT"
+
+[tool.briefcase.app.bleak_testbed]
+formal_name = "Bleak-Testbed"
+description = "Testbed Application for running bleak integration tests"
+sources = [
+    "src/bleak_testbed",
+]
+test_sources = [
+    "tests",
+    "../tests",
+]
+
+requires = [
+]
+test_requires = [
+    "pytest",
+    "pytest-asyncio",
+    "coverage",
+    "httpx",
+    "bumble==0.0.226"
+]
+
+[tool.briefcase.app.bleak_testbed.macOS]
+universal_build = true
+requires = [
+    "..",
+    "toga-cocoa~=0.5.0",
+    "std-nslog~=1.0.3"
+]
+min_os_version = "14.0"
+
+[tool.briefcase.app.bleak_testbed.windows]
+requires = [
+    "..",
+    "toga-winforms~=0.5.0",
+]
+
+[tool.briefcase.app.bleak_testbed.android]
+sources = [
+    "../bleak",
+]
+requires = [
+    # There is an error message "Failed to create MD5 hash for file content." when declaring "..".
+    # So we just copy the bleak files (see 'sources').
+    # "..",
+    
+    # This bugfix https://github.com/beeware/toga/pull/4083 is needed. 
+    # The current version Toga v0.5.3 does not include this fix.
+    # It is needed so that grpcio can be used on Android.
+    "git+https://github.com/beeware/toga.git@199b0fa751d944b9c83c5d29602c263a2fda3cd2#egg=travertino&subdirectory=travertino",
+    "git+https://github.com/beeware/toga.git@199b0fa751d944b9c83c5d29602c263a2fda3cd2#egg=toga-android&subdirectory=android",
+    "git+https://github.com/beeware/toga.git@199b0fa751d944b9c83c5d29602c263a2fda3cd2#egg=toga-core&subdirectory=core",
+    # "toga-android~=0.5.0",
+
+]
+
+base_theme = "Theme.MaterialComponents.Light.DarkActionBar"
+
+build_gradle_dependencies = [
+    "com.google.android.material:material:1.12.0",
+    # Needed for DetailedList
+    "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0",
+    # Needed for MapView
+    # "org.osmdroid:osmdroid-android:6.1.20",
+]
+
+build_gradle_extra_content = """
+android.defaultConfig.python.staticProxy(
+    'bleak.backends.android.scanner_callback',
+    'bleak.backends.android.client_callback',
+    'bleak.backends.android.broadcast'
+)
+
+// These settings are needed only for running the tests:
+android.defaultConfig.python {
+    // Coverage requires access to individual .py files.
+    extractPackages("bleak")
+
+    // Pytest's assertion rewriting produces its own .pyc files.
+    pyc.src = false
+}
+"""
+
+
+
+permission.bluetooth = "This app uses Bluetooth to communicate with nearby Bluetooth devices."
+
