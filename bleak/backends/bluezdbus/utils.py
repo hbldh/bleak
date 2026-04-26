@@ -14,12 +14,31 @@ from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 
 from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.defs import Device1
 from bleak.exc import (
     BleakDBusError,
     BleakError,
     BleakGATTProtocolError,
     BleakGATTProtocolErrorCode,
 )
+
+
+def device_name_from_props(props: Device1) -> Optional[str]:
+    """
+    Get the user-facing device name from BlueZ device properties.
+
+    BlueZ generates a name based on the address if no real name is
+    available. To match other backends, ``None`` is returned in that case.
+
+    Args:
+        props: The BlueZ ``org.bluez.Device1`` properties.
+
+    Returns:
+        The device name, or ``None`` if BlueZ has no real name for it.
+    """
+    return (
+        None if props["Alias"] == props["Address"].replace(":", "-") else props["Alias"]
+    )
 
 
 def assert_reply(reply: Message) -> None:

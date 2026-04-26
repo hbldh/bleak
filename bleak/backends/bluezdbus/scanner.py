@@ -17,6 +17,7 @@ from bleak.args.bluez import BlueZDiscoveryFilters as _BlueZDiscoveryFilters
 from bleak.args.bluez import BlueZScannerArgs as _BlueZScannerArgs
 from bleak.backends.bluezdbus.defs import Device1
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
+from bleak.backends.bluezdbus.utils import device_name_from_props
 from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
@@ -213,13 +214,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         device = self.create_or_update_device(
             path,
             props["Address"],
-            # BlueZ generates a name based on the address if no name is available.
-            # To match other backends, we replace this with None.
-            (
-                None
-                if props["Alias"] == props["Address"].replace(":", "-")
-                else props["Alias"]
-            ),
+            device_name_from_props(props),
             {"path": path, "props": props},
             advertisement_data,
         )
