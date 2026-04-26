@@ -2,6 +2,7 @@
 """
 BLE Client for Windows 10 systems, implemented with WinRT.
 """
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -157,10 +158,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         # Backend specific. WinRT objects.
         if isinstance(address_or_ble_device, BLEDevice):
-            data: RawAdvData = address_or_ble_device.details
-            args = data.adv or data.scan
-            assert args
-            self._device_info = args.bluetooth_address
+            self._device_info = _address_to_int(address_or_ble_device.address)
         else:
             self._device_info = None
 
