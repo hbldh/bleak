@@ -702,9 +702,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        char_path = characteristic.obj[0]
+
         if use_cached:
             manager = await get_global_bluez_manager()
-            return bytearray(manager.get_char_value(characteristic.obj[0]))
+            return bytearray(manager.get_char_value(char_path))
 
         while True:
             assert self._bus
@@ -712,7 +714,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.obj[0],
+                    path=char_path,
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="ReadValue",
                     signature="a{sv}",
@@ -735,7 +737,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         logger.debug(
             "Read Characteristic %s | %s: %r",
             characteristic.uuid,
-            characteristic.obj[0],
+            char_path,
             value,
         )
 
@@ -803,13 +805,15 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if not self.is_connected:
             raise BleakError("Not connected")
 
+        char_path = characteristic.obj[0]
+
         while True:
             assert self._bus
 
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.obj[0],
+                    path=char_path,
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="WriteValue",
                     signature="aya{sv}",
@@ -833,7 +837,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         logger.debug(
             "Write Characteristic %s | %s: %s",
             characteristic.uuid,
-            characteristic.obj[0],
+            char_path,
             data,
         )
 
@@ -923,25 +927,30 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Activate notifications/indications on a characteristic.
 
         Args:
-            characteristic (BleakGATTCharacteristic): The characteristic to activate notification/indication on.
-            callback (NotifyCallback): The callback to call when a notification/indication is received.
+            characteristic: The characteristic to activate notification/indication on.
+            callback: The callback to call when a notification/indication is received.
 
         Keyword Args:
-            bluez (dict): dictionary of additional parameters, see :ref:`linux-start-notify` for more details.
+            bluez (BlueZNotifyArgs): dictionary of additional parameters.
         """
 
         bluez: BlueZNotifyArgs = kwargs["bluez"]
-        force_use_start_notify = bluez.get("use_start_notify", False)
+        # A number of devices have issues with AcquireNotify, so we use StartNotify
+        # by default. For cases where AcquireNotify does work, users can set
+        # "use_start_notify" to False.
+        force_use_start_notify = bluez.get("use_start_notify", True)
 
         assert self._bus is not None
 
-        # If using StartNotify and calling a read on the same
-        # characteristic, BlueZ will return the response as
-        # both a notification and read, duplicating the message.
-        # Using AcquireNotify on supported characteristics avoids this.
-        # However, using the preferred AcquireNotify requires that devices
-        # correctly indicate "notify" and/or "indicate" properties. If they
-        # don't, we fall back to StartNotify.
+        char_path: str = characteristic.obj[0]
+
+        # If using StartNotify and calling a read on the same characteristic,
+        # BlueZ will return the response as both a notification and read,
+        # duplicating the message. Using AcquireNotify on supported
+        # characteristics avoids this. However, using the preferred
+        # AcquireNotify requires that devices correctly indicate "notify"
+        # and/or "indicate" properties. If they don't, we fall back to
+        # StartNotify anyway.
         use_notify_acquire = (
             not force_use_start_notify and "NotifyAcquired" in characteristic.obj[1]
         )
@@ -954,7 +963,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.obj[0],
+                    path=char_path,
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="AcquireNotify",
                     body=[{}],
@@ -964,14 +973,14 @@ class BleakClientBlueZDBus(BaseBleakClient):
             assert_gatt_reply(reply)
 
             unix_fd = reply.unix_fds[0]
-            self._notification_fds[characteristic.obj[0]] = unix_fd
-            self._register_notify_fd_reader(characteristic.obj[0], unix_fd, callback)
+            self._notification_fds[char_path] = unix_fd
+            self._register_notify_fd_reader(char_path, unix_fd, callback)
         else:
-            self._notification_callbacks[characteristic.obj[0]] = callback
+            self._notification_callbacks[char_path] = callback
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.obj[0],
+                    path=char_path,
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="StartNotify",
                 )
@@ -991,28 +1000,29 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         assert self._bus is not None
 
-        if "NotifyAcquired" in characteristic.obj[1]:
+        char_path: str = characteristic.obj[0]
+
+        # If we have a notification fd for this characteristic, then we know we
+        # used AcquireNotify, otherwise we used StartNotify.
+
+        if (fd := self._notification_fds.get(char_path)) is not None:
             logger.debug(
                 "Closing notification fd for characteristic %d", characteristic.handle
             )
-            fd = self._notification_fds.pop(characteristic.obj[0], None)
 
-            if fd is None:
-                logger.debug(
-                    "No notification fd found for characteristic %d",
-                    characteristic.handle,
-                )
-            else:
-                loop = asyncio.get_running_loop()
-                try:
-                    loop.remove_reader(fd)
-                except RuntimeError:
-                    # Run loop is closed
-                    pass
-                try:
-                    os.close(fd)
-                except OSError as e:
-                    logger.debug("Failed to remove file descriptor %d: %s", fd, e)
+            loop = asyncio.get_running_loop()
+            try:
+                loop.remove_reader(fd)
+            except RuntimeError:
+                # Run loop is closed
+                pass
+            try:
+                os.close(fd)
+            except OSError as e:
+                logger.debug("Failed to remove file descriptor %d: %s", fd, e)
+
+            self._notification_fds.pop(char_path, None)
+
         else:
             logger.debug(
                 "Calling StopNotify for characteristic %d", characteristic.handle
@@ -1020,10 +1030,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
             reply = await self._bus.call(
                 Message(
                     destination=defs.BLUEZ_SERVICE,
-                    path=characteristic.obj[0],
+                    path=char_path,
                     interface=defs.GATT_CHARACTERISTIC_INTERFACE,
                     member="StopNotify",
                 )
             )
             assert_reply(reply)
-            self._notification_callbacks.pop(characteristic.obj[0], None)
+            self._notification_callbacks.pop(char_path, None)
