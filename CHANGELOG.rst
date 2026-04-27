@@ -10,6 +10,14 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+
+Changed
+-------
+* ``BleakClientCoreBluetooth`` now tries ``retrievePeripheralsWithIdentifiers:`` before falling back to scanning when connecting by CoreBluetooth UUID address.
+
 `3.0.1`_ (2026-03-25)
 =====================
 

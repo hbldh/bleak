@@ -129,6 +129,24 @@ class BlueZClientArgs(TypedDict, total=False):
     """
 
 
+class BlueZAdapterArgs(TypedDict, total=False):
+    """
+    :class:`bleak.BleakAdapter` args that are specific to the BlueZ backend.
+
+    .. versionadded:: unreleased
+    """
+
+    adapter: str
+    """
+    Bluetooth adapter to use, e.g. "hci0".
+
+    .. tip:: If you have multiple Bluetooth adapters, they may not always be
+         assigned the same ``hciX`` name across reboots. In that case, you can
+         use udev to look up the name based on other properties like the USB
+         vendor and product ID.
+    """
+
+
 class BlueZNotifyArgs(TypedDict, total=False):
     """
     :meth:`bleak.BleakClient.start_notify` method args that are specific to the

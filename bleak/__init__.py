@@ -17,10 +17,16 @@ from warnings import warn
 from bleak._compat import Never, Self, Unpack, assert_never
 from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
-from bleak.args.bluez import BlueZClientArgs, BlueZNotifyArgs, BlueZScannerArgs
+from bleak.args.bluez import (
+    BlueZAdapterArgs,
+    BlueZClientArgs,
+    BlueZNotifyArgs,
+    BlueZScannerArgs,
+)
 from bleak.args.corebluetooth import CBScannerArgs, CBStartNotifyArgs
 from bleak.args.winrt import WinRTClientArgs
 from bleak.backends import BleakBackend
+from bleak.backends.adapter import BaseBleakAdapter, get_platform_adapter_backend_type
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, get_platform_client_backend_type
 from bleak.backends.descriptor import BleakGATTDescriptor
@@ -416,6 +422,87 @@ class BleakScanner:
                     assert_never(cast(Never, "advertisement_data() should never stop"))
             except asyncio.TimeoutError:
                 return None
+
+
+class BleakAdapter:
+    """
+    Interface for Bleak Bluetooth adapter operations.
+
+    Provides operations that do not require active scanning, such as
+    retrieving devices that are already connected to the system.
+
+    .. versionadded:: unreleased
+    """
+
+    def __init__(self, backend: BaseBleakAdapter):
+        self._backend = backend
+
+    @classmethod
+    async def get(
+        cls,
+        *,
+        bluez: BlueZAdapterArgs = {},
+        backend: Optional[type[BaseBleakAdapter]] = None,
+        **kwargs: Any,
+    ) -> Self:
+        """Get a Bluetooth adapter for the current platform.
+
+        Currently all platforms other than Linux only allow one Bluetooth
+        adapter. On Linux, the adapter can be selected via the ``bluez``
+        argument with ``{"adapter": "<adapter_name>"}``.
+
+        Args:
+            bluez:
+                Dictionary of arguments specific to the BlueZ backend.
+            backend:
+                Used to override the automatically selected backend (i.e. for
+                a custom backend).
+
+        Returns:
+            A :class:`BleakAdapter` instance.
+
+        Raises:
+            NotImplementedError: on platforms where this is not supported.
+        """
+        PlatformBleakAdapter, _ = (
+            get_platform_adapter_backend_type()
+            if backend is None
+            else (backend, backend.__name__)
+        )
+        return cls(await PlatformBleakAdapter.get(bluez=bluez, **kwargs))
+
+    async def get_connected_devices(
+        self,
+        service_uuids: Iterable[str] = ("00001801-0000-1000-8000-00805f9b34fb",),
+    ) -> list[BLEDevice]:
+        """Retrieve BLE devices that are currently connected to the system.
+
+        This does not require starting a scan. It queries the operating system
+        for devices that are already connected at the OS level.
+
+        The returned :class:`BLEDevice` objects can be passed directly to
+        :class:`BleakClient` for getting the existing connection without scanning.
+
+        Args:
+            service_uuids:
+                Service UUIDs to filter on. Defaults to the Generic
+                Attribute Profile (``0x1801``), which is present on
+                essentially all BLE devices.
+
+        Returns:
+            A list of :class:`BLEDevice` objects representing connected devices.
+
+        Raises:
+            ValueError: if ``service_uuids`` is empty.
+        """
+        service_uuids_list = list(service_uuids)
+
+        if not service_uuids_list:
+            raise ValueError("service_uuids must not be empty")
+
+        service_uuids_list = [normalize_uuid_str(u) for u in service_uuids_list]
+
+        return await self._backend.get_connected_devices(service_uuids_list)
 
 
 def _resolve_characteristic(

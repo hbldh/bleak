@@ -14,6 +14,11 @@ from bleak._compat import timeout as async_timeout
 from bleak.exc import BleakError
 
 
+def format_bdaddr(a: int) -> str:
+    """Format a 48-bit Bluetooth address integer as ``"XX:XX:XX:XX:XX:XX"``."""
+    return ":".join(f"{x:02X}" for x in a.to_bytes(6, byteorder="big"))
+
+
 def _check_result(result: int, func: Any, args: Any) -> Any:
     if not result:
         raise ctypes.WinError()
