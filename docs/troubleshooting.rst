@@ -320,7 +320,9 @@ Sometimes it can be helpful to see what is actually going over the air between
 the OS and the Bluetooth device. There are tools available to capture HCI packets
 and decode them.
 
-Windows 10
+.. _Windows 10:
+
+Windows 11
 ==========
 
 There is a Windows hardware developer package that includes a tool that supports

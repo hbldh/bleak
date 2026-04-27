@@ -45,7 +45,7 @@ Installation
 Features
 --------
 
-* Supports Windows 10, version 16299 (Fall Creators Update) or greater
+* Supports Windows 11, version 22000 and greater
 * Supports Linux distributions with BlueZ >= 5.55
 * OS X/macOS support via Core Bluetooth API, from at least OS X version 10.15
 * Android backend compatible with python-for-android
