@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Fixed
+-----
+* ``BleakClientBlueZDBus.disconnect()`` no longer disconnects from the device after "connecting" to an already connected device. Merged #1975.
+
 `3.0.2`_ (2026-05-02)
 =====================
 

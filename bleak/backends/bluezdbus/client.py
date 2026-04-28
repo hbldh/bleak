@@ -102,6 +102,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # used to override mtu_size property
         self._mtu_size: Optional[int] = None
 
+        # True if this BleakClient instance initiated the BlueZ connection.
+        # When False, the device was already connected at the time connect()
+        # was called, so disconnect() will not call BlueZ Disconnect.
+        # See https://github.com/bluez/bluez/issues/89
+        self._owns_connection = False
+
     # Connectivity methods
 
     @override
@@ -210,7 +216,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         # if connection was successful but _get_services() raises (e.g.
                         # because task was cancelled), then we still need to disconnect
                         # before passing on the exception.
-                        if self._bus:
+                        # If the device was already connected when connect() was called,
+                        # this BleakClient does not own the connection and must not
+                        # tear it down.
+                        if self._bus and self._owns_connection:
                             # If disconnected callback already fired, this will be a no-op
                             # since self._bus will be None and the _cleanup_all call will
                             # have already disconnected.
@@ -250,8 +259,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             'skipping calling "Connect" since %s is already connected',
                             self._device_path,
                         )
+                        self._owns_connection = False
                     else:
                         logger.debug("Connecting to BlueZ path %s", self._device_path)
+                        self._owns_connection = True
 
                         # Calling pair will fail if we are already paired, so
                         # in that case we just call Connect.
@@ -405,19 +416,29 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._disconnecting_event = asyncio.Event()
             try:
                 if self.is_connected:
-                    # Try to disconnect the actual device/peripheral
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            path=self._device_path,
-                            interface=defs.DEVICE_INTERFACE,
-                            member="Disconnect",
+                    if self._owns_connection:
+                        # Disconnect the actual device/peripheral. The manager
+                        # will fire the on_connected_changed handler which calls
+                        # _cleanup_all() and sets _disconnecting_event.
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                path=self._device_path,
+                                interface=defs.DEVICE_INTERFACE,
+                                member="Disconnect",
+                            )
                         )
-                    )
-                    assert_reply(reply)
+                        assert_reply(reply)
 
-                    async with async_timeout(10):
-                        await self._disconnecting_event.wait()
+                        async with async_timeout(10):
+                            await self._disconnecting_event.wait()
+                    else:
+                        # We did not initiate the connection (the device was
+                        # already connected when connect() was called), so
+                        # leave it connected. Clean up our local state since
+                        # no BlueZ "Connected"=false signal will fire.
+                        self._is_connected = False
+                        self._cleanup_all()
             finally:
                 self._disconnecting_event = None
 
