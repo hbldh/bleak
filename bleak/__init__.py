@@ -102,7 +102,7 @@ class BleakScanner:
         No longer is alias for backend type and no longer inherits from :class:`BaseBleakScanner`.
         Added ``backend`` parameter.
 
-    .. versionchanged:: unreleased
+    .. versionchanged:: 3.0
         Deprecated ``adapter`` keyword argument. Use ``bluez`` argument instead
         with ``{"adapter": "<adapter_name>"}``.
     """
@@ -248,7 +248,7 @@ class BleakScanner:
         """
         Name of adapter to use (BlueZ specific), e.g. hci0.
 
-        .. versionchanged:: unreleased
+        .. versionchanged:: 3.0
             This argument is deprecated and will be removed in a future release.
             Use the ``bluez`` argument with ``{"adapter": "<adapter_name>"}``
             instead.
@@ -523,7 +523,7 @@ class BleakClient:
     .. versionchanged:: 2.1.1
         Changed default connect timeout from 10 to 30 seconds.
 
-    .. versionchanged:: unreleased
+    .. versionchanged:: 3.0
         Added ``bluez`` parameter.
     """
 

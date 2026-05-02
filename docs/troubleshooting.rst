@@ -177,7 +177,7 @@ the *Privacy* settings in the macOS *System Preferences*.
 
 If the app is already in the list but the checkbox for Bluetooth is disabled,
 you will get a :class:`BleakBluetoothNotAvailableError` instead of crashing with ``SIGABRT``,
-in which case you need to check the box to allow Bluetooth for the app that is 
+in which case you need to check the box to allow Bluetooth for the app that is
 running Python.
 
 
@@ -320,7 +320,9 @@ Sometimes it can be helpful to see what is actually going over the air between
 the OS and the Bluetooth device. There are tools available to capture HCI packets
 and decode them.
 
-Windows 10
+.. _Windows 10:
+
+Windows 11
 ==========
 
 There is a Windows hardware developer package that includes a tool that supports
@@ -374,12 +376,12 @@ You will need to sign up for an Apple Developer account to obtain this software.
     logging profile from the Apple develop `Profiles and Logs`_ page. Follow the
     instruction provided in the link, then continue with the steps below.
 
-    .. tip:: After installing the ``Bluetooth_macOS.mobileconfig`` file, 
+    .. tip:: After installing the ``Bluetooth_macOS.mobileconfig`` file,
             the profile can be found in *System Settings* under *Device
             Management* > *Downloaded*. There you can double-click to review
             and install it. You have to go there to actually install the profile.
             Then reboot your computer.
-            
+
             If you are on macOS 14.x, the profile can be found on *System Settings*
             under *Privacy and Security* > *Others* > *Profiles*.
 

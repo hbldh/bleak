@@ -52,7 +52,7 @@ class CBCentralManager(CBManager):
         self, serviceUUIDs: NSArray[CBUUID]
     ) -> NSArray[CBPeripheral]: ...
     def retrievePeripheralsWithIdentifiers_(
-        self, serviceUUIDs: NSArray[CBUUID]
+        self, identifiers: NSArray[NSUUID]
     ) -> NSArray[CBPeripheral]: ...
     def scanForPeripheralsWithServices_options_(
         self,

@@ -93,7 +93,7 @@ class BlueZScannerArgs(TypedDict, total=False):
          use udev to look up the name based on other properties like the USB
          vendor and product ID.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 3.0
     """
 
     filters: BlueZDiscoveryFilters
@@ -115,7 +115,7 @@ class BlueZClientArgs(TypedDict, total=False):
     """
     :class:`bleak.BleakClient` args that are specific to the BlueZ backend.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 3.0
     """
 
     adapter: str

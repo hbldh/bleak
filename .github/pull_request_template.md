@@ -7,7 +7,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. Modify the `CHANGELOG.rst`, describing your changes as is specified by the
    guidelines in that document.
 3. The pull request should work for Python 3.10+ on the following platforms:
-    - Windows 10, version 16299 (Fall Creators Update) and greater
+    - Windows 11, version 22000 and greater
     - Linux distributions with BlueZ >= 5.55
     - OS X / macOS >= 10.15
 4. Squash all your commits on your PR branch, if the commits are not solving

@@ -18,10 +18,9 @@ import contextlib
 import logging
 import os
 from collections import defaultdict
-from collections.abc import Callable, Coroutine, MutableMapping
+from collections.abc import Callable, Coroutine
 from functools import partial
 from typing import Any, NamedTuple, Optional, cast
-from weakref import WeakKeyDictionary
 
 from dbus_fast import AuthError, BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
@@ -1185,7 +1184,15 @@ class BlueZManager:
             callback(device_path, device.copy())
 
 
-_global_instances: MutableMapping[Any, BlueZManager] = WeakKeyDictionary()
+# Bleak is designed to run in a single event loop for the duration of an
+# application. Starting a new manager is a very expensive operation because it
+# has to read all of the properties of all known Bluetooth devices over the bus.
+# So even though this technically supports more than one run loop, we don't
+# recommend doing that. This dict maps each event loop to its associated
+# BlueZManager instance so that multiple callers in the same loop share one
+# manager. Entries for closed loops are removed lazily when a new manager is
+# requested.
+_global_instances: dict[asyncio.AbstractEventLoop, BlueZManager] = {}
 
 
 async def get_global_bluez_manager() -> BlueZManager:
@@ -1198,6 +1205,15 @@ async def get_global_bluez_manager() -> BlueZManager:
     try:
         instance = _global_instances[loop]
     except KeyError:
+        # Clean up any entries whose event loop has been closed.
+        closed_loops = [
+            event_loop for event_loop in _global_instances if event_loop.is_closed()
+        ]
+        for closed_loop in closed_loops:
+            manager = _global_instances.pop(closed_loop)
+            if manager._bus is not None:  # pyright: ignore[reportPrivateUsage]
+                manager._bus._finalize(None)  # pyright: ignore[reportPrivateUsage]
+
         instance = _global_instances[loop] = BlueZManager()
 
     await instance.async_init()

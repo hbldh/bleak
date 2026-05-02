@@ -8,9 +8,8 @@ license-files = ["LICENSE"]
 readme = "README.rst"
 requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
-    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Android",

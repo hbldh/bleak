@@ -45,7 +45,7 @@ The following operating systems are supported and tested by the maintainers:
 
 * Linux distributions with BlueZ >= 5.55
 * Mac support via Core Bluetooth API, from at least macOS version 10.15
-* Windows 10, version 16299 (Fall Creators Update) or greater
+* Windows 11, version 22000 (Fall Creators Update) or greater
 * Android via Chaquopy/briefcase, since Python 3.13.
 
 Tier 2 support

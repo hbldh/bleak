@@ -921,6 +921,13 @@ class BleakClientBlueZDBus(BaseBleakClient):
     ) -> None:
         """
         Activate notifications/indications on a characteristic.
+
+        Args:
+            characteristic (BleakGATTCharacteristic): The characteristic to activate notification/indication on.
+            callback (NotifyCallback): The callback to call when a notification/indication is received.
+
+        Keyword Args:
+            bluez (dict): dictionary of additional parameters, see :ref:`linux-start-notify` for more details.
         """
 
         bluez: BlueZNotifyArgs = kwargs["bluez"]
