@@ -8,11 +8,13 @@ license = "MIT"
 formal_name = "Bleak-Testbed"
 description = "Testbed Application for running bleak integration tests"
 sources = [
+    # Satisfy briefcase as there has to be at least a package named "bleak_testbed" in the sources.
     "src/bleak_testbed",
 ]
 test_sources = [
-    "tests",
-    "../tests",
+    # The test sources from the two folders get merged together into one "tests" folder on the device.
+    "tests",  # This contains the main pytest runner file.
+    "../tests",  # This contains the actual test files.
 ]
 
 requires = [
