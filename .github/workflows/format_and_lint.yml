@@ -18,14 +18,8 @@ jobs:
         with:
           version: "latest"
 
-      - name: Check import sort with isort
-        run: uv run isort {.,docs} --check --diff
-
-      - name: Check code formatting with black
-        run: uv run black . --check --diff
-
-      - name: Lint with flake8
-        run: uv run flake8 . --count --show-source --statistics
+      - name: Check import sort with isort, code formatting with black, and lint with flake8
+        run: uv run poe lint --checkonly
 
       - name: Build docs
-        run: uv run make -C docs html
+        run: uv run poe docs

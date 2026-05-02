@@ -59,6 +59,7 @@ test = [
     "bumble==0.0.226",
 ]
 dev = [
+    "poethepoet>=0.45.0",
     { include-group = "docs" },
     { include-group = "lint" },
     { include-group = "test" },
@@ -83,6 +84,7 @@ python_version = "3.10"
 disable_error_code = ["import-not-found"]
 exclude = "(.venv|kivy|recipes)/"
 mypy_path = "typings"
+packages = ["bleak", "tests", "examples"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -100,7 +102,76 @@ filterwarnings = [
 ]
 
 addopts = """
+--import-mode=importlib
 --cov=bleak
 --cov-branch
 --cov-report html
 """
+
+
+
+[tool.poe.executor]
+type = "uv"
+isolated = true
+
+[tool.poe.tasks.test-py310]
+help = "Run tests using Python 3.10"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.10", group = "test" }
+
+[tool.poe.tasks.test-py311]
+help = "Run tests using Python 3.11"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.11", group = "test" }
+
+[tool.poe.tasks.test-py312]
+help = "Run tests using Python 3.12"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.12", group = "test" }
+
+[tool.poe.tasks.test-py313]
+help = "Run tests using Python 3.13"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.13", group = "test" }
+
+[tool.poe.tasks.test-py314]
+help = "Run tests using Python 3.14"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.14", group = "test" }
+
+[tool.poe.tasks.test-all]
+help = "Run tests using all supported Python versions"
+sequence = [
+    "test-py310",
+    "test-py311",
+    "test-py312",
+    "test-py313",
+    "test-py314",
+]
+
+[tool.poe.tasks.typecheck]
+help = "Run type checkers (mypy, pyright)"
+
+# We want always the latest version of pyright and mypy, to catch
+# any breakage as soon as we can. That is why they are not dev
+# dependencies in the pyproject.toml, because that would lock them to
+# a specific version. Instead we install the latest version as tool.
+sequence = [
+    { cmd = "mypy", executor = { with = "mypy" } },
+    { cmd = "pyright", executor = { with = "pyright" } },
+]
+
+[tool.poe.tasks.lint]
+help = "Run code linters (isort, black, flake8)"
+sequence = [
+    { cmd = "isort . docs ${checkonly:+--check --diff}", executor = { group = "lint" } },
+    { cmd = "black . ${checkonly:+--check --diff}", executor = { group = "lint" } },
+    { cmd = "flake8 . --count --show-source --statistics", executor = { group = "lint" } },
+]
+args = [{ name = "checkonly", type = "boolean" }]
+executor = { group = "lint" }
+
+[tool.poe.tasks.docs]
+help = "Build the documentation"
+cmd = "sphinx-build -b html -W -d docs/_build/doctrees docs docs/_build/html"
+executor = { python = "3.11", group = "docs" }
