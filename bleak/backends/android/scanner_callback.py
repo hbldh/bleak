@@ -58,9 +58,9 @@ class PythonScanCallback(static_proxy(ScanCallback)):  # type: ignore[misc]
     @Override(jvoid, [jint])
     def onScanFailed(self, errorCode: int):
         logger.debug(f"onScanFailed {errorCode=}")
-        error_str = ScanFailed(int(errorCode)).name
+        error_str = ScanFailed(errorCode).name
         self.dispatcher.result_state_threadsafe(
-            BleakError(f"Scan failed with error code: {int(errorCode)} ({error_str})"),
+            BleakError(f"Scan failed with error code: {errorCode} ({error_str})"),
             OnScanCallback(),
             OnScanResult(None),
         )

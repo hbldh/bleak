@@ -108,9 +108,9 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
     def onConnectionStateChange(self, gatt: BluetoothGatt, status: int, newState: int):
         logger.debug(f"onConnectionStateChange {status=} {newState=}")
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnConnectionStateChangeCallback(),
-            OnConnectionStateChangeResult(int(newState)),
+            OnConnectionStateChangeResult(newState),
         )
         disconnected_callback = (
             self._client._disconnected_callback  # pyright: ignore[reportPrivateUsage]
@@ -126,9 +126,9 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
     def onMtuChanged(self, gatt: BluetoothGatt, mtu: int, status: int):
         logger.debug(f"onMtuChanged {mtu=} {status=}")
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnMtuChangedCallback(),
-            OnMtuChangedResult(int(mtu)),
+            OnMtuChangedResult(mtu),
         )
 
     @Override(jvoid, [BluetoothGatt, jint])
@@ -136,7 +136,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
     def onServicesDiscovered(self, gatt: BluetoothGatt, status: int):
         logger.debug(f"onServicesDiscovered {status=}")
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnServicesDiscoveredCallback(),
             EmptyCallbackResult(),
         )
@@ -199,7 +199,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
             # On API level 33 (Android 13) and above
             value = args[0]
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnCharacteristicReadCallback(handle),
             OnCharacteristicReadResult(bytes(value)),
         )
@@ -215,7 +215,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
         logger.debug(f"onCharacteristicWrite {status=}")
         handle = characteristic.getInstanceId()
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnCharacteristicWriteCallback(handle),
             EmptyCallbackResult(),
         )
@@ -242,7 +242,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
             # On API level 33 (Android 13) and above
             value = args[0]
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnDescriptorReadCallback(uuid),
             OnDescriptorReadResult(bytes(value)),
         )
@@ -258,7 +258,7 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
         logger.debug(f"onDescriptorWrite {status=}")
         uuid = str(descriptor.getUuid())
         self.dispatcher.result_state_threadsafe(
-            BleakGATTProtocolError(int(status)) if status != GATT_SUCCESS else None,
+            BleakGATTProtocolError(status) if status != GATT_SUCCESS else None,
             OnDescriptorWriteCallback(uuid),
             EmptyCallbackResult(),
         )
