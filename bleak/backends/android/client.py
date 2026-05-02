@@ -43,7 +43,6 @@ from bleak.backends.android.client_callback import (
     OnServicesDiscoveredCallback,
     PythonBluetoothGattCallback,
 )
-from bleak.backends.android.dispatcher import dispatch_func
 from bleak.backends.android.permissions import check_for_permissions
 from bleak.backends.android.utils import context
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -127,21 +126,23 @@ class BleakClientAndroid(BaseBleakClient):
 
         logger.debug(f"Connecting to BLE device @ {self.address}")
 
-        gatt, conn_future = callbacks.dispatcher.dispatch(
-            dispatch_func=dispatch_func(
-                device.connectGatt,
+        def _do_connect() -> BluetoothGatt:
+            result = device.connectGatt(
                 context,
                 False,
                 callbacks.java,
                 BluetoothDevice.TRANSPORT_LE,
-            ),
-            callback_api=OnConnectionStateChangeCallback(),
-            dispatch_result_indicates_status=False,
-        )
-        if gatt is None:
-            raise BleakError(
-                f"Failed to initiate connection to device @ {self.address}"
             )
+            if result is None:
+                raise BleakError(
+                    f"Failed to initiate connection to device @ {self.address}"
+                )
+            return result
+
+        gatt, conn_future = callbacks.dispatcher.dispatch(
+            dispatch_func=_do_connect,
+            callback_api=OnConnectionStateChangeCallback(),
+        )
         try:
             conn_result = await asyncio.wait_for(conn_future, timeout=timeout)
             if conn_result.new_state != BluetoothProfile.STATE_CONNECTED:
@@ -169,15 +170,25 @@ class BleakClientAndroid(BaseBleakClient):
             # unlike other backends, Android doesn't automatically negotiate
             # the MTU, so we request the largest size possible like BlueZ
             logger.debug("requesting mtu...")
-            result = await callbacks.dispatcher.perform_and_wait(
-                dispatch_func=dispatch_func(gatt.requestMtu, 517),
+
+            def _do_request_mtu() -> None:
+                if not gatt.requestMtu(517):
+                    raise BleakError("requestMtu failed")
+
+            _, result = await callbacks.dispatcher.perform_and_wait(
+                dispatch_func=_do_request_mtu,
                 callback_api=OnMtuChangedCallback(),
             )
             self._mtu = result.mtu
 
             logger.debug("discovering services...")
+
+            def _do_discover_services() -> None:
+                if not gatt.discoverServices():
+                    raise BleakError("discoverServices failed")
+
             await callbacks.dispatcher.perform_and_wait(
-                dispatch_func=dispatch_func(gatt.discoverServices),
+                dispatch_func=_do_discover_services,
                 callback_api=OnServicesDiscoveredCallback(),
             )
 
@@ -218,9 +229,8 @@ class BleakClientAndroid(BaseBleakClient):
             )
             if not already_disconnected:
                 _, future = self._conn_objs.callbacks.dispatcher.dispatch(
-                    dispatch_func=dispatch_func(self._conn_objs.gatt.disconnect),
+                    dispatch_func=self._conn_objs.gatt.disconnect,
                     callback_api=OnConnectionStateChangeCallback(),
-                    dispatch_result_indicates_status=False,  # gatt.disconnect() returns void
                 )
                 await future
             self._conn_objs.gatt.close()
@@ -424,13 +434,19 @@ class BleakClientAndroid(BaseBleakClient):
             )
             return value
 
-        callback_result = await self._conn_objs.callbacks.dispatcher.perform_and_wait(
-            dispatch_func=dispatch_func(
-                self._conn_objs.gatt.readCharacteristic, characteristic.obj
-            ),
+        gatt = self._conn_objs.gatt
+
+        def _do_read_char() -> None:
+            if not gatt.readCharacteristic(characteristic.obj):
+                raise BleakError(
+                    f"readCharacteristic failed for characteristic {characteristic.uuid}"
+                )
+
+        _, result = await self._conn_objs.callbacks.dispatcher.perform_and_wait(
+            dispatch_func=_do_read_char,
             callback_api=OnCharacteristicReadCallback(characteristic.handle),
         )
-        value = bytearray(callback_result.value)
+        value = bytearray(result.value)
         logger.debug(
             f"Read characteristic {characteristic.uuid} | {characteristic.handle}: {value}"
         )
@@ -464,13 +480,20 @@ class BleakClientAndroid(BaseBleakClient):
             )
             return value
 
-        callback_result = await self._conn_objs.callbacks.dispatcher.perform_and_wait(
-            dispatch_func=dispatch_func(
-                self._conn_objs.gatt.readDescriptor, descriptor.obj
-            ),
+        gatt = self._conn_objs.gatt
+
+        def _do_read_desc() -> None:
+            status = gatt.readDescriptor(descriptor.obj)
+            if not status:
+                raise BleakError(
+                    f"readDescriptor failed for descriptor {descriptor.uuid}"
+                )
+
+        _, result = await self._conn_objs.callbacks.dispatcher.perform_and_wait(
+            dispatch_func=_do_read_desc,
             callback_api=OnDescriptorReadCallback(uuid=descriptor.uuid),
         )
-        value = bytearray(callback_result.value)
+        value = bytearray(result.value)
 
         logger.debug(
             f"Read descriptor {descriptor.uuid} | {descriptor.handle}: {value}"
@@ -497,21 +520,26 @@ class BleakClientAndroid(BaseBleakClient):
 
         if Build.VERSION.SDK_INT >= 33:
 
-            def _do_write_char():
+            def _do_write_char() -> None:
                 # On API level 33 (Android 13) and above writeCharacteristic returns int (GATT_SUCCESS=0 on success).
-                # Convert to bool so dispatch_result_indicates_status=True works correctly.
-                return (
-                    gatt.writeCharacteristic(characteristic.obj, payload, write_type)
-                    == 0
+                status = gatt.writeCharacteristic(
+                    characteristic.obj, payload, write_type
                 )
+                if status != 0:
+                    raise BleakError(
+                        f"writeCharacteristic failed for characteristic {characteristic.uuid} with status {status}"
+                    )
 
         else:
 
-            def _do_write_char():
+            def _do_write_char() -> None:
                 # On API level 32 (Android 12) and below writeCharacteristic returns boolean success.
                 characteristic.obj.setWriteType(write_type)
                 characteristic.obj.setValue(payload)
-                return gatt.writeCharacteristic(characteristic.obj)
+                if not gatt.writeCharacteristic(characteristic.obj):
+                    raise BleakError(
+                        f"writeCharacteristic failed for characteristic {characteristic.uuid}"
+                    )
 
         await self._conn_objs.callbacks.dispatcher.perform_and_wait(
             dispatch_func=_do_write_char,
@@ -544,17 +572,23 @@ class BleakClientAndroid(BaseBleakClient):
 
         if Build.VERSION.SDK_INT >= 33:
 
-            def _do_write_desc():
+            def _do_write_desc() -> None:
                 # On API level 33 (Android 13) and above writeDescriptor returns int (GATT_SUCCESS=0 on success).
-                # Convert to bool so dispatch_result_indicates_status=True works correctly.
-                return gatt.writeDescriptor(descriptor.obj, payload) == 0
+                status = gatt.writeDescriptor(descriptor.obj, payload)
+                if status != 0:
+                    raise BleakError(
+                        f"writeDescriptor failed for descriptor {descriptor.uuid} with status {status}"
+                    )
 
         else:
 
-            def _do_write_desc():
+            def _do_write_desc() -> None:
                 # On API level 32 (Android 12) and below writeDescriptor returns boolean success.
                 descriptor.obj.setValue(payload)
-                return gatt.writeDescriptor(descriptor.obj)
+                if not gatt.writeDescriptor(descriptor.obj):
+                    raise BleakError(
+                        f"writeDescriptor failed for descriptor {descriptor.uuid}"
+                    )
 
         await self._conn_objs.callbacks.dispatcher.perform_and_wait(
             dispatch_func=_do_write_desc,

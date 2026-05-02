@@ -23,7 +23,6 @@ from android.os import ParcelUuid
 from java.util import ArrayList, HashMap
 
 from bleak._compat import override
-from bleak.backends.android.dispatcher import dispatch_func
 from bleak.backends.android.permissions import check_for_permissions
 from bleak.backends.android.scanner_callback import OnScanCallback, PythonScanCallback
 from bleak.backends.android.utils import iterate_java_obj
@@ -183,15 +182,20 @@ class BleakScannerAndroid(BaseBleakScanner):
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
         )
-        scanfuture = self._scan_objs.callback.dispatcher.perform_and_wait(
-            dispatch_func=dispatch_func(
-                self._scan_objs.javascanner.startScan,
+
+        javascanner = self._scan_objs.javascanner
+        callback = self._scan_objs.callback
+
+        def _do_start_scan() -> None:
+            javascanner.startScan(
                 filters,
                 settings,
-                self._scan_objs.callback.java,
-            ),
+                callback.java,
+            )
+
+        scanfuture = self._scan_objs.callback.dispatcher.perform_and_wait(
+            dispatch_func=_do_start_scan,
             callback_api=OnScanCallback(),
-            dispatch_result_indicates_status=False,
         )
 
         try:
