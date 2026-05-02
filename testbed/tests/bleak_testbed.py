@@ -1,3 +1,12 @@
+"""
+This is the main entry point for the Bleak Testbed.
+
+On Android it is not possible to run pytest directly via the command line. Instead it is
+necessary to create an application that will run the tests. This file is a minimal Toga
+application, that will run the actual pytests. The pytests are located in the `../tests`
+directory, and will be copied to the device when the app is build.
+"""
+
 import os
 import sys
 import tempfile
