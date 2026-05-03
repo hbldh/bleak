@@ -22,7 +22,7 @@ from CoreBluetooth import (
     CBPeripheral,
     CBPeripheralStateConnected,
 )
-from Foundation import NSArray, NSData
+from Foundation import NSUUID, NSArray, NSData
 
 from bleak import BleakScanner
 from bleak._compat import override
@@ -95,6 +95,26 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             logger.debug("Explicit pairing is not available in CoreBluetooth.")
 
         timeout = kwargs.get("timeout", self._timeout)
+
+        # Try to retrieve the peripheral by its UUID from the system registry
+        # without scanning. This succeeds for devices already known to the
+        # system (e.g. previously connected or bonded) and avoids the cost of
+        # an active scan.
+        if self._peripheral is None:
+            new_manager = CentralManagerDelegate()
+            await new_manager.wait_until_ready()
+            nsuuid = NSUUID.UUIDWithString_(self.address)
+            peripherals = (
+                new_manager.central_manager.retrievePeripheralsWithIdentifiers_(
+                    NSArray.arrayWithObject_(nsuuid)
+                )
+            )
+
+            if peripherals and len(peripherals) > 0:
+                self._peripheral = peripherals.objectAtIndex_(0)
+                self._central_manager_delegate = new_manager
+
+        # Fall back to scanning if the system did not know about the peripheral.
         if self._peripheral is None:
             device = await BleakScanner.find_device_by_address(
                 self.address, timeout=timeout, backend=BleakScannerCoreBluetooth
