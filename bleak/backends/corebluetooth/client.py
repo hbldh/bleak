@@ -74,9 +74,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             ) = address_or_ble_device.details
 
         self._requested_services = (
-            NSArray[CBUUID]
-            .alloc()
-            .initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
+            NSArray[CBUUID].arrayWithArray_(list(map(CBUUID.UUIDWithString_, services)))
             if services
             else None
         )
