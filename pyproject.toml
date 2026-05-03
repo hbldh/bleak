@@ -164,7 +164,8 @@ sequence = [
 [tool.poe.tasks.lint]
 help = "Run code linters (isort, black, flake8)"
 sequence = [
-    { cmd = "isort . docs ${checkonly:+--check --diff}", executor = { group = "lint" } },
+    { cmd = "isort . ${checkonly:+--check --diff}", executor = { group = "lint" } },
+    { cmd = "isort docs ${checkonly:+--check --diff}", executor = { group = "lint" } },
     { cmd = "black . ${checkonly:+--check --diff}", executor = { group = "lint" } },
     { cmd = "flake8 . --count --show-source --statistics", executor = { group = "lint" } },
 ]
