@@ -29,7 +29,7 @@ from bleak.backends.scanner import (
     AdvertisementDataCallback,
     BaseBleakScanner,
 )
-from bleak.backends.winrt.util import assert_mta
+from bleak.backends.winrt.util import assert_mta, format_bdaddr
 from bleak.exc import (
     BleakBluetoothNotAvailableError,
     BleakBluetoothNotAvailableReason,
@@ -40,15 +40,11 @@ from bleak.uuids import normalize_uuid_str
 logger = logging.getLogger(__name__)
 
 
-def _format_bdaddr(a: int) -> str:
-    return ":".join(f"{x:02X}" for x in a.to_bytes(6, byteorder="big"))
-
-
 def _format_event_args(e: BluetoothLEAdvertisementReceivedEventArgs) -> str:
     try:
-        return f"{_format_bdaddr(e.bluetooth_address)}: {e.advertisement.local_name}"
+        return f"{format_bdaddr(e.bluetooth_address)}: {e.advertisement.local_name}"
     except Exception:
-        return _format_bdaddr(e.bluetooth_address)
+        return format_bdaddr(e.bluetooth_address)
 
 
 class RawAdvData(NamedTuple):
@@ -130,7 +126,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         # be removed from the list of seen devices instead of processing the advertisement data.
         # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothsignalstrengthfilter.outofrangetimeout
 
-        bdaddr = _format_bdaddr(event_args.bluetooth_address)
+        bdaddr = format_bdaddr(event_args.bluetooth_address)
 
         # Unlike other platforms, Windows does not combine advertising data for
         # us (regular advertisement + scan response) so we have to do it manually.

@@ -25,6 +25,7 @@ Contributors
 * JP Hutchins <jphutchins@gmail.com>
 * Bram Duvigneau <bram@bramd.nl>
 * Dmytro Yaroshenko <thehelixpg@gmail.com>
+* Kirill Rudovski <kirill.r@wearabledevices.co.il>
 
 And many others who did not wish to be named here.
 
