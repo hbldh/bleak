@@ -130,6 +130,8 @@ autodoc_mock_imports = [
     "bleak.backends.corebluetooth.CentralManagerDelegate",
     "bleak.backends.corebluetooth.PeripheralDelegate",
     "bleak.backends.corebluetooth.utils",
+    "java",
+    "org",
 ]
 
 # -- Options for HTML output -------------------------------------------

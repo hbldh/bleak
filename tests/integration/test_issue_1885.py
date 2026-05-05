@@ -44,8 +44,8 @@ async def test_notification_sent_before_write_response(
         # response.
 
         # TODO: Type hints in bumble need to be fixed to be able to remove the pyright ignore
-        await bumble_peripheral.notify_subscribers(  # pyright: ignore[reportUnknownMemberType]
-            test_characteristic, b"test", force=True
+        await bumble_peripheral.notify_subscriber(  # pyright: ignore[reportUnknownMemberType]
+            connection, test_characteristic, b"test", force=True
         )
 
     cccd_value = AttributeValue[bytes](on_cccd_read, on_cccd_write)

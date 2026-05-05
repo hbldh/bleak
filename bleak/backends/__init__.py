@@ -27,6 +27,11 @@ class BleakBackend(str, enum.Enum):
     Python for Android backend.
     """
 
+    ANDROID = "android"
+    """
+    Android backend using chaquopy.
+    """
+
     BLUEZ_DBUS = "bluez_dbus"
     """
     BlueZ D-Bus backend for Linux.
@@ -56,6 +61,9 @@ def get_default_backend() -> BleakBackend:
     """
     if os.environ.get("P4A_BOOTSTRAP") is not None:
         return BleakBackend.P4ANDROID
+
+    if sys.platform == "android":
+        return BleakBackend.ANDROID
 
     if platform.system() == "Linux":
         return BleakBackend.BLUEZ_DBUS

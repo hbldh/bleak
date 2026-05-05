@@ -1,60 +1,78 @@
-Android backend
-===============
+Android backend (BeeWare)
+=========================
 
-For an example of building an android bluetooth app, see 
-`the example folder <https://github.com/hbldh/bleak/tree/develop/examples/kivy>`_
-and its accompanying README file.
+This backend is intended for Android apps using the `BeeWare <https://beeware.org/>`_ toolchain:
 
-There are a handful of ways to run Python on Android.  Presently some code has
-been written for the `Python-for-Android <https://python-for-android.readthedocs.io/>`_
-build tool, and the code has only been tested using the `Kivy Framework <https://kivy.org/>`_.
-The Kivy framework provides a way to make graphical applications using
-bluetooth that run on both android and desktop.
+`Briefcase <https://briefcase.readthedocs.io/en/latest/>`_ is used to build the application. 
+Under the hood, it uses `Chaquopy <https://chaquo.com/chaquopy/>`_ to package the Python 
+application into an Android app and to bind to the Android Java APIs. Additionally, a GUI 
+using the `Toga <https://toga.readthedocs.io/en/latest/>`_ library is required for requesting 
+Bluetooth permissions.
+ 
+The BeeWare backend classes are located in the ``bleak.backends.android`` package and are 
+automatically selected when the application is built with Briefcase.
 
-An alternative framework is `BeeWare <https://beeware.org>`_.  An implementation
-for BeeWare would likely be very similar to Python-for-Android, if anybody is
-interested in contributing one.  As of 2020, the major task to tackle is making
-a custom template to embed Java subclasses of the Bluetooth Android interfaces,
-for forwarding callbacks.
+This backend requires Python 3.13 or later, as Android is only officially supported since that
+version (see `PEP 738 <https://peps.python.org/pep-0738/>`_) and only since then can an Android
+environment be reliably detected via ``sys.platform == "android"`` at runtime or via
+`environment markers <https://peps.python.org/pep-0508/#environment-markers>`_
+(``sys_platform == "android"``) for dependency resolution.
 
-The Python-for-Android backend classes are found in the
-``bleak.backends.p4android`` package and are automatically selected when
-building with python-for-android or `Buildozer <https://buildozer.readthedocs.io/>`_,
-Kivy's automated build tool.
+Briefcase Configuration
+-----------------------
 
-Considerations on Android
--------------------------
+To use Bluetooth functionality in an application built with Briefcase, some settings must be 
+configured in the ``pyproject.toml`` file.
 
-For one thing, the python-for-android backend has not been fully tested.
-Please run applications with ``adb logcat`` or ``buildozer android logcat`` and
-file issues that include the output, so that any compatibility concerns with
-devices the developer did not own can be eventually addressed.  This backend
-was originally authored by @xloem for a project that has mostly wrapped up now,
-so it would be good to tag him in the issues.
+Static proxies must be defined so that Java callbacks from Android can be forwarded to the 
+Python implementations in Bleak:
 
-When fixing issues, often the Android documentation is lacking, and other
-resources may need to be consulted to find information on various device
-quirks, such as community developer forums.
+.. code-block:: toml
 
-Sometimes device drivers will give off new, undocumented error codes.
-There is a developing list of these at ``bleak.backends.p4android.defs.GATT_STATUS_NAMES``.
-Please add to the list if you find new status codes, which is indicated by a
-number being reported instead of a name.
+    build_gradle_extra_content = """
+    android.defaultConfig.python.staticProxy(
+        'bleak.backends.android.scanner_callback',
+        'bleak.backends.android.client_callback',
+        'bleak.backends.android.broadcast'
+    )
+    """
 
-Additionally a few small features are missing.  Please file an issue if you
-need a missing feature, and ideally contribute code, so that soon they will all
-be implemented.
 
-Two missing features include scanning filters and indications (notifications
-without replies).
+Additionally, the required Bluetooth permissions must be added. Briefcase has an option
+to add `Bluetooth permissions <https://briefcase.beeware.org/en/stable/reference/configuration/#permissionbluetooth>`_
+to the app (available since Briefcase v0.3.26):
 
-Additionally reading from a characteristic has not been tested at all, as xloem's
-test device did not provide for this.
+.. code-block:: toml
 
-On Android, Bluetooth needs permissions for access.  These permissions need to
-be added to the android application in the buildozer.spec file, and are also
-requested from the user at runtime.  This means that enabling bluetooth may not
-succeed if the user does not accept permissions.
+    permission.bluetooth = "This app uses Bluetooth to communicate with nearby Bluetooth devices."
+
+This will automatically add the Bluetooth permissions to the application's ``AndroidManifest.xml``.
+But this only means that the app *can* request Bluetooth permissions, not that the app automatically
+has them. The app must still check for and request the permissions at runtime from the user. This is
+done automatically by Bleak when the ``BleakScanner`` or ``BleakClient`` is used for the first time. 
+If the app does not yet have Bluetooth permission, it will be automatically requested via a popup dialog
+by the Android OS:
+
+.. image:: ../images/android-permission-request.png
+   :alt: Android Bluetooth permission request dialog
+   :align: center
+   :width: 300px
+
+
+For an example of building an Android Bluetooth app using BeeWare, see
+`the briefcase testbed <https://github.com/hbldh/bleak/tree/develop/testbed>`_.
+
+Backend Specific Quirks
+-----------------------
+
+On Android, no more than 5 start/stop scanning operations are allowed per 30 seconds! See also 
+`this issue comment <https://github.com/NordicSemiconductor/Android-Scanner-Compat-Library/issues/18#issuecomment-402412139>`_ or
+`this PR in the Android OS <https://android-review.googlesource.com/c/platform/packages/apps/Bluetooth/+/215844>`_.
+If this limit is exceeded in a normal Android application, scanning simply won't work without 
+producing an error. Therefore, Bleak automatically tracks the starting times of scans 
+and waits the necessary time before a new scan can be started.
+
+
 
 API
 ---
@@ -62,12 +80,12 @@ API
 Scanner
 ~~~~~~~
 
-.. automodule:: bleak.backends.p4android.scanner
+.. automodule:: bleak.backends.android.scanner
     :members:
 
 
 Client
 ~~~~~~
 
-.. automodule:: bleak.backends.p4android.client
+.. automodule:: bleak.backends.android.client
     :members:
