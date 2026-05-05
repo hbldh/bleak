@@ -14,6 +14,10 @@ Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
 
+Fixed
+-----
+* Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+
 `3.0.2`_ (2026-05-02)
 =====================
 

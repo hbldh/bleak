@@ -2,6 +2,7 @@
 BLE Client for BlueZ on Linux
 """
 
+import select
 import sys
 from typing import TYPE_CHECKING
 
@@ -887,12 +888,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self, char_path: str, fd: int, callback: NotifyCallback
     ) -> None:
         loop = asyncio.get_running_loop()
+        poll = select.poll()
 
         def on_data():
             try:
                 data = os.read(fd, 1024)
+
                 if not data:
-                    raise RuntimeError("Unexpected EOF on notification file handle")
+                    # Empty data could mean that the socket was closed or it
+                    # could be a valid notification with an empty value. In
+                    # order to tell them apart, we have to run poll again to
+                    # check if the socket is closed.
+                    poll.register(fd, select.POLLHUP)
+                    try:
+                        if poll.poll(0):
+                            raise RuntimeError("AcquireNotify socket disconnected")
+                    finally:
+                        poll.unregister(fd)
             except Exception as e:
                 logger.debug(
                     "AcquireNotify: Read error on fd %d: %s. Notifications have been stopped.",
