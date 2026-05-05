@@ -9,9 +9,19 @@ import logging
 import os
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
+from collections.abc import AsyncGenerator, Awaitable, Callable, Hashable, Iterable
 from types import TracebackType
-from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
+from typing import (
+    Any,
+    ClassVar,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+    final,
+    overload,
+)
 from warnings import warn
 
 from bleak._compat import Never, Self, Unpack, assert_never
@@ -424,6 +434,7 @@ class BleakScanner:
                 return None
 
 
+@final
 class BleakAdapter:
     """
     Interface for Bleak Bluetooth adapter operations.
@@ -437,6 +448,17 @@ class BleakAdapter:
     .. versionadded:: unreleased
     """
 
+    _instances: ClassVar[
+        dict[
+            tuple[
+                asyncio.AbstractEventLoop,
+                type[BaseBleakAdapter],
+                Hashable,
+            ],
+            "BleakAdapter",
+        ]
+    ] = {}
+
     def __init__(self, backend: BaseBleakAdapter):
         self._backend = backend
 
@@ -446,13 +468,16 @@ class BleakAdapter:
         *,
         bluez: BlueZAdapterArgs = {},
         backend: Optional[type[BaseBleakAdapter]] = None,
-    ) -> Self:
+    ) -> "BleakAdapter":
         """
         Get a Bluetooth adapter for the current platform.
 
         Currently all platforms other than Linux only allow one Bluetooth
         adapter. On Linux, the adapter can be selected via the ``bluez``
         argument with ``{"adapter": "<adapter_name>"}``.
+
+        Repeated calls from the same running event loop with the same
+        adapter selection return the same :class:`BleakAdapter` instance.
 
         Args:
             bluez:
@@ -472,7 +497,23 @@ class BleakAdapter:
             if backend is None
             else (backend, backend.__name__)
         )
-        return cls(await PlatformBleakAdapter.get(bluez=bluez))
+        loop = asyncio.get_running_loop()
+        key = (loop, PlatformBleakAdapter, PlatformBleakAdapter.cache_key(bluez=bluez))
+
+        try:
+            return cls._instances[key]
+        except KeyError:
+            pass
+
+        # Lazily clean up entries for closed loops so the cache does not
+        # accumulate over time. Mirrors the pattern in
+        # ``bleak.backends.bluezdbus.manager._global_instances``.
+        for closed_key in [k for k in cls._instances if k[0].is_closed()]:
+            del cls._instances[closed_key]
+
+        instance = cls(await PlatformBleakAdapter.get(bluez=bluez))
+        cls._instances[key] = instance
+        return instance
 
     async def get_connected_devices(
         self,
