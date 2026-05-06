@@ -79,9 +79,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if isinstance(address_or_ble_device, BLEDevice):
             self._device_path = address_or_ble_device.details["path"]
             self._device_info = address_or_ble_device.details.get("props")
+            # Set by BleakAdapter.get_connected_devices(). When True, the
+            # user opted into an existing OS-level connection and
+            # disconnect() must not tear it down.
+            self._from_connected_devices = bool(
+                address_or_ble_device.details.get("from_connected_devices")
+            )
         else:
             self._device_path = None
             self._device_info = None
+            self._from_connected_devices = False
 
         self._requested_services = services
 
@@ -211,7 +218,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         # if connection was successful but _get_services() raises (e.g.
                         # because task was cancelled), then we still need to disconnect
                         # before passing on the exception.
-                        if self._bus:
+                        if self._bus and not self._from_connected_devices:
                             # If disconnected callback already fired, this will be a no-op
                             # since self._bus will be None and the _cleanup_all call will
                             # have already disconnected.
@@ -406,19 +413,31 @@ class BleakClientBlueZDBus(BaseBleakClient):
             self._disconnecting_event = asyncio.Event()
             try:
                 if self.is_connected:
-                    # Try to disconnect the actual device/peripheral
-                    reply = await self._bus.call(
-                        Message(
-                            destination=defs.BLUEZ_SERVICE,
-                            path=self._device_path,
-                            interface=defs.DEVICE_INTERFACE,
-                            member="Disconnect",
+                    if not self._from_connected_devices:
+                        # Try to disconnect the actual device/peripheral
+                        reply = await self._bus.call(
+                            Message(
+                                destination=defs.BLUEZ_SERVICE,
+                                path=self._device_path,
+                                interface=defs.DEVICE_INTERFACE,
+                                member="Disconnect",
+                            )
                         )
-                    )
-                    assert_reply(reply)
+                        assert_reply(reply)
 
-                    async with async_timeout(10):
-                        await self._disconnecting_event.wait()
+                        async with async_timeout(10):
+                            await self._disconnecting_event.wait()
+                    else:
+                        # Connection was opted into; leave it up. Mirror the
+                        # cleanup that on_connected_changed would do, except
+                        # for _disconnected_callback (the device is not
+                        # actually disconnecting from BlueZ's perspective).
+                        self._is_connected = False
+                        if self._disconnect_monitor_event:
+                            self._disconnect_monitor_event.set()
+                            self._disconnect_monitor_event = None
+                        self._cleanup_all()
+                        self._disconnecting_event.set()
             finally:
                 self._disconnecting_event = None
 

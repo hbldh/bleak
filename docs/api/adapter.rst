@@ -49,3 +49,14 @@ system. The returned :class:`BLEDevice` objects can be passed directly to
         ...
 
 .. automethod:: bleak.BleakAdapter.get_connected_devices
+
+.. note::
+
+    On Linux/BlueZ, BLE connections are not ref-counted: if any client calls
+    ``Disconnect`` (or the original :class:`BleakClient` that established
+    the connection exits), the connection drops for *all* clients sharing
+    it, including those that obtained the device via
+    :meth:`get_connected_devices`. On Windows and macOS the OS BT stack
+    ref-counts the underlying handle, so an attached client stays
+    connected when the originator disconnects. See
+    https://github.com/bluez/bluez/issues/89.
