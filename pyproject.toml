@@ -48,9 +48,9 @@ docs = [
     "sphinx-rtd-theme>=3.0.2; python_version>='3.11'",
 ]
 lint = [
-    "black>=24.3,<25.0",
-    "flake8>=7.1.1,<8.0.0",
-    "isort>=5.13.2,<6.0.0",
+   "black>=24.3,<25.0",
+   "flake8>=7.1.1,<8.0.0",
+   "isort>=5.13.2,<6.0.0",
 ]
 test = [
     "pytest>=8.2.1,<9.0.0",
@@ -117,27 +117,27 @@ isolated = true
 [tool.poe.tasks.test-py310]
 help = "Run tests using Python 3.10"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
-executor = { python = "3.10", group = "test" }
+executor = { python = "3.10", no-group = "dev", group = "test" }
 
 [tool.poe.tasks.test-py311]
 help = "Run tests using Python 3.11"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
-executor = { python = "3.11", group = "test" }
+executor = { python = "3.11", no-group = "dev", group = "test" }
 
 [tool.poe.tasks.test-py312]
 help = "Run tests using Python 3.12"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
-executor = { python = "3.12", group = "test" }
+executor = { python = "3.12", no-group = "dev", group = "test" }
 
 [tool.poe.tasks.test-py313]
 help = "Run tests using Python 3.13"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
-executor = { python = "3.13", group = "test" }
+executor = { python = "3.13", no-group = "dev", group = "test" }
 
 [tool.poe.tasks.test-py314]
 help = "Run tests using Python 3.14"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
-executor = { python = "3.14", group = "test" }
+executor = { python = "3.14", no-group = "dev", group = "test" }
 
 [tool.poe.tasks.test-all]
 help = "Run tests using all supported Python versions"
@@ -157,22 +157,21 @@ help = "Run type checkers (mypy, pyright)"
 # dependencies in the pyproject.toml, because that would lock them to
 # a specific version. Instead we install the latest version as tool.
 sequence = [
-    { cmd = "mypy", executor = { with = "mypy" } },
-    { cmd = "pyright", executor = { with = "pyright" } },
+    { cmd = "mypy", executor = { no-group = "dev", group = "test", with = "mypy" } },
+    { cmd = "pyright", executor = { no-group = "dev", group = "test", with = "pyright" } },
 ]
 
 [tool.poe.tasks.lint]
 help = "Run code linters (isort, black, flake8)"
 sequence = [
-    { cmd = "isort . ${checkonly:+--check --diff}", executor = { group = "lint" } },
-    { cmd = "isort docs ${checkonly:+--check --diff}", executor = { group = "lint" } },
-    { cmd = "black . ${checkonly:+--check --diff}", executor = { group = "lint" } },
-    { cmd = "flake8 . --count --show-source --statistics", executor = { group = "lint" } },
+    { cmd = "isort . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "isort docs ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "black . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "flake8 . --count --show-source --statistics", executor = { no-group = "dev", group = "lint" } },
 ]
 args = [{ name = "checkonly", type = "boolean" }]
-executor = { group = "lint" }
 
 [tool.poe.tasks.docs]
 help = "Build the documentation"
 cmd = "sphinx-build -b html -W -d docs/_build/doctrees docs docs/_build/html"
-executor = { python = "3.11", group = "docs" }
+executor = { python = "3.11", no-group = "dev", group = "docs" }
