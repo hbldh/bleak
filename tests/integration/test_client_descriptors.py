@@ -46,6 +46,9 @@ CUSTOM_BINARY_DESCRIPTOR_UUID = UUID("a1b2c3d4-e5f6-7890-1234-56789abcdef0")
 # CoreBluetooth specific UUID
 L2CAPPPSM_DESCRIPTOR_UUID = UUID("ABDD3056-28FA-441D-A470-55A75A52553A")
 
+DUPLICATE_DESCR_CHAR_UUID = "b2c3d4e5-f6a7-8901-2345-678901bcdef0"
+DUPLICATE_DESCRIPTOR_UUID = "c3d4e5f6-a7b8-9012-3456-789012cdef01"
+
 
 @dataclasses.dataclass
 class DescrTestPeripheral:
@@ -53,6 +56,8 @@ class DescrTestPeripheral:
     bumble_peripheral: Device
     readable_descr: dict[UUID, Descriptor]
     writable_descr: dict[UUID, Descriptor]
+    duplicate_descr_1: Descriptor
+    duplicate_descr_2: Descriptor
 
 
 STANDARD_DESCRIPTORS: list[tuple[UUID, bytes, bytes]] = [
@@ -178,6 +183,20 @@ async def descr_test_peripheral(
         list(writable_descr.values()),
     )
 
+    duplicate_descr_1 = Descriptor(
+        DUPLICATE_DESCRIPTOR_UUID, Descriptor.READABLE, b"DESC1"
+    )
+    duplicate_descr_2 = Descriptor(
+        DUPLICATE_DESCRIPTOR_UUID, Descriptor.READABLE, b"DESC2"
+    )
+    duplicate_descr_char = Characteristic(
+        DUPLICATE_DESCR_CHAR_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"",
+        [duplicate_descr_1, duplicate_descr_2],
+    )
+
     await configure_and_power_on_bumble_peripheral(
         bumble_peripheral,
         services=[
@@ -186,6 +205,7 @@ async def descr_test_peripheral(
                 [
                     readable_descr_char,
                     writable_descr_char,
+                    duplicate_descr_char,
                 ],
             ),
         ],
@@ -199,6 +219,8 @@ async def descr_test_peripheral(
             bleak_client=client,
             readable_descr=readable_descriptors,
             writable_descr=writable_descr,
+            duplicate_descr_1=duplicate_descr_1,
+            duplicate_descr_2=duplicate_descr_2,
         )
 
 
@@ -471,3 +493,29 @@ async def test_notify_gatt_char_error(descr_test_peripheral: DescrTestPeripheral
         await client.start_notify(characteristic, lambda c, d: None)
 
     assert exc_info.value.dbus_error == "org.bluez.Error.NotSupported"
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_duplicate_descriptor_uuids(descr_test_peripheral: DescrTestPeripheral):
+    """Verify that two descriptors sharing the same UUID on one characteristic are
+    each accessible by their individual handle.
+    """
+    characteristic = descr_test_peripheral.bleak_client.services.get_characteristic(
+        DUPLICATE_DESCR_CHAR_UUID
+    )
+    assert characteristic is not None
+
+    dup_descriptors = [
+        d
+        for d in characteristic.descriptors
+        if d.uuid.lower() == DUPLICATE_DESCRIPTOR_UUID.lower()
+    ]
+
+    assert len(dup_descriptors) == 2
+
+    values_read: set[bytes] = set()
+    for descr in dup_descriptors:
+        data = await descr_test_peripheral.bleak_client.read_gatt_descriptor(descr)
+        values_read.add(bytes(data))
+
+    assert values_read == {b"DESC1", b"DESC2"}
