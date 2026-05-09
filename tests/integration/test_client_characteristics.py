@@ -370,8 +370,7 @@ async def test_indicate_gatt_char(
         b"ind1",
     )
 
-    # dont wait since 'indicate_subscriber' waits for ack from client
-    data = indicated_data.get_nowait()
+    data = await asyncio.wait_for(indicated_data.get(), timeout=1)
     assert data == b"ind1"
 
     await char_test_peripheral.bumble_peripheral.indicate_subscriber(  # type: ignore  # (missing type hints in bumble)
@@ -380,8 +379,7 @@ async def test_indicate_gatt_char(
         b"ind2",
     )
 
-    # dont wait since 'indicate_subscriber' waits for ack from client
-    data = indicated_data.get_nowait()
+    data = await asyncio.wait_for(indicated_data.get(), timeout=1)
     assert data == b"ind2"
 
     await char_test_peripheral.bleak_client.stop_notify(INDICATE_CHAR_UUID)
