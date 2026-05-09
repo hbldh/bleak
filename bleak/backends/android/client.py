@@ -370,19 +370,29 @@ class BleakClientAndroid(BaseBleakClient):
             ):
                 continue
 
+            service_instance_id = java_service.getInstanceId()
+            service_uuid = str(java_service.getUuid())
+            logger.debug(
+                f"Service uuid={service_uuid} instanceId={service_instance_id} -> handle={service_instance_id}"
+            )
             service = BleakGATTService(
                 java_service,
-                java_service.getInstanceId(),
-                str(java_service.getUuid()),
+                service_instance_id,
+                service_uuid,
             )
             services.add_service(service)
 
             for java_characteristic in java_service.getCharacteristics().toArray():
                 assert isinstance(java_characteristic, BluetoothGattCharacteristic)
+                char_instance_id = java_characteristic.getInstanceId()
+                char_uuid = str(java_characteristic.getUuid())
+                logger.debug(
+                    f"  Characteristic uuid={char_uuid} instanceId={char_instance_id} -> handle={char_instance_id} (parent service handle={service.handle})"
+                )
                 characteristic = BleakGATTCharacteristic(
                     java_characteristic,
-                    java_characteristic.getInstanceId(),
-                    str(java_characteristic.getUuid()),
+                    char_instance_id,
+                    char_uuid,
                     list(gatt_char_props_to_strs(java_characteristic.getProperties())),
                     lambda: self._mtu - 3,
                     service,
@@ -393,9 +403,13 @@ class BleakClientAndroid(BaseBleakClient):
                     java_characteristic.getDescriptors().toArray()
                 ):
                     assert isinstance(java_descriptor, BluetoothGattDescriptor)
+                    descriptor_handle = characteristic.handle + 1 + descriptor_index
+                    logger.debug(
+                        f"    Descriptor uuid={java_descriptor.getUuid()} -> handle={descriptor_handle}"
+                    )
                     descriptor = BleakGATTDescriptor(
                         java_descriptor,
-                        characteristic.handle + 1 + descriptor_index,
+                        descriptor_handle,
                         str(java_descriptor.getUuid()),
                         characteristic,
                     )
