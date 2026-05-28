@@ -10,7 +10,6 @@ import logging
 from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
-from winrt.windows.devices.bluetooth import BluetoothAdapter
 from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
@@ -19,7 +18,6 @@ from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementWatcherStoppedEventArgs,
     BluetoothLEScanningMode,
 )
-from winrt.windows.devices.radios import RadioState
 from winrt.windows.foundation import EventRegistrationToken
 
 from bleak._compat import override
@@ -29,12 +27,9 @@ from bleak.backends.scanner import (
     AdvertisementDataCallback,
     BaseBleakScanner,
 )
+from bleak.backends.winrt.adapter import BleakAdapterWinRT
 from bleak.backends.winrt.util import assert_mta
-from bleak.exc import (
-    BleakBluetoothNotAvailableError,
-    BleakBluetoothNotAvailableReason,
-    BleakError,
-)
+from bleak.exc import BleakError
 from bleak.uuids import normalize_uuid_str
 
 logger = logging.getLogger(__name__)
@@ -241,26 +236,9 @@ class BleakScannerWinRT(BaseBleakScanner):
         # there is nothing pumping a Windows message loop.
         await assert_mta()
 
-        # TODO: need to fix return type of get_default_async() in PyWinRT
-        adapter = await BluetoothAdapter.get_default_async()
-        if adapter is None:  # pyright: ignore[reportUnnecessaryComparison]
-            raise BleakBluetoothNotAvailableError(
-                "No Bluetooth adapter found",
-                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
-            )
-
-        if not adapter.is_central_role_supported:
-            raise BleakBluetoothNotAvailableError(
-                "BLE 'central' role not supported on this adapter",
-                BleakBluetoothNotAvailableReason.NO_BLE_CENTRAL_ROLE,
-            )
-
-        radio = await adapter.get_radio_async()
-        if radio.state != RadioState.ON:
-            raise BleakBluetoothNotAvailableError(
-                "Bluetooth radio is not powered on. Turn on Bluetooth and try again.",
-                BleakBluetoothNotAvailableReason.POWERED_OFF,
-            )
+        # Validate that a usable BLE central adapter is available. This raises
+        # BleakBluetoothNotAvailableError if not.
+        await BleakAdapterWinRT.get()
 
         # start with fresh list of discovered devices
         self.seen_devices = {}
