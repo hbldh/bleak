@@ -13,6 +13,8 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+* Added BLE pairing agent support for Windows and Linux. ``BleakClient`` accepts a ``pairing_callbacks`` argument (and ``pair()`` a ``callbacks`` argument) taking a ``bleak.agent.PairingCallbacks`` to take part in the Numeric Comparison and Passkey Entry pairing ceremonies.
+* Added ``bleak.agent`` module with ``PairingCallbacks``, ``ConfirmPasskey``, ``RequestPasskey``, ``DisplayPasskey``, and ``IOCapability``.
 
 Fixed
 -----
@@ -100,7 +102,6 @@ Changed
 * Use ``"AcquireNotify"`` rather than ``"StartNotify"`` for Linux backend on supported characteristics
 * Allow multiple calls to ``disconnect()`` on Windows to align behavior over all backends.
 * Raise new ``BleakBluetoothNotAvailableError`` when Bluetooth is not supported, turned off or permission is denied.
-* Added ``pairing_callbacks`` parameter to ``BleakClient()`` constructor to support the different pairing methods.
 
 Fixed
 -----

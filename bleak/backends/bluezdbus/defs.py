@@ -24,6 +24,10 @@ GATT_CHARACTERISTIC_INTERFACE = "org.bluez.GattCharacteristic1"
 GATT_DESCRIPTOR_INTERFACE = "org.bluez.GattDescriptor1"
 
 # BlueZ error names
+BLUEZ_ERROR_AUTHENTICATION_CANCELED = "org.bluez.Error.AuthenticationCanceled"
+BLUEZ_ERROR_AUTHENTICATION_FAILED = "org.bluez.Error.AuthenticationFailed"
+BLUEZ_ERROR_AUTHENTICATION_REJECTED = "org.bluez.Error.AuthenticationRejected"
+BLUEZ_ERROR_AUTHENTICATION_TIMEOUT = "org.bluez.Error.AuthenticationTimeout"
 BLUEZ_ERROR_DOES_NOT_EXIST = "org.bluez.Error.DoesNotExist"
 BLUEZ_ERROR_FAILED = "org.bluez.Error.Failed"
 BLUEZ_ERROR_IMPROPERLY_CONFIGURED = "org.bluez.Error.ImproperlyConfigured"

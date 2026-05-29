@@ -2,22 +2,45 @@
 Agent
 -----
 
-This module contains types associated with the BlueZ D-Bus `agent api
-<https://github.com/bluez/bluez/blob/master/doc/agent-api.txt>`.
+Implements the BlueZ ``org.bluez.Agent1`` D-Bus interface and binds it to a
+:class:`~bleak.agent.PairingCallbacks`. See the BlueZ `agent API
+<https://github.com/bluez/bluez/blob/master/doc/agent-api.txt>`_.
+
+The D-Bus methods carry their wire signatures as string annotations (``"o"``,
+``"u"``, ...) which dbus-fast parses but static type checkers cannot, so each
+such method is a thin ``@no_type_check`` shim delegating to a fully typed
+helper.
 """
 
+import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "linux":
+        assert False, "This backend is only available on Linux"
+
 import asyncio
-import contextlib
 import logging
 import os
-from typing import Set, no_type_check
+from collections.abc import AsyncGenerator
+from contextlib import AsyncExitStack, asynccontextmanager
+from typing import TypeAlias, no_type_check
 
 from dbus_fast import DBusError, Message
 from dbus_fast.aio import MessageBus
-from dbus_fast.service import ServiceInterface, method
-from dbus_fast.signature import Variant
+from dbus_fast.service import ServiceInterface
+from dbus_fast.service import method as dbus_method
 
-from bleak.agent import BaseBleakAgentCallbacks
+from bleak._compat import assert_never
+from bleak.agent import (
+    MAX_PASSKEY,
+    ConfirmPasskey,
+    DisplayPasskey,
+    IOCapability,
+    PairingCallbacks,
+    RequestPasskey,
+    io_capability,
+)
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.utils import assert_reply
@@ -25,22 +48,36 @@ from bleak.backends.device import BLEDevice
 
 logger = logging.getLogger(__name__)
 
+_PendingTask: TypeAlias = asyncio.Task[bool] | asyncio.Task[int | None]
+
+
+def _capability_name(capability: IOCapability) -> str:
+    """Map an :class:`IOCapability` to the BlueZ agent capability string."""
+    match capability:
+        case IOCapability.NO_INPUT_NO_OUTPUT:
+            return "NoInputNoOutput"
+        case IOCapability.DISPLAY_YES_NO:
+            return "DisplayYesNo"
+        case IOCapability.KEYBOARD_ONLY:
+            return "KeyboardOnly"
+        case IOCapability.DISPLAY_ONLY:
+            return "DisplayOnly"
+        case IOCapability.KEYBOARD_DISPLAY:
+            return "KeyboardDisplay"
+        case _:
+            assert_never(capability)
+
 
 class Agent(ServiceInterface):
-    """
-    Implementation of the org.bluez.Agent1 D-Bus interface.
-    """
+    """The ``org.bluez.Agent1`` interface backed by a :class:`PairingCallbacks`."""
 
-    def __init__(self, callbacks: BaseBleakAgentCallbacks):
-        """
-        Args:
-        """
+    def __init__(self, callbacks: PairingCallbacks) -> None:
         super().__init__(defs.AGENT_INTERFACE)
         self._callbacks = callbacks
-        self._tasks: Set[asyncio.Task] = set()
+        self._pending: _PendingTask | None = None
 
     @staticmethod
-    async def _create_ble_device(device_path: str) -> BLEDevice:
+    async def _ble_device(device_path: str) -> BLEDevice:
         manager = await get_global_bluez_manager()
         return BLEDevice(
             manager.get_device_address(device_path),
@@ -48,163 +85,155 @@ class Agent(ServiceInterface):
             {"path": device_path},
         )
 
-    @method()
-    def Release(self):  # noqa: N802
-        logger.debug("Release")
+    async def _run(self, task: _PendingTask) -> bool | int | None:
+        """Await a callback *task*, mapping cancellation to a D-Bus error.
 
-    # REVISIT: mypy is broke, so we have to add redundant @no_type_check
-    # https://github.com/python/mypy/issues/6583
-
-    @method()
-    @no_type_check
-    async def RequestPinCode(self, device: "o") -> "s":  # noqa: F821 N802
-        logger.debug("RequestPinCode %s", device)
-        raise NotImplementedError
-
-    @method()
-    @no_type_check
-    async def DisplayPinCode(self, device: "o", pincode: "s"):  # noqa: F821 N802
-        logger.debug("DisplayPinCode %s %s", device, pincode)
-        raise NotImplementedError
-
-    @method()
-    @no_type_check
-    async def RequestPasskey(self, device: "o") -> "u":  # noqa: F821 N802
-        logger.debug("RequestPasskey %s", device)
-
-        ble_device = await self._create_ble_device(device)
-
-        task = asyncio.create_task(self._callbacks.request_passkey(ble_device))
-        self._tasks.add(task)
-
+        The task is held so a concurrent :meth:`Cancel` can abort the in-flight
+        callback without disturbing dbus-fast's own dispatch task.
+        """
+        self._pending = task
         try:
-            key = await task
+            return await task
         except asyncio.CancelledError:
-            raise DBusError("org.bluez.Error.Canceled", "task canceled")
+            raise DBusError("org.bluez.Error.Canceled", "pairing canceled")
         finally:
-            self._tasks.remove(task)
+            self._pending = None
 
-        if not key:
-            raise DBusError("org.bluez.Error.Rejected", "user rejected")
+    async def _confirm(self, device_path: str, passkey: int) -> None:
+        if (confirm := self._callbacks.confirm) is None:
+            raise DBusError(
+                "org.bluez.Error.Rejected", "numeric comparison not supported"
+            )
+        device = await self._ble_device(device_path)
+        if not await self._run(
+            asyncio.ensure_future(confirm(ConfirmPasskey(device, passkey)))
+        ):
+            raise DBusError("org.bluez.Error.Rejected", "pairing rejected")
 
-        try:
-            passkey = int(key)
-        except ValueError:
-            raise DBusError("org.bluez.Error.Rejected", "invalid passkey")
-
+    async def _request_passkey(self, device_path: str) -> int:
+        if (request := self._callbacks.request_passkey) is None:
+            raise DBusError("org.bluez.Error.Rejected", "passkey entry not supported")
+        device = await self._ble_device(device_path)
+        passkey = await self._run(
+            asyncio.ensure_future(request(RequestPasskey(device)))
+        )
+        if passkey is None:
+            raise DBusError("org.bluez.Error.Rejected", "pairing rejected")
+        if not 0 <= passkey <= MAX_PASSKEY:
+            raise DBusError(
+                "org.bluez.Error.Rejected", f"passkey {passkey} out of range"
+            )
         return passkey
 
-    @method()
+    async def _display(self, device_path: str, passkey: int) -> None:
+        if (display := self._callbacks.display_passkey) is None:
+            return
+        device = await self._ble_device(device_path)
+        await display(DisplayPasskey(device, passkey))
+
+    @dbus_method()
+    def Release(self) -> None:  # noqa: N802
+        logger.debug("pairing agent released")
+
+    @dbus_method()
     @no_type_check
-    async def DisplayPasskey(  # noqa: N802
-        self, device: "o", passkey: "u", entered: "q"  # noqa: F821
-    ):
-        passkey = f"{passkey:06}"
-        logger.debug("DisplayPasskey %s %s %d", device, passkey, entered)
-        raise NotImplementedError
-
-    @method()
-    @no_type_check
-    async def RequestConfirmation(self, device: "o", passkey: "u"):  # noqa: F821 N802
-        passkey = f"{passkey:06}"
-        logger.debug("RequestConfirmation %s %s", device, passkey)
-
-        ble_device = await self._create_ble_device(device)
-
-        task = asyncio.create_task(self._callbacks.confirm_passkey(ble_device, passkey))
-        self._tasks.add(task)
-
-        try:
-            result = await task
-        except asyncio.CancelledError:
-            raise DBusError("org.bluez.Error.Canceled", "task canceled")
-        finally:
-            self._tasks.remove(task)
-
-        if not result:
-            raise DBusError("org.bluez.Error.Rejected", "user rejected")
-        else:
-            manager = await get_global_bluez_manager()
-            # Set device as trusted.
-            reply = await manager._bus.call(
-                Message(
-                    destination=defs.BLUEZ_SERVICE,
-                    path=device,
-                    interface=defs.PROPERTIES_INTERFACE,
-                    member="Set",
-                    signature="ssv",
-                    body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
-                )
-            )
-            assert reply
-            assert_reply(reply)
-
-    @method()
-    @no_type_check
-    async def RequestAuthorization(self, device: "o"):  # noqa: F821 N802
-        logger.debug("RequestAuthorization %s", device)
-        raise NotImplementedError
-
-    @method()
-    @no_type_check
-    async def AuthorizeService(self, device: "o", uuid: "s"):  # noqa: F821 N802
-        logger.debug("AuthorizeService %s", device, uuid)
-        raise NotImplementedError
-
-    @method()
-    @no_type_check
-    def Cancel(self):  # noqa: F821 N802
-        logger.debug("Cancel")
-        for t in self._tasks:
-            t.cancel()
-
-
-@contextlib.asynccontextmanager
-async def bluez_agent(bus: MessageBus, callbacks: BaseBleakAgentCallbacks):
-    agent = Agent(callbacks)
-
-    # REVISIT: implement passing capability if needed
-    # "DisplayOnly", "DisplayYesNo", "KeyboardOnly", "NoInputNoOutput", "KeyboardDisplay"
-    # Note: If an empty string is used, BlueZ will fall back to "KeyboardDisplay".
-    capability = ""
-
-    # this should be a unique path to allow multiple python interpreters
-    # running bleak and multiple agents at the same time
-    agent_path = f"/org/bleak/agent/{os.getpid()}/{id(agent)}"
-
-    bus.export(agent_path, agent)
-
-    try:
-        reply = await bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path="/org/bluez",
-                interface=defs.AGENT_MANAGER_INTERFACE,
-                member="RegisterAgent",
-                signature="os",
-                body=[agent_path, capability],
-            )
+    async def RequestPinCode(self, device: "o") -> "s":  # noqa: F821 N802
+        raise DBusError(
+            "org.bluez.Error.Rejected", "legacy PIN code pairing not supported"
         )
 
-        assert reply
-        assert_reply(reply)
+    @dbus_method()
+    @no_type_check
+    async def DisplayPinCode(self, device: "o", pincode: "s"):  # noqa: F821 N802
+        raise DBusError(
+            "org.bluez.Error.Rejected", "legacy PIN code pairing not supported"
+        )
 
-        try:
-            yield
-        finally:
-            reply = await bus.call(
-                Message(
-                    destination=defs.BLUEZ_SERVICE,
-                    path="/org/bluez",
-                    interface=defs.AGENT_MANAGER_INTERFACE,
-                    member="UnregisterAgent",
-                    signature="o",
-                    body=[agent_path],
-                )
-            )
+    @dbus_method()
+    @no_type_check
+    async def RequestPasskey(self, device: "o") -> "u":  # noqa: F821 N802
+        return await self._request_passkey(device)
 
-            assert reply
-            assert_reply(reply)
+    @dbus_method()
+    @no_type_check
+    async def DisplayPasskey(
+        self, device: "o", passkey: "u", entered: "q"  # noqa: F821
+    ):  # noqa: N802
+        await self._display(device, passkey)
 
-    finally:
-        bus.unexport(agent_path, agent)
+    @dbus_method()
+    @no_type_check
+    async def RequestConfirmation(self, device: "o", passkey: "u"):  # noqa: F821 N802
+        await self._confirm(device, passkey)
+
+    @dbus_method()
+    @no_type_check
+    async def RequestAuthorization(self, device: "o"):  # noqa: F821 N802
+        logger.debug("authorizing just works pairing for %s", device)
+
+    @dbus_method()
+    @no_type_check
+    async def AuthorizeService(self, device: "o", uuid: "s"):  # noqa: F821 N802
+        raise DBusError(
+            "org.bluez.Error.Rejected", "service authorization not supported"
+        )
+
+    @dbus_method()
+    def Cancel(self) -> None:  # noqa: N802
+        logger.debug("pairing canceled by peer")
+        if self._pending is not None:
+            self._pending.cancel()
+
+
+async def _register_agent(bus: MessageBus, agent_path: str, capability: str) -> None:
+    reply = await bus.call(
+        Message(
+            destination=defs.BLUEZ_SERVICE,
+            path="/org/bluez",
+            interface=defs.AGENT_MANAGER_INTERFACE,
+            member="RegisterAgent",
+            signature="os",
+            body=[agent_path, capability],
+        )
+    )
+    assert reply is not None
+    assert_reply(reply)
+
+
+async def _unregister_agent(bus: MessageBus, agent_path: str) -> None:
+    reply = await bus.call(
+        Message(
+            destination=defs.BLUEZ_SERVICE,
+            path="/org/bluez",
+            interface=defs.AGENT_MANAGER_INTERFACE,
+            member="UnregisterAgent",
+            signature="o",
+            body=[agent_path],
+        )
+    )
+    assert reply is not None
+    assert_reply(reply)
+
+
+@asynccontextmanager
+async def bluez_agent(
+    bus: MessageBus, callbacks: PairingCallbacks | None = None
+) -> AsyncGenerator[None]:
+    """Register a pairing :class:`Agent` for the duration of the context.
+
+    The advertised capability is derived from *callbacks* via
+    :func:`~bleak.agent.io_capability`. Omitting *callbacks* (or passing
+    ``None``) registers a Just Works agent. A unique object path keeps multiple
+    Bleak agents (and interpreters) from colliding.
+    """
+    callbacks = callbacks if callbacks is not None else PairingCallbacks()
+    agent = Agent(callbacks)
+    agent_path = f"/org/bleak/agent/{os.getpid()}/{id(agent)}"
+    capability = _capability_name(io_capability(callbacks))
+
+    async with AsyncExitStack() as stack:
+        bus.export(agent_path, agent)
+        stack.callback(bus.unexport, agent_path, agent)
+        await _register_agent(bus, agent_path, capability)
+        stack.push_async_callback(_unregister_agent, bus, agent_path)
+        yield

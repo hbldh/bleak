@@ -16,7 +16,7 @@ from warnings import warn
 
 from bleak._compat import Never, Self, Unpack, assert_never
 from bleak._compat import timeout as async_timeout
-from bleak.agent import BaseBleakAgentCallbacks
+from bleak.agent import PairingCallbacks
 from bleak.args import SizedBuffer
 from bleak.args.bluez import (
     BlueZAdapterArgs,
@@ -630,7 +630,7 @@ class BleakClient:
         address_or_ble_device: Union[BLEDevice, str],
         disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
         services: Optional[Iterable[str]] = None,
-        pairing_callbacks: Optional[BaseBleakAgentCallbacks] = None,
+        pairing_callbacks: Optional[PairingCallbacks] = None,
         *,
         timeout: float = 30,
         pair: bool = False,

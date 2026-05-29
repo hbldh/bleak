@@ -19,6 +19,10 @@ with a HCI-UART firmware. The firmware including instructions can be found
 the advantage over the HCI-USB firmware, that it is not automatically claimed by
 the OS, so that ``bumble`` can use it without special configurations.
 
+`Intercreate <https://intercreate.io>`_ maintains a `repository <https://github.com/intercreate/zephyr-hci>`_
+and `PyPI packages <https://pypi.org/project/zephyr-4.4.0-hci/>`_ for distribution
+of prebuilt HCI firmware. PRs to add more FW and board variants are welcome!
+
 To run the integration tests you have to pass the ``--bleak-hci-transport`` moniker of your
  ``bumble`` device. You have to specify the bumble moniker of the transport. For more
 information see the `bumble documentation <https://google.github.io/bumble/transports/serial.html>`_.
@@ -39,6 +43,15 @@ On Windows you can find the port via the Device Manager under "Ports (COM & LPT)
 And the moniker will look like this::
 
     serial:COM3
+
+If your firmware exposes an HCI-USB interface instead of UART, use the ``usb``
+transport moniker::
+
+    $ uv run pytest --bleak-hci-transport=usb:0
+
+Here ``usb:0`` selects the first USB Bluetooth controller. See the `bumble USB
+transport documentation <https://google.github.io/bumble/transports/usb.html>`_
+for selecting a specific device by ``VID:PID``.
 
 
 Virtual Bluetooth controllers

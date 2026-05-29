@@ -13,12 +13,14 @@ import asyncio
 import logging
 import uuid
 import warnings
+from collections.abc import Callable
 from typing import Any, Optional, Union
 
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
 
 from bleak._compat import override
+from bleak.agent import PairingCallbacks
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
@@ -46,9 +48,25 @@ class BleakClientP4Android(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[uuid.UUID]],
-        **kwargs,
+        *,
+        timeout: float,
+        disconnected_callback: Callable[[], None] | None = None,
+        pairing_callbacks: PairingCallbacks | None = None,
+        **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            timeout=timeout,
+            disconnected_callback=disconnected_callback,
+            pairing_callbacks=pairing_callbacks,
+        )
+
+        if pairing_callbacks is not None:
+            logger.debug(
+                "pairing callbacks are not used by the Android backend; "
+                "the system handles the pairing UI"
+            )
+
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any, Optional, Union
 
 from CoreBluetooth import (
@@ -26,6 +27,7 @@ from Foundation import NSArray, NSData
 
 from bleak import BleakScanner
 from bleak._compat import override
+from bleak.agent import PairingCallbacks
 from bleak.args import SizedBuffer
 from bleak.args.corebluetooth import CBStartNotifyArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
@@ -59,19 +61,26 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
+        *,
+        timeout: float,
+        disconnected_callback: Callable[[], None] | None = None,
+        pairing_callbacks: PairingCallbacks | None = None,
         **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            timeout=timeout,
+            disconnected_callback=disconnected_callback,
+            pairing_callbacks=pairing_callbacks,
+        )
 
         self._peripheral: Optional[CBPeripheral] = None
         self._delegate: Optional[PeripheralDelegate] = None
         self._central_manager_delegate: Optional[CentralManagerDelegate] = None
 
-        if kwargs.get("pairing_callbacks"):
-            logger.warn(
-                "Pairing is not available in Core Bluetooth.",
-                RuntimeWarning,
-                stacklevel=2,
+        if pairing_callbacks is not None:
+            logger.debug(
+                "pairing callbacks are not supported by the Core Bluetooth backend"
             )
 
         if isinstance(address_or_ble_device, BLEDevice):
