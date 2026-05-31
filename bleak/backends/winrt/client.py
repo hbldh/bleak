@@ -14,6 +14,7 @@ import asyncio
 import logging
 import uuid
 from collections.abc import Callable
+from concurrent.futures import Future
 from contextvars import Context
 from ctypes import WinError  # type: ignore[attr-defined]
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
@@ -67,8 +68,20 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
-from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolError
-from bleak.pairing import PairingCallbacks
+from bleak.exc import (
+    BleakDeviceNotFoundError,
+    BleakError,
+    BleakGATTProtocolError,
+    BleakPairingCancelledError,
+    BleakPairingFailedError,
+)
+from bleak.pairing import (
+    MAX_PASSKEY,
+    PairingCallbacks,
+    SupportsConfirm,
+    SupportsDisplayPasskey,
+    SupportsRequestPasskey,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +146,22 @@ def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
         raise BleakError(f"{fail_msg}: Unreachable")
 
     raise BleakError(f"{fail_msg}: Unexpected status code 0x{status:02X}")
+
+
+def _pairing_kinds(callbacks: PairingCallbacks | None) -> DevicePairingKinds:
+    """Derive the accepted ``DevicePairingKinds`` from the provided callbacks.
+
+    Just Works (``CONFIRM_ONLY``) is always accepted; each capability the
+    callbacks implement adds the kinds it can take part in.
+    """
+    kinds = DevicePairingKinds.CONFIRM_ONLY
+    if isinstance(callbacks, SupportsConfirm):
+        kinds |= DevicePairingKinds.CONFIRM_PIN_MATCH
+    if isinstance(callbacks, SupportsRequestPasskey):
+        kinds |= DevicePairingKinds.PROVIDE_PIN
+    if isinstance(callbacks, SupportsDisplayPasskey):
+        kinds |= DevicePairingKinds.DISPLAY_PIN
+    return kinds
 
 
 class BleakClientWinRT(BaseBleakClient):
@@ -537,12 +566,22 @@ class BleakClientWinRT(BaseBleakClient):
     @override
     async def pair(
         self,
+        callbacks: Optional[PairingCallbacks] = None,
+        *,
+        protection_level: Optional[DevicePairingProtectionLevel] = None,
         **kwargs: Any,
     ) -> None:
         """Attempts to pair with the device.
 
+        Args:
+            callbacks: Optional :class:`~bleak.pairing.PairingCallbacks` used to
+                take part in the negotiated pairing kind (numeric comparison or
+                passkey entry). If omitted, the callbacks given to the
+                :class:`~bleak.BleakClient` constructor are used; with no
+                callbacks at all, Just Works pairing is accepted automatically.
+
         Keyword Args:
-            protection_level (int): A ``DevicePairingProtectionLevel`` enum value:
+            protection_level (DevicePairingProtectionLevel): The pairing protection level:
 
                 1. None - Pair the device using no levels of protection.
                 2. Encryption - Pair the device using encryption.
@@ -568,17 +607,28 @@ class BleakClientWinRT(BaseBleakClient):
         if not device_information.pairing.can_pair:
             raise BleakError("Device does not support pairing")
 
-        protection_level = kwargs.get("protection_level")
-
-        # Currently only supporting Just Works solutions...
-        ceremony = DevicePairingKinds.CONFIRM_ONLY
+        callbacks = callbacks if callbacks is not None else self._pairing_callbacks
+        kinds = _pairing_kinds(callbacks)
         custom_pairing = device_information.pairing.custom
+
+        loop = asyncio.get_running_loop()
+        pending: list[Future[None]] = []
 
         def handler(
             sender: DeviceInformationCustomPairing,
             args: DevicePairingRequestedEventArgs,
-        ):
-            args.accept()
+        ) -> None:
+            deferral = args.get_deferral()
+
+            async def respond() -> None:
+                try:
+                    await self._accept_pairing(args, callbacks)
+                except Exception:
+                    logger.exception("error handling pairing request")
+                finally:
+                    deferral.complete()
+
+            pending.append(asyncio.run_coroutine_threadsafe(respond(), loop))
 
         pairing_requested_token = custom_pairing.add_pairing_requested(handler)
 
@@ -590,7 +640,7 @@ class BleakClientWinRT(BaseBleakClient):
                     2,
                 )
                 pairing_result = await custom_pairing.pair_with_protection_level_async(
-                    ceremony, protection_level
+                    kinds, protection_level
                 )
             else:
                 for level in (
@@ -599,7 +649,7 @@ class BleakClientWinRT(BaseBleakClient):
                 ):
                     pairing_result = (
                         await custom_pairing.pair_with_protection_level_async(
-                            ceremony, level
+                            kinds, level
                         )
                     )
                     if (
@@ -610,20 +660,26 @@ class BleakClientWinRT(BaseBleakClient):
 
                     logger.debug("Protection level %r not met. Retrying.", level)
                 else:
-                    pairing_result = await custom_pairing.pair_async(ceremony)
+                    pairing_result = await custom_pairing.pair_async(kinds)
 
         except Exception as e:
             raise BleakError("Failure trying to pair with device!") from e
         finally:
             custom_pairing.remove_pairing_requested(pairing_requested_token)
+            for future in pending:
+                future.cancel()
 
         if pairing_result.status not in (
             DevicePairingResultStatus.PAIRED,
             DevicePairingResultStatus.ALREADY_PAIRED,
         ):
-            raise BleakError(
-                f"Could not pair with device: {pairing_result.status.name}"
-            )
+            message = f"Could not pair with device: {pairing_result.status.name}"
+            if pairing_result.status in (
+                DevicePairingResultStatus.PAIRING_CANCELED,
+                DevicePairingResultStatus.REJECTED_BY_HANDLER,
+            ):
+                raise BleakPairingCancelledError(message)
+            raise BleakPairingFailedError(message)
 
         if logger.isEnabledFor(logging.DEBUG):
             # pairing_result.protection_level_used doesn't seem to return
@@ -637,6 +693,43 @@ class BleakClientWinRT(BaseBleakClient):
                 "Paired to device with protection level %s.",
                 pairing_result.protection_level_used.name,
             )
+
+    async def _accept_pairing(
+        self, args: DevicePairingRequestedEventArgs, callbacks: PairingCallbacks | None
+    ) -> None:
+        """Respond to a WinRT pairing request by dispatching to *callbacks*.
+
+        Runs on the event loop (scheduled from the WinRT callback thread) while
+        the caller holds a deferral, so awaiting user input here is safe.
+        """
+        assert self._requester
+        device = BLEDevice(self.address, self._requester.name, self._requester)
+        logger.debug("pairing requested (kind %r)", args.pairing_kind)
+        match args.pairing_kind:
+            case DevicePairingKinds.CONFIRM_ONLY:
+                args.accept()
+            case DevicePairingKinds.CONFIRM_PIN_MATCH:
+                if isinstance(callbacks, SupportsConfirm) and await callbacks.confirm(
+                    device, int(args.pin)
+                ):
+                    args.accept()
+            case DevicePairingKinds.PROVIDE_PIN:
+                if isinstance(callbacks, SupportsRequestPasskey):
+                    passkey = await callbacks.request_passkey(device)
+                    if passkey is not None and 0 <= passkey <= MAX_PASSKEY:
+                        args.accept_with_pin(f"{passkey:06d}")
+            case DevicePairingKinds.DISPLAY_PIN:
+                if isinstance(callbacks, SupportsDisplayPasskey):
+                    await callbacks.display_passkey(device, int(args.pin))
+                    args.accept()
+            case (
+                DevicePairingKinds.NONE
+                | DevicePairingKinds.PROVIDE_PASSWORD_CREDENTIAL
+                | DevicePairingKinds.PROVIDE_ADDRESS
+            ):
+                logger.debug("unsupported pairing kind: %r", args.pairing_kind)
+            case _:
+                assert_never(args.pairing_kind)
 
     @override
     async def unpair(self) -> None:
