@@ -109,6 +109,14 @@ class BleakDeviceNotFoundError(BleakError):
         self.identifier = identifier
 
 
+class BleakPairingCancelledError(BleakError):
+    """Raised when pairing is canceled before it completes."""
+
+
+class BleakPairingFailedError(BleakError):
+    """Raised when pairing is rejected or fails to authenticate."""
+
+
 class BleakDBusError(BleakError):
     """Specialized exception type for D-Bus errors."""
 

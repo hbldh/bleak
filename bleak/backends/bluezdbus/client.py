@@ -30,6 +30,7 @@ from bleak._compat import override
 from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
+from bleak.backends.bluezdbus.agent import bluez_agent
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.bluezdbus.scanner import BleakScannerBlueZDBus
 from bleak.backends.bluezdbus.utils import (
@@ -43,13 +44,39 @@ from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
-from bleak.exc import BleakDBusError, BleakDeviceNotFoundError, BleakError
+from bleak.exc import (
+    BleakDBusError,
+    BleakDeviceNotFoundError,
+    BleakError,
+    BleakPairingCancelledError,
+    BleakPairingFailedError,
+)
 from bleak.pairing import PairingCallbacks
 
 logger = logging.getLogger(__name__)
 
 # prevent tasks from being garbage collected
 _background_tasks: set[asyncio.Task[None]] = set()
+
+
+def _assert_pairing_reply(reply: Message) -> None:
+    """Like :func:`assert_reply`, but map BlueZ authentication errors.
+
+    A canceled or failed pairing is raised as the corresponding
+    ``BleakPairing*Error`` instead of a generic D-Bus error. Unknown error
+    names fall through to :func:`assert_reply`.
+    """
+    if reply.message_type == MessageType.ERROR:
+        detail = reply.body[0] if reply.body else reply.error_name or ""
+        if reply.error_name == defs.BLUEZ_ERROR_AUTHENTICATION_CANCELED:
+            raise BleakPairingCancelledError(detail)
+        if reply.error_name in (
+            defs.BLUEZ_ERROR_AUTHENTICATION_FAILED,
+            defs.BLUEZ_ERROR_AUTHENTICATION_REJECTED,
+            defs.BLUEZ_ERROR_AUTHENTICATION_TIMEOUT,
+        ):
+            raise BleakPairingFailedError(detail)
+    assert_reply(reply)
 
 
 class BleakClientBlueZDBus(BaseBleakClient):
@@ -266,7 +293,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         # Calling pair will fail if we are already paired, so
                         # in that case we just call Connect.
                         if pair and not manager.is_paired(self._device_path):
-                            reply = await self._pair()
+                            reply = await self._pair(self._pairing_callbacks)
 
                             # For resolvable private addresses, the address will
                             # change after pairing, so we need to update that.
@@ -315,7 +342,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                                     f"Device with address {self.address} was not found. It may have been removed from BlueZ when scanning stopped.",
                                 )
 
-                        assert_reply(reply)
+                        _assert_pairing_reply(reply)
 
                     self._is_connected = True
 
@@ -439,7 +466,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # "PropertiesChanged" signal handler and that it completed successfully
         assert self.services is None
 
-    async def _pair(self) -> Message:
+    async def _pair(self, callbacks: PairingCallbacks | None) -> Message:
         """
         Pair with the peripheral and return the D-Bus reply.
 
@@ -449,32 +476,29 @@ class BleakClientBlueZDBus(BaseBleakClient):
         assert self._bus is not None
         assert self._device_path is not None
 
-        # REVIST: This leaves "Trusted" property set if we
-        # fail later. Probably not a big deal since we were
-        # going to trust it anyway.
-        # Trusted means device is authorized
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.PROPERTIES_INTERFACE,
-                member="Set",
-                signature="ssv",
-                body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
-            )
-        )
-        assert_reply(reply)
-
         logger.debug("Pairing to BLE device @ %s", self.address)
-        # Pairing means device is authenticated
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=self._device_path,
-                interface=defs.DEVICE_INTERFACE,
-                member="Pair",
+        async with bluez_agent(self._bus, callbacks):
+            reply = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=self._device_path,
+                    interface=defs.DEVICE_INTERFACE,
+                    member="Pair",
+                )
             )
-        )
+
+        if reply.message_type == MessageType.METHOD_RETURN:
+            trusted = await self._bus.call(
+                Message(
+                    destination=defs.BLUEZ_SERVICE,
+                    path=self._device_path,
+                    interface=defs.PROPERTIES_INTERFACE,
+                    member="Set",
+                    signature="ssv",
+                    body=[defs.DEVICE_INTERFACE, "Trusted", Variant("b", True)],
+                )
+            )
+            assert_reply(trusted)
 
         return reply
 
@@ -491,8 +515,8 @@ class BleakClientBlueZDBus(BaseBleakClient):
             logger.debug("BLE device @ %s is already paired", self.address)
             return
 
-        reply = await self._pair()
-        assert_reply(reply)
+        reply = await self._pair(self._pairing_callbacks)
+        _assert_pairing_reply(reply)
 
         # For resolvable private addresses, the address will
         # change after pairing, so we need to update that.
