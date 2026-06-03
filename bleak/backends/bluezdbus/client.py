@@ -66,10 +66,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
         *,
+        disconnected_callback: Callable[[], None] | None,
+        timeout: float,
         bluez: BlueZClientArgs,
         **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            disconnected_callback=disconnected_callback,
+            timeout=timeout,
+        )
 
         self._adapter = bluez.get("adapter")
         self._device_path: Optional[str]
