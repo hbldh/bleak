@@ -4,7 +4,7 @@ Base class for backend clients.
 """
 import abc
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from bleak.args import SizedBuffer
 from bleak.backends import BleakBackend, get_default_backend
@@ -28,11 +28,18 @@ class BaseBleakClient(abc.ABC):
     Keyword Args:
         timeout (float): Timeout for required ``discover`` call.
         disconnected_callback (callable): Callback that will be scheduled in the
-            event loop when the client is disconnected. The callable must take one
-            argument, which will be this client object.
+            event loop when the client is disconnected. The callable takes no
+            arguments.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs: Any):
+    def __init__(
+        self,
+        address_or_ble_device: BLEDevice | str,
+        *,
+        disconnected_callback: Callable[[], None] | None,
+        timeout: float,
+        **kwargs: Any,
+    ) -> None:
         if isinstance(address_or_ble_device, BLEDevice):
             self.address = address_or_ble_device.address
         else:
@@ -40,10 +47,8 @@ class BaseBleakClient(abc.ABC):
 
         self.services: Optional[BleakGATTServiceCollection] = None
 
-        self._timeout = kwargs["timeout"]
-        self._disconnected_callback: Optional[Callable[[], None]] = kwargs.get(
-            "disconnected_callback"
-        )
+        self._timeout = timeout
+        self._disconnected_callback = disconnected_callback
 
     # NB: this is not marked as @abc.abstractmethod because that would break
     # 3rd-party backends. We might change this in the future to make it required.
