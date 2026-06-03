@@ -13,6 +13,7 @@ import asyncio
 import logging
 import uuid
 import warnings
+from collections.abc import Callable
 from typing import Any, Optional, Union
 
 from android.broadcast import BroadcastReceiver
@@ -46,9 +47,16 @@ class BleakClientP4Android(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[uuid.UUID]],
-        **kwargs,
+        *,
+        disconnected_callback: Callable[[], None] | None,
+        timeout: float,
+        **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            disconnected_callback=disconnected_callback,
+            timeout=timeout,
+        )
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )
