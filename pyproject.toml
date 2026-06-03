@@ -29,7 +29,7 @@ dependencies = [
     "winrt-Windows.Foundation>=3.1; platform_system=='Windows'",
     "winrt-Windows.Foundation.Collections>=3.1; platform_system=='Windows'",
     "winrt-Windows.Storage.Streams>=3.1; platform_system=='Windows'",
-    "dbus-fast>=1.83.0; platform_system=='Linux'",
+    "dbus-fast>=4.0.0; platform_system=='Linux'",
 ]
 
 [project.urls]

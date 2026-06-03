@@ -15,11 +15,18 @@ if TYPE_CHECKING:
 
 import logging
 from collections.abc import Iterable
-from typing import Any, no_type_check
+from typing import Annotated, Any
 from warnings import warn
 
 from dbus_fast import PropertyAccess
-from dbus_fast.service import ServiceInterface, dbus_property, method
+from dbus_fast.annotations import (
+    DBusInt16,
+    DBusObjectPath,
+    DBusSignature,
+    DBusStr,
+    DBusUInt16,
+)
+from dbus_fast.service import ServiceInterface, dbus_method, dbus_property
 
 from bleak.args.bluez import OrPattern as _OrPattern
 from bleak.args.bluez import OrPatternLike as _OrPatternLike
@@ -68,64 +75,51 @@ class AdvertisementMonitor(ServiceInterface):
                 List of or patterns that will be returned by the ``Patterns`` property.
         """
         super().__init__(defs.ADVERTISEMENT_MONITOR_INTERFACE)
-        # dbus_fast marshaling requires list instead of tuple
-        self._or_patterns = [list(p) for p in or_patterns]
+        self._or_patterns = list(or_patterns)
 
-    @method()
-    def Release(self):
+    @dbus_method()
+    def Release(self) -> None:
         logger.debug("Release")
 
-    @method()
-    def Activate(self):
+    @dbus_method()
+    def Activate(self) -> None:
         logger.debug("Activate")
 
-    # REVISIT: mypy is broke, so we have to add redundant @no_type_check
-    # https://github.com/python/mypy/issues/6583
-
-    @method()
-    @no_type_check
-    def DeviceFound(self, device: "o"):  # noqa: F821
+    @dbus_method()
+    def DeviceFound(self, device: DBusObjectPath) -> None:
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("DeviceFound %s", device)
 
-    @method()
-    @no_type_check
-    def DeviceLost(self, device: "o"):  # noqa: F821
+    @dbus_method()
+    def DeviceLost(self, device: DBusObjectPath) -> None:
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("DeviceLost %s", device)
 
     @dbus_property(PropertyAccess.READ)
-    @no_type_check
-    def Type(self) -> "s":  # noqa: F821
+    def Type(self) -> DBusStr:
         # this is currently the only type supported in BlueZ
         return "or_patterns"
 
     @dbus_property(PropertyAccess.READ, disabled=True)
-    @no_type_check
-    def RSSILowThreshold(self) -> "n":  # noqa: F821
-        ...
+    def RSSILowThreshold(self) -> DBusInt16:
+        raise NotImplementedError
 
     @dbus_property(PropertyAccess.READ, disabled=True)
-    @no_type_check
-    def RSSIHighThreshold(self) -> "n":  # noqa: F821
-        ...
+    def RSSIHighThreshold(self) -> DBusInt16:
+        raise NotImplementedError
 
     @dbus_property(PropertyAccess.READ, disabled=True)
-    @no_type_check
-    def RSSILowTimeout(self) -> "q":  # noqa: F821
-        ...
+    def RSSILowTimeout(self) -> DBusUInt16:
+        raise NotImplementedError
 
     @dbus_property(PropertyAccess.READ, disabled=True)
-    @no_type_check
-    def RSSIHighTimeout(self) -> "q":  # noqa: F821
-        ...
+    def RSSIHighTimeout(self) -> DBusUInt16:
+        raise NotImplementedError
 
     @dbus_property(PropertyAccess.READ, disabled=True)
-    @no_type_check
-    def RSSISamplingPeriod(self) -> "q":  # noqa: F821
-        ...
+    def RSSISamplingPeriod(self) -> DBusUInt16:
+        raise NotImplementedError
 
     @dbus_property(PropertyAccess.READ)
-    @no_type_check
-    def Patterns(self) -> "a(yyay)":  # noqa: F821
+    def Patterns(self) -> Annotated[list[_OrPatternLike], DBusSignature("a(yyay)")]:
         return self._or_patterns
