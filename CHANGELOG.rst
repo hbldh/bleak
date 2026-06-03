@@ -14,6 +14,10 @@ Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
 
+Changed
+-------
+* Changed minimum ``dbus-fast`` version to 4.0.0 on Linux.
+
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.

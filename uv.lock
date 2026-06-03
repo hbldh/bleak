@@ -322,7 +322,7 @@ test = [
 requires-dist = [
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=3.0.0" },
     { name = "bleak-pythonista", marker = "extra == 'pythonista'", specifier = ">=0.1.1" },
-    { name = "dbus-fast", marker = "sys_platform == 'linux'", specifier = ">=1.83.0" },
+    { name = "dbus-fast", marker = "sys_platform == 'linux'", specifier = ">=4.0.0" },
     { name = "pyobjc-core", marker = "sys_platform == 'darwin'", specifier = ">=10.3" },
     { name = "pyobjc-framework-corebluetooth", marker = "sys_platform == 'darwin'", specifier = ">=10.3" },
     { name = "pyobjc-framework-libdispatch", marker = "sys_platform == 'darwin'", specifier = ">=10.3" },
