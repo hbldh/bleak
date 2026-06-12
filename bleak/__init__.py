@@ -341,57 +341,148 @@ class BleakScanner:
         """
         return {d[0].address: d for d in self._backend.seen_devices.values()}
 
+    @overload
     @classmethod
     async def find_device_by_address(
-        cls, device_identifier: str, timeout: float = 10.0, **kwargs: Unpack[ExtraArgs]
-    ) -> Optional[BLEDevice]:
+        cls,
+        device_identifier: str,
+        timeout: float = 10.0,
+        *,
+        return_adv: Literal[False] = False,
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[BLEDevice]: ...
+
+    @overload
+    @classmethod
+    async def find_device_by_address(
+        cls,
+        device_identifier: str,
+        timeout: float = 10.0,
+        *,
+        return_adv: Literal[True],
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[tuple[BLEDevice, AdvertisementData]]: ...
+
+    @classmethod
+    async def find_device_by_address(
+        cls,
+        device_identifier: str,
+        timeout: float = 10.0,
+        *,
+        return_adv: bool = False,
+        **kwargs: Unpack[ExtraArgs],
+    ):
         """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
         Args:
             device_identifier: The Bluetooth/UUID address of the Bluetooth peripheral sought.
             timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+            return_adv: If ``True``, the return value will also include advertising data.
             **kwargs: additional args passed to the :class:`BleakScanner` constructor.
 
         Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
+            The ``BLEDevice`` sought (paired with its most recently received
+            :class:`AdvertisementData` if ``return_adv`` is ``True``) or
+            ``None`` if not detected.
 
+        .. versionchanged:: unreleased
+            Added ``return_adv`` parameter.
         """
         device_identifier = device_identifier.lower()
-        return await cls.find_device_by_filter(
+        return await cls._find_device_by_filter(
             lambda d, ad: d.address.lower() == device_identifier,
-            timeout=timeout,
+            timeout,
+            return_adv,
             **kwargs,
         )
 
+    @overload
     @classmethod
     async def find_device_by_name(
-        cls, name: str, timeout: float = 10.0, **kwargs: Unpack[ExtraArgs]
-    ) -> Optional[BLEDevice]:
+        cls,
+        name: str,
+        timeout: float = 10.0,
+        *,
+        return_adv: Literal[False] = False,
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[BLEDevice]: ...
+
+    @overload
+    @classmethod
+    async def find_device_by_name(
+        cls,
+        name: str,
+        timeout: float = 10.0,
+        *,
+        return_adv: Literal[True],
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[tuple[BLEDevice, AdvertisementData]]: ...
+
+    @classmethod
+    async def find_device_by_name(
+        cls,
+        name: str,
+        timeout: float = 10.0,
+        *,
+        return_adv: bool = False,
+        **kwargs: Unpack[ExtraArgs],
+    ):
         """Obtain a ``BLEDevice`` for a BLE server specified by the local name in the advertising data.
 
         Args:
             name: The name sought.
             timeout: Optional timeout to wait for detection of specified peripheral before giving up. Defaults to 10.0 seconds.
+            return_adv: If ``True``, the return value will also include advertising data.
             **kwargs: additional args passed to the :class:`BleakScanner` constructor.
 
         Returns:
-            The ``BLEDevice`` sought or ``None`` if not detected.
+            The ``BLEDevice`` sought (paired with its most recently received
+            :class:`AdvertisementData` if ``return_adv`` is ``True``) or
+            ``None`` if not detected.
 
         .. versionadded:: 0.20
+
+        .. versionchanged:: unreleased
+            Added ``return_adv`` parameter.
         """
-        return await cls.find_device_by_filter(
+        return await cls._find_device_by_filter(
             lambda d, ad: ad.local_name == name,
-            timeout=timeout,
+            timeout,
+            return_adv,
             **kwargs,
         )
+
+    @overload
+    @classmethod
+    async def find_device_by_filter(
+        cls,
+        filterfunc: AdvertisementDataFilter,
+        timeout: float = 10.0,
+        *,
+        return_adv: Literal[False] = False,
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[BLEDevice]: ...
+
+    @overload
+    @classmethod
+    async def find_device_by_filter(
+        cls,
+        filterfunc: AdvertisementDataFilter,
+        timeout: float = 10.0,
+        *,
+        return_adv: Literal[True],
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[tuple[BLEDevice, AdvertisementData]]: ...
 
     @classmethod
     async def find_device_by_filter(
         cls,
         filterfunc: AdvertisementDataFilter,
         timeout: float = 10.0,
+        *,
+        return_adv: bool = False,
         **kwargs: Unpack[ExtraArgs],
-    ) -> Optional[BLEDevice]:
+    ):
         """Obtain a ``BLEDevice`` for a BLE server that matches a given filter function.
 
         This can be used to find a BLE server by other identifying information than its address,
@@ -404,21 +495,42 @@ class BleakScanner:
             timeout:
                 Optional timeout to wait for detection of specified peripheral
                 before giving up. Defaults to 10.0 seconds.
+            return_adv:
+                If ``True``, the return value will also include advertising data.
             **kwargs:
                 Additional arguments to be passed to the :class:`BleakScanner`
                 constructor.
 
         Returns:
-            The :class:`BLEDevice` sought or ``None`` if not detected before
+            The :class:`BLEDevice` sought (paired with the
+            :class:`AdvertisementData` that matched the filter if
+            ``return_adv`` is ``True``) or ``None`` if not detected before
             the timeout.
 
+        .. versionchanged:: unreleased
+            Added ``return_adv`` parameter.
         """
+        return await cls._find_device_by_filter(
+            filterfunc,
+            timeout,
+            return_adv,
+            **kwargs,
+        )
+
+    @classmethod
+    async def _find_device_by_filter(
+        cls,
+        filterfunc: AdvertisementDataFilter,
+        timeout: float,
+        return_adv: bool,
+        **kwargs: Unpack[ExtraArgs],
+    ) -> Optional[Union[BLEDevice, tuple[BLEDevice, AdvertisementData]]]:
         async with cls(**kwargs) as scanner:
             try:
                 async with async_timeout(timeout):
                     async for bd, ad in scanner.advertisement_data():
                         if filterfunc(bd, ad):
-                            return bd
+                            return (bd, ad) if return_adv else bd
                     assert_never(cast(Never, "advertisement_data() should never stop"))
             except asyncio.TimeoutError:
                 return None
