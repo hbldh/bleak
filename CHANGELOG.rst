@@ -17,6 +17,7 @@ Added
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed ``ValueError`` when calling ``start_notify()`` after reconnecting in the CoreBluetooth backend. Fixes #1969.
 
 `3.0.2`_ (2026-05-02)
 =====================

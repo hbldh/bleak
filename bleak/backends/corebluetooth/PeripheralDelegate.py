@@ -339,6 +339,18 @@ class PeripheralDelegate:
             self._read_rssi_futures.values(),
         )
 
+    def clear_notify_callbacks(self) -> None:
+        """
+        Removes all registered notification callbacks.
+
+        CoreBluetooth automatically stops notifications when a peripheral
+        disconnects, so this should be called on disconnect to keep the
+        delegate state in sync. Otherwise ``start_notifications`` will fail
+        with "Characteristic notifications already started" after reconnecting.
+        """
+        self._characteristic_notify_callbacks.clear()
+        self._characteristic_notification_discriminators.clear()
+
     async def discover_services(
         self, services: Optional[NSArray[CBUUID]] = None
     ) -> NSArray[CBService]:
