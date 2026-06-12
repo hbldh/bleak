@@ -278,6 +278,26 @@ async def test_write_gatt_char_no_response(char_test_peripheral: CharTestPeriphe
     assert written_value == b"DATA"
 
 
+@pytest.mark.asyncio(loop_scope="module")
+async def test_write_gatt_char_no_response_too_large(
+    char_test_peripheral: CharTestPeripheral,
+):
+    """Writing more data than the connection allows without response raises ValueError."""
+    characteristic = char_test_peripheral.bleak_client.services.get_characteristic(
+        WRITE_WITHOUT_RESPONSE_CHAR_UUID
+    )
+    assert characteristic is not None
+
+    max_size = characteristic.max_write_without_response_size
+    if max_size <= 20:
+        pytest.skip("maximum write without response size is not known")
+
+    with pytest.raises(ValueError, match="write without response"):
+        await char_test_peripheral.bleak_client.write_gatt_char(
+            characteristic, bytes(max_size + 1), response=False
+        )
+
+
 @pytest.mark.parametrize(
     "bluez",
     (
