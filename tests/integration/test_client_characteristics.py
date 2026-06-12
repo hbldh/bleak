@@ -279,20 +279,28 @@ async def test_write_gatt_char_no_response(char_test_peripheral: CharTestPeriphe
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_write_gatt_char_no_response_too_large(
-    char_test_peripheral: CharTestPeripheral,
+@pytest.mark.parametrize("response", [True, False])
+async def test_write_gatt_char_too_large(
+    char_test_peripheral: CharTestPeripheral, response: bool
 ):
-    """Writing more data than the connection allows without response raises ValueError."""
-    characteristic = char_test_peripheral.bleak_client.services.get_characteristic(
-        WRITE_WITHOUT_RESPONSE_CHAR_UUID
-    )
-    assert characteristic is not None
+    """Writing more data than the write operation allows raises ValueError."""
+    if response:
+        # the Bluetooth spec limits characteristic values to 512 bytes
+        char_uuid = WRITE_WITH_RESPONSE_CHAR_UUID
+        size = 513
+        match = "512"
+    else:
+        char_uuid = WRITE_WITHOUT_RESPONSE_CHAR_UUID
+        characteristic = char_test_peripheral.bleak_client.services.get_characteristic(
+            char_uuid
+        )
+        assert characteristic is not None
+        size = characteristic.max_write_without_response_size + 1
+        match = "max_write_without_response_size"
 
-    max_size = characteristic.max_write_without_response_size
-
-    with pytest.raises(ValueError, match="max_write_without_response_size"):
+    with pytest.raises(ValueError, match=match):
         await char_test_peripheral.bleak_client.write_gatt_char(
-            characteristic, bytes(max_size + 1), response=False
+            char_uuid, bytes(size), response=response
         )
 
 
