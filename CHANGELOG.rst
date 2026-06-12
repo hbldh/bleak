@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+* Added ``return_adv`` parameter to ``BleakScanner.find_device_by_address()``, ``BleakScanner.find_device_by_name()`` and ``BleakScanner.find_device_by_filter()``. Fixes #1277.
 
 Fixed
 -----

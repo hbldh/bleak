@@ -45,6 +45,31 @@ async def test_find_by_address(bumble_peripheral: Device):
     assert device is not None
 
 
+async def test_find_by_filter(bumble_peripheral: Device):
+    """Scanner is finding the device by a custom filter function."""
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    device = await BleakScanner.find_device_by_filter(
+        lambda d, ad: ad.local_name == bumble_peripheral.name
+    )
+    assert device is not None
+    assert isinstance(device, BLEDevice)
+
+
+async def test_find_by_name_return_adv(bumble_peripheral: Device):
+    """Scanner returns the advertisement data when finding a device with return_adv=True."""
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    result = await BleakScanner.find_device_by_name(
+        bumble_peripheral.name, return_adv=True
+    )
+    assert result is not None
+    device, adv = result
+    assert isinstance(device, BLEDevice)
+    assert isinstance(adv, AdvertisementData)
+    assert adv.local_name == bumble_peripheral.name
+
+
 @pytest.mark.parametrize("service_uuid_available", [True, False])
 async def test_discover_filter_by_service_uuid(
     bumble_peripheral: Device,
