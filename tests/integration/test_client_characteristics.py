@@ -279,28 +279,31 @@ async def test_write_gatt_char_no_response(char_test_peripheral: CharTestPeriphe
 
 
 @pytest.mark.asyncio(loop_scope="module")
-@pytest.mark.parametrize("response", [True, False])
-async def test_write_gatt_char_too_large(
-    char_test_peripheral: CharTestPeripheral, response: bool
+async def test_write_gatt_char_with_response_too_large(
+    char_test_peripheral: CharTestPeripheral,
 ):
-    """Writing more data than the write operation allows raises ValueError."""
-    if response:
-        # the Bluetooth spec limits characteristic values to 512 bytes
-        char_uuid = WRITE_WITH_RESPONSE_CHAR_UUID
-        size = 513
-        match = "512"
-    else:
-        char_uuid = WRITE_WITHOUT_RESPONSE_CHAR_UUID
-        characteristic = char_test_peripheral.bleak_client.services.get_characteristic(
-            char_uuid
-        )
-        assert characteristic is not None
-        size = characteristic.max_write_without_response_size + 1
-        match = "max_write_without_response_size"
-
-    with pytest.raises(ValueError, match=match):
+    """Writing more than the maximum characteristic value length raises ValueError."""
+    with pytest.raises(ValueError, match="512"):
         await char_test_peripheral.bleak_client.write_gatt_char(
-            char_uuid, bytes(size), response=response
+            WRITE_WITH_RESPONSE_CHAR_UUID, bytes(513), response=True
+        )
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_write_gatt_char_no_response_too_large(
+    char_test_peripheral: CharTestPeripheral,
+):
+    """Writing more data than the connection allows without response raises ValueError."""
+    characteristic = char_test_peripheral.bleak_client.services.get_characteristic(
+        WRITE_WITHOUT_RESPONSE_CHAR_UUID
+    )
+    assert characteristic is not None
+
+    with pytest.raises(ValueError, match="max_write_without_response_size"):
+        await char_test_peripheral.bleak_client.write_gatt_char(
+            WRITE_WITHOUT_RESPONSE_CHAR_UUID,
+            bytes(characteristic.max_write_without_response_size + 1),
+            response=False,
         )
 
 
