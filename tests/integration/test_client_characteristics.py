@@ -289,10 +289,8 @@ async def test_write_gatt_char_no_response_too_large(
     assert characteristic is not None
 
     max_size = characteristic.max_write_without_response_size
-    if max_size <= 20:
-        pytest.skip("maximum write without response size is not known")
 
-    with pytest.raises(ValueError, match="write without response"):
+    with pytest.raises(ValueError, match="max_write_without_response_size"):
         await char_test_peripheral.bleak_client.write_gatt_char(
             characteristic, bytes(max_size + 1), response=False
         )

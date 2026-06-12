@@ -1,4 +1,4 @@
-"""Tests for the data size check in BleakClient.write_gatt_char()."""
+"""Tests for the data size checks in BleakClient.write_gatt_char()."""
 
 from typing import cast
 from unittest.mock import Mock
@@ -38,48 +38,58 @@ def create_characteristic(
 
 
 async def test_write_without_response_too_large_raises() -> None:
-    """Writing more data than the known limit allows raises ValueError."""
+    """Writing more data than the limit allows raises ValueError."""
     backend = Mock(spec=BaseBleakClient)
     client = create_client(backend)
     characteristic = create_characteristic(100)
 
-    with pytest.raises(ValueError, match="write without response"):
+    with pytest.raises(ValueError, match="max_write_without_response_size"):
         await client.write_gatt_char(characteristic, bytes(101), response=False)
 
     backend.write_gatt_char.assert_not_called()
 
 
-async def test_write_without_response_within_limit() -> None:
-    """Writing data up to the known limit is passed to the backend."""
-    backend = Mock(spec=BaseBleakClient)
-    client = create_client(backend)
-    characteristic = create_characteristic(100)
-
-    await client.write_gatt_char(characteristic, bytes(100), response=False)
-
-    backend.write_gatt_char.assert_awaited_once_with(characteristic, bytes(100), False)
-
-
-async def test_write_with_response_limit_not_enforced() -> None:
-    """The limit only applies to write without response."""
-    backend = Mock(spec=BaseBleakClient)
-    client = create_client(backend)
-    characteristic = create_characteristic(100)
-
-    await client.write_gatt_char(characteristic, bytes(101), response=True)
-
-    backend.write_gatt_char.assert_awaited_once_with(characteristic, bytes(101), True)
-
-
-async def test_write_without_response_unknown_limit_not_enforced() -> None:
-    """
-    A limit of 20 may just be a fallback for when the actual limit is not
-    known, so oversized writes are passed to the backend in that case.
-    """
+async def test_write_without_response_minimum_limit_enforced() -> None:
+    """The limit is also enforced for peripherals with the minimum MTU of 23."""
     backend = Mock(spec=BaseBleakClient)
     client = create_client(backend)
     characteristic = create_characteristic(20)
 
+    with pytest.raises(ValueError, match="max_write_without_response_size"):
+        await client.write_gatt_char(characteristic, bytes(21), response=False)
+
+    backend.write_gatt_char.assert_not_called()
+
+
+async def test_write_without_response_within_limit() -> None:
+    """Writing data up to the limit is passed to the backend."""
+    backend = Mock(spec=BaseBleakClient)
+    client = create_client(backend)
+    characteristic = create_characteristic(100)
+
     await client.write_gatt_char(characteristic, bytes(100), response=False)
 
     backend.write_gatt_char.assert_awaited_once_with(characteristic, bytes(100), False)
+
+
+async def test_write_with_response_too_large_raises() -> None:
+    """Writing more than the maximum characteristic value length raises ValueError."""
+    backend = Mock(spec=BaseBleakClient)
+    client = create_client(backend)
+    characteristic = create_characteristic(100)
+
+    with pytest.raises(ValueError, match="512"):
+        await client.write_gatt_char(characteristic, bytes(513), response=True)
+
+    backend.write_gatt_char.assert_not_called()
+
+
+async def test_write_with_response_within_limit() -> None:
+    """Long writes are not limited by max_write_without_response_size."""
+    backend = Mock(spec=BaseBleakClient)
+    client = create_client(backend)
+    characteristic = create_characteristic(100)
+
+    await client.write_gatt_char(characteristic, bytes(512), response=True)
+
+    backend.write_gatt_char.assert_awaited_once_with(characteristic, bytes(512), True)

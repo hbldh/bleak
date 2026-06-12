@@ -898,7 +898,8 @@ class BleakClient:
                 handle or UUID specified by ``char_specifier`` could not be found.
             BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
                 Only applies when ``response=True``.
-            ValueError: if the length of ``data`` is known to exceed
+            ValueError: if the length of ``data`` exceeds 512 bytes for a
+                write-with-response operation or
                 :attr:`~bleak.backends.characteristic.BleakGATTCharacteristic.max_write_without_response_size`
                 for a write-without-response operation.
             backend-specific exceptions: in rare cases.
@@ -911,9 +912,9 @@ class BleakClient:
             backend-specific exceptions.
 
         .. versionchanged:: unreleased
-            Now raises ``ValueError`` when the data is known to be too large
-            for a write-without-response operation instead of failing with a
-            cryptic OS-specific error.
+            Now raises ``ValueError`` when the data is too large for the
+            requested write operation instead of failing with a cryptic
+            OS-specific error.
 
         Example::
 
@@ -930,21 +931,23 @@ class BleakClient:
             # characteristic properties, so doesn't work in some cases.
             response = "write" in characteristic.properties
 
-        if not response:
-            max_size = characteristic.max_write_without_response_size
-            # A value of 20 may just be a fallback for when the actual limit
-            # is not (yet) known, e.g. on BlueZ < 5.62 or before the MTU
-            # exchange has completed, so the limit is only enforced when it
-            # is known to be higher to avoid false positives. When the check
-            # is skipped, oversized writes fail with a cryptic OS-specific
-            # error instead, as before.
-            if max_size > 20 and len(data) > max_size:
+        if response:
+            # The Bluetooth spec limits attribute values to 512 bytes, long
+            # writes split the data into multiple ATT packets as needed.
+            if len(data) > 512:
                 raise ValueError(
-                    f"data is {len(data)} bytes, but characteristic "
-                    f"{characteristic.uuid} only supports {max_size} bytes "
-                    "for write without response; use response=True or split "
-                    "the data into smaller chunks"
+                    f"data is {len(data)} bytes, which is larger than the "
+                    "maximum characteristic value length of 512 bytes; split "
+                    "the data into multiple writes"
                 )
+        elif len(data) > characteristic.max_write_without_response_size:
+            # BlueZ < 5.62 (2021) always reports 20, so this can raise even
+            # when the actual limit is higher there.
+            raise ValueError(
+                f"data is {len(data)} bytes, which is larger than "
+                "characteristic.max_write_without_response_size; use "
+                "response=True or split the data into smaller chunks"
+            )
 
         await self._backend.write_gatt_char(characteristic, data, response)
 
