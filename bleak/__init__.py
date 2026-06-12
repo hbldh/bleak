@@ -898,6 +898,10 @@ class BleakClient:
                 handle or UUID specified by ``char_specifier`` could not be found.
             BleakGATTProtocolError: if the peripheral replied with ATT_ERROR_RSP.
                 Only applies when ``response=True``.
+            ValueError: if the length of ``data`` exceeds 512 bytes for a
+                write-with-response operation or
+                :attr:`~bleak.backends.characteristic.BleakGATTCharacteristic.max_write_without_response_size`
+                for a write-without-response operation.
             backend-specific exceptions: in rare cases.
 
         .. versionchanged:: 0.21
@@ -906,6 +910,11 @@ class BleakClient:
         .. versionchanged:: 3.0
             Now raises ``BleakGATTProtocolError`` when possible instead of
             backend-specific exceptions.
+
+        .. versionchanged:: unreleased
+            Now raises ``ValueError`` when the data is too large for the
+            requested write operation instead of failing with a cryptic
+            OS-specific error.
 
         Example::
 
@@ -921,6 +930,24 @@ class BleakClient:
             # This assumes that the peripheral correctly reports the
             # characteristic properties, so doesn't work in some cases.
             response = "write" in characteristic.properties
+
+        if response:
+            # The Bluetooth spec limits attribute values to 512 bytes, long
+            # writes split the data into multiple ATT packets as needed.
+            if len(data) > 512:
+                raise ValueError(
+                    f"data is {len(data)} bytes, which is larger than the "
+                    "maximum characteristic value length of 512 bytes; split "
+                    "the data into multiple writes"
+                )
+        elif len(data) > characteristic.max_write_without_response_size:
+            # BlueZ < 5.62 (2021) always reports 20, so this can raise even
+            # when the actual limit is higher there.
+            raise ValueError(
+                f"data is {len(data)} bytes, which is larger than "
+                "characteristic.max_write_without_response_size; use "
+                "response=True or split the data into smaller chunks"
+            )
 
         await self._backend.write_gatt_char(characteristic, data, response)
 

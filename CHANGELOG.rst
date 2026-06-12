@@ -14,6 +14,10 @@ Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
 
+Changed
+-------
+* Changed ``BleakClient.write_gatt_char()`` to raise ``ValueError`` when the data is too large for the requested write operation, instead of failing with a cryptic OS-specific error. Fixes #737.
+
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
