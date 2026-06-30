@@ -28,6 +28,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.p4android import defs, utils
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.exc import BleakError
+from bleak.pairing import PairingCallbacks
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +51,22 @@ class BleakClientP4Android(BaseBleakClient):
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
+        pairing_callbacks: PairingCallbacks | None = None,
         **kwargs: Any,
     ):
         super().__init__(
             address_or_ble_device,
             disconnected_callback=disconnected_callback,
             timeout=timeout,
+            pairing_callbacks=pairing_callbacks,
         )
+
+        if pairing_callbacks is not None:
+            logger.debug(
+                "pairing callbacks are not used by the Android backend; "
+                "the system handles the pairing UI"
+            )
+
         self._requested_services = (
             set(map(defs.UUID.fromString, services)) if services else None
         )

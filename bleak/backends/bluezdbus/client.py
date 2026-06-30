@@ -44,6 +44,7 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakDBusError, BleakDeviceNotFoundError, BleakError
+from bleak.pairing import PairingCallbacks
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
+        pairing_callbacks: PairingCallbacks | None = None,
         bluez: BlueZClientArgs,
         **kwargs: Any,
     ):
@@ -75,6 +77,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
             address_or_ble_device,
             disconnected_callback=disconnected_callback,
             timeout=timeout,
+            pairing_callbacks=pairing_callbacks,
         )
 
         self._adapter = bluez.get("adapter")

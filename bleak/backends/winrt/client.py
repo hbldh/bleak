@@ -68,6 +68,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolError
+from bleak.pairing import PairingCallbacks
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,7 @@ class BleakClientWinRT(BaseBleakClient):
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
+        pairing_callbacks: PairingCallbacks | None = None,
         winrt: _WinRTClientArgs,
         **kwargs: Any,
     ):
@@ -158,6 +160,7 @@ class BleakClientWinRT(BaseBleakClient):
             address_or_ble_device,
             disconnected_callback=disconnected_callback,
             timeout=timeout,
+            pairing_callbacks=pairing_callbacks,
         )
 
         self._device_info: int | None

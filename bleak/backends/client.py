@@ -13,6 +13,7 @@ from bleak.backends.descriptor import BleakGATTDescriptor
 from bleak.backends.device import BLEDevice
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakError
+from bleak.pairing import PairingCallbacks
 
 NotifyCallback = Callable[[bytearray], None]
 
@@ -30,6 +31,11 @@ class BaseBleakClient(abc.ABC):
         disconnected_callback (callable): Callback that will be scheduled in the
             event loop when the client is disconnected. The callable takes no
             arguments.
+        pairing_callbacks (PairingCallbacks | None): Object implementing one or
+            more pairing-capability protocols (see
+            :data:`~bleak.pairing.PairingCallbacks`); used by backends that pair
+            during connection (BlueZ and WinRT) and ignored by others. ``None``
+            (the default) means no callbacks, which selects Just Works.
     """
 
     def __init__(
@@ -38,6 +44,7 @@ class BaseBleakClient(abc.ABC):
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
+        pairing_callbacks: PairingCallbacks | None = None,
         **kwargs: Any,
     ) -> None:
         if isinstance(address_or_ble_device, BLEDevice):
@@ -49,6 +56,7 @@ class BaseBleakClient(abc.ABC):
 
         self._timeout = timeout
         self._disconnected_callback = disconnected_callback
+        self._pairing_callbacks = pairing_callbacks
 
     # NB: this is not marked as @abc.abstractmethod because that would break
     # 3rd-party backends. We might change this in the future to make it required.
