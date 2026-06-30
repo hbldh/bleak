@@ -40,6 +40,7 @@ from bleak.backends.scanner import (
 )
 from bleak.backends.service import BleakGATTServiceCollection
 from bleak.exc import BleakCharacteristicNotFoundError, BleakError
+from bleak.pairing import PairingCallbacks
 from bleak.uuids import normalize_uuid_16, normalize_uuid_str
 
 __author__ = """Henrik Blidh"""
@@ -573,6 +574,11 @@ class BleakClient:
             In rare cases, on other platforms, it might be necessary to pair the
             device first in order to be able to even enumerate the services during
             the connection process.
+        pairing_callbacks:
+            Callbacks used during pairing (numeric comparison / passkey entry);
+            see :data:`~bleak.pairing.PairingCallbacks`. They apply whether the
+            device is paired during connection (``pair=True``) or by a later
+            :meth:`pair` call. Backends that do not support pairing ignore them.
         bluez:
             Dictionary of BlueZ/Linux platform-specific options.
         winrt:
@@ -615,6 +621,9 @@ class BleakClient:
 
     .. versionchanged:: 3.0
         Added ``bluez`` parameter.
+
+    .. versionchanged:: unreleased
+        Added ``pairing_callbacks`` parameter.
     """
 
     def __init__(
@@ -625,6 +634,7 @@ class BleakClient:
         *,
         timeout: float = 30,
         pair: bool = False,
+        pairing_callbacks: PairingCallbacks | None = None,
         bluez: BlueZClientArgs = {},
         winrt: WinRTClientArgs = {},
         backend: Optional[type[BaseBleakClient]] = None,
@@ -658,6 +668,7 @@ class BleakClient:
             services=(
                 None if services is None else set(map(normalize_uuid_str, services))
             ),
+            pairing_callbacks=pairing_callbacks,
             timeout=timeout,
             bluez=bluez,
             winrt=winrt,

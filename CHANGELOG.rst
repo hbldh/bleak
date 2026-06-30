@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+* Added a ``pairing_callbacks`` argument to ``BleakClient`` taking a ``bleak.pairing.PairingCallbacks`` to take part in the BLE pairing ceremony (Numeric Comparison / Passkey Entry) during connection.
 
 Changed
 -------
