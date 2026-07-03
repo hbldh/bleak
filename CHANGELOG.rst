@@ -12,6 +12,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 
 Added
 -----
+* Exposed address type (``BLEAddressType.PUBLIC`` or ``BLEAddressType.RANDOM``) in ``BLEDevice``.
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
 
 Changed

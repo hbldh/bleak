@@ -41,6 +41,11 @@ PythonBluetoothGattCallback = autoclass(
     BLEAK_JNI_NAMESPACE + ".PythonBluetoothGattCallback"
 )
 
+ADDRESS_TYPE_PUBLIC = 0
+ADDRESS_TYPE_RANDOM = 1
+ADDRESS_TYPE_ANONYMOUS = 255
+ADDRESS_TYPE_UNKNOWN = 65535
+
 
 class ScanFailed(enum.IntEnum):
     ALREADY_STARTED = ScanCallback.SCAN_FAILED_ALREADY_STARTED

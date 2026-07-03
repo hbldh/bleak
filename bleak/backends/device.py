@@ -4,9 +4,15 @@ Wrapper class for Bluetooth LE servers returned from calling
 :py:meth:`bleak.discover`.
 """
 
-
+from enum import Enum
 from typing import Any, Optional
 from warnings import warn
+
+
+class BLEAddressType(Enum):
+    UNKNOWN = "unknown"
+    PUBLIC = "public"
+    RANDOM = "random"
 
 
 class BLEDevice:
@@ -14,11 +20,20 @@ class BLEDevice:
     A simple wrapper class representing a BLE server detected during scanning.
     """
 
-    __slots__ = ("address", "name", "details")
+    __slots__ = ("address", "address_type", "name", "details")
 
-    def __init__(self, address: str, name: Optional[str], details: Any, **kwargs: Any):
+    def __init__(
+        self,
+        address: str,
+        name: Optional[str],
+        details: Any,
+        address_type: BLEAddressType = BLEAddressType.UNKNOWN,
+        **kwargs: Any,
+    ):
         #: The Bluetooth address of the device on this machine (UUID on macOS).
         self.address = address
+        #: The address type of the device (public or random).
+        self.address_type = address_type
         #: The operating system name of the device (not necessarily the local name
         #: from the advertising data), suitable for display to the user.
         self.name = name

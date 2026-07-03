@@ -16,6 +16,7 @@ from jnius import cast, java_method
 
 from bleak._compat import override
 from bleak._compat import timeout as async_timeout
+from bleak.backends.device import BLEAddressType
 from bleak.backends.p4android import defs, utils
 from bleak.backends.scanner import (
     AdvertisementData,
@@ -247,6 +248,15 @@ class BleakScannerP4Android(BaseBleakScanner):
         if tx_power == -2147483648:  # Integer#MIN_VALUE
             tx_power = None
 
+        address_type: BLEAddressType
+        match native_device.getAddressType():
+            case defs.ADDRESS_TYPE_PUBLIC:
+                address_type = BLEAddressType.PUBLIC
+            case defs.ADDRESS_TYPE_RANDOM:
+                address_type = BLEAddressType.RANDOM
+            case _:
+                address_type = BLEAddressType.UNKNOWN
+
         advertisement = AdvertisementData(
             local_name=record.getDeviceName(),
             manufacturer_data=manufacturer_data,
@@ -260,6 +270,7 @@ class BleakScannerP4Android(BaseBleakScanner):
         device = self.create_or_update_device(
             native_device.getAddress(),
             native_device.getAddress(),
+            address_type,
             native_device.getName(),
             native_device,
             advertisement,

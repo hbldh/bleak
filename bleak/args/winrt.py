@@ -6,15 +6,17 @@ WinRT backend arguments
 
 from typing import Literal, TypedDict
 
+from bleak.backends.device import BLEAddressType
+
 
 class WinRTClientArgs(TypedDict, total=False):
     """
     Windows-specific arguments for :class:`BleakClient`.
     """
 
-    address_type: Literal["public", "random"]
+    address_type: BLEAddressType | Literal["public", "random"]
     """
-    Can either be ``"public"`` or ``"random"``, depending on the required address
+    Can either be ``BLEAddressType.PUBLIC`` or ``BLEAddressType.RANDOM``, depending on the required address
     type needed to connect to your device.
     """
 

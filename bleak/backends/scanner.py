@@ -5,7 +5,7 @@ from collections.abc import Callable, Coroutine, Hashable
 from typing import Any, NamedTuple, Optional
 
 from bleak.backends import BleakBackend, get_default_backend
-from bleak.backends.device import BLEDevice
+from bleak.backends.device import BLEAddressType, BLEDevice
 from bleak.exc import BleakError
 
 # prevent tasks from being garbage collected
@@ -238,6 +238,7 @@ class BaseBleakScanner(abc.ABC):
         self,
         key: str,
         address: str,
+        address_type: BLEAddressType,
         name: Optional[str],
         details: Any,
         adv: AdvertisementData,
@@ -261,7 +262,7 @@ class BaseBleakScanner(abc.ABC):
 
             device.name = name
         except KeyError:
-            device = BLEDevice(address, name, details)
+            device = BLEDevice(address, name, details, address_type)
 
         self.seen_devices[key] = (device, adv)
 
