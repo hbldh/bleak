@@ -28,8 +28,14 @@ from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 from bleak.backends.bluezdbus.manager import BlueZManager
 from bleak.exc import BleakError
 
-ADAPTER_PATH = "/org/bluez/hci0"
-DEVICE_PATH = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"
+from .conftest import (
+    ADAPTER_PATH,
+    DEVICE_PATH,
+    get_watcher_task,
+    noop_characteristic_value_changed,
+    reap_watcher_task,
+)
+
 SERVICE_PATH = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/service0001"
 SECOND_ADAPTER_PATH = "/org/bluez/hci1"
 SECOND_DEVICE_PATH = "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_00"
@@ -136,16 +142,6 @@ class FakeMessageBusFactory:
         return bus
 
 
-def noop_characteristic_value_changed(char_path: str, value: bytes) -> None:
-    pass
-
-
-def get_watcher_task(manager: BlueZManager) -> "asyncio.Task[None]":
-    task = manager._bus_watcher_task  # pyright: ignore[reportPrivateUsage]
-    assert task is not None
-    return task
-
-
 MakeManager = Callable[..., Awaitable[tuple[BlueZManager, FakeMessageBusFactory]]]
 
 
@@ -169,11 +165,7 @@ async def make_manager(
     yield _make
 
     for manager in managers:
-        task = manager._bus_watcher_task  # pyright: ignore[reportPrivateUsage]
-        if task is not None and not task.done():
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
+        await reap_watcher_task(manager)
 
 
 async def test_bus_death_resets_state_and_notifies_watchers(
@@ -343,10 +335,7 @@ async def test_global_manager_cleans_up_closed_loops(
     finally:
         instances.pop(asyncio.get_running_loop(), None)
         if manager is not None:
-            task = get_watcher_task(manager)
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
+            await reap_watcher_task(manager)
 
 
 async def test_parse_msg_connected_change_notifies_watchers(
