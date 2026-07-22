@@ -21,6 +21,8 @@ Changed
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed BlueZ backend not detecting loss of the D-Bus connection, which left clients reporting connected forever and disconnect callbacks never firing.
+* Fixed ``disconnect()`` raising ``EOFError`` and leaking the D-Bus connection in BlueZ backend when the message bus died.
 
 `3.0.2`_ (2026-05-02)
 =====================

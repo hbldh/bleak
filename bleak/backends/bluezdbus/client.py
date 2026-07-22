@@ -419,12 +419,45 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     async with async_timeout(10):
                         await self._disconnecting_event.wait()
+            except (EOFError, OSError) as e:
+                # The D-Bus connection is dead, so the "PropertiesChanged"
+                # signal will never arrive; clean up here so the client does
+                # not report connected forever.
+                logger.debug(
+                    "D-Bus connection lost while disconnecting (%s): %r",
+                    self._device_path,
+                    e,
+                )
+                self._is_connected = False
+                self._cleanup_all()
+                # Wake any concurrent disconnect() call waiting on the event.
+                self._disconnecting_event.set()
             finally:
                 self._disconnecting_event = None
 
-            self._bus.disconnect()
-            await self._bus.wait_for_disconnect()
-            self._bus = None
+            try:
+                self._bus.disconnect()
+                # On a bus that died abnormally, wait_for_disconnect()
+                # re-raises the original socket error.
+                await self._bus.wait_for_disconnect()
+            except (EOFError, OSError) as e:
+                # Expected when the bus is already dead
+                logger.debug(
+                    "error disconnecting from bus (%s): %r", self._device_path, e
+                )
+            except Exception as e:
+                # Deliberately not re-raised: wait_for_disconnect() replays
+                # whatever error killed the reader when the bus died, which
+                # can be any type and was already handled at that time, and
+                # a raise here would leave callers unable to release a dead
+                # connection.
+                logger.warning(
+                    "unexpected error disconnecting from bus (%s): %r",
+                    self._device_path,
+                    e,
+                )
+            finally:
+                self._bus = None
 
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
