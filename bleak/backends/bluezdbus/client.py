@@ -419,12 +419,25 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     async with async_timeout(10):
                         await self._disconnecting_event.wait()
+            except EOFError:
+                # BlueZ's "Disconnected" PropertiesChanged signal arrives on
+                # the shared manager D-Bus connection and can race with the
+                # reply to the "Disconnect" call above. If it wins,
+                # on_connected_changed() has already run _cleanup_all(),
+                # which closes this client's own D-Bus connection out from
+                # under the pending call, so dbus-fast reports that as an
+                # EOFError here instead of a normal method reply. If cleanup
+                # already ran (self._bus is None), the device is genuinely
+                # disconnected, so this is not a real failure.
+                if self._bus is not None:
+                    raise
             finally:
                 self._disconnecting_event = None
 
-            self._bus.disconnect()
-            await self._bus.wait_for_disconnect()
-            self._bus = None
+            if self._bus is not None:
+                self._bus.disconnect()
+                await self._bus.wait_for_disconnect()
+                self._bus = None
 
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
