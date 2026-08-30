@@ -21,6 +21,7 @@ Changed
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed ``BleakClient.disconnect()`` on the BlueZ backend raising ``EOFError`` when BlueZ's "Disconnected" signal (delivered on the shared manager D-Bus connection) races the reply to the client's own "Disconnect" call and closes the client's D-Bus connection first.
 
 `3.0.2`_ (2026-05-02)
 =====================
