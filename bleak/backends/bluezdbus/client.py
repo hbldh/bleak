@@ -420,24 +420,27 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     async with async_timeout(10):
                         await self._disconnecting_event.wait()
             except EOFError:
-                # BlueZ's "Disconnected" PropertiesChanged signal arrives on
-                # the shared manager D-Bus connection and can race with the
-                # reply to the "Disconnect" call above. If it wins,
-                # on_connected_changed() has already run _cleanup_all(),
-                # which closes this client's own D-Bus connection out from
-                # under the pending call, so dbus-fast reports that as an
-                # EOFError here instead of a normal method reply. If cleanup
-                # already ran (self._bus is None), the device is genuinely
-                # disconnected, so this is not a real failure.
-                if self._bus is not None:
+                # An EOFError here means that the client's D-Bus connection
+                # was closed while the "Disconnect" method call above was
+                # still pending. This can happen when BlueZ's "Disconnected"
+                # PropertiesChanged signal is received on the shared manager
+                # D-Bus connection and wins the race with the reply to the
+                # method call, in which case the device is already
+                # disconnected and this is not a real failure. If the
+                # connection is still open, then the EOFError is unexpected
+                # and is re-raised.
+                if self._bus.connected:
                     raise
             finally:
                 self._disconnecting_event = None
 
-            if self._bus is not None:
+            # The D-Bus connection may have already been closed by the race
+            # condition above, in which case there is nothing left to do.
+            if self._bus.connected:
                 self._bus.disconnect()
                 await self._bus.wait_for_disconnect()
-                self._bus = None
+
+            self._bus = None
 
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully

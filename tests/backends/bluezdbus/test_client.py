@@ -29,7 +29,7 @@ def make_connected_client() -> tuple[BleakClientBlueZDBus, Mock]:
     Returns the client and the mocked bus so that tests can make assertions
     about how the bus was used.
     """
-    bus = Mock(spec=MessageBus)
+    bus = Mock(spec=MessageBus, connected=True)
     bus.wait_for_disconnect = AsyncMock()
     client = BleakClientBlueZDBus("11:22:33:44:55:66", timeout=10.0, bluez={})
     client._bus = bus  # pyright: ignore[reportPrivateUsage]
@@ -39,22 +39,6 @@ def make_connected_client() -> tuple[BleakClientBlueZDBus, Mock]:
     return client, bus
 
 
-def simulate_disconnected_signal(client: BleakClientBlueZDBus, close_bus: bool) -> None:
-    """
-    Simulate receiving the BlueZ "Disconnected" signal.
-
-    This is what ``on_connected_changed()`` does, except that it optionally
-    also closes the client's own D-Bus connection, which is what happens
-    when the signal races a pending method call on that connection.
-    """
-    client._is_connected = False  # pyright: ignore[reportPrivateUsage]
-    client.services = None  # pyright: ignore[reportPrivateUsage]
-    if client._disconnecting_event is not None:  # pyright: ignore[reportPrivateUsage]
-        client._disconnecting_event.set()  # pyright: ignore[reportPrivateUsage]
-    if close_bus:
-        client._bus = None  # pyright: ignore[reportPrivateUsage]
-
-
 def method_return() -> Message:
     """Makes a valid reply to a "Disconnect" method call."""
     return Message(
@@ -62,6 +46,26 @@ def method_return() -> Message:
         serial=2,
         reply_serial=1,
     )
+
+
+def simulate_disconnected_signal(
+    client: BleakClientBlueZDBus, bus: Mock, close_bus: bool = False
+) -> None:
+    """
+    Simulate receiving the BlueZ "Disconnected" signal.
+
+    This does what the ``on_connected_changed()`` callback does, plus it can
+    also close the client's own D-Bus connection, which is what happens when
+    the signal races a pending method call on that connection.
+    """
+    client._is_connected = False  # pyright: ignore[reportPrivateUsage]
+    client.services = None  # pyright: ignore[reportPrivateUsage]
+    if client._disconnecting_event is not None:  # pyright: ignore[reportPrivateUsage]
+        client._disconnecting_event.set()  # pyright: ignore[reportPrivateUsage]
+    if close_bus:
+        # like the D-Bus connection being closed while a method call is
+        # still pending, dbus-fast then raises EOFError for that call
+        bus.connected = False
 
 
 async def test_disconnect_not_connected():
@@ -85,7 +89,7 @@ async def test_disconnect():
 
     async def call_side_effect(msg: Message) -> Message:
         reply = await orig_call(msg)
-        simulate_disconnected_signal(client, close_bus=False)
+        simulate_disconnected_signal(client, bus, close_bus=False)
         return reply
 
     bus.call = AsyncMock(side_effect=call_side_effect)
@@ -98,7 +102,22 @@ async def test_disconnect():
     assert client._bus is None  # pyright: ignore[reportPrivateUsage]
 
 
-async def test_disconnect_eoferror_when_disconnected():
+async def test_disconnect_already_disconnected():
+    """
+    Disconnecting a client whose device was already disconnected by the
+    peer only closes the client D-Bus connection.
+    """
+    client, bus = make_connected_client()
+    simulate_disconnected_signal(client, bus, close_bus=False)
+
+    await client.disconnect()
+
+    bus.call.assert_not_called()
+    bus.disconnect.assert_called_once()
+    bus.wait_for_disconnect.assert_awaited_once()
+
+
+async def test_disconnect_eoferror_when_bus_disconnected():
     """
     An ``EOFError`` from the "Disconnect" method call is treated as success
     if the client D-Bus connection was already closed.
@@ -116,7 +135,7 @@ async def test_disconnect_eoferror_when_disconnected():
         assert msg.member == "Disconnect"
         # the "Disconnected" signal arrives before the reply to this
         # pending method call and the connection is closed
-        simulate_disconnected_signal(client, close_bus=True)
+        simulate_disconnected_signal(client, bus, close_bus=True)
         raise EOFError
 
     bus.call = AsyncMock(side_effect=call_side_effect)
@@ -127,24 +146,10 @@ async def test_disconnect_eoferror_when_disconnected():
     bus.disconnect.assert_not_called()
     bus.wait_for_disconnect.assert_not_awaited()
     assert client.is_connected is False
+    assert client._bus is None  # pyright: ignore[reportPrivateUsage]
 
 
-async def test_disconnect_already_disconnected():
-    """
-    Disconnecting a client whose device was already disconnected by the
-    peer only closes the client D-Bus connection.
-    """
-    client, bus = make_connected_client()
-    simulate_disconnected_signal(client, close_bus=False)
-
-    await client.disconnect()
-
-    bus.call.assert_not_called()
-    bus.disconnect.assert_called_once()
-    bus.wait_for_disconnect.assert_awaited_once()
-
-
-async def test_disconnect_eoferror_when_not_disconnected():
+async def test_disconnect_eoferror_when_bus_connected():
     """An ``EOFError`` from an open connection is a real failure and is raised."""
     client, bus = make_connected_client()
     bus.call = AsyncMock(side_effect=EOFError)
