@@ -77,6 +77,32 @@ This is only possible via the macOS system settings. To create a nice user exper
 can catch the :class:`BleakBluetoothNotAvailableError` and guide the user to ``System Settings → Privacy & Security → 
 Bluetooth``.
 
+.. _cb-launchd:
+
+Running without a foreground application (launchd, daemons)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+macOS decides whether to show the Bluetooth permission prompt based on the
+process that is responsible for the request. A script started from a
+terminal is covered by the terminal application's permission. A process
+started by ``launchd`` (a LaunchAgent or LaunchDaemon), by cron, or by any
+other supervisor has no responsible application. The system cannot show a
+prompt in that case and Bluetooth access is denied outright: bleak raises
+:class:`BleakBluetoothNotAvailableError` with reason
+``BleakBluetoothNotAvailableReason.DENIED_BY_USER``, even though the same
+interpreter works fine when run from a terminal, and nothing appears in the
+*Bluetooth* privacy list because there was never an application to list.
+
+To give the system something it can grant, run the interpreter from a
+minimal application bundle. The bundle needs an ``Info.plist`` with a
+stable ``CFBundleIdentifier`` and the ``NSBluetoothAlwaysUsageDescription``
+key, and the executable must live inside ``Contents/MacOS``. An ad hoc
+signature is sufficient (``codesign --sign - --force --deep MyService.app``).
+Start the bundled executable from the LaunchAgent instead of the bare
+interpreter. The first launch in a logged-in session shows the normal prompt
+and the grant persists. Because the grant is tied to the code signature and
+path, rebuilding or moving the bundle may prompt again.
+
 .. _cb-notification-discriminator:
 
 Notifications
