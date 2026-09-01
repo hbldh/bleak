@@ -347,19 +347,20 @@ class CentralManagerDelegate:
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
-        uuid_string = peripheral.identifier().UUIDString()
+        with objc.autorelease_pool():  # type: ignore[attr-defined]
+            uuid_string = peripheral.identifier().UUIDString()
 
-        for callback in self.callbacks.values():
-            callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
+            for callback in self.callbacks.values():
+                callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
 
-        logger.debug(
-            "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
-            uuid_string,
-            peripheral.name(),
-            RSSI,
-            advertisementData.keys(),
-            central,
-        )
+            logger.debug(
+                "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
+                uuid_string,
+                peripheral.name(),
+                RSSI,
+                advertisementData.keys(),
+                central,
+            )
 
     def did_connect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral

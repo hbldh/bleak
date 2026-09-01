@@ -11,7 +11,7 @@ from warnings import warn
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSNumber
+from Foundation import NSBundle, NSData, NSNumber
 
 from bleak._compat import override
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
@@ -32,6 +32,11 @@ from bleak.backends.scanner import (
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
+
+
+def _nsdata_to_bytes(data: NSData) -> bytes:
+    """Copy data through the buffer protocol without retaining the exporter."""
+    return memoryview(data).tobytes()
 
 
 def __getattr__(name: str):
@@ -121,7 +126,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             # Process service data
             service_data = {
-                cb_uuid_to_str(k): bytes(v)
+                cb_uuid_to_str(k): _nsdata_to_bytes(v)
                 for k, v in adv_data.get("kCBAdvDataServiceData", {}).items()
             }
 
@@ -129,10 +134,13 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             manufacturer_binary_data = adv_data.get("kCBAdvDataManufacturerData")
             manufacturer_data: dict[int, bytes] = {}
             if manufacturer_binary_data:
-                manufacturer_id = int.from_bytes(
-                    manufacturer_binary_data[0:2], byteorder="little"
+                manufacturer_binary_data_bytes = _nsdata_to_bytes(
+                    manufacturer_binary_data
                 )
-                manufacturer_value = bytes(manufacturer_binary_data[2:])
+                manufacturer_id = int.from_bytes(
+                    manufacturer_binary_data_bytes[0:2], byteorder="little"
+                )
+                manufacturer_value = manufacturer_binary_data_bytes[2:]
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
             advertisement_data = AdvertisementData(
