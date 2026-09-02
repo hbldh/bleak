@@ -347,6 +347,9 @@ class CentralManagerDelegate:
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
+        # This method may run on a long-running asyncio thread where temporary
+        # Objective-C objects would otherwise accumulate. Use an autorelease pool per
+        # advertisement to release them promptly.
         with objc.autorelease_pool():
             uuid_string = peripheral.identifier().UUIDString()
 
