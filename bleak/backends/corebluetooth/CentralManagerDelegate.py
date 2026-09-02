@@ -347,7 +347,7 @@ class CentralManagerDelegate:
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
-        with objc.autorelease_pool():  # type: ignore[attr-defined]
+        with objc.autorelease_pool():
             uuid_string = peripheral.identifier().UUIDString()
 
             for callback in self.callbacks.values():

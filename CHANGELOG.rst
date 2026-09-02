@@ -21,8 +21,7 @@ Changed
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
-* Fixed native object accumulation while scanning with CoreBluetooth on a
-  long-running asyncio worker thread.
+* Fixed memory leak when scanning in CoreBluetooth backend.
 
 `3.0.2`_ (2026-05-02)
 =====================

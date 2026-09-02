@@ -34,6 +34,9 @@ from bleak.exc import BleakError
 logger = logging.getLogger(__name__)
 
 
+# NSData.bytes() leaks one exporter reference in supported PyObjC versions.
+# Remove this workaround once the minimum PyObjC version includes the fix:
+# https://github.com/ronaldoussoren/pyobjc/pull/689
 def _nsdata_to_bytes(data: NSData) -> bytes:
     """Copy data through the buffer protocol without retaining the exporter."""
     return memoryview(data).tobytes()

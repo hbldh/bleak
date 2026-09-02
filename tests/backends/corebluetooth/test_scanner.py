@@ -1,4 +1,9 @@
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.platform != "darwin":
+        assert False, "This backend is only available on macOS"
 
 import pytest
 
@@ -15,7 +20,7 @@ from bleak.backends.corebluetooth.scanner import (
 
 
 def test_nsdata_to_bytes_does_not_retain_data():
-    data = NSData(b"test")  # pyright: ignore[reportAbstractUsage, reportCallIssue]
+    data = NSData.alloc().initWithBytes_length_(b"test", 4)
     initial_refcount = sys.getrefcount(data)
 
     for _ in range(10):
