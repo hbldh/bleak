@@ -21,6 +21,7 @@ Changed
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed crash in WinRT backend if a WinRT event handler is called after the asyncio event loop is closed.
 
 `3.0.2`_ (2026-05-02)
 =====================

@@ -61,6 +61,7 @@ from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.args.winrt import WinRTClientArgs as _WinRTClientArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
+from bleak.backends._utils import try_call_soon_threadsafe
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
@@ -249,7 +250,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         def services_changed_handler(sender: BluetoothLEDevice, args: Object) -> None:
             logger.debug("%s: services changed", self.address)
-            loop.call_soon_threadsafe(handle_services_changed)
+            try_call_soon_threadsafe(loop, handle_services_changed)
 
         self._services_changed_token = self._requester.add_gatt_services_changed(
             services_changed_handler
@@ -315,7 +316,7 @@ class BleakClientWinRT(BaseBleakClient):
                 args.error,
                 args.status,
             )
-            loop.call_soon_threadsafe(handle_session_status_changed, args)
+            try_call_soon_threadsafe(loop, handle_session_status_changed, args)
 
         def max_pdu_size_changed_handler(sender: GattSession, args: Object) -> None:
             try:
@@ -1025,7 +1026,7 @@ class BleakClientWinRT(BaseBleakClient):
             sender: GattCharacteristic, args: GattValueChangedEventArgs
         ) -> None:
             value = bytearray(args.characteristic_value)
-            loop.call_soon_threadsafe(callback, value)
+            try_call_soon_threadsafe(loop, callback, value)
 
         event_handler_token = winrt_char.add_value_changed(handle_value_changed)
         self._notification_callbacks[characteristic.handle] = event_handler_token
@@ -1107,7 +1108,7 @@ class FutureLike(Generic[T]):
                 # have to get result on this thread, otherwise it may not return correct value
                 self._result = op.get_results()
 
-            self._loop.call_soon_threadsafe(call_callbacks)
+            try_call_soon_threadsafe(self._loop, call_callbacks)
 
         op.completed = call_callbacks_threadsafe
 
