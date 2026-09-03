@@ -21,6 +21,7 @@ Changed
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed ``BleakScanner.stop()`` raising ``BleakDBusError`` with ``org.bluez.Error.InProgress`` in BlueZ backend when the kernel had already stopped scanning. Fixes #2021.
 
 `3.0.2`_ (2026-05-02)
 =====================

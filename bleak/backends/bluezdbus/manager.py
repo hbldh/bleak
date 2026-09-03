@@ -502,7 +502,17 @@ class BlueZManager:
                         try:
                             assert_reply(reply)
                         except BleakDBusError as ex:
-                            if ex.dbus_error != defs.BLUEZ_ERROR_NOT_READY:
+                            # InProgress here means the kernel already stopped
+                            # scanning (e.g. its LE scan timeout) and rejected
+                            # the redundant stop; BlueZ has already removed our
+                            # discovery session by the time it replies, so
+                            # nothing is left to stop. See
+                            # https://github.com/hbldh/bleak/issues/2021 and
+                            # https://github.com/bluez/bluez/issues/807.
+                            if ex.dbus_error not in (
+                                defs.BLUEZ_ERROR_NOT_READY,
+                                defs.BLUEZ_ERROR_IN_PROGRESS,
+                            ):
                                 raise
                         else:
                             # remove the filters
