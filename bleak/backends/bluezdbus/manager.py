@@ -506,9 +506,12 @@ class BlueZManager:
                             # because it is not actively scanning at that
                             # moment (already stopped, or mid-restart); BlueZ
                             # has already removed our discovery session by the
-                            # time it replies, so nothing is left to stop. See
-                            # https://github.com/hbldh/bleak/issues/2021 and
-                            # https://github.com/bluez/bluez/issues/807.
+                            # time it replies, so nothing is left to stop:
+                            # bluetoothd's stop_discovery_complete() calls
+                            # discovery_remove() before checking the status,
+                            # then relays MGMT_STATUS_REJECTED as InProgress.
+                            # See https://github.com/hbldh/bleak/issues/2021
+                            # and https://github.com/bluez/bluez/issues/807.
                             if ex.dbus_error not in (
                                 defs.BLUEZ_ERROR_NOT_READY,
                                 defs.BLUEZ_ERROR_IN_PROGRESS,
