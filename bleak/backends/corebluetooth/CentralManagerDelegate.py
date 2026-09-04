@@ -347,19 +347,23 @@ class CentralManagerDelegate:
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
-        uuid_string = peripheral.identifier().UUIDString()
+        # This method may run on a long-running asyncio thread where temporary
+        # Objective-C objects would otherwise accumulate. Use an autorelease pool per
+        # advertisement to release them promptly.
+        with objc.autorelease_pool():
+            uuid_string = peripheral.identifier().UUIDString()
 
-        for callback in self.callbacks.values():
-            callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
+            for callback in self.callbacks.values():
+                callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
 
-        logger.debug(
-            "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
-            uuid_string,
-            peripheral.name(),
-            RSSI,
-            advertisementData.keys(),
-            central,
-        )
+            logger.debug(
+                "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
+                uuid_string,
+                peripheral.name(),
+                RSSI,
+                advertisementData.keys(),
+                central,
+            )
 
     def did_connect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral
