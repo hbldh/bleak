@@ -4,8 +4,9 @@ Base class for backend clients.
 """
 import abc
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
+from bleak.agent import PairingCallbacks
 from bleak.args import SizedBuffer
 from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -30,9 +31,21 @@ class BaseBleakClient(abc.ABC):
         disconnected_callback (callable): Callback that will be scheduled in the
             event loop when the client is disconnected. The callable must take one
             argument, which will be this client object.
+        pairing_callbacks (PairingCallbacks):
+            Optional callbacks otherwise provided as ``callbacks`` parameter to the
+            :meth:`pair` method. If provided here, device will be implicitly paired
+            during connection establishment.
     """
 
-    def __init__(self, address_or_ble_device: Union[BLEDevice, str], **kwargs: Any):
+    def __init__(
+        self,
+        address_or_ble_device: BLEDevice | str,
+        *,
+        timeout: float,
+        disconnected_callback: Callable[[], None] | None = None,
+        pairing_callbacks: Optional[PairingCallbacks] = None,
+        **kwargs: Any,
+    ) -> None:
         if isinstance(address_or_ble_device, BLEDevice):
             self.address = address_or_ble_device.address
         else:
@@ -40,10 +53,9 @@ class BaseBleakClient(abc.ABC):
 
         self.services: Optional[BleakGATTServiceCollection] = None
 
-        self._timeout = kwargs["timeout"]
-        self._disconnected_callback: Optional[Callable[[], None]] = kwargs.get(
-            "disconnected_callback"
-        )
+        self._timeout = timeout
+        self._disconnected_callback = disconnected_callback
+        self._pairing_callbacks = pairing_callbacks
 
     # NB: this is not marked as @abc.abstractmethod because that would break
     # 3rd-party backends. We might change this in the future to make it required.
