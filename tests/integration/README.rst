@@ -56,9 +56,12 @@ peripheral device and replaces the nRF Dongle from the previous chapter.
 
 This way you can run integration tests without any physical hardware, just using virtual
 Bluetooth controllers. To use this setup you have to use the additional command line option
-``--bleak-bluez-vhci`` to run the tests::
+``--bleak-vhci`` to run the tests::
 
-    $ uv run pytest --bleak-bluez-vhci
+    $ uv run pytest --bleak-vhci
+
+``--bleak-bluez-vhci`` is a deprecated alias for the same option, from when BlueZ was the
+only stack that could be driven this way.
 
 You may need to load the kernel module first::
 
