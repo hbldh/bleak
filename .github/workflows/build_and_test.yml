@@ -82,7 +82,7 @@ jobs:
             export FORCE_COLOR=1
             export CI=true
             export GITHUB_ACTIONS=true
-            uv run poe test-py${{ matrix.python-version }} --bleak-bluez-vhci --cov-report=xml --cov-report=html:../.htmlcov --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
+            uv run poe test-py${{ matrix.python-version }} --bleak-vhci --cov-report=xml --cov-report=html:../.htmlcov --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
           '
 
       - name: Upload coverage reports to Codecov
