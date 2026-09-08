@@ -82,7 +82,7 @@ jobs:
             export FORCE_COLOR=1
             export CI=true
             export GITHUB_ACTIONS=true
-            uv run poe test-py${{ matrix.python-version }} --bleak-bluez-vhci --cov-report=xml --cov-report=html:../.htmlcov --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
+            uv run poe test-py${{ matrix.python-version }} --bleak-vhci --cov-report=xml --cov-report=html:../.htmlcov --junitxml=junit.xml -o junit_family=legacy -o cache_dir=../.pytest_cache
           '
 
       - name: Upload coverage reports to Codecov
@@ -98,4 +98,59 @@ jobs:
         with:
           report_type: test_results
           flags: bluez-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # The same integration tests against the Windows Bluetooth stack, using the
+  # winvhci driver in place of BlueZ's vhci. No VM: GitHub's Windows runner
+  # images enable test signing at image build time, so the driver installs
+  # directly on the runner.
+  integration_tests_winvhci:
+    name: "Windows integration tests"
+    # Must be a Windows CLIENT image, and ARM64 is the only one GitHub offers.
+    # Windows Server is not supported: Microsoft does not document Bluetooth
+    # as supported there, and windows-2025 still ships bthport.sys and
+    # bthenum.sys at the RTM 10.0.26100.1 while the rest of the OS is serviced
+    # to .33296. A GATT discovery failure reproduced 19 times in 448 tests
+    # there and 0 times in 448 here. The vs2026 label is pinned because the
+    # plain windows-11-arm label is being migrated to this image anyway.
+    runs-on: "windows-11-vs2026-arm"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["310", "311", "312", "313", "314"]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs the driver but deliberately not a radio: the radio's lifetime
+      # is a device handle's lifetime, so winvhci_controller.py owns it.
+      - name: Install the winvhci driver
+        uses: dlech/windows-vhci-driver/actions/install@v1.2.1
+        with:
+          # Keep equal to the ref above. A mismatch surfaces as
+          # ERROR_INVALID_FUNCTION from an IOCTL, not as a version complaint.
+          version: v1.2.1
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+
+      - name: Run pytest
+        env:
+          FORCE_COLOR: 1
+        run: uv run poe test-py${{ matrix.python-version }} --bleak-vhci --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: coverage
+          flags: winvhci-integration-py${{ matrix.python-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          report_type: test_results
+          flags: winvhci-integration-py${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
