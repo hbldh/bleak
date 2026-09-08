@@ -57,6 +57,9 @@ test = [
     "pytest-asyncio>=1.2.0,<2.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "bumble==0.0.226",
+    # Client for the winvhci virtual Bluetooth controller, used by --bleak-vhci
+    # on Windows. From git because it is not published on PyPI yet.
+    "winvhci @ git+https://github.com/dlech/windows-vhci-driver@v1.2.1#subdirectory=python ; platform_system=='Windows'",
 ]
 dev = [
     "poethepoet>=0.45.0",
@@ -68,6 +71,28 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.10.9,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+# Bumble's USB and Android transports pull in packages with no win_arm64 wheel,
+# which made the test group unresolvable there. None of them is reachable from
+# these tests, which talk to bumble over BlueZ's vhci or winvhci. An
+# unsatisfiable marker is how uv expresses "drop this requirement".
+override-dependencies = [
+    "grpcio ; sys_platform == 'no-such-platform'",
+    "libusb-package ; sys_platform == 'no-such-platform'",
+    "libusb1 ; sys_platform == 'no-such-platform'",
+    "pyusb ; sys_platform == 'no-such-platform'",
+]
+
+# cryptography ships win_arm64 wheels in 46.0.0-46.0.3 and then stops, so
+# anything newer would need a Rust toolchain to build. The marker is all of
+# Windows rather than just ARM64 because platform_machine cannot distinguish
+# the two: since 3.12, platform.machine() on Windows reports the machine, not
+# the process, so an emulated x64 interpreter also says 'ARM64' while its
+# wheel tag is win_amd64.
+constraint-dependencies = [
+    "cryptography==46.0.3 ; sys_platform == 'win32'",
+]
 
 [tool.uv.build-backend]
 module-name = "bleak"

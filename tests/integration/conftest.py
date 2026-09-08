@@ -46,13 +46,24 @@ async def create_hci_transport(
             "(or --bleak-bluez-vhci) together"
         )
     elif vhci_enabled:
-        if sys.platform != "linux":
-            pytest.skip(f"--bleak-vhci is not supported on {sys.platform}")
-            return  # skip raises an exception, but mypy can't infer that
-        from tests.integration.bluez_controller import open_transport_with_bluez_vhci
+        # Imported inside the branch: each implementation depends on packages
+        # that only install on its own platform. Each branch does its own
+        # `async with` because mypy narrows sys.platform, so a shared alias is
+        # never bound on a third platform.
+        if sys.platform == "linux":
+            from tests.integration.bluez_controller import (
+                open_transport_with_bluez_vhci,
+            )
 
-        async with open_transport_with_bluez_vhci() as hci_transport:
-            yield hci_transport
+            async with open_transport_with_bluez_vhci() as hci_transport:
+                yield hci_transport
+        elif sys.platform == "win32":
+            from tests.integration.winvhci_controller import open_transport_with_winvhci
+
+            async with open_transport_with_winvhci() as hci_transport:
+                yield hci_transport
+        else:
+            pytest.skip(f"--bleak-vhci is not supported on {sys.platform}")
     elif hci_transport_name is not None:
         async with await open_transport(hci_transport_name) as hci_transport:
             yield hci_transport
@@ -114,13 +125,32 @@ async def configure_and_power_on_bumble_peripheral(
     await bumble_peripheral.start_advertising()
 
 
+#: How many times :func:`find_ble_device` restarts the scan before giving up.
+#:
+#: One scan is not evidence of absence: Windows can answer out of a cache that
+#: a background scanner fills on its own schedule, returning nothing while the
+#: peer is advertising. Restarting is not the same as scanning for longer - the
+#: point is to make the backend begin a fresh scan.
+FIND_DEVICE_ATTEMPTS = 3
+
+
 async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
     """Find the BLE device corresponding to the bumble peripheral."""
-    device = await BleakScanner.find_device_by_name(bumble_peripheral.name)
-    if device is None:
-        raise RuntimeError("failed to discover device, is Bumble working?")
+    for attempt in range(1, FIND_DEVICE_ATTEMPTS + 1):
+        device = await BleakScanner.find_device_by_name(bumble_peripheral.name)
+        if device is not None:
+            return device
 
-    return device
+        if attempt < FIND_DEVICE_ATTEMPTS:
+            print(
+                f"scan {attempt}/{FIND_DEVICE_ATTEMPTS} did not find "
+                f"{bumble_peripheral.name!r}; restarting the scan",
+                flush=True,
+            )
+
+    raise RuntimeError(
+        f"failed to discover device in {FIND_DEVICE_ATTEMPTS} scans, is Bumble working?"
+    )
 
 
 _P = ParamSpec("_P")
