@@ -44,10 +44,11 @@ And the moniker will look like this::
 Virtual Bluetooth controllers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-An alternative to using physical hardware on Linux with BlueZ is to use virtual Bluetooth
-controllers created by ``bumble`` and connected to your OS via the VHCI interface. This
-virtual controller replaces the builtin Bluetooth adapter of your PC/laptop from the
-previous chapter. This Bluetooth controller is then controlled by ``bleak``.
+An alternative to using physical hardware is to use virtual Bluetooth controllers created
+by ``bumble`` and connected to your OS via a VHCI interface: ``/dev/vhci`` on Linux with
+BlueZ, the ``winvhci`` driver on Windows. This virtual controller replaces the builtin
+Bluetooth adapter of your PC/laptop from the previous chapter. This Bluetooth controller
+is then controlled by ``bleak``.
 
 Then a second virtual Bluetooth controller can be created with ``bumble`` that connects
 to the first virtual controller through a so called `LocalLink`. This is like a virtual
@@ -62,6 +63,9 @@ Bluetooth controllers. To use this setup you have to use the additional command 
 
 ``--bleak-bluez-vhci`` is a deprecated alias for the same option, from when BlueZ was the
 only stack that could be driven this way.
+
+Linux (BlueZ)
+^^^^^^^^^^^^^
 
 You may need to load the kernel module first::
 
@@ -81,3 +85,28 @@ If you weren't already in the ``bluetooth`` group, then you need to reload your
 group membership. Either log out and log back in, or run::
 
     $ newgrp bluetooth  # warning, this will start a new shell
+
+Windows
+^^^^^^^
+
+Windows has no ``/dev/vhci``, so the virtual controller is provided by the `winvhci
+<https://github.com/dlech/windows-vhci-driver>`_ driver: a kernel driver that presents a
+virtual Bluetooth radio which the in-box Windows Bluetooth stack binds to and treats as
+real hardware. Install the release matching the ``winvhci`` requirement in
+``pyproject.toml``, then run its installer from an elevated prompt::
+
+    PS> .\install-winvhci.ps1
+
+The driver is test-signed, so the machine needs test signing on, Secure Boot off and
+memory integrity off. The installer names any missing prerequisite and refuses rather
+than half-installing, and ``-Uninstall`` removes everything it added. Because those
+settings weaken the machine, run the tests in a VM or on a dedicated test machine rather
+than on a daily driver.
+
+Nothing has to be started by hand: the radio's lifetime is the lifetime of an open handle
+to the driver, so the test fixture creates it and Windows removes it again when the
+fixture closes.
+
+Bleak uses whichever adapter WinRT reports as the default, which is not necessarily the
+virtual one. If a real radio wins that election the fixture fails with an error naming
+both addresses, so disable any physical Bluetooth adapter before running the tests.
