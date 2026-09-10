@@ -149,6 +149,32 @@ with similar problems on Raspberry Pi and other devices.
 If you need Wi-Fi, you can possibly work around the issue by using a USB
 Bluetooth adapter instead.
 
+"StopDiscovery returned InProgress" in the log, or scans that see nothing
+=========================================================================
+
+On Linux the kernel ends an LE scan on its own after about 10 seconds and
+BlueZ restarts it a few seconds later for as long as a scanner is active. If
+Bleak stops a scan in the moment between those two, BlueZ rejects the stop
+with ``InProgress`` even though it has already ended Bleak's discovery
+session. Bleak treats this as a completed stop and logs it at INFO level.
+Seen once, it is harmless: the scan that follows may return no devices,
+because BlueZ still believes it is discovering and does not start the kernel
+scan, and the scan after that works normally.
+
+``bluetoothd`` can also lose track of the kernel's scan state for good (see
+`bluez/bluez#807 <https://github.com/bluez/bluez/issues/807>`_). Then every
+stop on that adapter is rejected and no scan on it reaches the kernel until
+the adapter is reset. Bleak detects this as two ``InProgress`` rejections in
+a row with no successful stop between them: the second one is logged at
+WARNING level and ``BleakScanner.stop()`` raises ``BleakDBusError`` so the
+caller knows the adapter is not scanning. Power cycle or re-plug the adapter,
+or restart ``bluetoothd``. The ``Discovering`` property of the adapter is not
+a reliable indicator here, since BlueZ leaves it set to ``true`` in both the
+harmless and the stuck case. The detection only sees stops made by the
+current process while it is the only scanner on the adapter; another active
+scanner on the same adapter makes BlueZ answer the stop without asking the
+kernel, which counts as a successful stop.
+
 ----------
 macOS Bugs
 ----------

@@ -196,6 +196,9 @@ class BlueZManager:
             defaultdict(list)
         )
         self._device_removed_callbacks: list[DeviceRemovedCallbackAndState] = []
+        # adapters whose most recent StopDiscovery was rejected with InProgress
+        # and has not been followed by a clean stop since; see active_scan()
+        self._stop_rejected: set[str] = set()
         self._device_watchers: dict[str, set[DeviceWatcher]] = {}
         self._condition_callbacks: dict[str, set[DeviceConditionCallback]] = {}
         self._services_cache: dict[str, BleakGATTServiceCollection] = {}
@@ -502,9 +505,51 @@ class BlueZManager:
                         try:
                             assert_reply(reply)
                         except BleakDBusError as ex:
-                            if ex.dbus_error != defs.BLUEZ_ERROR_NOT_READY:
+                            # InProgress here is the kernel rejecting the stop
+                            # because it is not actively scanning at that
+                            # moment (already stopped, or mid-restart); BlueZ
+                            # has already removed our discovery session by the
+                            # time it replies, so nothing is left to stop:
+                            # bluetoothd's stop_discovery_complete() calls
+                            # discovery_remove() before checking the status,
+                            # then relays MGMT_STATUS_REJECTED as InProgress.
+                            # See https://github.com/hbldh/bleak/issues/2021
+                            # and https://github.com/bluez/bluez/issues/807.
+                            if ex.dbus_error not in (
+                                defs.BLUEZ_ERROR_NOT_READY,
+                                defs.BLUEZ_ERROR_IN_PROGRESS,
+                            ):
                                 raise
+                            if ex.dbus_error == defs.BLUEZ_ERROR_IN_PROGRESS:
+                                # A one-off rejection is a harmless race with
+                                # the kernel's own scan timeout, and the next
+                                # stop on the adapter succeeds. Two in a row
+                                # with no clean stop between them cannot come
+                                # from that race: bluetoothd has lost track of
+                                # the kernel's scan state and no scan on this
+                                # adapter will reach the kernel until it is
+                                # reset. Surface that one as the error it is;
+                                # see the Linux section of docs/troubleshooting.
+                                if adapter_path in self._stop_rejected:
+                                    logger.warning(
+                                        "StopDiscovery on %s returned InProgress "
+                                        "twice in a row; bluetoothd's discovery "
+                                        "state appears stuck and scans on this "
+                                        "adapter will see nothing until it is "
+                                        "reset (power cycle or re-plug the "
+                                        "adapter, or restart bluetoothd)",
+                                        adapter_path,
+                                    )
+                                    raise
+                                self._stop_rejected.add(adapter_path)
+                                logger.info(
+                                    "StopDiscovery on %s returned InProgress; "
+                                    "BlueZ had already ended our discovery "
+                                    "session, so the scan is stopped",
+                                    adapter_path,
+                                )
                         else:
+                            self._stop_rejected.discard(adapter_path)
                             # remove the filters
                             reply = await self._bus.call(
                                 Message(
