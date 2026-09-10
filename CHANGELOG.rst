@@ -21,7 +21,7 @@ Changed
 Fixed
 -----
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
-* Fixed ``BleakScanner.stop()`` raising ``BleakDBusError`` with ``org.bluez.Error.InProgress`` in BlueZ backend when the kernel had already stopped scanning. Fixes #2021.
+* Fixed ``BleakScanner.stop()`` raising ``BleakDBusError`` with ``org.bluez.Error.InProgress`` in BlueZ backend when the kernel had already stopped scanning. A single rejection is now logged and tolerated; two in a row on the same adapter still raise, since that means bluetoothd's discovery state is stuck. Fixes #2021.
 
 `3.0.2`_ (2026-05-02)
 =====================
