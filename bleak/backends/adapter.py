@@ -1,3 +1,4 @@
+from collections.abc import Hashable
 from typing import Any
 
 from bleak._compat import Self
@@ -30,6 +31,18 @@ class BaseBleakAdapter:
             NotImplementedError: if the current backend does not support this.
         """
         raise NotImplementedError("get is not implemented for this backend")
+
+    @classmethod
+    def cache_key(cls, **kwargs: Any) -> Hashable:
+        """
+        Return a value used to differentiate cached :class:`BleakAdapter`
+        instances for this backend.
+
+        Subclasses override this to differentiate by backend-specific args
+        (e.g. the BlueZ adapter name). The default returns ``None``, which
+        means a single cache entry per (loop, backend type).
+        """
+        return None
 
     async def get_connected_devices(
         self, service_uuids: frozenset[str]
