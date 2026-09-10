@@ -71,13 +71,23 @@ def make_manager(stop_errors: "list[str | None]") -> "tuple[BlueZManager, FakeBu
     manager = BlueZManager()
     bus = FakeBus(stop_errors)
     manager._bus = bus  # type: ignore[assignment]
-    manager._properties[ADAPTER_PATH] = {defs.ADAPTER_INTERFACE: {}}
+    properties = manager._properties  # pyright: ignore[reportPrivateUsage]
+    properties[ADAPTER_PATH] = {defs.ADAPTER_INTERFACE: {}}
     return manager, bus
 
 
 async def _scan_and_stop(manager: BlueZManager) -> None:
     stop = await manager.active_scan(ADAPTER_PATH, NO_FILTERS, _ADV, _REMOVED)
     await stop()
+
+
+def _assert_callbacks_removed(manager: BlueZManager) -> None:
+    """stop() removes the session's callbacks before it talks to BlueZ, so
+    they must be gone whether or not the StopDiscovery call succeeded."""
+    adv = manager._advertisement_callbacks  # pyright: ignore[reportPrivateUsage]
+    removed = manager._device_removed_callbacks  # pyright: ignore[reportPrivateUsage]
+    assert adv[ADAPTER_PATH] == []
+    assert removed == []
 
 
 def _records(caplog: pytest.LogCaptureFixture, level: int) -> "list[str]":
@@ -97,8 +107,7 @@ async def test_stop_tolerates_in_progress(caplog: pytest.LogCaptureFixture) -> N
         await _scan_and_stop(manager)
 
     assert bus.members == ["SetDiscoveryFilter", "StartDiscovery", "StopDiscovery"]
-    assert manager._advertisement_callbacks[ADAPTER_PATH] == []
-    assert manager._device_removed_callbacks == []
+    _assert_callbacks_removed(manager)
     assert any(
         "InProgress" in m and ADAPTER_PATH in m for m in _records(caplog, logging.INFO)
     )
@@ -125,9 +134,7 @@ async def test_second_consecutive_in_progress_raises(
 
     assert info.value.dbus_error == defs.BLUEZ_ERROR_IN_PROGRESS
     assert bus.members.count("StopDiscovery") == 2
-    # the callbacks were still removed before the failing stop
-    assert manager._advertisement_callbacks[ADAPTER_PATH] == []
-    assert manager._device_removed_callbacks == []
+    _assert_callbacks_removed(manager)
     warnings = _records(caplog, logging.WARNING)
     assert len(warnings) == 1
     assert "twice in a row" in warnings[0] and ADAPTER_PATH in warnings[0]
