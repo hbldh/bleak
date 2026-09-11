@@ -7,8 +7,9 @@ if TYPE_CHECKING:
 
 from uuid import UUID
 
-from winrt.system import unbox_string
+from winrt.system import unbox_string, unbox_uint8
 from winrt.windows.devices.bluetooth import (
+    BluetoothAddressType,
     BluetoothCacheMode,
     BluetoothConnectionStatus,
     BluetoothDeviceId,
@@ -19,7 +20,7 @@ from winrt.windows.devices.enumeration import DeviceInformation
 
 from bleak._compat import Self, override
 from bleak.backends.adapter import BaseBleakAdapter
-from bleak.backends.device import BLEDevice
+from bleak.backends.device import BLEAddressType, BLEDevice
 from bleak.backends.winrt.util import assert_mta
 from bleak.uuids import normalize_uuid_16
 
@@ -44,7 +45,11 @@ class BleakAdapterWinRT(BaseBleakAdapter):
         )
         connected_devices = (
             await DeviceInformation.find_all_async_aqs_filter_and_additional_properties(
-                selector, ["System.Devices.Aep.DeviceAddress"]
+                selector,
+                [
+                    "System.Devices.Aep.DeviceAddress",
+                    "System.Devices.Aep.Bluetooth.Le.AddressType",
+                ],
             )
         )
 
@@ -82,6 +87,22 @@ class BleakAdapterWinRT(BaseBleakAdapter):
                 device_info.properties["System.Devices.Aep.DeviceAddress"]
             ).upper()
 
-            devices.append(BLEDevice(address, device_info.name, device_info))
+            address_type: BLEAddressType
+            if address_type_prop := device_info.properties.get(
+                "System.Devices.Aep.Bluetooth.Le.AddressType"
+            ):
+                match unbox_uint8(address_type_prop):
+                    case BluetoothAddressType.PUBLIC.value:
+                        address_type = BLEAddressType.PUBLIC
+                    case BluetoothAddressType.RANDOM.value:
+                        address_type = BLEAddressType.RANDOM
+                    case _:
+                        address_type = BLEAddressType.UNKNOWN
+            else:
+                address_type = BLEAddressType.UNKNOWN
+
+            devices.append(
+                BLEDevice(address, device_info.name, device_info, address_type)
+            )
 
         return devices

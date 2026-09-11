@@ -11,7 +11,7 @@ from bleak._compat import Self, override
 from bleak.args.bluez import BlueZAdapterArgs
 from bleak.backends.adapter import BaseBleakAdapter
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
-from bleak.backends.device import BLEDevice
+from bleak.backends.device import BLEAddressType, BLEDevice
 
 
 class BleakAdapterBlueZDBus(BaseBleakAdapter):
@@ -41,6 +41,7 @@ class BleakAdapterBlueZDBus(BaseBleakAdapter):
             self._adapter_path, service_uuids
         ):
             address = props["Address"]
+            address_type = BLEAddressType(props["AddressType"])
             # BlueZ generates a name based on the address if no name is available.
             # To match other backends, we replace this with None.
             name = (
@@ -48,6 +49,8 @@ class BleakAdapterBlueZDBus(BaseBleakAdapter):
                 if props["Alias"] == props["Address"].replace(":", "-")
                 else props["Alias"]
             )
-            devices.append(BLEDevice(address, name, {"path": path, "props": props}))
+            devices.append(
+                BLEDevice(address, name, {"path": path, "props": props}, address_type)
+            )
 
         return devices

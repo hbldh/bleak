@@ -24,6 +24,7 @@ from bleak.backends.corebluetooth.utils import (
     to_optional_int,
     to_optional_str,
 )
+from bleak.backends.device import BLEAddressType
 from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
@@ -164,6 +165,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             device = self.create_or_update_device(
                 peripheral.identifier().UUIDString(),
                 address,
+                BLEAddressType.UNKNOWN,  # macOS does not provide address type information
                 peripheral.name(),
                 (peripheral, self._manager),
                 advertisement_data,

@@ -64,7 +64,7 @@ from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
-from bleak.backends.device import BLEDevice
+from bleak.backends.device import BLEAddressType, BLEDevice
 from bleak.backends.service import BleakGATTService, BleakGATTServiceCollection
 from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolError
@@ -173,7 +173,13 @@ class BleakClientWinRT(BaseBleakClient):
 
         # os-specific options
         self._use_cached_services = winrt.get("use_cached_services")
-        self._address_type = winrt.get("address_type")
+
+        if address_type := winrt.get("address_type"):
+            self._address_type = BLEAddressType(address_type)
+        elif isinstance(address_or_ble_device, BLEDevice):
+            self._address_type = address_or_ble_device.address_type
+        else:
+            self._address_type = BLEAddressType.UNKNOWN
         self._retry_on_services_changed = False
 
         self._services_changed_token: Optional[EventRegistrationToken] = None
@@ -186,12 +192,12 @@ class BleakClientWinRT(BaseBleakClient):
     # Connectivity methods
 
     async def _create_requester(self, bluetooth_address: int) -> BluetoothLEDevice:
-        if self._address_type is not None:
+        if self._address_type != BLEAddressType.UNKNOWN:
             requester = await BluetoothLEDevice.from_bluetooth_address_with_bluetooth_address_type_async(
                 bluetooth_address,
                 (
                     BluetoothAddressType.PUBLIC
-                    if self._address_type == "public"
+                    if self._address_type == BLEAddressType.PUBLIC
                     else BluetoothAddressType.RANDOM
                 ),
             )

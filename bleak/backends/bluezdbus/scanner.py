@@ -1,6 +1,8 @@
 import sys
 from typing import TYPE_CHECKING
 
+from bleak.backends.device import BLEAddressType
+
 if TYPE_CHECKING:
     if sys.platform != "linux":
         assert False, "This backend is only available on Linux"
@@ -214,6 +216,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         device = self.create_or_update_device(
             path,
             props["Address"],
+            BLEAddressType(props["AddressType"]),
             device_name_from_props(props),
             {"path": path, "props": props},
             advertisement_data,

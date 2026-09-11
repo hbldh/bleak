@@ -10,7 +10,7 @@ import logging
 from typing import Literal, NamedTuple, Optional
 from uuid import UUID
 
-from winrt.windows.devices.bluetooth import BluetoothAdapter
+from winrt.windows.devices.bluetooth import BluetoothAdapter, BluetoothAddressType
 from winrt.windows.devices.bluetooth.advertisement import (
     BluetoothLEAdvertisementReceivedEventArgs,
     BluetoothLEAdvertisementType,
@@ -24,6 +24,7 @@ from winrt.windows.foundation import EventRegistrationToken
 
 from bleak._compat import override
 from bleak.assigned_numbers import AdvertisementDataType
+from bleak.backends.device import BLEAddressType
 from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
@@ -132,6 +133,15 @@ class BleakScannerWinRT(BaseBleakScanner):
 
         bdaddr = _format_bdaddr(event_args.bluetooth_address)
 
+        address_type: BLEAddressType
+        match event_args.bluetooth_address_type:
+            case BluetoothAddressType.PUBLIC:
+                address_type = BLEAddressType.PUBLIC
+            case BluetoothAddressType.RANDOM:
+                address_type = BLEAddressType.RANDOM
+            case _:
+                address_type = BLEAddressType.UNKNOWN
+
         # Unlike other platforms, Windows does not combine advertising data for
         # us (regular advertisement + scan response) so we have to do it manually.
 
@@ -214,7 +224,7 @@ class BleakScannerWinRT(BaseBleakScanner):
         )
 
         device = self.create_or_update_device(
-            bdaddr, bdaddr, local_name, raw_data, advertisement_data
+            bdaddr, bdaddr, address_type, local_name, raw_data, advertisement_data
         )
 
         self.call_detection_callbacks(device, advertisement_data)
