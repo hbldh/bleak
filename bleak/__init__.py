@@ -139,8 +139,7 @@ class BleakScanner:
                 stacklevel=2,
             )
 
-            if "adapter" not in bluez:
-                bluez["adapter"] = adapter_kwarg
+            bluez = {"adapter": adapter_kwarg, **bluez}
 
         self._backend = PlatformBleakScanner(
             detection_callback,
@@ -645,8 +644,7 @@ class BleakClient:
                 stacklevel=2,
             )
 
-            if "adapter" not in bluez:
-                bluez["adapter"] = adapter_kwarg
+            bluez = {"adapter": adapter_kwarg, **bluez}
 
         self._backend = PlatformBleakClient(
             address_or_ble_device,
