@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 import asyncio
 import dataclasses
 import logging
+import time
 from typing import Any, Literal, Optional
 
 from android.bluetooth import BluetoothAdapter
@@ -39,7 +40,7 @@ from bleak.exc import (
 
 logger = logging.getLogger(__name__)
 
-NUM_SCAN_DURATIONS_KEPT = 5
+MAX_SCANS_PER_PERIOD = 5
 EXCESSIVE_SCANNING_PERIOD = 30.5  # normally 30s, add 0.5s margin
 
 
@@ -47,7 +48,9 @@ class ExcessiveUsageChecker:
     """
     On Android, no more than 5 start/stop scanning operations are allowed per 30 seconds!
 
-    This is a helper class to track scan start times and enforce waiting if excessive scanning is detected.
+    Before API level 33, Android does not report an error when this limit is exceeded,
+    scanning just silently doesn't work. This is a helper class to track scan start
+    times so that we can raise an error instead.
 
     See this commit: https://android-review.googlesource.com/c/platform/packages/apps/Bluetooth/+/215844
     Or this comment: https://github.com/NordicSemiconductor/Android-Scanner-Compat-Library/issues/18#issuecomment-402412139
@@ -56,23 +59,29 @@ class ExcessiveUsageChecker:
     def __init__(self) -> None:
         self.scan_timestamps: list[float] = []
 
-    def add_new_scan(self, loop: asyncio.AbstractEventLoop) -> None:
+    def add_new_scan(self) -> None:
         """Record a new scan start time."""
-        self.scan_timestamps.append(loop.time())
-        if len(self.scan_timestamps) > NUM_SCAN_DURATIONS_KEPT:
+        self.scan_timestamps.append(time.monotonic())
+        if len(self.scan_timestamps) > MAX_SCANS_PER_PERIOD:
             self.scan_timestamps.pop(0)
 
-    async def wait_if_excessive(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Wait if excessive scanning is detected."""
-        if len(self.scan_timestamps) < NUM_SCAN_DURATIONS_KEPT:
-            return
+    def time_until_next_scan_allowed(self) -> float:
+        """Get the time in seconds until the next scan may be started (0 if it can be started now)."""
+        if len(self.scan_timestamps) < MAX_SCANS_PER_PERIOD:
+            return 0.0
 
-        period = loop.time() - self.scan_timestamps[0]
-        if (waiting_time := EXCESSIVE_SCANNING_PERIOD - period) > 0:
-            logger.warning(
-                f"Excessive scanning detected: last {NUM_SCAN_DURATIONS_KEPT} scans in {period:.2f} seconds. waiting {waiting_time:.2f} seconds"
+        period = time.monotonic() - self.scan_timestamps[0]
+        return max(0.0, EXCESSIVE_SCANNING_PERIOD - period)
+
+    def check(self) -> None:
+        """Raise :class:`BleakError` if starting a scan now would exceed the limit."""
+        waiting_time = self.time_until_next_scan_allowed()
+        if waiting_time > 0:
+            raise BleakError(
+                f"Scanning too frequently: Android allows at most {MAX_SCANS_PER_PERIOD} "
+                f"scans per {EXCESSIVE_SCANNING_PERIOD:.0f} seconds. "
+                f"Try again in {waiting_time:.1f} seconds."
             )
-            await asyncio.sleep(waiting_time)
 
 
 excessive_usage_checker = ExcessiveUsageChecker()
@@ -157,10 +166,10 @@ class BleakScannerAndroid(BaseBleakScanner):
                 callback=callback,
             )
 
-        BleakScannerAndroid.__scanner = self
+        excessive_usage_checker.check()
+        excessive_usage_checker.add_new_scan()
 
-        await excessive_usage_checker.wait_if_excessive(self._loop)
-        excessive_usage_checker.add_new_scan(self._loop)
+        BleakScannerAndroid.__scanner = self
 
         filters: ArrayList[ScanFilter] = ArrayList()
         if self._service_uuids:

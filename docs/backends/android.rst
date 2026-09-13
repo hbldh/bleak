@@ -68,10 +68,10 @@ Backend Specific Quirks
 On Android, no more than 5 start/stop scanning operations are allowed per 30 seconds! See also 
 `this issue comment <https://github.com/NordicSemiconductor/Android-Scanner-Compat-Library/issues/18#issuecomment-402412139>`_ or
 `this PR in the Android OS <https://android-review.googlesource.com/c/platform/packages/apps/Bluetooth/+/215844>`_.
-If this limit is exceeded in a normal Android application, scanning simply won't work without 
-producing an error. Therefore, Bleak automatically tracks the starting times of scans 
-and waits the necessary time before a new scan can be started.
-
+Before Android 13 (API level 33), if this limit is exceeded, scanning simply won't work without
+producing an error. Therefore, Bleak tracks the start times of scans itself and raises a
+``BleakError`` when starting a scan would exceed the limit. The error message includes the time
+to wait before scanning is possible again.
 
 
 API

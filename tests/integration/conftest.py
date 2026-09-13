@@ -1,8 +1,10 @@
+import asyncio
 import contextlib
 import functools
 import logging
 import sys
 import threading
+import time
 from collections.abc import Callable
 from typing import AsyncGenerator, ParamSpec, TypeVar
 
@@ -20,6 +22,29 @@ from bleak.backends import _utils
 from bleak.backends.device import BLEDevice
 
 logger = logging.getLogger(__name__)
+
+
+def android_time_until_next_scan_allowed() -> float:
+    """
+    Android allows only 5 scan starts per 30 seconds and the Android backend raises
+    an error when this limit would be exceeded. Get the time to wait until the next
+    scan may be started (always 0 on other platforms).
+    """
+    if sys.platform == "android":
+        from bleak.backends.android.scanner import excessive_usage_checker
+
+        return excessive_usage_checker.time_until_next_scan_allowed()
+
+    return 0.0
+
+
+@pytest.fixture(autouse=True)
+def android_scan_rate_limit() -> None:
+    """Wait before each test until the next scan is allowed again on Android."""
+    waiting_time = android_time_until_next_scan_allowed()
+
+    if waiting_time > 0:
+        time.sleep(waiting_time)
 
 
 @pytest.fixture
@@ -140,6 +165,12 @@ FIND_DEVICE_ATTEMPTS = 3
 async def find_ble_device(bumble_peripheral: Device) -> BLEDevice:
     """Find the BLE device corresponding to the bumble peripheral."""
     for attempt in range(1, FIND_DEVICE_ATTEMPTS + 1):
+        # Module scoped fixtures run before the autouse fixture, so wait here too.
+        waiting_time = android_time_until_next_scan_allowed()
+
+        if waiting_time > 0:
+            await asyncio.sleep(waiting_time)
+
         device = await BleakScanner.find_device_by_name(bumble_peripheral.name)
         if device is not None:
             return device
