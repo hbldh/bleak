@@ -110,3 +110,44 @@ fixture closes.
 Bleak uses whichever adapter WinRT reports as the default, which is not necessarily the
 virtual one. If a real radio wins that election the fixture fails with an error naming
 both addresses, so disable any physical Bluetooth adapter before running the tests.
+
+
+Android
+~~~~~~~
+
+The Android backend integration tests are run inside a dedicated Android testbed app that
+executes the pytest test suite directly on the device. This app is generated with
+`Briefcase <https://briefcase.beeware.org/en/stable/>`_ and can be found in the 
+``testbed`` folder.
+
+Tests can be run either on a real Android device or on an emulator.
+
+Real Device
+^^^^^^^^^^^
+
+To run the integration tests on a real device, connect the nRF52840 Dongle to the host PC
+and start the tests with the following command. The script starts a TCP server that transparently
+forwards data to and from the serial port of the dongle, and sets up an ADB
+reverse-port tunnel so that the Android device can reach that TCP server. This allows the
+tests running on the Android device to communicate with the dongle over Bluetooth::
+
+    $ uv run poe test-android-device --bleak-hci-transport=serial:/dev/tty.usbmodem11401
+
+.. note::
+
+   Some tests (permissions, pairing) will show system dialogs on the Android device that
+   must be confirmed manually.
+
+Emulator
+^^^^^^^^
+
+The integration tests can also be run entirely without physical hardware using the Android
+Emulator together with Android's built-in Bluetooth simulator (netsim). System dialogs for
+Bluetooth permissions and pairing are automatically confirmed via ADB
+automation, so the tests run without any manual interaction. This setup works
+headlessly, for example in GitHub Actions::
+
+    $ uv run poe test-android-emulator --api-level 31
+
+This is working from Android API level 31 and above. On API level 30 and below ``netsim``
+is not available.

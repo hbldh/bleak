@@ -61,11 +61,19 @@ test = [
     # on Windows. From git because it is not published on PyPI yet.
     "winvhci @ git+https://github.com/dlech/windows-vhci-driver@v1.3.0#subdirectory=python ; platform_system=='Windows'",
 ]
+test-android = [
+    "briefcase>=0.4.5; python_version >= '3.11'",
+    "chaquopy-stubs-android~=36.0",
+    # only needed for type checking bleak/backends/android/permissions.py
+    "toga-core>=0.5.4",
+    "uiautomator2>=3.5.0",
+]
 dev = [
     "poethepoet>=0.45.0",
     { include-group = "docs" },
     { include-group = "lint" },
     { include-group = "test" },
+    { include-group = "test-android" },
 ]
 
 [build-system]
@@ -109,13 +117,14 @@ extend_skip = [".buildozer", "docs"]
 [tool.mypy]
 python_version = "3.10"
 disable_error_code = ["import-not-found"]
-exclude = "(.venv|kivy|recipes)/"
+exclude = "(.venv|kivy|recipes|testbed)/"
 mypy_path = "typings"
 packages = ["bleak", "tests", "examples"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**"]
+# testbed is type checked in the "typecheck-android" task
+exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", "**/testbed/**", "**/typings/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -176,6 +185,16 @@ sequence = [
     "test-py314",
 ]
 
+[tool.poe.tasks.test-android-emulator]
+help = "Run integration tests in the Android emulator (see tests/integration/README.rst)"
+cmd = "python testbed/run_android_tests_emulator.py $POE_EXTRA_ARGS"
+executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"] }
+
+[tool.poe.tasks.test-android-device]
+help = "Run integration tests on a real Android device (see tests/integration/README.rst)"
+cmd = "python testbed/run_android_tests_real_device.py $POE_EXTRA_ARGS"
+executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"] }
+
 [tool.poe.tasks.typecheck]
 help = "Run type checkers (mypy, pyright)"
 
@@ -186,6 +205,13 @@ help = "Run type checkers (mypy, pyright)"
 sequence = [
     { cmd = "mypy", executor = { no-group = "dev", group = "test", with = "mypy" } },
     { cmd = "pyright", executor = { no-group = "dev", group = "test", with = "pyright" } },
+]
+
+[tool.poe.tasks.typecheck-android]
+help = "Run type checkers (mypy, pyright) for the Android backend"
+sequence = [
+    { cmd = "mypy --config-file=mypy-android.ini", executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"], with = "mypy" } },
+    { cmd = "pyright --project pyrightconfig-android.json", executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"], with = "pyright" } },
 ]
 
 [tool.poe.tasks.lint]

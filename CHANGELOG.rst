@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+* Added new Android backend for apps built with BeeWare/Briefcase (Chaquopy). Requires Python 3.13 or later.
 
 Changed
 -------

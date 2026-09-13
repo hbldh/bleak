@@ -26,4 +26,25 @@ async def test_pairing_unavailable(bumble_peripheral: Device):
         await client.unpair()
 
 
+@pytest.mark.skipif(
+    get_default_backend() != BleakBackend.ANDROID,
+    reason="testing pairing is currently only implemented for the Android backend",
+)
+async def test_pairing_android(bumble_peripheral: Device):
+    """Test pairing on Android backend."""
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    device = await find_ble_device(bumble_peripheral)
+
+    async with BleakClient(device) as client:
+        # Pairing (Bonding) should succeed without raising an exception
+        await client.pair()
+
+        # Unpairing (Unbonding) is not possible on Android backend, because
+        # Android does not provide an API to unpair programmatically. So
+        # we check that NotImplementedError is raised.
+        with pytest.raises(NotImplementedError):
+            await client.unpair()
+
+
 # TODO: Add tests for pairing
