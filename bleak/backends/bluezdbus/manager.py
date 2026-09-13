@@ -18,7 +18,7 @@ import contextlib
 import logging
 import os
 from collections import defaultdict
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterator, Mapping
 from functools import partial
 from typing import Any, NamedTuple, Optional, cast
 
@@ -175,6 +175,7 @@ class BlueZManager:
     def __init__(self) -> None:
         self._bus: Optional[MessageBus] = None
         self._bus_lock = asyncio.Lock()
+        self._bus_watcher_task: Optional[asyncio.Task[None]] = None
 
         # dict of object path: dict of interface name: dict of property name: property value
         self._properties: dict[str, dict[str, dict[str, Any]]] = {}
@@ -199,6 +200,25 @@ class BlueZManager:
         self._device_watchers: dict[str, set[DeviceWatcher]] = {}
         self._condition_callbacks: dict[str, set[DeviceConditionCallback]] = {}
         self._services_cache: dict[str, BleakGATTServiceCollection] = {}
+
+    def _reset_cached_state(self) -> None:
+        """Clears all state cached from the message bus."""
+        self._properties.clear()
+        self._service_map.clear()
+        self._characteristic_map.clear()
+        self._descriptor_map.clear()
+        self._services_cache.clear()
+        self._adapters.clear()
+
+    def _iter_device_props(self) -> Iterator[tuple[str, Device1]]:
+        """
+        Yields the D-Bus object path and device properties for each
+        device in BlueZ.
+        """
+        for path, interfaces in self._properties.items():
+            props = cast(Device1 | None, interfaces.get(defs.DEVICE_INTERFACE))
+            if props is not None:
+                yield path, props
 
     def _check_adapter(self, adapter_path: str) -> None:
         """
@@ -246,10 +266,19 @@ class BlueZManager:
         connected, no action is performed.
         """
         async with self._bus_lock:
-            if self._bus and self._bus.connected:
-                return
+            if self._bus is not None:
+                if self._bus.connected:
+                    return
 
-            self._services_cache = {}
+                # the watcher task resets state and notifies watchers once,
+                # whichever task saw the bus die first
+                if self._bus_watcher_task is not None:
+                    await asyncio.wait({self._bus_watcher_task})
+                    self._bus_watcher_task = None
+
+                # Even if we are disconnected, still need to call this to
+                # release file handles.
+                self._bus.disconnect()
 
             # We need to create a new MessageBus each time as
             # dbus-next will destroy the underlying file descriptors
@@ -309,12 +338,9 @@ class BlueZManager:
                 )
                 assert_reply(reply)
 
-                # dictionaries are cleared in case AddInterfaces was received first
+                # state is cleared in case AddInterfaces was received first
                 # or there was a bus reset and we are reconnecting
-                self._properties.clear()
-                self._service_map.clear()
-                self._characteristic_map.clear()
-                self._descriptor_map.clear()
+                self._reset_cached_state()
 
                 for path, interfaces in reply.body[0].items():
                     props = unpack_variants(interfaces)
@@ -359,13 +385,99 @@ class BlueZManager:
                 bus.disconnect()
                 raise
 
-            if self._bus:
-                # Even if we are disconnected, still need to call this to
-                # release file handles.
-                self._bus.disconnect()
-
             # Everything is setup, so save the bus
             self._bus = bus
+
+            # Watch for the bus dying (e.g. D-Bus daemon restart or a broken
+            # socket) so cached state is invalidated and device watchers are
+            # notified instead of reporting stale "Connected" state forever.
+            self._bus_watcher_task = asyncio.create_task(
+                self._monitor_bus_disconnect(bus)
+            )
+
+    async def _monitor_bus_disconnect(self, bus: MessageBus) -> None:
+        """
+        Waits for the message bus to disconnect and resets the manager state.
+        """
+        exc: Optional[Exception] = None
+        try:
+            await bus.wait_for_disconnect()
+        except Exception as e:
+            exc = e
+
+        try:
+            self._handle_bus_disconnect(exc)
+        except Exception:
+            # This is a fire and forget task, so log instead of surfacing
+            # the error as a destroyed pending task at garbage collection.
+            logger.exception("error handling bus disconnect")
+
+    def _handle_bus_disconnect(self, exc: Optional[Exception]) -> None:
+        """
+        Resets cached state and notifies watchers after the message bus died.
+
+        Args:
+            exc: The error that killed the bus, if known.
+        """
+        logger.warning(
+            "D-Bus connection to BlueZ was lost (%r); "
+            "resetting state and notifying watchers",
+            exc,
+        )
+
+        devices = list(self._iter_device_props())
+        # The devices did not necessarily disconnect, but without the bus
+        # there is no way to know, and reporting them disconnected makes
+        # clients clean up and reconnect, which rebuilds the bus. Watchers
+        # are included since a device can leave the cache while its client
+        # is still connected.
+        disconnected_paths = dict.fromkeys(
+            [
+                *(path for path, props in devices if props.get("Connected")),
+                *self._device_watchers,
+                *self._condition_callbacks,
+            ]
+        )
+
+        # clear first so callbacks observe the updated state, like _parse_msg
+        self._reset_cached_state()
+
+        for path in disconnected_paths:
+            self._notify_device_property_changed(path, {"Connected": False})
+
+        # Report all devices as removed so pending service discovery waits
+        # finish and scanners drop their seen devices.
+        for path, _ in devices:
+            self._notify_device_removed(path)
+
+    def _notify_device_property_changed(
+        self, device_path: str, changed: Mapping[str, Any]
+    ) -> None:
+        """
+        Runs condition callbacks and connection watchers for changed
+        device properties.
+        """
+        if callbacks := self._condition_callbacks.get(device_path):
+            for item in callbacks:
+                name = item.property_name
+                if name in changed:
+                    item.callback(changed[name])
+
+        if "Connected" in changed:
+            if watchers := self._device_watchers.get(device_path):
+                connected = changed["Connected"]
+                # callbacks may remove the watcher, hence the copy
+                for watcher in watchers.copy():
+                    watcher.on_connected_changed(connected)
+
+    def _notify_device_removed(self, device_path: str) -> None:
+        """
+        Runs the device removed callbacks for the adapter of the device.
+        """
+        for callback, adapter_path in self._device_removed_callbacks:
+            # hci1 must not match hci10
+            if device_path.startswith(f"{adapter_path}/"):
+                callback(device_path)
 
     def get_default_adapter(self) -> str:
         """
@@ -859,12 +971,7 @@ class BlueZManager:
         """
         result: list[tuple[str, Device1]] = []
 
-        for path, interfaces in self._properties.items():
-            props = cast(Device1 | None, interfaces.get(defs.DEVICE_INTERFACE))
-
-            if props is None:
-                continue
-
+        for path, props in self._iter_device_props():
             if props["Adapter"] != adapter_path:
                 continue
 
@@ -1124,10 +1231,7 @@ class BlueZManager:
                     except KeyError:
                         pass
 
-                    for callback, adapter_path in self._device_removed_callbacks:
-                        # hci1 must not match hci10
-                        if obj_path.startswith(f"{adapter_path}/"):
-                            callback(obj_path)
+                    self._notify_device_removed(obj_path)
                 elif interface == defs.GATT_SERVICE_INTERFACE:
                     device_path = obj_path[: obj_path.rfind("/")]
 
@@ -1168,7 +1272,8 @@ class BlueZManager:
             else:
                 # update self._properties first
 
-                self_interface.update(unpack_variants(changed))
+                changed = unpack_variants(changed)
+                self_interface.update(changed)
 
                 for name in invalidated:
                     try:
@@ -1189,22 +1294,8 @@ class BlueZManager:
                         device_path, cast(Device1, self_interface)
                     )
 
-                    # handle device condition watchers
-                    callbacks = self._condition_callbacks.get(device_path)
-                    if callbacks:
-                        for item in callbacks:
-                            name = item.property_name
-                            if name in changed:
-                                item.callback(self_interface.get(name))
-
-                    # handle device connection change watchers
-                    if "Connected" in changed:
-                        new_connected = self_interface["Connected"]
-                        watchers = self._device_watchers.get(device_path)
-                        if watchers:
-                            # callbacks may remove the watcher, hence the copy
-                            for watcher in watchers.copy():
-                                watcher.on_connected_changed(new_connected)
+                    # handle device condition and connection change watchers
+                    self._notify_device_property_changed(device_path, changed)
 
                 elif interface == defs.GATT_CHARACTERISTIC_INTERFACE:
                     # handle characteristic value change watchers
@@ -1259,7 +1350,14 @@ async def get_global_bluez_manager() -> BlueZManager:
         for closed_loop in closed_loops:
             manager = _global_instances.pop(closed_loop)
             if manager._bus is not None:  # pyright: ignore[reportPrivateUsage]
-                manager._bus._finalize(None)  # pyright: ignore[reportPrivateUsage]
+                try:
+                    manager._bus._finalize(None)  # pyright: ignore[reportPrivateUsage]
+                except RuntimeError:
+                    # Resolving the disconnect future schedules the watcher
+                    # task wakeup on the closed loop, after the socket is
+                    # already released. The task stays pending since it can
+                    # never run again, and cancelling it would fail the same way.
+                    logger.debug("error finalizing bus of closed loop", exc_info=True)
 
         instance = _global_instances[loop] = BlueZManager()
 
