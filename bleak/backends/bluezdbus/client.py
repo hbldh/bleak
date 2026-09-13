@@ -176,20 +176,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     def on_connected_changed(connected: bool) -> None:
                         if not connected:
-                            logger.debug("Device disconnected (%s)", self._device_path)
-
-                            self._is_connected = False
-
-                            if self._disconnect_monitor_event:
-                                self._disconnect_monitor_event.set()
-                                self._disconnect_monitor_event = None
-
-                            self._cleanup_all()
-                            if self._disconnected_callback is not None:
-                                self._disconnected_callback()
-                            disconnecting_event = self._disconnecting_event
-                            if disconnecting_event:
-                                disconnecting_event.set()
+                            self._on_disconnected()
 
                     def on_value_changed(char_path: str, value: bytes) -> None:
                         callback = self._notification_callbacks.get(char_path)
@@ -368,6 +355,41 @@ class BleakClientBlueZDBus(BaseBleakClient):
             except Exception:
                 pass
 
+    async def _release_bus(self) -> None:
+        """
+        Disconnects the bus and drops the reference, never raising.
+        """
+        if self._bus is None:
+            return
+
+        try:
+            self._bus.disconnect()
+            await self._bus.wait_for_disconnect()
+        except Exception as e:
+            # replays the error that killed the reader, never raise from teardown
+            logger.debug("error disconnecting from bus (%s): %r", self._device_path, e)
+        finally:
+            self._bus = None
+
+    def _on_disconnected(self) -> None:
+        """
+        Cleans up and notifies after the device disconnected or its bus died.
+        """
+        logger.debug("Device disconnected (%s)", self._device_path)
+
+        self._is_connected = False
+
+        if self._disconnect_monitor_event:
+            self._disconnect_monitor_event.set()
+            self._disconnect_monitor_event = None
+
+        self._cleanup_all()
+        if self._disconnected_callback is not None:
+            self._disconnected_callback()
+        disconnecting_event = self._disconnecting_event
+        if disconnecting_event:
+            disconnecting_event.set()
+
     def _cleanup_all(self) -> None:
         """
         Free all the allocated resource in DBus. Use this method to
@@ -425,12 +447,29 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     async with async_timeout(10):
                         await self._disconnecting_event.wait()
+            except Exception as e:
+                if self._bus.connected:
+                    raise
+
+                # The bus died so "PropertiesChanged" will never arrive
+                logger.warning(
+                    "D-Bus connection lost while disconnecting (%s): %r",
+                    self._device_path,
+                    e,
+                )
+                try:
+                    # the manager's bus watcher may have already run the teardown
+                    if self._is_connected:
+                        self._on_disconnected()
+                finally:
+                    # the teardown runs the disconnected callback, which is
+                    # third party code we don't control, so release the dead
+                    # bus even if it raised
+                    await self._release_bus()
             finally:
                 self._disconnecting_event = None
 
-            self._bus.disconnect()
-            await self._bus.wait_for_disconnect()
-            self._bus = None
+            await self._release_bus()
 
         # sanity check to make sure _cleanup_all() was triggered by the
         # "PropertiesChanged" signal handler and that it completed successfully
