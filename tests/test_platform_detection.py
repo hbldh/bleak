@@ -3,6 +3,7 @@
 """Tests for `bleak` package."""
 
 import platform
+import sys
 
 import pytest
 
@@ -20,7 +21,14 @@ def test_platform_detection():
     scanner_backend_type, scanner_backend_id = get_platform_scanner_backend_type()
     adapter_backend_type, adapter_backend_id = get_platform_adapter_backend_type()
 
-    if platform.system() == "Linux":
+    if sys.platform == "android":
+        assert client_backend_type.__name__ == "BleakClientAndroid"
+        assert scanner_backend_type.__name__ == "BleakScannerAndroid"
+        assert adapter_backend_type.__name__ == "BleakAdapterAndroid"
+        assert client_backend_id == BleakBackend.ANDROID
+        assert scanner_backend_id == BleakBackend.ANDROID
+        assert adapter_backend_id == BleakBackend.ANDROID
+    elif platform.system() == "Linux":
         assert client_backend_type.__name__ == "BleakClientBlueZDBus"
         assert scanner_backend_type.__name__ == "BleakScannerBlueZDBus"
         assert adapter_backend_type.__name__ == "BleakAdapterBlueZDBus"
@@ -51,7 +59,10 @@ async def test_backend_id():
 
     assert client.backend_id == scanner.backend_id
 
-    if platform.system() == "Linux":
+    if sys.platform == "android":
+        assert client.backend_id == BleakBackend.ANDROID
+        assert scanner.backend_id == BleakBackend.ANDROID
+    elif platform.system() == "Linux":
         assert client.backend_id == BleakBackend.BLUEZ_DBUS
         assert scanner.backend_id == BleakBackend.BLUEZ_DBUS
     elif platform.system() == "Windows":

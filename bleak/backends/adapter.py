@@ -76,5 +76,12 @@ def get_platform_adapter_backend_type() -> tuple[type[BaseBleakAdapter], BleakBa
 
             return (BleakAdapterWinRT, backend)  # type: ignore
 
+        case BleakBackend.ANDROID:
+            from bleak.backends.android.adapter import (
+                BleakAdapterAndroid,  # type: ignore
+            )
+
+            return (BleakAdapterAndroid, backend)  # type: ignore
+
         case _:
             raise BleakError(f"Unsupported backend: {backend}")

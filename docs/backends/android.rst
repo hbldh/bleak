@@ -73,6 +73,10 @@ producing an error. Therefore, Bleak tracks the start times of scans itself and 
 ``BleakError`` when starting a scan would exceed the limit. The error message includes the time
 to wait before scanning is possible again.
 
+``BleakAdapter.get_connected_devices()`` can only filter by service UUIDs of devices for
+which Android has already performed GATT service discovery (e.g. devices that were connected
+with ``BleakClient`` before). Devices connected by other apps may not be found.
+
 
 API
 ---
@@ -88,4 +92,11 @@ Client
 ~~~~~~
 
 .. automodule:: bleak.backends.android.client
+    :members:
+
+
+Adapter
+~~~~~~~
+
+.. automodule:: bleak.backends.android.adapter
     :members:
