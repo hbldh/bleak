@@ -24,6 +24,7 @@ Fixed
 * Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
 * Fixed crash in WinRT backend if a WinRT event handler is called after the asyncio event loop is closed.
+* Fixed device removed callbacks in BlueZ backend matching devices on adapters whose name starts with the watched adapter name, e.g. ``hci10`` for ``hci1``.
 
 `3.0.2`_ (2026-05-02)
 =====================
