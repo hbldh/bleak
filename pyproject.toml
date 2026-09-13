@@ -64,6 +64,8 @@ test = [
 test-android = [
     "briefcase>=0.4.5; python_version >= '3.11'",
     "chaquopy-stubs-android~=36.0",
+    # only needed for type checking bleak/backends/android/permissions.py
+    "toga-core>=0.5.4",
     "uiautomator2>=3.5.0",
 ]
 dev = [
@@ -121,7 +123,8 @@ packages = ["bleak", "tests", "examples"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", "**/testbed/**"]
+# testbed is type checked in the "typecheck-android" task
+exclude = ["**/.venv/**", "**/kivy/**", "**/recipes/**", "**/testbed/**", "**/typings/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
