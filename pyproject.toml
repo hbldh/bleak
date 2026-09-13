@@ -182,6 +182,16 @@ sequence = [
     "test-py314",
 ]
 
+[tool.poe.tasks.test-android-emulator]
+help = "Run integration tests in the Android emulator (see tests/integration/README.rst)"
+cmd = "python testbed/run_android_tests_emulator.py $POE_EXTRA_ARGS"
+executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"] }
+
+[tool.poe.tasks.test-android-device]
+help = "Run integration tests on a real Android device (see tests/integration/README.rst)"
+cmd = "python testbed/run_android_tests_real_device.py $POE_EXTRA_ARGS"
+executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"] }
+
 [tool.poe.tasks.typecheck]
 help = "Run type checkers (mypy, pyright)"
 
@@ -192,6 +202,13 @@ help = "Run type checkers (mypy, pyright)"
 sequence = [
     { cmd = "mypy", executor = { no-group = "dev", group = "test", with = "mypy" } },
     { cmd = "pyright", executor = { no-group = "dev", group = "test", with = "pyright" } },
+]
+
+[tool.poe.tasks.typecheck-android]
+help = "Run type checkers (mypy, pyright) for the Android backend"
+sequence = [
+    { cmd = "mypy --config-file=mypy-android.ini", executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"], with = "mypy" } },
+    { cmd = "pyright --project pyrightconfig-android.json", executor = { python = "3.13", no-group = "dev", group = ["test", "test-android"], with = "pyright" } },
 ]
 
 [tool.poe.tasks.lint]

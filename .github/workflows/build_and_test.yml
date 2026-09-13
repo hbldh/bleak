@@ -206,7 +206,7 @@ jobs:
             build-deps-${{ runner.os }}-api${{ matrix.api-level }}-
 
       - name: Run App
-        run: uv run testbed/run_android_tests_emulator.py --ci --api-level ${{ matrix.api-level }}
+        run: uv run poe test-android-emulator --ci --api-level ${{ matrix.api-level }}
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -224,13 +224,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Type checking
-        # We don't do this in the lint job because we have conditionals
-        # on both the platform and the Python version in the code, so we
-        # need to check each matrix combination.
-        run: |
-          # For pyright a new release is missing that includes https://github.com/microsoft/pyright/pull/11221
-          # When building pyright from main locally, it works.
-          # uv tool install pyright
-          # uv run pyright --project pyrightconfig-android.json
-          uv tool install mypy
-          uv run mypy --config-file=mypy-android.ini
+        # The Android backend can only be type checked with the Android platform
+        # selected, so this is done here instead of in the other jobs.
+        run: uv run poe typecheck-android

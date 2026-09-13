@@ -131,7 +131,7 @@ forwards data to and from the serial port of the dongle, and sets up an ADB
 reverse-port tunnel so that the Android device can reach that TCP server. This allows the
 tests running on the Android device to communicate with the dongle over Bluetooth::
 
-    $ uv run --python 3.13 testbed/run_android_tests_real_device.py --bleak-hci-transport=serial:/dev/tty.usbmodem11401
+    $ uv run poe test-android-device --bleak-hci-transport=serial:/dev/tty.usbmodem11401
 
 .. note::
 
@@ -145,9 +145,9 @@ The integration tests can also be run entirely without physical hardware using t
 Emulator together with Android's built-in Bluetooth simulator (netsim). System dialogs for
 Bluetooth permissions and pairing are automatically confirmed via ADB
 automation, so the tests run without any manual interaction. This setup works
-headlessly, for example in GitHub Actions.
+headlessly, for example in GitHub Actions::
 
-    $ uv run --python 3.13 testbed/run_android_tests_emulator.py --api-level 31
+    $ uv run poe test-android-emulator --api-level 31
 
 This is working from Android API level 31 and above. On API level 30 and below ``netsim``
 is not available.
