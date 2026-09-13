@@ -1,6 +1,6 @@
 [project]
 name = "bleak"
-version = "3.0.1"
+version = "3.0.2"
 description = "Bluetooth Low Energy platform Agnostic Klient"
 authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
@@ -29,7 +29,7 @@ dependencies = [
     "winrt-Windows.Foundation>=3.1; platform_system=='Windows'",
     "winrt-Windows.Foundation.Collections>=3.1; platform_system=='Windows'",
     "winrt-Windows.Storage.Streams>=3.1; platform_system=='Windows'",
-    "dbus-fast>=1.83.0; platform_system=='Linux'",
+    "dbus-fast>=4.0.0; platform_system=='Linux'",
 ]
 
 [project.urls]
@@ -48,15 +48,18 @@ docs = [
     "sphinx-rtd-theme>=3.0.2; python_version>='3.11'",
 ]
 lint = [
-    "black>=24.3,<25.0",
-    "flake8>=7.1.1,<8.0.0",
-    "isort>=5.13.2,<6.0.0",
+   "black>=24.3,<25.0",
+   "flake8>=7.1.1,<8.0.0",
+   "isort>=5.13.2,<6.0.0",
 ]
 test = [
     "pytest>=8.2.1,<9.0.0",
     "pytest-asyncio>=1.2.0,<2.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "bumble==0.0.226",
+    # Client for the winvhci virtual Bluetooth controller, used by --bleak-vhci
+    # on Windows. From git because it is not published on PyPI yet.
+    "winvhci @ git+https://github.com/dlech/windows-vhci-driver@v1.3.0#subdirectory=python ; platform_system=='Windows'",
 ]
 test-android = [
     "fastapi>=0.128.0",
@@ -69,6 +72,7 @@ test-android = [
     "chaquopy-stubs-android~=36.0",
 ]
 dev = [
+    "poethepoet>=0.45.0",
     { include-group = "docs" },
     { include-group = "lint" },
     { include-group = "test" },
@@ -76,8 +80,32 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.10.9,<0.11.0"]
+requires = ["uv_build>=0.10.9,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+# Bumble's USB and Android transports pull in packages with no win_arm64 wheel,
+# which made the test group unresolvable there. None of them is reachable from
+# these tests, which talk to bumble over BlueZ's vhci or winvhci. Each override
+# keeps bumble's own specifier and adds a marker that is false on Windows, so
+# the requirement is dropped there and resolution everywhere else is exactly
+# what bumble declares.
+override-dependencies = [
+    "grpcio>=1.62.1 ; sys_platform != 'win32'",
+    "libusb-package==1.0.26.1 ; sys_platform != 'win32'",
+    "libusb1>=2.0.1 ; sys_platform != 'win32'",
+    "pyusb>=1.2 ; sys_platform != 'win32'",
+]
+
+# cryptography ships win_arm64 wheels in 46.0.0-46.0.3 and then stops, so
+# anything newer would need a Rust toolchain to build. The marker is all of
+# Windows rather than just ARM64 because platform_machine cannot distinguish
+# the two: since 3.12, platform.machine() on Windows reports the machine, not
+# the process, so an emulated x64 interpreter also says 'ARM64' while its
+# wheel tag is win_amd64.
+constraint-dependencies = [
+    "cryptography==46.0.3 ; sys_platform == 'win32'",
+]
 
 [tool.uv.build-backend]
 module-name = "bleak"
@@ -94,6 +122,7 @@ python_version = "3.10"
 disable_error_code = ["import-not-found"]
 exclude = "(.venv|kivy|recipes|testbed)/"
 mypy_path = "typings"
+packages = ["bleak", "tests", "examples"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -111,7 +140,76 @@ filterwarnings = [
 ]
 
 addopts = """
+--import-mode=importlib
 --cov=bleak
 --cov-branch
 --cov-report html
 """
+
+
+
+[tool.poe.executor]
+type = "uv"
+isolated = true
+
+[tool.poe.tasks.test-py310]
+help = "Run tests using Python 3.10"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.10", no-group = "dev", group = "test" }
+
+[tool.poe.tasks.test-py311]
+help = "Run tests using Python 3.11"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.11", no-group = "dev", group = "test" }
+
+[tool.poe.tasks.test-py312]
+help = "Run tests using Python 3.12"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.12", no-group = "dev", group = "test" }
+
+[tool.poe.tasks.test-py313]
+help = "Run tests using Python 3.13"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.13", no-group = "dev", group = "test" }
+
+[tool.poe.tasks.test-py314]
+help = "Run tests using Python 3.14"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.14", no-group = "dev", group = "test" }
+
+[tool.poe.tasks.test-all]
+help = "Run tests using all supported Python versions"
+sequence = [
+    "test-py310",
+    "test-py311",
+    "test-py312",
+    "test-py313",
+    "test-py314",
+]
+
+[tool.poe.tasks.typecheck]
+help = "Run type checkers (mypy, pyright)"
+
+# We want always the latest version of pyright and mypy, to catch
+# any breakage as soon as we can. That is why they are not dev
+# dependencies in the pyproject.toml, because that would lock them to
+# a specific version. Instead we install the latest version as tool.
+sequence = [
+    { cmd = "mypy", executor = { no-group = "dev", group = "test", with = "mypy" } },
+    { cmd = "pyright", executor = { no-group = "dev", group = "test", with = "pyright" } },
+]
+
+[tool.poe.tasks.lint]
+help = "Run code linters (isort, black, flake8)"
+sequence = [
+    { cmd = "isort . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "isort docs ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "black . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "flake8 . --count --show-source --statistics", executor = { no-group = "dev", group = "lint" } },
+]
+args = [{ name = "checkonly", type = "boolean" }]
+
+[tool.poe.tasks.docs]
+help = "Build the documentation"
+cmd = "sphinx-build -b html -W -d docs/_build/doctrees docs docs/_build/html"
+executor = { python = "3.11", no-group = "dev", group = "docs" }

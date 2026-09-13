@@ -839,6 +839,52 @@ class BlueZManager:
         except KeyError:
             return False
 
+    def get_connected_devices(
+        self,
+        adapter_path: str,
+        service_uuids: frozenset[str],
+    ) -> list[tuple[str, Device1]]:
+        """
+        Gets D-Bus object paths and properties for all connected BLE devices
+        on an adapter that advertise at least one of the given service UUIDs.
+
+        Args:
+            adapter_path: The D-Bus object path of the adapter.
+            service_uuids:
+                Set of service UUIDs (lowercase, full form). A device
+                matches if it advertises at least one of these services.
+
+        Returns:
+            A list of (device_path, device_properties) tuples.
+        """
+        result: list[tuple[str, Device1]] = []
+
+        for path, interfaces in self._properties.items():
+            props = cast(Device1 | None, interfaces.get(defs.DEVICE_INTERFACE))
+
+            if props is None:
+                continue
+
+            if props["Adapter"] != adapter_path:
+                continue
+
+            if not props["Connected"]:
+                continue
+
+            if path not in self._service_map:
+                continue
+
+            device_uuids = frozenset(u.lower() for u in props.get("UUIDs", []))
+
+            # "any of" matching semantics, matching the macOS
+            # retrieveConnectedPeripheralsWithServices: API.
+            if not (device_uuids & service_uuids):
+                continue
+
+            result.append((path, props))
+
+        return result
+
     async def _wait_for_services_discovery(self, device_path: str) -> None:
         """
         Waits for the device services to be discovered.

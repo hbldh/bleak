@@ -10,6 +10,28 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+* Added new Android backend for apps built with BeeWare/Briefcase (Chaquopy). Requires Python 3.13 or later.
+
+Changed
+-------
+* Changed minimum ``dbus-fast`` version to 4.0.0 on Linux.
+
+Fixed
+-----
+* Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
+* Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed crash in WinRT backend if a WinRT event handler is called after the asyncio event loop is closed.
+
+`3.0.2`_ (2026-05-02)
+=====================
+
+Changed
+-------
+* Changed default value of ``BlueZNotifyArgs.use_start_notify`` to ``True``. Fixes #1951.
+
 `3.0.1`_ (2026-03-25)
 =====================
 
@@ -28,7 +50,6 @@ Added
 * Added ``bleak.exc.BleakGATTProtocolError`` and ``bleak.exc.BleakGATTProtocolErrorCode`` classes.
 * Added type hints and documentation for ``use_cached`` kwarg for ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in ``BleakClient``.
 * Added support for ``"use_cached"`` kwarg to ``read_gatt_char()`` and ``read_gatt_descriptor()`` methods in BlueZ backend.
-* Added new Android backend using Chaquopy/briefcase.
 
 Changed
 -------
@@ -1210,7 +1231,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.0.1...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.0.2...develop
+.. _3.0.2: https://github.com/hbldh/bleak/compare/v3.0.1...v3.0.2
 .. _3.0.1: https://github.com/hbldh/bleak/compare/v3.0.0...v3.0.1
 .. _3.0.0: https://github.com/hbldh/bleak/compare/v2.1.1...v3.0.0
 .. _2.1.1: https://github.com/hbldh/bleak/compare/v2.1.0...v2.1.1

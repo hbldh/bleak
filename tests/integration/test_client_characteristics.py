@@ -11,6 +11,8 @@ from bumble.gatt import Characteristic, CharacteristicValue, Service
 from bumble.transport.common import Transport
 
 from bleak import BleakClient
+from bleak.args.bluez import BlueZNotifyArgs
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakGATTProtocolError
 from tests.integration.conftest import (
@@ -323,9 +325,19 @@ async def test_write_gatt_char_no_response(char_test_peripheral: CharTestPeriphe
     assert written_value == b"DATA"
 
 
+@pytest.mark.parametrize(
+    "bluez",
+    (
+        [{"use_start_notify": True}, {"use_start_notify": False}]
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS
+        else [{}]
+    ),
+)
 @pytest.mark.asyncio(loop_scope="module")
-async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
-    """Writing a GATT characteristic is possible."""
+async def test_notify_gatt_char(
+    char_test_peripheral: CharTestPeripheral, bluez: BlueZNotifyArgs
+):
+    """Ensure notifications are delivered and received by the client."""
 
     notified_data: asyncio.Queue[bytes] = asyncio.Queue()
 
@@ -336,6 +348,7 @@ async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
     await char_test_peripheral.bleak_client.start_notify(
         NOTIFY_CHAR_UUID,
         notify_callback,
+        bluez=bluez,
     )
     assert notified_data.empty()
 
@@ -367,8 +380,18 @@ async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
         await asyncio.wait_for(notified_data.get(), timeout=1)
 
 
+@pytest.mark.parametrize(
+    "bluez",
+    (
+        [{"use_start_notify": True}, {"use_start_notify": False}]
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS
+        else [{}]
+    ),
+)
 @pytest.mark.asyncio(loop_scope="module")
-async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
+async def test_indicate_gatt_char(
+    char_test_peripheral: CharTestPeripheral, bluez: BlueZNotifyArgs
+):
     """Ensure indications are delivered and received by the client."""
 
     virtual_connection = list(
@@ -384,6 +407,7 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
     await char_test_peripheral.bleak_client.start_notify(
         INDICATE_CHAR_UUID,
         indicate_callback,
+        bluez=bluez,
     )
     assert indicated_data.empty()
 
@@ -393,8 +417,7 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
         b"ind1",
     )
 
-    # dont wait since 'indicate_subscriber' waits for ack from client
-    data = indicated_data.get_nowait()
+    data = await asyncio.wait_for(indicated_data.get(), timeout=1)
     assert data == b"ind1"
 
     await char_test_peripheral.bumble_peripheral.indicate_subscriber(  # type: ignore  # (missing type hints in bumble)
@@ -403,8 +426,7 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
         b"ind2",
     )
 
-    # dont wait since 'indicate_subscriber' waits for ack from client
-    data = indicated_data.get_nowait()
+    data = await asyncio.wait_for(indicated_data.get(), timeout=1)
     assert data == b"ind2"
 
     await char_test_peripheral.bleak_client.stop_notify(INDICATE_CHAR_UUID)
@@ -418,6 +440,43 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
     # Verify no indication was received after stop
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(indicated_data.get(), timeout=1)
+
+
+@pytest.mark.parametrize(
+    "bluez",
+    (
+        [{"use_start_notify": True}, {"use_start_notify": False}]
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS
+        else [{}]
+    ),
+)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_notify_gatt_char_empty(
+    char_test_peripheral: CharTestPeripheral, bluez: BlueZNotifyArgs
+):
+    """Ensure empty notifications are delivered and received by the client."""
+
+    notified_data: asyncio.Queue[bytes] = asyncio.Queue()
+
+    def notify_callback(characteristic: BleakGATTCharacteristic, data: bytearray):
+        assert characteristic.uuid.lower() == NOTIFY_CHAR_UUID
+        notified_data.put_nowait(bytes(data))
+
+    await char_test_peripheral.bleak_client.start_notify(
+        NOTIFY_CHAR_UUID,
+        notify_callback,
+        bluez=bluez,
+    )
+
+    await char_test_peripheral.bumble_peripheral.notify_subscribers(  # type: ignore  # (missing type hints in bumble)
+        char_test_peripheral.notify_characteristic,
+        b"",
+    )
+
+    data = await asyncio.wait_for(notified_data.get(), timeout=1)
+    assert data == b""
+
+    await char_test_peripheral.bleak_client.stop_notify(NOTIFY_CHAR_UUID)
 
 
 @pytest.mark.asyncio(loop_scope="module")

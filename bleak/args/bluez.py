@@ -129,6 +129,24 @@ class BlueZClientArgs(TypedDict, total=False):
     """
 
 
+class BlueZAdapterArgs(TypedDict, total=False):
+    """
+    :class:`bleak.BleakAdapter` args that are specific to the BlueZ backend.
+
+    .. versionadded:: unreleased
+    """
+
+    adapter: str
+    """
+    Bluetooth adapter to use, e.g. "hci0".
+
+    .. tip:: If you have multiple Bluetooth adapters, they may not always be
+         assigned the same ``hciX`` name across reboots. In that case, you can
+         use udev to look up the name based on other properties like the USB
+         vendor and product ID.
+    """
+
+
 class BlueZNotifyArgs(TypedDict, total=False):
     """
     :meth:`bleak.BleakClient.start_notify` method args that are specific to the
@@ -139,11 +157,12 @@ class BlueZNotifyArgs(TypedDict, total=False):
 
     use_start_notify: bool
     """
-    If true, use the "StartNotify" D-Bus method instead of "AcquireNotify" to
-    subscribe to notifications.
+    If false, use the "AcquireNotify" D-Bus method instead of "StartNotify" to
+    subscribe to notifications. The default is to use "StartNotify" for better
+    compatibility with most BLE devices.
 
-    This is needed in rare cases to work around BlueZ quirks. For example, some
-    peripherals may send notifications immediately after writing to the CCCD
-    descriptor, before the write response is sent. In this case, "AcquireNotify"
-    will miss the notification, whereas "StartNotify" will work correctly.
+    see :ref:`linux-start-notify` for more details.
+
+    .. versionchanged:: 3.0.2
+        The default value was changed from ``False`` to ``True``.
     """

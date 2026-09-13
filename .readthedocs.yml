@@ -10,15 +10,15 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.12"
-  jobs:
-    post_create_environment:
+
+python:
+  install:
       # Install uv
       # https://docs.astral.sh/uv/
-      - pip install uv
-    post_install:
-      # Install dependencies with 'docs' dependency group
-      # https://docs.astral.sh/uv/concepts/projects/dependencies/
-      - uv sync --only-group docs
+    - method: uv
+      command: sync
+      groups:    # Install dependencies with 'docs' dependency group
+        - docs   # https://docs.astral.sh/uv/concepts/projects/dependencies/
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:

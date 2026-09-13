@@ -23,12 +23,19 @@ services immediately, but don't want to wait for them to be resolved again.
 
 Enabling notification/indication with ``start_notify``
 ------------------------------------------------------
-Calling ``start_notify`` will by default adhere to the properties reported by
-the device assuming it correctly indicates "notify" and/or "indicate" properties.
-Some devices do not properly support AcquireNotify although reported. In such
-cases, you can force using StartNotify instead of AcquireNotify for notifications,
-even if AcquireNotify is supported by the characteristic. You can do so, by setting
-``{"use_start_notify": True}`` to the ``bluez`` parameter.
+BlueZ has two different methods of subscribing to notifications/indications:
+"StartNotify" and "AcquireNotify". For best compatibility, Bleak defaults to
+using "StartNotify". However, in cases where there is a characteristic that
+needs to be read after the notification is received to get the full data, using
+"AcquireNotify" is recommended to avoid receiving notifications for the both
+the notification and the read operation. To do this, pass ``bluez={"use_start_notify": False}``.
+to ``start_notify``.
+
+Briefly, in Bleak v3.0.0 and v3.0.1, "AcquireNotify" was used by default, but
+this caused issues with a number of devices, so the default was changed back to
+"StartNotify". If you have an affected device and need to support these versions
+of Bleak, you can set ``bluez={"use_start_notify": True}`` to make it work on
+all versions of Bleak.
 
 
 Parallel Access

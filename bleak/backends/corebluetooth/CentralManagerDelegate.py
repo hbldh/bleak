@@ -268,9 +268,9 @@ class CentralManagerDelegate:
 
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
         _service_uuids = (
-            NSArray[CBUUID]
-            .alloc()
-            .initWithArray_(list(map(CBUUID.UUIDWithString_, service_uuids)))
+            NSArray[CBUUID].arrayWithArray_(
+                list(map(CBUUID.UUIDWithString_, service_uuids))
+            )
             if service_uuids
             else None
         )
