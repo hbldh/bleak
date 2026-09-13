@@ -20,6 +20,7 @@ Changed
 
 Fixed
 -----
+* Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
 
 `3.0.2`_ (2026-05-02)
