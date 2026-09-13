@@ -12,6 +12,8 @@ import dataclasses
 import logging
 from typing import Any, Callable, Generic, TypeVar
 
+from bleak.exc import BleakError
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -91,6 +93,13 @@ class CallbackDispatcher:
         """
         logger.debug(f"Waiting for android api {callback_api}")
 
+        if callback_api in self.futures:
+            # Android only allows one GATT operation of a kind at a time and the
+            # callback does not tell us which request it belongs to. If we would
+            # overwrite the pending future here, the first caller would never
+            # get its result.
+            raise BleakError(f"Another operation is already waiting for {callback_api}")
+
         # Create a future, that is filled from the callback
         state: asyncio.Future[CallbackResultT] = self._loop.create_future()
         self.futures[callback_api] = state
@@ -110,9 +119,14 @@ class CallbackDispatcher:
         callback_api: CallbackApi[CallbackResultT],
         callback_result: CallbackResultT,
     ):
-        self._loop.call_soon_threadsafe(
-            self._result_state, failure, callback_api, callback_result
-        )
+        try:
+            self._loop.call_soon_threadsafe(
+                self._result_state, failure, callback_api, callback_result
+            )
+        except RuntimeError:
+            # The event loop was closed. This can happen when e.g. a disconnect
+            # callback arrives after the application has shut down.
+            logger.debug(f"Ignoring {callback_api} result, event loop is closed")
 
     def _result_state(
         self,
