@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 from collections.abc import AsyncGenerator
 
@@ -10,6 +11,7 @@ from bumble.gatt import Characteristic, Service
 from bumble.transport.common import Transport
 
 from bleak import BleakAdapter, BleakClient
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.device import BLEDevice
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
@@ -99,3 +101,58 @@ async def test_get_connected_devices_filters_by_service_uuid(
 
     not_connected = await adapter.get_connected_devices([OTHER_SERVICE_UUID])
     assert not_connected == []
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_disconnect_does_not_disconnect_connected_device(
+    connected_peripheral: ConnectedPeripheral,
+) -> None:
+    """A BleakClient using a device from get_connected_devices() must not
+    disconnect the underlying connection on close.
+    """
+    adapter = await BleakAdapter.get()
+    connected_devices = await adapter.get_connected_devices([TEST_SERVICE_UUID])
+    target = next(
+        d for d in connected_devices if d.address == connected_peripheral.device.address
+    )
+
+    async with BleakClient(target) as client:
+        # If this is false, it is a bug in Bleak. Real usage never needs
+        # to check `is_connected` after connecting because it cannot be
+        # anything but true. If connecting fails, an exception is raised
+        # before we get here.
+        assert client.is_connected
+
+    assert connected_peripheral.client.is_connected
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_disconnect_of_originating_client_disconnects_attached_client(
+    connected_peripheral: ConnectedPeripheral,
+) -> None:
+    """When the BleakClient that originally established the connection
+    disconnects, the attached BleakClient (using a device from
+    get_connected_devices()) sees the disconnect on BlueZ but stays
+    connected on other backends.
+    """
+    adapter = await BleakAdapter.get()
+    connected_devices = await adapter.get_connected_devices([TEST_SERVICE_UUID])
+    target = next(
+        d for d in connected_devices if d.address == connected_peripheral.device.address
+    )
+
+    # NOTE: this test must be the last in the module since it leaves the
+    # fixture's BleakClient in a disconnected state. Reconnecting Bumble
+    # immediately after a cascading disconnect is unreliable.
+    async with BleakClient(target) as client:
+        await connected_peripheral.client.disconnect()
+        await asyncio.sleep(0.5)
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS:
+            # BlueZ does not ref-count connections, so any client tearing
+            # down the connection takes everyone else with it. See
+            # https://github.com/bluez/bluez/issues/89.
+            assert not client.is_connected
+        else:
+            # Other backends ref-count and keep the attached client
+            # connected when the originating one disconnects.
+            assert client.is_connected

@@ -48,6 +48,14 @@ class BleakAdapterBlueZDBus(BaseBleakAdapter):
                 if props["Alias"] == props["Address"].replace(":", "-")
                 else props["Alias"]
             )
-            devices.append(BLEDevice(address, name, {"path": path, "props": props}))
+            # "from_connected_devices" marker: BleakClientBlueZDBus uses it
+            # to skip the BlueZ Disconnect call when this client is closed.
+            devices.append(
+                BLEDevice(
+                    address,
+                    name,
+                    {"path": path, "props": props, "from_connected_devices": True},
+                )
+            )
 
         return devices
