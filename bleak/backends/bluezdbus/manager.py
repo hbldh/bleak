@@ -1125,7 +1125,8 @@ class BlueZManager:
                         pass
 
                     for callback, adapter_path in self._device_removed_callbacks:
-                        if obj_path.startswith(adapter_path):
+                        # hci1 must not match hci10
+                        if obj_path.startswith(f"{adapter_path}/"):
                             callback(obj_path)
                 elif interface == defs.GATT_SERVICE_INTERFACE:
                     device_path = obj_path[: obj_path.rfind("/")]
