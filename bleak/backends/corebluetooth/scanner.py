@@ -11,7 +11,7 @@ from warnings import warn
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSData, NSNumber
+from Foundation import NSBundle, NSNumber
 
 from bleak._compat import override
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
@@ -21,6 +21,7 @@ from bleak.backends.corebluetooth.CentralManagerDelegate import (
 )
 from bleak.backends.corebluetooth.utils import (
     cb_uuid_to_str,
+    nsdata_to_bytes,
     to_optional_int,
     to_optional_str,
 )
@@ -32,14 +33,6 @@ from bleak.backends.scanner import (
 from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
-
-
-# NSData.bytes() leaks one exporter reference in supported PyObjC versions.
-# Remove this workaround once the minimum PyObjC version includes the fix:
-# https://github.com/ronaldoussoren/pyobjc/pull/689
-def _nsdata_to_bytes(data: NSData) -> bytes:
-    """Copy data through the buffer protocol without retaining the exporter."""
-    return memoryview(data).tobytes()
 
 
 def __getattr__(name: str):
@@ -129,7 +122,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             # Process service data
             service_data = {
-                cb_uuid_to_str(k): _nsdata_to_bytes(v)
+                cb_uuid_to_str(k): nsdata_to_bytes(v)
                 for k, v in adv_data.get("kCBAdvDataServiceData", {}).items()
             }
 
@@ -137,7 +130,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             manufacturer_binary_data = adv_data.get("kCBAdvDataManufacturerData")
             manufacturer_data: dict[int, bytes] = {}
             if manufacturer_binary_data:
-                manufacturer_binary_data_bytes = _nsdata_to_bytes(
+                manufacturer_binary_data_bytes = nsdata_to_bytes(
                     manufacturer_binary_data
                 )
                 manufacturer_id = int.from_bytes(

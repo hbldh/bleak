@@ -22,7 +22,7 @@ Fixed
 -----
 * Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
-* Fixed memory leak when scanning in CoreBluetooth backend.
+* Fixed memory leaks when scanning and using a notification discriminator in CoreBluetooth backend.
 * Fixed crash in WinRT backend if a WinRT event handler is called after the asyncio event loop is closed.
 
 `3.0.2`_ (2026-05-02)
