@@ -30,9 +30,17 @@ from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 from bleak.backends.bluezdbus.manager import BlueZManager
 from bleak.exc import BleakError
 
-ADAPTER_PATH = "/org/bluez/hci0"
-DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"
-DEVICE_PATH = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"
+from .conftest import (
+    ADAPTER_PATH,
+    DEVICE_ADDRESS,
+    DEVICE_PATH,
+    get_watcher_task,
+    init_manager_on_closed_loop,
+    noop_characteristic_value_changed,
+    reap_watcher_task,
+    watch_connected,
+)
+
 SERVICE_PATH = "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/service0001"
 SECOND_ADAPTER_PATH = "/org/bluez/hci1"
 SECOND_DEVICE_PATH = "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_00"
@@ -153,34 +161,6 @@ class FakeMessageBusFactory:
         return bus
 
 
-def noop_characteristic_value_changed(char_path: str, value: bytes) -> None:
-    pass
-
-
-def get_watcher_task(manager: BlueZManager) -> "asyncio.Task[None]":
-    task = manager._bus_watcher_task  # pyright: ignore[reportPrivateUsage]
-    assert task is not None
-    return task
-
-
-async def reap_watcher_task(manager: BlueZManager) -> None:
-    """Cancel and await the bus watcher task so it does not leak."""
-    task = manager._bus_watcher_task  # pyright: ignore[reportPrivateUsage]
-    if task is not None and not task.done():
-        task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await task
-
-
-def watch_connected(manager: BlueZManager) -> list[bool]:
-    """Records "Connected" changes reported for the test device."""
-    changes: list[bool] = []
-    manager.add_device_watcher(
-        DEVICE_PATH, changes.append, noop_characteristic_value_changed
-    )
-    return changes
-
-
 def make_client(
     bus: Optional[FakeMessageBus],
     connected: bool = False,
@@ -227,19 +207,11 @@ async def make_manager(
 
 
 @pytest.fixture
-async def global_instances(
-    monkeypatch: pytest.MonkeyPatch,
-) -> AsyncIterator[dict[asyncio.AbstractEventLoop, BlueZManager]]:
-    """The global manager registry, with this loop's entry reaped at teardown."""
+def fake_bus_factory(monkeypatch: pytest.MonkeyPatch) -> FakeMessageBusFactory:
+    """Serves the default managed objects to managers created outside make_manager."""
     factory = FakeMessageBusFactory(build_managed_objects())
     monkeypatch.setattr(manager_module, "MessageBus", factory)
-    instances = manager_module._global_instances  # pyright: ignore[reportPrivateUsage]
-
-    yield instances
-
-    manager = instances.pop(asyncio.get_running_loop(), None)
-    if manager is not None:
-        await reap_watcher_task(manager)
+    return factory
 
 
 async def test_bus_death_resets_state_and_notifies_watchers(
@@ -454,6 +426,7 @@ async def test_handle_bus_disconnect_propagates_callback_exception(
 
 
 async def test_global_manager_cleans_up_closed_loops(
+    fake_bus_factory: FakeMessageBusFactory,
     global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
 ) -> None:
     closed_loop = asyncio.new_event_loop()
@@ -538,22 +511,11 @@ async def test_watcher_logs_unexpected_handler_error(
 
 
 async def test_global_manager_cleans_up_closed_loop_with_real_watcher(
+    fake_bus_factory: FakeMessageBusFactory,
     global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
 ) -> None:
     """A watcher task left on a closed loop must not break the accessor."""
-
-    def init_manager_on_own_loop() -> tuple[BlueZManager, asyncio.AbstractEventLoop]:
-        own_loop = asyncio.new_event_loop()
-        stale_manager = BlueZManager()
-        own_loop.run_until_complete(stale_manager.async_init())
-        own_loop.run_until_complete(asyncio.sleep(0))  # park the watcher
-        own_loop.close()
-        return stale_manager, own_loop
-
-    loop = asyncio.get_running_loop()
-    stale_manager, closed_loop = await loop.run_in_executor(
-        None, init_manager_on_own_loop
-    )
+    stale_manager, closed_loop = await init_manager_on_closed_loop()
     assert not get_watcher_task(stale_manager).done()
     global_instances[closed_loop] = stale_manager
 
