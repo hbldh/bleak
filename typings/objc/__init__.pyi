@@ -1,3 +1,4 @@
+from types import TracebackType
 from typing import Literal, Optional, TypeVar, overload
 
 from CoreBluetooth import CBCentralManagerDelegate, CBPeripheralDelegate
@@ -14,6 +15,15 @@ class _OptionsType:
     verbose: bool
 
 options: _OptionsType
+
+class autorelease_pool:
+    def __enter__(self) -> None: ...
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None: ...
 
 def super(cls: type, self: T) -> T: ...
 def macos_available(major: int, minor: int, patch: int = 0) -> bool: ...
