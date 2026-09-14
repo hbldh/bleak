@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     if sys.platform != "linux":
         assert False, "This backend is only available on Linux"
 
+from collections.abc import Hashable
 from typing import Any
 
 from bleak._compat import Self, override
@@ -29,6 +30,11 @@ class BleakAdapterBlueZDBus(BaseBleakAdapter):
             f"/org/bluez/{adapter}" if adapter else manager.get_default_adapter()
         )
         return cls(adapter_path)
+
+    @classmethod
+    @override
+    def cache_key(cls, *, bluez: BlueZAdapterArgs = {}, **kwargs: Any) -> Hashable:
+        return bluez.get("adapter")
 
     @override
     async def get_connected_devices(
