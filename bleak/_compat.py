@@ -13,6 +13,7 @@ if sys.version_info < (3, 11):
     from typing_extensions import TypeVarTuple as TypeVarTuple
     from typing_extensions import Unpack as Unpack
     from typing_extensions import assert_never as assert_never
+    from typing_extensions import assert_type as assert_type
 else:
     from asyncio import timeout as timeout  # noqa: F401
     from typing import Never as Never  # noqa: F401
@@ -20,6 +21,7 @@ else:
     from typing import TypeVarTuple as TypeVarTuple  # noqa: F401
     from typing import Unpack as Unpack  # noqa: F401
     from typing import assert_never as assert_never  # noqa: F401
+    from typing import assert_type as assert_type  # noqa: F401
 
 if sys.version_info < (3, 12):
     from typing_extensions import override as override
