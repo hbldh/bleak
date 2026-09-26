@@ -14,6 +14,7 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on macOS"
 
 import asyncio
+import atexit
 import logging
 from collections.abc import Callable
 from typing import Any, Optional, TypedDict, cast
@@ -41,7 +42,7 @@ from Foundation import (
     NSObject,
     NSString,
 )
-from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
+from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create, dispatch_sync
 
 from bleak._compat import Self
 from bleak._compat import timeout as async_timeout
@@ -183,6 +184,31 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         )
 
 
+# Every live CentralManagerDelegate, so they can all be detached at interpreter exit.
+_live_managers: weakref.WeakSet[CentralManagerDelegate] = weakref.WeakSet()
+
+
+def _detach_all_managers() -> None:
+    """
+    Stops CoreBluetooth calling into Python before the interpreter is torn down.
+
+    CoreBluetooth keeps delivering events on each manager's dispatch queue after the
+    event loop and the scanners have stopped. Once module teardown has started, a
+    delegate callback can fail before any of its code runs, for example because PyObjC
+    can no longer convert the arguments, and PyObjC turns the Python exception into an
+    Objective-C exception that nothing catches, so the process aborts. ``atexit``
+    handlers run before that teardown.
+    """
+    for manager in list(_live_managers):
+        try:
+            manager.detach()
+        except Exception:
+            logger.debug("failed to detach a central manager at exit", exc_info=True)
+
+
+atexit.register(_detach_all_managers)
+
+
 class CentralManagerDelegate:
     """
     macOS conforming python class for managing the CentralManger for BLE
@@ -210,10 +236,26 @@ class CentralManagerDelegate:
         self._disconnect_futures: dict[NSUUID, asyncio.Future[None]] = {}
 
         self.did_update_state_event = asyncio.Event()
+        self._queue = dispatch_queue_create(
+            b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL
+        )
         self.central_manager = CBCentralManager.alloc().initWithDelegate_queue_(
             self.objc_delegate,
-            dispatch_queue_create(b"bleak.corebluetooth", DISPATCH_QUEUE_SERIAL),
+            self._queue,
         )
+        _live_managers.add(self)
+
+    @objc.python_method
+    def detach(self) -> None:
+        """
+        Stops scanning and clears the delegate of the central manager.
+
+        The delegate is cleared on the manager's own serial queue, so when this returns
+        no callback is running and none can start. Called at interpreter exit.
+        """
+        central_manager = self.central_manager
+        central_manager.stopScan()
+        dispatch_sync(self._queue, lambda: central_manager.setDelegate_(None))
 
     # User defined functions
     @objc.python_method
