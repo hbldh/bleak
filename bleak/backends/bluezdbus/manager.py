@@ -524,6 +524,88 @@ class BlueZManager:
             BleakBluetoothNotAvailableReason.POWERED_OFF,
         )
 
+    async def _recover_from_rejected_stop(self, adapter_path: str) -> Optional[Message]:
+        """
+        Clears bluetoothd's stale discovery state after ``StopDiscovery`` was
+        rejected with ``InProgress``.
+
+        Must be called with :attr:`_bus_lock` held.
+
+        Args:
+            adapter_path: The D-Bus object path of the adapter that was scanning.
+
+        Returns:
+            The reply to the second ``StopDiscovery``, which is what the caller
+            should check, or ``None`` if the recovery had to be abandoned and
+            the caller should treat scanning as stopped.
+        """
+        # bluetoothd only forwards our StopDiscovery to the kernel while it
+        # believes the kernel is scanning (discovery_enable). The kernel ends
+        # an LE scan on its own after ~10 s and bluetoothd restarts it a
+        # moment later, so a stop that lands in that gap is rejected by the
+        # kernel and relayed to us as InProgress. bluetoothd has already
+        # removed our discovery session by then, but on this error path it
+        # never resets its own "discovering" flag, so it would answer the next
+        # StartDiscovery with success without asking the kernel and that scan
+        # would silently find nothing (https://github.com/bluez/bluez/issues/807).
+        #
+        # Calling StartDiscovery and StopDiscovery again clears that flag.
+        # Since we did not touch the discovery filter in between, bluetoothd
+        # sees the same filter with "discovering" still set and answers the
+        # StartDiscovery immediately, without any kernel traffic. The following
+        # StopDiscovery then takes bluetoothd's idle branch, which resets
+        # "discovering" and succeeds. If the second stop is rejected too,
+        # bluetoothd still believes the kernel is scanning although it is not,
+        # and no scan on this adapter will work until it is reset.
+        # https://github.com/hbldh/bleak/issues/2021
+        #
+        # Do not reset the filter before the StartDiscovery: that would make
+        # bluetoothd start a real, unfiltered BR/EDR + LE discovery instead.
+        assert self._bus
+
+        logger.debug(
+            "StopDiscovery on %s returned InProgress, retrying",
+            adapter_path,
+        )
+
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=adapter_path,
+                interface=defs.ADAPTER_INTERFACE,
+                member="StartDiscovery",
+            )
+        )
+
+        try:
+            assert_reply(reply)
+        except BleakDBusError as ex:
+            # Our discovery session is already gone, so scanning is stopped as
+            # requested even though we could not clear the stale state.
+            logger.warning(
+                "StartDiscovery on %s failed while retrying, next scan may not find devices: %s",
+                adapter_path,
+                ex,
+            )
+            return None
+
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=adapter_path,
+                interface=defs.ADAPTER_INTERFACE,
+                member="StopDiscovery",
+            )
+        )
+
+        if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
+            logger.warning(
+                "bluetoothd discovery state on %s is stuck, scanning will not work until the adapter is power cycled or bluetoothd is restarted",
+                adapter_path,
+            )
+
+        return reply
+
     async def active_scan(
         self,
         adapter_path: str,
@@ -610,6 +692,16 @@ class BlueZManager:
                                 member="StopDiscovery",
                             )
                         )
+
+                        if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
+                            retry_reply = await self._recover_from_rejected_stop(
+                                adapter_path
+                            )
+
+                            if retry_reply is None:
+                                return
+
+                            reply = retry_reply
 
                         try:
                             assert_reply(reply)

@@ -28,6 +28,7 @@ Fixed
 * Fixed device removed callbacks in BlueZ backend matching devices on adapters whose name starts with the watched adapter name, e.g. ``hci10`` for ``hci1``.
 * Fixed BlueZ backend not detecting loss of the D-Bus connection, which left clients reporting connected forever and disconnect callbacks never firing.
 * Fixed ``disconnect()`` raising ``EOFError`` and leaking the D-Bus connection in BlueZ backend when the message bus died.
+* Fixed BlueZ backend to attempt to automatically recover from ``InProgress`` error when stopping scanning. Fixes #2021.
 
 `3.0.2`_ (2026-05-02)
 =====================

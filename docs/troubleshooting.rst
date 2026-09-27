@@ -149,6 +149,17 @@ with similar problems on Raspberry Pi and other devices.
 If you need Wi-Fi, you can possibly work around the issue by using a USB
 Bluetooth adapter instead.
 
+"bluetoothd discovery state is stuck" in the log
+================================================
+
+``bluetoothd`` can lose track of whether the kernel is scanning (see
+`bluez/bluez#807 <https://github.com/bluez/bluez/issues/807>`_). When this
+happens, BlueZ accepts requests to start scanning but no scanning actually
+happens, so no devices are found. Bleak detects this when stopping scanning
+and raises ``BleakDBusError`` with ``org.bluez.Error.InProgress`` after logging
+this warning. To recover, power cycle or re-plug the Bluetooth adapter or
+restart ``bluetoothd``.
+
 ----------
 macOS Bugs
 ----------
