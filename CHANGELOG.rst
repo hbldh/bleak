@@ -33,6 +33,7 @@ Fixed
 * Fixed ``start_notify()`` raising ``ValueError`` after reconnecting in CoreBluetooth backend. Fixes #1969.
 * Fixed GATT operations raising ``OSError`` instead of ``BleakError`` in WinRT backend when the device disconnects during the operation.
 * Fixed intermittent ``AssertionError`` in WinRT backend on fast reconnect.
+* Fixed BlueZ backend to attempt to automatically recover from ``InProgress`` error when stopping scanning. Fixes #2021.
 
 `3.0.2`_ (2026-05-02)
 =====================
