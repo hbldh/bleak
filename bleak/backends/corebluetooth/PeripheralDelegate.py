@@ -340,6 +340,16 @@ class PeripheralDelegate:
             self._read_rssi_futures.values(),
         )
 
+    def clear_notifications(self) -> None:
+        """
+        Forgets all notification callbacks.
+
+        This should be called when a peripheral is disconnected since
+        notifications are implicitly stopped by the disconnection.
+        """
+        self._characteristic_notify_callbacks.clear()
+        self._characteristic_notification_discriminators.clear()
+
     async def discover_services(
         self, services: Optional[NSArray[CBUUID]] = None
     ) -> NSArray[CBService]:

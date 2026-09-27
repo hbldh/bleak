@@ -124,6 +124,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
             assert self._delegate is not None
 
+            # CoreBluetooth stops notifications on disconnect, so we need to
+            # forget them too, otherwise start_notify() fails after reconnecting.
+            self._delegate.clear_notifications()
+
             # If there are any pending futures waiting for delegate callbacks, we
             # need to raise an exception since the callback will no longer be
             # called because the device is disconnected.
