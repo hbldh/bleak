@@ -29,7 +29,7 @@ from bleak.backends.android.dispatcher import (
     EmptyCallbackResult,
 )
 from bleak.backends.android.status import GATT_SUCCESS
-from bleak.exc import BleakGATTProtocolError
+from bleak.exc import BleakError, BleakGATTProtocolError
 
 if TYPE_CHECKING:
     # Only for type checking. At runtime this results in an error.
@@ -112,13 +112,18 @@ class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type:
             OnConnectionStateChangeCallback(),
             OnConnectionStateChangeResult(newState),
         )
+
+        if newState != BluetoothProfile.STATE_DISCONNECTED:
+            return
+
+        # There is no guarantee that the callbacks of pending operations are
+        # still called after disconnecting, so they could wait forever.
+        self.dispatcher.fail_all_threadsafe(BleakError("disconnected"))
+
         disconnected_callback = (
             self._client._disconnected_callback  # pyright: ignore[reportPrivateUsage]
         )
-        if (
-            newState == BluetoothProfile.STATE_DISCONNECTED
-            and disconnected_callback is not None
-        ):
+        if disconnected_callback is not None:
             self._loop.call_soon_threadsafe(disconnected_callback)
 
     @Override(jvoid, [BluetoothGatt, jint, jint])

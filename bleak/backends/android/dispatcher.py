@@ -128,6 +128,25 @@ class CallbackDispatcher:
             # callback arrives after the application has shut down.
             logger.debug(f"Ignoring {callback_api} result, event loop is closed")
 
+    def fail_all_threadsafe(self, exception: Exception) -> None:
+        """
+        Fails all pending futures with *exception*.
+
+        This is needed when Android won't call the callbacks anymore, e.g.
+        after the device disconnected.
+        """
+        try:
+            self._loop.call_soon_threadsafe(self._fail_all, exception)
+        except RuntimeError:
+            # The event loop was closed. See result_state_threadsafe().
+            logger.debug(f"Ignoring {exception!r}, event loop is closed")
+
+    def _fail_all(self, exception: Exception) -> None:
+        for callback_api, future in self.futures.items():
+            if not future.done():
+                logger.debug(f"Failing {callback_api} with {exception!r}")
+                future.set_exception(exception)
+
     def _result_state(
         self,
         exception: Exception | None,
