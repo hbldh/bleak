@@ -29,6 +29,7 @@ Fixed
 * Fixed BlueZ backend not detecting loss of the D-Bus connection, which left clients reporting connected forever and disconnect callbacks never firing.
 * Fixed ``disconnect()`` raising ``EOFError`` and leaking the D-Bus connection in BlueZ backend when the message bus died.
 * Fixed ``start_notify()`` raising ``ValueError`` after reconnecting in CoreBluetooth backend. Fixes #1969.
+* Fixed GATT operations raising ``OSError`` instead of ``BleakError`` in WinRT backend when the device disconnects during the operation.
 
 `3.0.2`_ (2026-05-02)
 =====================

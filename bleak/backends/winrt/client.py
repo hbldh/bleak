@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextvars import Context
 from ctypes import WinError  # type: ignore[attr-defined]
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
@@ -72,6 +72,8 @@ from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolErr
 
 logger = logging.getLogger(__name__)
 
+_T = TypeVar("_T")
+
 
 def __getattr__(name: str):
     if name == "WinRTClientArgs":
@@ -105,6 +107,10 @@ def _address_to_int(address: str) -> int:
         address = address.replace(char, "")
 
     return int(address, base=16)
+
+
+#: HRESULT_FROM_WIN32(ERROR_CANCELLED) as returned by WinRT async operations.
+_E_CANCELLED = -2147023673
 
 
 def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
@@ -849,6 +855,23 @@ class BleakClientWinRT(BaseBleakClient):
 
     # I/O methods
 
+    async def _await_gatt_io(self, operation: Awaitable[_T]) -> _T:
+        """
+        Awaits a GATT I/O operation.
+
+        Windows cancels pending operations when the device disconnects, which
+        raises a confusing "The operation was canceled by the user" error.
+        Raises :class:`BleakError` instead in that case.
+        """
+        try:
+            return await operation
+        except OSError as e:
+            # The operation can be canceled for other reasons too, so only
+            # blame the disconnection if we are actually disconnected.
+            if e.winerror == _E_CANCELLED and not self.is_connected:
+                raise BleakError("disconnected") from e
+            raise
+
     @override
     async def read_gatt_char(
         self,
@@ -879,10 +902,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         value = bytearray(
             _ensure_success(
-                await gatt_char.read_value_with_cache_mode_async(
-                    BluetoothCacheMode.CACHED
-                    if use_cached
-                    else BluetoothCacheMode.UNCACHED
+                await self._await_gatt_io(
+                    gatt_char.read_value_with_cache_mode_async(
+                        BluetoothCacheMode.CACHED
+                        if use_cached
+                        else BluetoothCacheMode.UNCACHED
+                    )
                 ),
                 "value",
                 f"Could not read characteristic handle {characteristic.handle}",
@@ -921,10 +946,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         value = bytearray(
             _ensure_success(
-                await gatt_desc.read_value_with_cache_mode_async(
-                    BluetoothCacheMode.CACHED
-                    if use_cached
-                    else BluetoothCacheMode.UNCACHED
+                await self._await_gatt_io(
+                    gatt_desc.read_value_with_cache_mode_async(
+                        BluetoothCacheMode.CACHED
+                        if use_cached
+                        else BluetoothCacheMode.UNCACHED
+                    )
                 ),
                 "value",
                 f"Could not read Descriptor value for {descriptor.handle:04X}",
@@ -951,13 +978,15 @@ class BleakClientWinRT(BaseBleakClient):
         gatt_char = cast(GattCharacteristic, characteristic.obj)
 
         _ensure_success(
-            await gatt_char.write_value_with_result_and_option_async(
-                buf,
-                (
-                    GattWriteOption.WRITE_WITH_RESPONSE
-                    if response
-                    else GattWriteOption.WRITE_WITHOUT_RESPONSE
-                ),
+            await self._await_gatt_io(
+                gatt_char.write_value_with_result_and_option_async(
+                    buf,
+                    (
+                        GattWriteOption.WRITE_WITH_RESPONSE
+                        if response
+                        else GattWriteOption.WRITE_WITHOUT_RESPONSE
+                    ),
+                )
             ),
             None,
             f"Could not write value {data} to characteristic {characteristic.handle:04X}",
@@ -988,7 +1017,7 @@ class BleakClientWinRT(BaseBleakClient):
         gatt_desc = cast(GattDescriptor, descriptor.obj)
 
         _ensure_success(
-            await gatt_desc.write_value_with_result_async(buf),
+            await self._await_gatt_io(gatt_desc.write_value_with_result_async(buf)),
             None,
             f"Could not write value {data!r} to descriptor {descriptor.handle:04X}",
         )
@@ -1039,8 +1068,10 @@ class BleakClientWinRT(BaseBleakClient):
 
         try:
             _ensure_success(
-                await winrt_char.write_client_characteristic_configuration_descriptor_with_result_async(
-                    cccd
+                await self._await_gatt_io(
+                    winrt_char.write_client_characteristic_configuration_descriptor_with_result_async(
+                        cccd
+                    )
                 ),
                 None,
                 f"Could not start notify on {characteristic.handle:04X}",
@@ -1072,8 +1103,10 @@ class BleakClientWinRT(BaseBleakClient):
         gatt_char = cast(GattCharacteristic, characteristic.obj)
 
         _ensure_success(
-            await gatt_char.write_client_characteristic_configuration_descriptor_with_result_async(
-                GattClientCharacteristicConfigurationDescriptorValue.NONE
+            await self._await_gatt_io(
+                gatt_char.write_client_characteristic_configuration_descriptor_with_result_async(
+                    GattClientCharacteristicConfigurationDescriptorValue.NONE
+                )
             ),
             None,
             f"Could not stop notify on {characteristic.handle:04X}",
