@@ -12,12 +12,16 @@ if TYPE_CHECKING:
 
 import asyncio
 import contextlib
+import shutil
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import pytest
 
 if TYPE_CHECKING:
     from bleak.backends.bluezdbus.manager import BlueZManager
+
+    from .fake_bluez import StartDaemon
 
 ADAPTER_PATH = "/org/bluez/hci0"
 DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"
@@ -92,3 +96,27 @@ async def global_instances() -> (
     manager = instances.pop(asyncio.get_running_loop(), None)
     if manager is not None:
         await release_manager(manager)
+
+
+@pytest.fixture
+async def start_daemon(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> "AsyncIterator[StartDaemon]":
+    """Starts private dbus-daemons with a fake BlueZ and stops them at teardown."""
+    if shutil.which("dbus-daemon") is None:
+        pytest.skip("dbus-daemon is not available")
+
+    from .fake_bluez import RealDBusDaemon
+
+    daemons: "list[RealDBusDaemon]" = []
+
+    async def _start() -> "RealDBusDaemon":
+        daemon = RealDBusDaemon()
+        await daemon.start(monkeypatch, tmp_path)
+        daemons.append(daemon)
+        return daemon
+
+    yield _start
+
+    for daemon in daemons:
+        await daemon.stop()
