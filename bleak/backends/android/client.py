@@ -30,6 +30,7 @@ from java.chaquopy import jarray
 from java.util import UUID
 
 from bleak._compat import override
+from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.android.broadcast import BroadcastReceiver
@@ -134,34 +135,38 @@ class BleakClientAndroid(BaseBleakClient):
 
         logger.debug(f"Connecting to BLE device @ {self.address}")
 
+        # Keeps the gatt object for cleanup if waiting for the connection fails.
+        pending_gatt: BluetoothGatt | None = None
+
         def _do_connect() -> BluetoothGatt:
-            result = device.connectGatt(
+            nonlocal pending_gatt
+            pending_gatt = device.connectGatt(
                 context,
                 False,
                 callbacks.java,
                 BluetoothDevice.TRANSPORT_LE,
             )
-            if result is None:
+            if pending_gatt is None:
                 raise BleakError(
                     f"Failed to initiate connection to device @ {self.address}"
                 )
-            return result
+            return pending_gatt
 
-        gatt, conn_future = callbacks.dispatcher.dispatch(
-            dispatch_func=_do_connect,
-            callback_api=OnConnectionStateChangeCallback(),
-        )
         try:
-            conn_result = await asyncio.wait_for(conn_future, timeout=timeout)
+            async with async_timeout(timeout):
+                gatt, conn_result = await callbacks.dispatcher.perform_and_wait(
+                    dispatch_func=_do_connect,
+                    callback_api=OnConnectionStateChangeCallback(),
+                )
             if conn_result.new_state != BluetoothProfile.STATE_CONNECTED:
                 raise BleakError(
                     f"Unexpected connection state: {conn_result.new_state}"
                 )
-            logger.debug(f"{OnConnectionStateChangeCallback()} succeeded")
         except BaseException:
             # If connecting is canceled, times out, or fails, we need to disconnect to clean up the gatt connection.
-            gatt.disconnect()
-            gatt.close()
+            if pending_gatt is not None:
+                pending_gatt.disconnect()
+                pending_gatt.close()
             raise
 
         self._conn_objs = ConnectObjects(
@@ -236,11 +241,10 @@ class BleakClientAndroid(BaseBleakClient):
                 == BluetoothProfile.STATE_DISCONNECTED
             )
             if not already_disconnected:
-                _, future = self._conn_objs.callbacks.dispatcher.dispatch(
+                await self._conn_objs.callbacks.dispatcher.perform_and_wait(
                     dispatch_func=self._conn_objs.gatt.disconnect,
                     callback_api=OnConnectionStateChangeCallback(),
                 )
-                await future
             self._conn_objs.gatt.close()
         except Exception as e:
             logger.error(f"Attempt to disconnect device failed: {e}")
