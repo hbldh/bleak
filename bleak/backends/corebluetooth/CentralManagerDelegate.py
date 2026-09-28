@@ -313,6 +313,11 @@ class CentralManagerDelegate:
                 del self._disconnect_futures[peripheral.identifier()]
 
             raise
+        except BaseException:
+            # CoreBluetooth does not call didDisconnectPeripheral after a failed
+            # connection attempt, so the callback has to be removed here.
+            del self._disconnect_callbacks[peripheral.identifier()]
+            raise
 
     async def disconnect(self, peripheral: CBPeripheral) -> None:
         future = self.event_loop.create_future()
