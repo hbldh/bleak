@@ -156,24 +156,24 @@ On Linux the kernel ends an LE scan on its own after about 10 seconds and
 BlueZ restarts it a few seconds later for as long as a scanner is active. If
 Bleak stops a scan in the moment between those two, BlueZ rejects the stop
 with ``InProgress`` even though it has already ended Bleak's discovery
-session. Bleak treats this as a completed stop and logs it at INFO level.
-Seen once, it is harmless: the scan that follows may return no devices,
+session. Bleak then starts and stops a short probe scan on the same adapter
+to check that BlueZ is still working. When the probe stops cleanly the
+original stop is treated as completed and logged at INFO level. This is
+harmless, apart from one thing: the scan that follows may return no devices,
 because BlueZ still believes it is discovering and does not start the kernel
 scan, and the scan after that works normally.
 
 ``bluetoothd`` can also lose track of the kernel's scan state for good (see
 `bluez/bluez#807 <https://github.com/bluez/bluez/issues/807>`_). Then every
 stop on that adapter is rejected and no scan on it reaches the kernel until
-the adapter is reset. Bleak detects this as two ``InProgress`` rejections in
-a row with no successful stop between them: the second one is logged at
-WARNING level and ``BleakScanner.stop()`` raises ``BleakDBusError`` so the
-caller knows the adapter is not scanning. Power cycle or re-plug the adapter,
-or restart ``bluetoothd``. The ``Discovering`` property of the adapter is not
-a reliable indicator here, since BlueZ leaves it set to ``true`` in both the
-harmless and the stuck case. The detection only sees stops made by the
-current process while it is the only scanner on the adapter; another active
-scanner on the same adapter makes BlueZ answer the stop without asking the
-kernel, which counts as a successful stop.
+the adapter is reset. The probe scan cannot be stopped either in that case,
+so Bleak logs a WARNING and ``BleakScanner.stop()`` raises ``BleakDBusError``
+to tell the caller the adapter is not scanning. Power cycle or re-plug the
+adapter, or restart ``bluetoothd``. The ``Discovering`` property of the
+adapter is not a reliable indicator here, since BlueZ leaves it set to
+``true`` in both the harmless and the stuck case. The probe only decides
+anything while Bleak is the only scanner on the adapter; when another
+scanner is active, BlueZ answers the stop without asking the kernel.
 
 ----------
 macOS Bugs

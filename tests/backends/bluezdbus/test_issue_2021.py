@@ -2,6 +2,7 @@
 
 import logging
 import sys
+from typing import Any
 
 import pytest
 
@@ -22,7 +23,7 @@ from bleak.exc import BleakDBusError
 
 ADAPTER_PATH = "/org/bluez/hci0"
 
-NO_FILTERS: dict[str, Variant] = {}
+FILTERS: dict[str, Variant] = {"Transport": Variant("s", "le")}
 
 LOGGER = "bleak.backends.bluezdbus.manager"
 
@@ -48,12 +49,12 @@ class FakeBus:
 
     def __init__(self, stop_errors: "list[str | None]") -> None:
         self.stop_errors = list(stop_errors)
-        self.members: "list[str | None]" = []
+        self.calls: "list[tuple[str | None, list[Any]]]" = []
 
     async def call(self, msg: Message) -> Message:
         # outgoing messages carry serial 0 until a real bus assigns one, so
         # replies are built explicitly rather than derived from the request
-        self.members.append(msg.member)
+        self.calls.append((msg.member, msg.body))
         if msg.member == "StopDiscovery" and self.stop_errors:
             error = self.stop_errors.pop(0)
             if error is not None:
@@ -66,6 +67,10 @@ class FakeBus:
                 )
         return Message(message_type=MessageType.METHOD_RETURN, reply_serial=1)
 
+    @property
+    def members(self) -> "list[str | None]":
+        return [member for member, _ in self.calls]
+
 
 def make_manager(stop_errors: "list[str | None]") -> "tuple[BlueZManager, FakeBus]":
     manager = BlueZManager()
@@ -77,7 +82,7 @@ def make_manager(stop_errors: "list[str | None]") -> "tuple[BlueZManager, FakeBu
 
 
 async def _scan_and_stop(manager: BlueZManager) -> None:
-    stop = await manager.active_scan(ADAPTER_PATH, NO_FILTERS, _ADV, _REMOVED)
+    stop = await manager.active_scan(ADAPTER_PATH, FILTERS, _ADV, _REMOVED)
     await stop()
 
 
@@ -94,19 +99,31 @@ def _records(caplog: pytest.LogCaptureFixture, level: int) -> "list[str]":
     return [r.getMessage() for r in caplog.records if r.levelno == level]
 
 
-async def test_stop_tolerates_in_progress(caplog: pytest.LogCaptureFixture) -> None:
+async def test_stop_tolerates_in_progress_when_a_probe_scan_stops_cleanly(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """
     BlueZ answers StopDiscovery with InProgress when the kernel has already
-    stopped scanning; the discovery session is gone by then, so stop() must
-    return normally, leave the manager's bookkeeping clean, and leave a
-    record in the log.
+    stopped scanning; the discovery session is gone by then. stop() probes
+    the adapter with a start/stop pair, and when that stops cleanly it
+    returns normally, clears the filters and leaves a record in the log.
     """
-    manager, bus = make_manager([defs.BLUEZ_ERROR_IN_PROGRESS])
+    manager, bus = make_manager([defs.BLUEZ_ERROR_IN_PROGRESS, None])
 
     with caplog.at_level(logging.INFO, logger=LOGGER):
         await _scan_and_stop(manager)
 
-    assert bus.members == ["SetDiscoveryFilter", "StartDiscovery", "StopDiscovery"]
+    assert bus.calls == [
+        ("SetDiscoveryFilter", [FILTERS]),
+        ("StartDiscovery", []),
+        ("StopDiscovery", []),
+        # the probe uses the same filters ...
+        ("SetDiscoveryFilter", [FILTERS]),
+        ("StartDiscovery", []),
+        ("StopDiscovery", []),
+        # ... and the filters are cleared once it has stopped
+        ("SetDiscoveryFilter", [{}]),
+    ]
     _assert_callbacks_removed(manager)
     assert any(
         "InProgress" in m and ADAPTER_PATH in m for m in _records(caplog, logging.INFO)
@@ -114,56 +131,48 @@ async def test_stop_tolerates_in_progress(caplog: pytest.LogCaptureFixture) -> N
     assert not _records(caplog, logging.WARNING)
 
 
-async def test_second_consecutive_in_progress_raises(
+async def test_stop_raises_when_the_probe_scan_cannot_be_stopped_either(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """
-    A single rejection is a race with the kernel's scan timeout and the next
-    stop succeeds. Two in a row means bluetoothd's discovery state is stuck
-    and no scan on the adapter reaches the kernel, so the second one must be
-    reported as an error, with a warning that says what to do.
+    When the probe's stop is rejected as well, bluetoothd's discovery state
+    is stuck and no scan on the adapter reaches the kernel. The original
+    error is raised, with a warning that says what to do.
     """
     manager, bus = make_manager(
         [defs.BLUEZ_ERROR_IN_PROGRESS, defs.BLUEZ_ERROR_IN_PROGRESS]
     )
 
     with caplog.at_level(logging.INFO, logger=LOGGER):
-        await _scan_and_stop(manager)
         with pytest.raises(BleakDBusError) as info:
             await _scan_and_stop(manager)
 
     assert info.value.dbus_error == defs.BLUEZ_ERROR_IN_PROGRESS
     assert bus.members.count("StopDiscovery") == 2
+    # nothing stopped, so the filters are not cleared
+    assert bus.calls[-1] == ("StopDiscovery", [])
     _assert_callbacks_removed(manager)
     warnings = _records(caplog, logging.WARNING)
     assert len(warnings) == 1
-    assert "twice in a row" in warnings[0] and ADAPTER_PATH in warnings[0]
+    assert "probe scan" in warnings[0] and ADAPTER_PATH in warnings[0]
 
 
-async def test_a_clean_stop_resets_the_count(caplog: pytest.LogCaptureFixture) -> None:
-    """A successful stop between two rejections means they were two separate
-    races, not a stuck adapter; neither may raise."""
-    manager, bus = make_manager(
-        [defs.BLUEZ_ERROR_IN_PROGRESS, None, defs.BLUEZ_ERROR_IN_PROGRESS]
-    )
+async def test_stop_tolerates_not_ready_without_probing() -> None:
+    """A powered-off adapter has nothing to stop and no filters to clear."""
+    manager, bus = make_manager([defs.BLUEZ_ERROR_NOT_READY])
 
-    with caplog.at_level(logging.INFO, logger=LOGGER):
-        await _scan_and_stop(manager)
-        await _scan_and_stop(manager)
-        await _scan_and_stop(manager)
+    await _scan_and_stop(manager)
 
-    assert bus.members.count("StopDiscovery") == 3
-    # only the successful stop goes on to reset the discovery filter
-    assert bus.members.count("SetDiscoveryFilter") == 3 + 1
-    assert len(_records(caplog, logging.INFO)) == 2
-    assert not _records(caplog, logging.WARNING)
+    assert bus.members == ["SetDiscoveryFilter", "StartDiscovery", "StopDiscovery"]
+    _assert_callbacks_removed(manager)
 
 
 async def test_stop_still_raises_other_errors() -> None:
-    manager, _ = make_manager([defs.BLUEZ_ERROR_FAILED])
+    manager, bus = make_manager([defs.BLUEZ_ERROR_FAILED])
 
-    stop = await manager.active_scan(ADAPTER_PATH, NO_FILTERS, _ADV, _REMOVED)
     with pytest.raises(BleakDBusError) as info:
-        await stop()
+        await _scan_and_stop(manager)
 
     assert info.value.dbus_error == defs.BLUEZ_ERROR_FAILED
+    assert bus.members.count("StopDiscovery") == 1
+    _assert_callbacks_removed(manager)
