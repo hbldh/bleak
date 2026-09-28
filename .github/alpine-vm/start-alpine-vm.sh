@@ -7,10 +7,12 @@ set -e
 #
 # The script will:
 #   1. Check dependencies
-#   2. Fetch alpine-make-vm-image if needed
-#   3. Build VM image alpine.qcow2 (prompts if exists)
-#   4. Boot VM with QEMU on port 2222
-#   5. Setup workspace (mount 9p filesystem and create symlink)
+#   2. Build VM image alpine.qcow2 (prompts if exists, reuses it if
+#      not running interactively)
+#   3. Boot VM with QEMU on port 2222
+#   4. Setup workspace (mount 9p filesystem and create symlink)
+#
+# Pass --build-only to stop after building the image.
 #
 # To stop the running VM:
 #   pkill -f 'qemu-system.*alpine.qcow2'
@@ -22,6 +24,30 @@ VM_IMAGE="$VM_BUILD_DIR/alpine.qcow2"
 VM_SSH_PORT="2222"
 VM_CONSOLE_LOG="vm-console.log"
 VM_PACKAGES="bluez openssh uv git"
+
+# alpine-make-vm-image downloads apk.static from gitlab.alpinelinux.org by
+# default, which is unreliable, so take it from the apk-tools-static package
+# on the package mirror instead. The v3.22 branch is the last one with
+# apk-tools 2.x, which is what alpine-make-vm-image uses by default. The
+# version is looked up in the APKINDEX since the mirror only keeps the latest
+# build, and apk.static is verified against Alpine's signing key instead of
+# a pinned hash.
+APK_TOOLS_STATIC_REPO="https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64"
+ALPINE_KEY_NAME="alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub"
+ALPINE_KEY="-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAutQkua2CAig4VFSJ7v54
+ALyu/J1WB3oni7qwCZD3veURw7HxpNAj9hR+S5N/pNeZgubQvJWyaPuQDm7PTs1+
+tFGiYNfAsiibX6Rv0wci3M+z2XEVAeR9Vzg6v4qoofDyoTbovn2LztaNEjTkB+oK
+tlvpNhg1zhou0jDVYFniEXvzjckxswHVb8cT0OMTKHALyLPrPOJzVtM9C1ew2Nnc
+3848xLiApMu3NBk0JqfcS3Bo5Y2b1FRVBvdt+2gFoKZix1MnZdAEZ8xQzL/a0YS5
+Hd0wj5+EEKHfOd3A75uPa/WQmA+o0cBFfrzm69QDcSJSwGpzWrD1ScH3AK8nWvoj
+v7e9gukK/9yl1b4fQQ00vttwJPSgm9EnfPHLAtgXkRloI27H6/PuLoNvSAMQwuCD
+hQRlyGLPBETKkHeodfLoULjhDi1K2gKJTMhtbnUcAA7nEphkMhPWkBpgFdrH+5z4
+Lxy+3ek0cqcI7K68EtrffU8jtUj9LFTUC8dERaIBs7NgQ/LfDbDfGh9g6qVj1hZl
+k9aaIPTm/xsi8v3u+0qaq7KzIBc9s59JOoA8TlpOaYdVgSQhHHLBaahOuAigH+VI
+isbC9vmqsThF2QdDtQt37keuqoda2E6sL7PUvIyVXDRfwX7uMDjlzTxHTymvq2Ck
+htBqojBnThmjJQFgZXocHG8CAwEAAQ==
+-----END PUBLIC KEY-----"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -59,6 +85,14 @@ check_dependencies() {
         missing_deps+=("lsof")
     fi
 
+    if ! command -v curl &> /dev/null; then
+        missing_deps+=("curl")
+    fi
+
+    if ! command -v openssl &> /dev/null; then
+        missing_deps+=("openssl")
+    fi
+
     if [ ${#missing_deps[@]} -ne 0 ]; then
         log_error "Missing dependencies: ${missing_deps[*]}"
         log_info "On Ubuntu/Debian: sudo apt-get install qemu-system-x86 qemu-utils qemu-kvm"
@@ -87,9 +121,49 @@ fetch_alpine_make_vm_image() {
     log_info "alpine-make-vm-image fetched"
 }
 
+# Fetch apk.static from the apk-tools-static package
+fetch_apk_static() {
+    local apk_static="$VM_BUILD_DIR/sbin/apk.static"
+    local signature="$apk_static.SIGN.RSA.sha256.$ALPINE_KEY_NAME"
+    local version
+
+    if [ -f "$apk_static" ]; then
+        log_info "apk.static already exists"
+        return 0
+    fi
+
+    log_info "Fetching apk-tools-static..."
+    curl -sSf --retry 5 -o "$VM_BUILD_DIR/APKINDEX.tar.gz" "$APK_TOOLS_STATIC_REPO/APKINDEX.tar.gz"
+    version=$(tar -xzOf "$VM_BUILD_DIR/APKINDEX.tar.gz" APKINDEX \
+        | awk '/^P:apk-tools-static$/ { found = 1 } found && /^V:/ { print substr($0, 3); exit }')
+    rm "$VM_BUILD_DIR/APKINDEX.tar.gz"
+    if [ -z "$version" ]; then
+        log_error "apk-tools-static not found in $APK_TOOLS_STATIC_REPO"
+        exit 1
+    fi
+
+    curl -sSf --retry 5 -o "$VM_BUILD_DIR/apk-tools-static.apk" \
+        "$APK_TOOLS_STATIC_REPO/apk-tools-static-$version.apk"
+    tar -xzf "$VM_BUILD_DIR/apk-tools-static.apk" -C "$VM_BUILD_DIR" --warning=no-unknown-keyword \
+        "${apk_static#"$VM_BUILD_DIR"/}" "${signature#"$VM_BUILD_DIR"/}"
+    rm "$VM_BUILD_DIR/apk-tools-static.apk"
+
+    if ! openssl dgst -sha256 -verify <(echo "$ALPINE_KEY") -signature "$signature" "$apk_static"; then
+        rm -f "$apk_static"
+        log_error "apk.static signature verification failed"
+        exit 1
+    fi
+    rm "$signature"
+    log_info "apk.static $version fetched"
+}
+
 # Build Alpine VM image
 build_vm_image() {
     if [ -f "$VM_IMAGE" ]; then
+        if [ ! -t 0 ]; then
+            log_info "Using existing VM image $VM_IMAGE"
+            return 0
+        fi
         log_warn "VM image $VM_IMAGE already exists. Delete it to rebuild."
         read -p "Delete and rebuild? (y/N) " -n 1 -r
         echo
@@ -100,6 +174,9 @@ build_vm_image() {
         rm -f "$VM_IMAGE"
     fi
     
+    fetch_alpine_make_vm_image
+    fetch_apk_static
+
     log_info "Building Alpine VM image..."
     
     # Check if we need sudo
@@ -111,7 +188,7 @@ build_vm_image() {
     fi
     
     cd "$VM_BUILD_DIR"
-    $SUDO ./alpine-make-vm-image \
+    $SUDO env APK="$VM_BUILD_DIR/sbin/apk.static" ./alpine-make-vm-image \
         --image-format qcow2 \
         --image-size 1G \
         --serial-console \
@@ -237,8 +314,12 @@ main() {
     cd "$REPO_ROOT"
     
     check_dependencies
-    fetch_alpine_make_vm_image
     build_vm_image
+
+    if [ "${1:-}" = "--build-only" ]; then
+        return 0
+    fi
+
     boot_vm
     
     log_info "Alpine VM setup complete!"

@@ -71,7 +71,27 @@ jobs:
         run: |
           sudo chmod 666 /dev/kvm
 
-      - name: Build and boot Alpine VM
+      # The image is saved right after it is built since the VM writes to it
+      # while running.
+      - name: Restore Alpine VM image
+        id: alpine-vm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .alpine-vm-build/alpine.qcow2
+          key: alpine-vm-${{ hashFiles('.github/alpine-vm/*.sh') }}
+
+      - name: Build Alpine VM image
+        if: steps.alpine-vm-cache.outputs.cache-hit != 'true'
+        run: ./.github/alpine-vm/start-alpine-vm.sh --build-only
+
+      - name: Save Alpine VM image
+        if: steps.alpine-vm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .alpine-vm-build/alpine.qcow2
+          key: ${{ steps.alpine-vm-cache.outputs.cache-primary-key }}
+
+      - name: Boot Alpine VM
         run: ./.github/alpine-vm/start-alpine-vm.sh
 
       - name: Run pytest in VM
