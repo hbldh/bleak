@@ -236,6 +236,101 @@ class BlueZManager:
         if device_path not in self._properties:
             raise BleakError(f"device '{device_path.split('/')[-1]}' not found")
 
+    async def _call_adapter(
+        self, adapter_path: str, member: str, **kwargs: Any
+    ) -> None:
+        """
+        Call a method on an adapter and raise on an error reply.
+
+        The caller must hold the bus lock.
+        """
+        assert self._bus
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=adapter_path,
+                interface=defs.ADAPTER_INTERFACE,
+                member=member,
+                **kwargs,
+            )
+        )
+        assert_reply(reply)
+
+    async def _stop_discovery(
+        self, adapter_path: str, filters: dict[str, Variant]
+    ) -> None:
+        """
+        Stop discovery on an adapter and clear its discovery filters.
+
+        The caller must hold the bus lock.
+        """
+        try:
+            await self._call_adapter(adapter_path, "StopDiscovery")
+        except BleakDBusError as ex:
+            match ex.dbus_error:
+                case defs.BLUEZ_ERROR_NOT_READY:
+                    # the adapter is powered off, so there is nothing to stop
+                    # and no filter left to clear
+                    return
+                case defs.BLUEZ_ERROR_IN_PROGRESS:
+                    await self._probe_stuck_discovery(adapter_path, filters, ex)
+                case _:
+                    raise
+
+        # remove the filters
+        await self._call_adapter(
+            adapter_path, "SetDiscoveryFilter", signature="a{sv}", body=[{}]
+        )
+
+    async def _probe_stuck_discovery(
+        self, adapter_path: str, filters: dict[str, Variant], ex: BleakDBusError
+    ) -> None:
+        """
+        Work out whether an InProgress reply to StopDiscovery is harmless.
+
+        BlueZ relays the kernel rejecting a stop while it is not actively
+        scanning as InProgress, and it has already removed our discovery
+        session by the time it replies (bluetoothd's stop_discovery_complete()
+        removes the client before checking the status). Usually this is a
+        race with the kernel's own scan timeout and the stop has taken effect.
+        But bluetoothd can also lose track of the kernel's scan state for good
+        (https://github.com/bluez/bluez/issues/807); then every stop on the
+        adapter is rejected and no scan reaches the kernel until the adapter
+        is reset. The two look the same in the reply, so tell them apart by
+        starting and stopping once more: in the harmless case bluetoothd
+        answers the stop from its idle state without asking the kernel, in
+        the stuck case the kernel rejects it again.
+
+        See https://github.com/hbldh/bleak/issues/2021.
+
+        Raises:
+            The original exception if the probe scan cannot be stopped either.
+        """
+        try:
+            await self._call_adapter(
+                adapter_path, "SetDiscoveryFilter", signature="a{sv}", body=[filters]
+            )
+            await self._call_adapter(adapter_path, "StartDiscovery")
+            await self._call_adapter(adapter_path, "StopDiscovery")
+        except BleakDBusError as probe_ex:
+            logger.warning(
+                "StopDiscovery on %s returned InProgress and a probe scan could "
+                "not be stopped either (%s); bluetoothd's discovery state "
+                "appears stuck and scans on this adapter will see nothing until "
+                "it is reset (power cycle or re-plug the adapter, or restart "
+                "bluetoothd)",
+                adapter_path,
+                probe_ex.dbus_error,
+            )
+            raise ex from probe_ex
+
+        logger.info(
+            "StopDiscovery on %s returned InProgress; BlueZ had already ended "
+            "our discovery session and a probe scan stopped cleanly, so "
+            "scanning is stopped",
+            adapter_path,
+        )
+
     def _get_device_property(
         self, device_path: str, interface: str, property_name: str
     ) -> Any:
@@ -600,35 +695,7 @@ class BlueZManager:
                     )
 
                     async with self._bus_lock:
-                        assert self._bus
-
-                        reply = await self._bus.call(
-                            Message(
-                                destination=defs.BLUEZ_SERVICE,
-                                path=adapter_path,
-                                interface=defs.ADAPTER_INTERFACE,
-                                member="StopDiscovery",
-                            )
-                        )
-
-                        try:
-                            assert_reply(reply)
-                        except BleakDBusError as ex:
-                            if ex.dbus_error != defs.BLUEZ_ERROR_NOT_READY:
-                                raise
-                        else:
-                            # remove the filters
-                            reply = await self._bus.call(
-                                Message(
-                                    destination=defs.BLUEZ_SERVICE,
-                                    path=adapter_path,
-                                    interface=defs.ADAPTER_INTERFACE,
-                                    member="SetDiscoveryFilter",
-                                    signature="a{sv}",
-                                    body=[{}],
-                                )
-                            )
-                            assert_reply(reply)
+                        await self._stop_discovery(adapter_path, filters)
 
                 return stop
             except BaseException:
