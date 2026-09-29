@@ -73,6 +73,15 @@ async def connected_peripheral(
 
 
 @pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.usefixtures("hci_transport")
+async def test_get_returns_same_instance_on_second_call() -> None:
+    """``BleakAdapter.get()`` returns the same instance on repeated calls."""
+    a = await BleakAdapter.get()
+    b = await BleakAdapter.get()
+    assert a is b
+
+
+@pytest.mark.asyncio(loop_scope="module")
 async def test_get_connected_devices_without_filters_returns_non_empty(
     connected_peripheral: ConnectedPeripheral,
 ) -> None:
