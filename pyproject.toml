@@ -60,6 +60,7 @@ test = [
     # Client for the winvhci virtual Bluetooth controller, used by --bleak-vhci
     # on Windows. From git because it is not published on PyPI yet.
     "winvhci @ git+https://github.com/dlech/windows-vhci-driver@v1.3.0#subdirectory=python ; platform_system=='Windows'",
+    "pytest-rerunfailures>=16.7",
 ]
 test-android = [
     "briefcase>=0.4.5; python_version >= '3.11'",
