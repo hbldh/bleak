@@ -1125,16 +1125,27 @@ class FutureLike(Generic[T]):
     be passed to Python APIs.
 
     Needed until https://github.com/pywinrt/pywinrt/issues/14
+
+    Completion is tracked by the operation's completed handler, not by
+    polling the operation's status. The status flips to COMPLETED before
+    the handler runs, and the result is only fetched inside the handler
+    (it has to be read on that thread), so a fast operation, such as a
+    cached GATT discovery, can already read as completed while its result
+    is still unset. Awaiting it then must wait for the handler.
     """
 
     _asyncio_future_blocking = False
 
     def __init__(self: Self, op: IAsyncOperation[T]) -> None:
-        self._op = op
+        self._cancel_op = op.cancel
         self._callbacks: list[Callable[[Self], None]] = []
         self._loop = asyncio.get_running_loop()
         self._cancel_requested = False
         self._result = None
+        self._error_code = 0
+        # Set by the completed handler; None until it has run. The handler is
+        # the only source of truth about the operation.
+        self._status: Optional[AsyncStatus] = None
 
         def call_callbacks() -> None:
             for c in self._callbacks:
@@ -1146,16 +1157,23 @@ class FutureLike(Generic[T]):
             if status == AsyncStatus.COMPLETED:
                 # have to get result on this thread, otherwise it may not return correct value
                 self._result = op.get_results()
+            elif status == AsyncStatus.ERROR:
+                self._error_code = op.error_code.value
+
+            # Publish the status last: done() is true from here on.
+            self._status = status
 
             try_call_soon_threadsafe(self._loop, call_callbacks)
 
         op.completed = call_callbacks_threadsafe
 
     def result(self) -> T:
-        if self._op.status == AsyncStatus.STARTED:
+        status = self._status
+
+        if status is None or status == AsyncStatus.STARTED:
             raise asyncio.InvalidStateError
 
-        if self._op.status == AsyncStatus.COMPLETED:
+        if status == AsyncStatus.COMPLETED:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
@@ -1163,23 +1181,22 @@ class FutureLike(Generic[T]):
 
             return self._result
 
-        if self._op.status == AsyncStatus.CANCELED:
+        if status == AsyncStatus.CANCELED:
             raise asyncio.CancelledError
 
-        if self._op.status == AsyncStatus.ERROR:
+        if status == AsyncStatus.ERROR:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
-            error_code = self._op.error_code.value
-            raise WinError(error_code)
+            raise WinError(self._error_code)
 
-        assert_never(self._op.status)
+        assert_never(status)
 
     def done(self) -> bool:
-        return self._op.status != AsyncStatus.STARTED
+        return self._status is not None
 
     def cancelled(self) -> bool:
-        return self._cancel_requested or self._op.status == AsyncStatus.CANCELED
+        return self._cancel_requested or self._status == AsyncStatus.CANCELED
 
     def add_done_callback(
         self,
@@ -1193,36 +1210,36 @@ class FutureLike(Generic[T]):
         self._callbacks.remove(callback)
 
     def cancel(self, msg: Optional[str] = None) -> bool:
-        if self._cancel_requested or self._op.status != AsyncStatus.STARTED:
+        if self._cancel_requested or self._status is not None:
             return False
 
         self._cancel_requested = True
-        self._op.cancel()
+        self._cancel_op()
 
         return True
 
     def exception(self) -> Optional[Exception]:
-        if self._op.status == AsyncStatus.STARTED:
+        status = self._status
+
+        if status is None or status == AsyncStatus.STARTED:
             raise asyncio.InvalidStateError
 
-        if self._op.status == AsyncStatus.COMPLETED:
+        if status == AsyncStatus.COMPLETED:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
             return None
 
-        if self._op.status == AsyncStatus.CANCELED:
+        if status == AsyncStatus.CANCELED:
             raise asyncio.CancelledError
 
-        if self._op.status == AsyncStatus.ERROR:
+        if status == AsyncStatus.ERROR:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
-            error_code = self._op.error_code.value
+            return WinError(self._error_code)
 
-            return WinError(error_code)
-
-        assert_never(self._op.status)
+        assert_never(status)
 
     def get_loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
