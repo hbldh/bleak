@@ -155,10 +155,21 @@ jobs:
         with:
           version: "latest"
 
+      # Retried, and only for these two errors: Windows' Device Association
+      # Service (das.dll 10.0.26100.9444) can abandon a device query. Its
+      # OnQueryStateUpdateStub publishes a query-state work item before writing
+      # the item's sequence number, and the consumer, which applies updates in
+      # order, then waits 38.5s for a sequence that never comes and fails the
+      # query (System event 3503). Here that is FromBluetoothAddressAsync
+      # raising E_FAIL (-2147467259) or DeviceInformation.FindAllAsync raising
+      # E_ABORT (-2147467260), about one connect in a hundred. It reproduces
+      # on other machines with the same build, with or without Microsoft's
+      # feature-flagged fixes in das.dll. Neither bleak nor the test rig takes
+      # part; the evidence is in the commit that added this line.
       - name: Run pytest
         env:
           FORCE_COLOR: 1
-        run: uv run poe test-py${{ matrix.python-version }} --bleak-vhci --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: uv run poe test-py${{ matrix.python-version }} --bleak-vhci "--reruns=2" "--only-rerun=-2147467259" "--only-rerun=-2147467260" --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

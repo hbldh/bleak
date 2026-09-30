@@ -367,6 +367,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytest-rerunfailures" },
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "sphinx-rtd-theme", marker = "python_full_version >= '3.11'" },
@@ -389,6 +390,7 @@ test = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytest-rerunfailures" },
     { name = "winvhci", marker = "sys_platform == 'win32'" },
 ]
 test-android = [
@@ -431,6 +433,7 @@ dev = [
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.2.0,<2.0.0" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8.0.0" },
+    { name = "pytest-rerunfailures", specifier = ">=16.7" },
     { name = "sphinx", marker = "python_full_version >= '3.11'", specifier = ">=8.2.3" },
     { name = "sphinx-rtd-theme", marker = "python_full_version >= '3.11'", specifier = ">=3.0.2" },
     { name = "toga-core", specifier = ">=0.5.4" },
@@ -451,6 +454,7 @@ test = [
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.2.0,<2.0.0" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8.0.0" },
+    { name = "pytest-rerunfailures", specifier = ">=16.7" },
     { name = "winvhci", marker = "sys_platform == 'win32'", git = "https://github.com/dlech/windows-vhci-driver?subdirectory=python&rev=v1.3.0" },
 ]
 test-android = [
@@ -2377,6 +2381,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5e/f7/c933acc76f5208b3b00089573cf6a2bc26dc80a8aece8f52bb7d6b1855ca/pytest_cov-7.0.0.tar.gz", hash = "sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1", size = 54328, upload-time = "2025-09-09T10:57:02.113Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/49/1377b49de7d0c1ce41292161ea0f721913fa8722c19fb9c1e3aa0367eecb/pytest_cov-7.0.0-py3-none-any.whl", hash = "sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861", size = 22424, upload-time = "2025-09-09T10:57:00.695Z" },
+]
+
+[[package]]
+name = "pytest-rerunfailures"
+version = "16.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/b0/6b5337f9d59b26b0069ea3d5e863c31dc04b69e51bbfb1cf2ea6328fba87/pytest_rerunfailures-16.7.tar.gz", hash = "sha256:6956ddfb65ca1d07e7e3d99e2c5359d82300f4cb062e6049563bd2c106f72d5c", size = 59666, upload-time = "2026-09-17T07:08:48.871Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/d3/07ea35102cf2020ddaaac368d2a6f0bcc63d6523fb8918805bac3eb8b98f/pytest_rerunfailures-16.7-py3-none-any.whl", hash = "sha256:edf1886209c2b7dafe35b5bf1708d6ec40ccf6c6b357f0f02807efcec0204c99", size = 23952, upload-time = "2026-09-17T07:08:47.635Z" },
 ]
 
 [[package]]
