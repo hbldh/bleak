@@ -22,6 +22,8 @@ from libdispatch import dispatch_queue_t
 CBErrorDomain: NSErrorDomain
 CBATTErrorDomain: NSErrorDomain
 
+CBErrorConnectionFailed: int
+
 class CBManager(NSObject):
     def state(self) -> CBManagerState: ...
     def authorization(self) -> CBManagerAuthorization: ...
