@@ -34,6 +34,18 @@ def nsdata_to_bytes(data: NSData) -> bytes:
     return memoryview(data).tobytes()
 
 
+def nsdata_to_bdaddr(data: NSData) -> str:
+    """Converts a Bluetooth address in NSData to a string.
+
+    Args:
+        data: The address bytes.
+
+    Returns:
+        The address as an upper case string (``XX:XX:XX:XX:XX:XX``).
+    """
+    return nsdata_to_bytes(data).hex(":").upper()
+
+
 def cb_uuid_to_str(uuid: CBUUID) -> str:
     """Converts a CoreBluetooth UUID to a Python string.
 
