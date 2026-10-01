@@ -11,7 +11,7 @@ from warnings import warn
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSNumber
+from Foundation import NSBundle, NSData, NSNumber
 
 from bleak._compat import override
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
@@ -21,6 +21,7 @@ from bleak.backends.corebluetooth.CentralManagerDelegate import (
 )
 from bleak.backends.corebluetooth.utils import (
     cb_uuid_to_str,
+    nsdata_to_bdaddr,
     nsdata_to_bytes,
     to_optional_int,
     to_optional_str,
@@ -152,7 +153,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
                 address_bytes = cast(
-                    Optional[bytes],
+                    Optional[NSData],
                     self._manager.central_manager.retrieveAddressForPeripheral_(peripheral),  # type: ignore
                 )
                 if address_bytes is None:
@@ -161,7 +162,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                         peripheral.identifier().UUIDString(),
                     )
                     return
-                address = address_bytes.hex(":").upper()
+                address = nsdata_to_bdaddr(address_bytes)
             else:
                 address = peripheral.identifier().UUIDString()
 
