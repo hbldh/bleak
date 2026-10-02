@@ -173,6 +173,11 @@ It is not a problem with Bleak. It is a problem with your application. The appli
 It is also possible to manually add the app to the list of Bluetooth apps in
 the *Privacy* settings in the macOS *System Preferences*.
 
+If the program is started by ``launchd`` or another supervisor rather than
+from a terminal, there is no application for macOS to prompt for, and
+Bluetooth is denied without any entry in the privacy list. See
+:ref:`cb-launchd` for how to run such a process from an application bundle.
+
 .. image:: images/macos-privacy-bluetooth.png
 
 If the app is already in the list but the checkbox for Bluetooth is disabled,
