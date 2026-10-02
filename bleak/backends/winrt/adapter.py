@@ -9,6 +9,7 @@ from uuid import UUID
 
 from winrt.system import unbox_string
 from winrt.windows.devices.bluetooth import (
+    BluetoothAdapter,
     BluetoothCacheMode,
     BluetoothConnectionStatus,
     BluetoothDeviceId,
@@ -16,11 +17,13 @@ from winrt.windows.devices.bluetooth import (
 )
 from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 from winrt.windows.devices.enumeration import DeviceInformation
+from winrt.windows.devices.radios import RadioState
 
 from bleak._compat import Self, override
 from bleak.backends.adapter import BaseBleakAdapter
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.util import assert_mta
+from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
 from bleak.uuids import normalize_uuid_16
 
 
@@ -31,6 +34,32 @@ class BleakAdapterWinRT(BaseBleakAdapter):
     @override
     async def get(cls, **kwargs: Any) -> Self:
         await assert_mta()
+
+        # TODO: need to fix return type of get_default_async() in PyWinRT
+        adapter = await BluetoothAdapter.get_default_async()
+        if adapter is None:  # pyright: ignore[reportUnnecessaryComparison]
+            raise BleakBluetoothNotAvailableError(
+                "No Bluetooth adapter found",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+            )
+        if not adapter.is_central_role_supported:
+            raise BleakBluetoothNotAvailableError(
+                "BLE 'central' role not supported on this adapter",
+                BleakBluetoothNotAvailableReason.NO_BLE_CENTRAL_ROLE,
+            )
+
+        radio = await adapter.get_radio_async()
+        if radio.state == RadioState.UNKNOWN:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth radio state is unknown",
+                BleakBluetoothNotAvailableReason.UNKNOWN,
+            )
+        if radio.state != RadioState.ON:
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth adapter is not powered on",
+                BleakBluetoothNotAvailableReason.POWERED_OFF,
+            )
+
         return cls()
 
     @override
