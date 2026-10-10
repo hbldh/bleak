@@ -149,6 +149,34 @@ with similar problems on Raspberry Pi and other devices.
 If you need Wi-Fi, you can possibly work around the issue by using a USB
 Bluetooth adapter instead.
 
+"StopDiscovery returned InProgress" in the log, or scans that see nothing
+=========================================================================
+
+On Linux the kernel ends an LE scan on its own after about 10 seconds and
+BlueZ restarts it a few seconds later for as long as a scanner is active. If
+Bleak stops a scan in the moment between those two, BlueZ rejects the stop
+with ``InProgress`` even though it has already ended Bleak's discovery
+session, and it leaves its own discovery state flag set, so the next scan on
+that adapter would be accepted without the kernel scanning and would find
+nothing (see `bluez/bluez#807 <https://github.com/bluez/bluez/issues/807>`_).
+Bleak repairs this on the spot by starting and stopping discovery once more,
+which makes BlueZ reset the flag, and logs it at INFO level. The stop is then
+complete and the next scan works normally. If the extra ``StartDiscovery``
+fails, Bleak logs a WARNING and still returns, since scanning is stopped as
+requested, but the next scan on that adapter may not find devices.
+
+``bluetoothd`` can also lose track of the kernel's scan state for good. Then
+every stop on that adapter is rejected and no scan on it reaches the kernel
+until the adapter is reset. The extra stop is rejected too in that case, so
+Bleak logs a WARNING saying the discovery state is stuck and
+``BleakScanner.stop()`` raises ``BleakDBusError`` to tell the caller the
+adapter is not scanning. Power cycle or re-plug the adapter, or restart
+``bluetoothd``. The ``Discovering`` property of the adapter is not a reliable
+indicator here, since BlueZ leaves it set to ``true`` in both the harmless and
+the stuck case. The extra start and stop only decide anything while Bleak is
+the only scanner on the adapter; when another scanner is active, BlueZ answers
+the stop without asking the kernel.
+
 ----------
 macOS Bugs
 ----------
