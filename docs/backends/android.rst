@@ -78,6 +78,16 @@ which Android has already performed GATT service discovery (e.g. devices that we
 with ``BleakClient`` before). Devices connected by other apps may not be found.
 
 
+Specific features for the Android backend
+-----------------------------------------
+
+Client
+~~~~~~
+ - The constructor keyword ``auto_connect`` which can be set to ``True`` or ``False``.
+Whether to directly connect to the remote device ``False`` or to automatically
+connect as soon as the remote device becomes available ``True``.
+The default value is ``False``.
+
 API
 ---
 
