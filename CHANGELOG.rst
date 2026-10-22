@@ -21,6 +21,7 @@ Changed
 
 Fixed
 -----
+* Fixed BlueZ backend not checking ``or_patterns`` types, which made passive scanning fail silently. Invalid patterns now raise ``ValueError``. Fixes #1149.
 * Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
 * Fixed memory leaks when scanning and using a notification discriminator in CoreBluetooth backend.

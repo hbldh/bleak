@@ -10,7 +10,7 @@ from collections.abc import Callable, Coroutine
 from typing import Any, Literal, Optional
 from warnings import warn
 
-from dbus_fast import Variant
+from dbus_fast import SignatureBodyMismatchError, SignatureTree, Variant
 
 from bleak._compat import override
 from bleak.args.bluez import BlueZDiscoveryFilters as _BlueZDiscoveryFilters
@@ -107,6 +107,15 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
         if self._scanning_mode == "passive" and not self._or_patterns:
             raise BleakError("passive scanning mode requires bluez or_patterns")
+
+        if self._or_patterns:
+            # The patterns are sent to BlueZ later as a D-Bus property. If they
+            # don't match the D-Bus signature, dbus-fast only logs an error and
+            # leaves the property out, so we check them here to fail early.
+            try:
+                SignatureTree("a(yyay)").verify([list(self._or_patterns)])
+            except SignatureBodyMismatchError as e:
+                raise ValueError(f"invalid bluez or_patterns: {e}") from e
 
     @override
     async def start(self) -> None:
