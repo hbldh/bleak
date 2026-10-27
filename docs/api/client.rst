@@ -42,7 +42,7 @@ The current connection status can be retrieved with:
 .. autoproperty:: bleak.BleakClient.is_connected
 
 A callback can be provided to the :class:`BleakClient` constructor via the
-``disconnect_callback`` argument to be notified of disconnection events.
+``disconnected_callback`` argument to be notified of disconnection events.
 
 
 ------------------
