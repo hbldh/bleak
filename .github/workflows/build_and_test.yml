@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 qemu-utils qemu-kvm
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 qemu-utils
 
       - name: Enable KVM group permissions
         run: |
