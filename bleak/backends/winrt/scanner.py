@@ -24,6 +24,7 @@ from winrt.windows.foundation import EventRegistrationToken
 
 from bleak._compat import override
 from bleak.assigned_numbers import AdvertisementDataType
+from bleak.backends._utils import try_call_soon_threadsafe
 from bleak.backends.scanner import (
     AdvertisementData,
     AdvertisementDataCallback,
@@ -283,7 +284,7 @@ class BleakScannerWinRT(BaseBleakScanner):
             sender: BluetoothLEAdvertisementWatcher,
             args: BluetoothLEAdvertisementReceivedEventArgs,
         ) -> None:
-            event_loop.call_soon_threadsafe(self._received_handler, sender, args)
+            try_call_soon_threadsafe(event_loop, self._received_handler, sender, args)
 
         self._received_token = self.watcher.add_received(on_received)
 
@@ -291,7 +292,7 @@ class BleakScannerWinRT(BaseBleakScanner):
             sender: BluetoothLEAdvertisementWatcher,
             args: BluetoothLEAdvertisementWatcherStoppedEventArgs,
         ) -> None:
-            event_loop.call_soon_threadsafe(self._stopped_handler, sender, args)
+            try_call_soon_threadsafe(event_loop, self._stopped_handler, sender, args)
 
         self._stopped_token = self.watcher.add_stopped(on_stopped)
 

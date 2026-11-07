@@ -11,7 +11,7 @@ from warnings import warn
 
 import objc
 from CoreBluetooth import CBPeripheral
-from Foundation import NSBundle, NSNumber
+from Foundation import NSBundle, NSData, NSNumber
 
 from bleak._compat import override
 from bleak.args.corebluetooth import CBScannerArgs as _CBScannerArgs
@@ -21,6 +21,8 @@ from bleak.backends.corebluetooth.CentralManagerDelegate import (
 )
 from bleak.backends.corebluetooth.utils import (
     cb_uuid_to_str,
+    nsdata_to_bdaddr,
+    nsdata_to_bytes,
     to_optional_int,
     to_optional_str,
 )
@@ -121,7 +123,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
             # Process service data
             service_data = {
-                cb_uuid_to_str(k): bytes(v)
+                cb_uuid_to_str(k): nsdata_to_bytes(v)
                 for k, v in adv_data.get("kCBAdvDataServiceData", {}).items()
             }
 
@@ -129,10 +131,13 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             manufacturer_binary_data = adv_data.get("kCBAdvDataManufacturerData")
             manufacturer_data: dict[int, bytes] = {}
             if manufacturer_binary_data:
-                manufacturer_id = int.from_bytes(
-                    manufacturer_binary_data[0:2], byteorder="little"
+                manufacturer_binary_data_bytes = nsdata_to_bytes(
+                    manufacturer_binary_data
                 )
-                manufacturer_value = bytes(manufacturer_binary_data[2:])
+                manufacturer_id = int.from_bytes(
+                    manufacturer_binary_data_bytes[0:2], byteorder="little"
+                )
+                manufacturer_value = manufacturer_binary_data_bytes[2:]
                 manufacturer_data[manufacturer_id] = manufacturer_value
 
             advertisement_data = AdvertisementData(
@@ -148,7 +153,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
                 address_bytes = cast(
-                    Optional[bytes],
+                    Optional[NSData],
                     self._manager.central_manager.retrieveAddressForPeripheral_(peripheral),  # type: ignore
                 )
                 if address_bytes is None:
@@ -157,7 +162,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                         peripheral.identifier().UUIDString(),
                     )
                     return
-                address = address_bytes.hex(":").upper()
+                address = nsdata_to_bdaddr(address_bytes)
             else:
                 address = peripheral.identifier().UUIDString()
 

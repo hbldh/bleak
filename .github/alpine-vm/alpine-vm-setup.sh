@@ -26,6 +26,19 @@ step 'Enable bluetooth and dbus services'
 rc-update add bluetooth default
 rc-update add dbus default
 
+# Enable BlueZ experimental D-Bus interfaces. The AdvertisementMonitorManager1
+# interface (used by passive scanning with or_patterns) is gated behind this
+# flag, so RegisterMonitor is unavailable without it.
+step 'Enable BlueZ experimental interfaces'
+mkdir -p /etc/bluetooth
+if [ -f /etc/bluetooth/main.conf ] && grep -qiE '^[[:space:]]*#?[[:space:]]*Experimental' /etc/bluetooth/main.conf; then
+	sed -i -E 's/^[[:space:]]*#?[[:space:]]*Experimental.*/Experimental = true/I' /etc/bluetooth/main.conf
+elif [ -f /etc/bluetooth/main.conf ] && grep -qE '^\[General\]' /etc/bluetooth/main.conf; then
+	sed -i '/^\[General\]/a Experimental = true' /etc/bluetooth/main.conf
+else
+	printf '[General]\nExperimental = true\n' >> /etc/bluetooth/main.conf
+fi
+
 # Configure vhci kernel module to load at boot
 step 'Configure VHCI kernel module for boot'
 echo "hci_vhci" >> /etc/modules

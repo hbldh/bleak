@@ -9,10 +9,13 @@ if sys.platform != "darwin":
 
 import gc
 import weakref
+from typing import Any, Optional, cast
 from unittest.mock import Mock
 
 from bumble.device import Device
 from CoreBluetooth import (
+    CBErrorConnectionFailed,
+    CBErrorDomain,
     CBManagerAuthorizationDenied,
     CBManagerAuthorizationRestricted,
     CBManagerStatePoweredOff,
@@ -20,14 +23,20 @@ from CoreBluetooth import (
     CBManagerStateUnauthorized,
     CBManagerStateUnknown,
     CBManagerStateUnsupported,
+    CBPeripheral,
 )
+from Foundation import NSDictionary, NSError, NSLocalizedDescriptionKey
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.corebluetooth.client import BleakClientCoreBluetooth
 from bleak.backends.corebluetooth.PeripheralDelegate import PeripheralDelegate
 from bleak.backends.corebluetooth.scanner import BleakScannerCoreBluetooth
-from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
+from bleak.exc import (
+    BleakBluetoothNotAvailableError,
+    BleakBluetoothNotAvailableReason,
+    BleakError,
+)
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
     find_ble_device,
@@ -189,3 +198,61 @@ async def test_peripheral_circular_references(bumble_peripheral: Device):
 
     # The delegate should be garbage collected if there are no circular references
     assert peripheral_delegate_ref() is None
+
+
+async def test_did_fail_to_connect_peripheral(
+    bumble_peripheral: Device,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """
+    Connecting to a BLE device fails when didFailToConnectPeripheral is called.
+
+    According to Apple's documentation, this delegate is called to indicate "transient
+    issues". Unfortunately it is not possible to create these "transient issues" with a
+    standard HCI like the one used for the integration tests. Therefore, a mock is used
+    to simulate this behavior.
+    """
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    device = await find_ble_device(bumble_peripheral)
+
+    central_manager_delegate = cast(CentralManagerDelegate, device.details[1])
+    mock_manager = Mock(wraps=central_manager_delegate.central_manager)
+    monkeypatch.setattr(
+        central_manager_delegate,
+        "central_manager",
+        mock_manager,
+    )
+
+    # Use a real NSError so that it is formatted the same way as a real
+    # CoreBluetooth error would be.
+    error = NSError.errorWithDomain_code_userInfo_(
+        CBErrorDomain,
+        CBErrorConnectionFailed,
+        {NSLocalizedDescriptionKey: "Simulated connection error"},
+    )
+
+    def simulate_connection_failure(
+        peripheral: CBPeripheral, options: Optional[NSDictionary[str, Any]]
+    ):
+        # Simulate connection failure by calling the delegate method
+        central_manager_delegate.objc_delegate.centralManager_didFailToConnectPeripheral_error_(
+            mock_manager,
+            peripheral,
+            error,
+        )
+
+    mock_manager.connectPeripheral_options_.side_effect = simulate_connection_failure
+
+    with pytest.raises(
+        BleakError, match="failed to connect: .*Simulated connection error"
+    ):
+        async with BleakClient(device):
+            pass
+
+    # CoreBluetooth never calls didDisconnectPeripheral after a failed connection
+    # attempt, so the delegate has to clean up the disconnect callback itself.
+    disconnect_callbacks = (
+        central_manager_delegate._disconnect_callbacks  # pyright: ignore[reportPrivateUsage]
+    )
+    assert not disconnect_callbacks

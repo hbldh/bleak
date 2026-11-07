@@ -268,9 +268,9 @@ class CentralManagerDelegate:
 
     async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
         _service_uuids = (
-            NSArray[CBUUID]
-            .alloc()
-            .initWithArray_(list(map(CBUUID.UUIDWithString_, service_uuids)))
+            NSArray[CBUUID].arrayWithArray_(
+                list(map(CBUUID.UUIDWithString_, service_uuids))
+            )
             if service_uuids
             else None
         )
@@ -313,6 +313,11 @@ class CentralManagerDelegate:
                 del self._disconnect_futures[peripheral.identifier()]
 
             raise
+        except BaseException:
+            # CoreBluetooth does not call didDisconnectPeripheral after a failed
+            # connection attempt, so the callback has to be removed here.
+            del self._disconnect_callbacks[peripheral.identifier()]
+            raise
 
     async def disconnect(self, peripheral: CBPeripheral) -> None:
         future = self.event_loop.create_future()
@@ -347,19 +352,23 @@ class CentralManagerDelegate:
         # This behaviour could be affected by the
         # CBCentralManagerScanOptionAllowDuplicatesKey global setting.
 
-        uuid_string = peripheral.identifier().UUIDString()
+        # This method may run on a long-running asyncio thread where temporary
+        # Objective-C objects would otherwise accumulate. Use an autorelease pool per
+        # advertisement to release them promptly.
+        with objc.autorelease_pool():
+            uuid_string = peripheral.identifier().UUIDString()
 
-        for callback in self.callbacks.values():
-            callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
+            for callback in self.callbacks.values():
+                callback(peripheral, cast(CBAdvertisementData, advertisementData), RSSI)
 
-        logger.debug(
-            "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
-            uuid_string,
-            peripheral.name(),
-            RSSI,
-            advertisementData.keys(),
-            central,
-        )
+            logger.debug(
+                "Discovered device %s: %s @ RSSI: %d (kCBAdvData %r) and Central: %r",
+                uuid_string,
+                peripheral.name(),
+                RSSI,
+                advertisementData.keys(),
+                central,
+            )
 
     def did_connect_peripheral(
         self, central: CBCentralManager, peripheral: CBPeripheral

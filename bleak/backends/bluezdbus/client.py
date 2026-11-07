@@ -2,6 +2,7 @@
 BLE Client for BlueZ on Linux
 """
 
+import select
 import sys
 from typing import TYPE_CHECKING
 
@@ -65,10 +66,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
         *,
+        disconnected_callback: Callable[[], None] | None,
+        timeout: float,
         bluez: BlueZClientArgs,
         **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            disconnected_callback=disconnected_callback,
+            timeout=timeout,
+        )
 
         self._adapter = bluez.get("adapter")
         self._device_path: Optional[str]
@@ -169,20 +176,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     def on_connected_changed(connected: bool) -> None:
                         if not connected:
-                            logger.debug("Device disconnected (%s)", self._device_path)
-
-                            self._is_connected = False
-
-                            if self._disconnect_monitor_event:
-                                self._disconnect_monitor_event.set()
-                                self._disconnect_monitor_event = None
-
-                            self._cleanup_all()
-                            if self._disconnected_callback is not None:
-                                self._disconnected_callback()
-                            disconnecting_event = self._disconnecting_event
-                            if disconnecting_event:
-                                disconnecting_event.set()
+                            self._on_disconnected()
 
                     def on_value_changed(char_path: str, value: bytes) -> None:
                         callback = self._notification_callbacks.get(char_path)
@@ -361,6 +355,41 @@ class BleakClientBlueZDBus(BaseBleakClient):
             except Exception:
                 pass
 
+    async def _release_bus(self) -> None:
+        """
+        Disconnects the bus and drops the reference, never raising.
+        """
+        if self._bus is None:
+            return
+
+        try:
+            self._bus.disconnect()
+            await self._bus.wait_for_disconnect()
+        except Exception as e:
+            # replays the error that killed the reader, never raise from teardown
+            logger.debug("error disconnecting from bus (%s): %r", self._device_path, e)
+        finally:
+            self._bus = None
+
+    def _on_disconnected(self) -> None:
+        """
+        Cleans up and notifies after the device disconnected or its bus died.
+        """
+        logger.debug("Device disconnected (%s)", self._device_path)
+
+        self._is_connected = False
+
+        if self._disconnect_monitor_event:
+            self._disconnect_monitor_event.set()
+            self._disconnect_monitor_event = None
+
+        self._cleanup_all()
+        if self._disconnected_callback is not None:
+            self._disconnected_callback()
+        disconnecting_event = self._disconnecting_event
+        if disconnecting_event:
+            disconnecting_event.set()
+
     def _cleanup_all(self) -> None:
         """
         Free all the allocated resource in DBus. Use this method to
@@ -382,6 +411,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
     @override
     async def disconnect(self) -> None:
         """Disconnect from the specified GATT server.
+
+        If this raises or is canceled, ``is_connected`` is still False
+        afterwards, the disconnected callback has been called and the D-Bus
+        connection of this client is closed. The device itself may still be
+        connected. A call made while another one is running only waits up to
+        10 seconds for that one to finish.
 
         Raises:
             BleakDBusError: If there was a D-Bus error
@@ -418,15 +453,30 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                     async with async_timeout(10):
                         await self._disconnecting_event.wait()
+            except Exception as e:
+                if self._bus.connected:
+                    raise
+
+                # The bus died so "PropertiesChanged" will never arrive
+                logger.warning(
+                    "D-Bus connection lost while disconnecting (%s): %r",
+                    self._device_path,
+                    e,
+                )
             finally:
+                # Normally "PropertiesChanged" already ran the teardown. If the
+                # Disconnect call failed or was canceled, the wait for
+                # "Connected" timed out, or the bus died, tear down here so that
+                # a released bus always means no watcher, no services and one
+                # disconnected callback.
+                if self._is_connected:
+                    self._on_disconnected()
+
                 self._disconnecting_event = None
+                # nothing else closes this bus, so release it here
+                await self._release_bus()
 
-            self._bus.disconnect()
-            await self._bus.wait_for_disconnect()
-            self._bus = None
-
-        # sanity check to make sure _cleanup_all() was triggered by the
-        # "PropertiesChanged" signal handler and that it completed successfully
+        # sanity check that the teardown ran
         assert self.services is None
 
     async def _pair(self) -> Message:
@@ -887,12 +937,23 @@ class BleakClientBlueZDBus(BaseBleakClient):
         self, char_path: str, fd: int, callback: NotifyCallback
     ) -> None:
         loop = asyncio.get_running_loop()
+        poll = select.poll()
 
         def on_data():
             try:
                 data = os.read(fd, 1024)
+
                 if not data:
-                    raise RuntimeError("Unexpected EOF on notification file handle")
+                    # Empty data could mean that the socket was closed or it
+                    # could be a valid notification with an empty value. In
+                    # order to tell them apart, we have to run poll again to
+                    # check if the socket is closed.
+                    poll.register(fd, select.POLLHUP)
+                    try:
+                        if poll.poll(0):
+                            raise RuntimeError("AcquireNotify socket disconnected")
+                    finally:
+                        poll.unregister(fd)
             except Exception as e:
                 logger.debug(
                     "AcquireNotify: Read error on fd %d: %s. Notifications have been stopped.",

@@ -40,6 +40,7 @@ from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.backends.client import NotifyCallback
+from bleak.backends.corebluetooth.utils import nsdata_to_bytes
 from bleak.exc import BleakError, BleakGATTProtocolError
 
 logger = logging.getLogger(__name__)
@@ -339,6 +340,16 @@ class PeripheralDelegate:
             self._read_rssi_futures.values(),
         )
 
+    def clear_notifications(self) -> None:
+        """
+        Forgets all notification callbacks.
+
+        This should be called when a peripheral is disconnected since
+        notifications are implicitly stopped by the disconnection.
+        """
+        self._characteristic_notify_callbacks.clear()
+        self._characteristic_notification_discriminators.clear()
+
     async def discover_services(
         self, services: Optional[NSArray[CBUUID]] = None
     ) -> NSArray[CBService]:
@@ -589,7 +600,8 @@ class PeripheralDelegate:
                 self._characteristic_notification_discriminators.get(c_handle)
             )
             if not future or (
-                notification_discriminator and notification_discriminator(bytes(value))
+                notification_discriminator
+                and notification_discriminator(nsdata_to_bytes(value))
             ):
                 notify_callback = self._characteristic_notify_callbacks.get(c_handle)
 

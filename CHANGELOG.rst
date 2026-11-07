@@ -10,12 +10,41 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`3.1.0`_ (2026-11-07)
+=====================
+
+Added
+-----
+* Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
+* Added new Android backend for apps built with BeeWare/Briefcase (Chaquopy). Requires Python 3.13 or later.
+
+Changed
+-------
+* Changed minimum ``dbus-fast`` version to 4.0.0 on Linux.
+
+Fixed
+-----
+* Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
+* Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
+* Fixed memory leaks when scanning and using a notification discriminator in CoreBluetooth backend.
+* Fixed ``BleakClient`` being kept alive by the ``CentralManagerDelegate`` after a failed connection attempt in CoreBluetooth backend.
+* Fixed leaking Bluetooth address data when scanning with ``cb={"use_bdaddr": True}`` in CoreBluetooth backend.
+* Fixed crash in WinRT backend if a WinRT event handler is called after the asyncio event loop is closed.
+* Fixed device removed callbacks in BlueZ backend matching devices on adapters whose name starts with the watched adapter name, e.g. ``hci10`` for ``hci1``.
+* Fixed BlueZ backend not detecting loss of the D-Bus connection, which left clients reporting connected forever and disconnect callbacks never firing.
+* Fixed ``disconnect()`` raising ``EOFError`` and leaking the D-Bus connection in BlueZ backend when the message bus died.
+* Fixed ``disconnect()`` leaking the D-Bus connection in BlueZ backend when it raised or was canceled.
+* Fixed ``start_notify()`` raising ``ValueError`` after reconnecting in CoreBluetooth backend. Fixes #1969.
+* Fixed GATT operations raising ``OSError`` instead of ``BleakError`` in WinRT backend when the device disconnects during the operation.
+* Fixed intermittent ``AssertionError`` in WinRT backend on fast reconnect.
+* Fixed BlueZ backend to attempt to automatically recover from ``InProgress`` error when stopping scanning. Fixes #2021.
+
 `3.0.2`_ (2026-05-02)
 =====================
 
 Changed
 -------
-* Changed default value of ``BlueZNotifyArgs.use_start_notify`` to ``False``. Fixes #1951.
+* Changed default value of ``BlueZNotifyArgs.use_start_notify`` to ``True``. Fixes #1951.
 
 `3.0.1`_ (2026-03-25)
 =====================
@@ -1216,7 +1245,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.0.2...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.1.0...develop
+.. _3.1.0: https://github.com/hbldh/bleak/compare/v3.0.2...v3.1.0
 .. _3.0.2: https://github.com/hbldh/bleak/compare/v3.0.1...v3.0.2
 .. _3.0.1: https://github.com/hbldh/bleak/compare/v3.0.0...v3.0.1
 .. _3.0.0: https://github.com/hbldh/bleak/compare/v2.1.1...v3.0.0

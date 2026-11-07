@@ -79,17 +79,16 @@ and your favorite text editor. And Python of course.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass linting and the tests::
+5. When you're done making changes, check that your changes pass linting, type checking and the tests::
 
-    $ uv run isort .
-    $ uv run black .
-    $ uv run flake8
-    $ uv run pytest
+    $ uv run poe lint
+    $ uv run poe typecheck
+    $ uv run poe test-all
 
 6. Additionally, you can run integration tests by adding the ``--bleak-hci-transport`` argument to ``pytest``.
 For more information, see `tests/integration/README.rst <tests/integration/README.rst>`_.
 
-  $ uv run pytest --bleak-hci-transport=serial:/dev/tty.usbmodem1101
+  $ uv run poe test-all --bleak-hci-transport=serial:/dev/tty.usbmodem1101
 
 7. Commit your changes and push your branch to GitHub::
 

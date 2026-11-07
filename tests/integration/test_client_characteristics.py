@@ -11,6 +11,8 @@ from bumble.gatt import Characteristic, CharacteristicValue, Service
 from bumble.transport.common import Transport
 
 from bleak import BleakClient
+from bleak.args.bluez import BlueZNotifyArgs
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakGATTProtocolError
 from tests.integration.conftest import (
@@ -43,6 +45,9 @@ WRITE_WITH_RESPONSE_CHAR_UUID = "79a92bad-31b4-4a70-885c-e704ae2c6363"
 WRITE_WITHOUT_RESPONSE_CHAR_UUID = "2a07f6ea-6401-45d7-838c-0f459a7edb7f"
 NOTIFY_CHAR_UUID = "d4c6dad3-76f1-4034-8871-0a6345be6cfc"
 INDICATE_CHAR_UUID = "b1f7c8d4-9e2a-4f6b-8d3a-1234567890ab"
+DUPLICATE_SERVICE_UUID = "f5a1d2b3-c4e5-6789-abcd-ef0123456789"
+DUPLICATE_CHAR_UUID = "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+DUPLICATE_CHAR_SERVICE_UUID = "e1b2c3d4-f5a6-7890-1234-567890abcdef"
 
 
 @dataclasses.dataclass
@@ -54,6 +59,10 @@ class CharTestPeripheral:
     write_without_response_characteristic: Characteristic[bytes]
     notify_characteristic: Characteristic[bytes]
     indicate_characteristic: Characteristic[bytes]
+    duplicate_svc_char_1: Characteristic[bytes]
+    duplicate_svc_char_2: Characteristic[bytes]
+    duplicate_char_a: Characteristic[bytes]
+    duplicate_char_b: Characteristic[bytes]
 
 
 @pytest_asyncio.fixture(loop_scope="module", scope="module")
@@ -91,6 +100,32 @@ async def char_test_peripheral(
         b"----",
     )
 
+    duplicate_svc_char_1 = Characteristic[bytes](
+        DUPLICATE_CHAR_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"SVC1",
+    )
+    duplicate_svc_char_2 = Characteristic[bytes](
+        DUPLICATE_CHAR_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"SVC2",
+    )
+
+    duplicate_char_a = Characteristic[bytes](
+        DUPLICATE_CHAR_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"CHAR_A",
+    )
+    duplicate_char_b = Characteristic[bytes](
+        DUPLICATE_CHAR_UUID,
+        Characteristic.Properties.READ,
+        Characteristic.Permissions.READABLE,
+        b"CHAR_B",
+    )
+
     await configure_and_power_on_bumble_peripheral(
         bumble_peripheral,
         services=[
@@ -104,12 +139,22 @@ async def char_test_peripheral(
                     indicate_characteristic,
                 ],
             ),
+            Service(DUPLICATE_SERVICE_UUID, [duplicate_svc_char_1]),
+            Service(DUPLICATE_SERVICE_UUID, [duplicate_svc_char_2]),
+            Service(DUPLICATE_CHAR_SERVICE_UUID, [duplicate_char_a, duplicate_char_b]),
         ],
     )
 
     device = await find_ble_device(bumble_peripheral)
 
-    async with BleakClient(device, services=[CHAR_TEST_SERVICE_UUID]) as client:
+    async with BleakClient(
+        device,
+        services=[
+            CHAR_TEST_SERVICE_UUID,
+            DUPLICATE_SERVICE_UUID,
+            DUPLICATE_CHAR_SERVICE_UUID,
+        ],
+    ) as client:
         yield CharTestPeripheral(
             bumble_peripheral=bumble_peripheral,
             bleak_client=client,
@@ -118,6 +163,10 @@ async def char_test_peripheral(
             write_without_response_characteristic=write_without_response_characteristic,
             notify_characteristic=notify_characteristic,
             indicate_characteristic=indicate_characteristic,
+            duplicate_svc_char_1=duplicate_svc_char_1,
+            duplicate_svc_char_2=duplicate_svc_char_2,
+            duplicate_char_a=duplicate_char_a,
+            duplicate_char_b=duplicate_char_b,
         )
 
 
@@ -276,9 +325,19 @@ async def test_write_gatt_char_no_response(char_test_peripheral: CharTestPeriphe
     assert written_value == b"DATA"
 
 
+@pytest.mark.parametrize(
+    "bluez",
+    (
+        [{"use_start_notify": True}, {"use_start_notify": False}]
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS
+        else [{}]
+    ),
+)
 @pytest.mark.asyncio(loop_scope="module")
-async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
-    """Writing a GATT characteristic is possible."""
+async def test_notify_gatt_char(
+    char_test_peripheral: CharTestPeripheral, bluez: BlueZNotifyArgs
+):
+    """Ensure notifications are delivered and received by the client."""
 
     notified_data: asyncio.Queue[bytes] = asyncio.Queue()
 
@@ -289,6 +348,7 @@ async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
     await char_test_peripheral.bleak_client.start_notify(
         NOTIFY_CHAR_UUID,
         notify_callback,
+        bluez=bluez,
     )
     assert notified_data.empty()
 
@@ -320,8 +380,18 @@ async def test_notify_gatt_char(char_test_peripheral: CharTestPeripheral):
         await asyncio.wait_for(notified_data.get(), timeout=1)
 
 
+@pytest.mark.parametrize(
+    "bluez",
+    (
+        [{"use_start_notify": True}, {"use_start_notify": False}]
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS
+        else [{}]
+    ),
+)
 @pytest.mark.asyncio(loop_scope="module")
-async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
+async def test_indicate_gatt_char(
+    char_test_peripheral: CharTestPeripheral, bluez: BlueZNotifyArgs
+):
     """Ensure indications are delivered and received by the client."""
 
     virtual_connection = list(
@@ -337,6 +407,7 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
     await char_test_peripheral.bleak_client.start_notify(
         INDICATE_CHAR_UUID,
         indicate_callback,
+        bluez=bluez,
     )
     assert indicated_data.empty()
 
@@ -346,8 +417,7 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
         b"ind1",
     )
 
-    # dont wait since 'indicate_subscriber' waits for ack from client
-    data = indicated_data.get_nowait()
+    data = await asyncio.wait_for(indicated_data.get(), timeout=1)
     assert data == b"ind1"
 
     await char_test_peripheral.bumble_peripheral.indicate_subscriber(  # type: ignore  # (missing type hints in bumble)
@@ -356,8 +426,7 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
         b"ind2",
     )
 
-    # dont wait since 'indicate_subscriber' waits for ack from client
-    data = indicated_data.get_nowait()
+    data = await asyncio.wait_for(indicated_data.get(), timeout=1)
     assert data == b"ind2"
 
     await char_test_peripheral.bleak_client.stop_notify(INDICATE_CHAR_UUID)
@@ -371,3 +440,84 @@ async def test_indicate_gatt_char(char_test_peripheral: CharTestPeripheral):
     # Verify no indication was received after stop
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(indicated_data.get(), timeout=1)
+
+
+@pytest.mark.parametrize(
+    "bluez",
+    (
+        [{"use_start_notify": True}, {"use_start_notify": False}]
+        if get_default_backend() == BleakBackend.BLUEZ_DBUS
+        else [{}]
+    ),
+)
+@pytest.mark.asyncio(loop_scope="module")
+async def test_notify_gatt_char_empty(
+    char_test_peripheral: CharTestPeripheral, bluez: BlueZNotifyArgs
+):
+    """Ensure empty notifications are delivered and received by the client."""
+
+    notified_data: asyncio.Queue[bytes] = asyncio.Queue()
+
+    def notify_callback(characteristic: BleakGATTCharacteristic, data: bytearray):
+        assert characteristic.uuid.lower() == NOTIFY_CHAR_UUID
+        notified_data.put_nowait(bytes(data))
+
+    await char_test_peripheral.bleak_client.start_notify(
+        NOTIFY_CHAR_UUID,
+        notify_callback,
+        bluez=bluez,
+    )
+
+    await char_test_peripheral.bumble_peripheral.notify_subscribers(  # type: ignore  # (missing type hints in bumble)
+        char_test_peripheral.notify_characteristic,
+        b"",
+    )
+
+    data = await asyncio.wait_for(notified_data.get(), timeout=1)
+    assert data == b""
+
+    await char_test_peripheral.bleak_client.stop_notify(NOTIFY_CHAR_UUID)
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_duplicate_service_uuids(char_test_peripheral: CharTestPeripheral):
+    """Verify that two services sharing the same UUID are each accessible by handle."""
+    all_services = list(char_test_peripheral.bleak_client.services.services.values())
+    dup_services = [
+        s for s in all_services if s.uuid.lower() == DUPLICATE_SERVICE_UUID.lower()
+    ]
+
+    assert len(dup_services) == 2
+
+    values_read: set[bytes] = set()
+    for service in dup_services:
+        assert len(service.characteristics) == 1
+        char = service.characteristics[0]
+        data = await char_test_peripheral.bleak_client.read_gatt_char(char)
+        values_read.add(bytes(data))
+
+    assert values_read == {b"SVC1", b"SVC2"}
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_duplicate_characteristic_uuids(char_test_peripheral: CharTestPeripheral):
+    """Verify that two characteristics sharing the same UUID within one service are
+    each accessible by handle.
+    """
+    all_services = list(char_test_peripheral.bleak_client.services.services.values())
+    dup_char_services = [
+        s for s in all_services if s.uuid.lower() == DUPLICATE_CHAR_SERVICE_UUID.lower()
+    ]
+
+    assert len(dup_char_services) == 1
+    service = dup_char_services[0]
+
+    assert len(service.characteristics) == 2
+
+    values_read: set[bytes] = set()
+    for char in service.characteristics:
+        assert char.uuid.lower() == DUPLICATE_CHAR_UUID.lower()
+        data = await char_test_peripheral.bleak_client.read_gatt_char(char)
+        values_read.add(bytes(data))
+
+    assert values_read == {b"CHAR_A", b"CHAR_B"}

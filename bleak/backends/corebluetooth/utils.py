@@ -21,9 +21,29 @@ from CoreBluetooth import (
     CBUUIDClientCharacteristicConfigurationString,
     CBUUIDServerCharacteristicConfigurationString,
 )
-from Foundation import NSNumber, NSString
+from Foundation import NSData, NSNumber, NSString
 
 from bleak.uuids import normalize_uuid_str
+
+
+def nsdata_to_bytes(data: NSData) -> bytes:
+    """Copy NSData through the buffer protocol without retaining the exporter."""
+    # NSData.bytes() leaks one exporter reference in supported PyObjC versions.
+    # Remove this workaround once the minimum PyObjC version includes the fix:
+    # https://github.com/ronaldoussoren/pyobjc/pull/689
+    return memoryview(data).tobytes()
+
+
+def nsdata_to_bdaddr(data: NSData) -> str:
+    """Converts a Bluetooth address in NSData to a string.
+
+    Args:
+        data: The address bytes.
+
+    Returns:
+        The address as an upper case string (``XX:XX:XX:XX:XX:XX``).
+    """
+    return nsdata_to_bytes(data).hex(":").upper()
 
 
 def cb_uuid_to_str(uuid: CBUUID) -> str:

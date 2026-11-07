@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextvars import Context
 from ctypes import WinError  # type: ignore[attr-defined]
 from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
@@ -61,6 +61,7 @@ from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.args.winrt import WinRTClientArgs as _WinRTClientArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
+from bleak.backends._utils import try_call_soon_threadsafe
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.client import BaseBleakClient, NotifyCallback
 from bleak.backends.descriptor import BleakGATTDescriptor
@@ -70,6 +71,8 @@ from bleak.backends.winrt.scanner import BleakScannerWinRT, RawAdvData
 from bleak.exc import BleakDeviceNotFoundError, BleakError, BleakGATTProtocolError
 
 logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
 
 
 def __getattr__(name: str):
@@ -104,6 +107,10 @@ def _address_to_int(address: str) -> int:
         address = address.replace(char, "")
 
     return int(address, base=16)
+
+
+#: HRESULT_FROM_WIN32(ERROR_CANCELLED) as returned by WinRT async operations.
+_E_CANCELLED = -2147023673
 
 
 def _ensure_success(result: _Result, attr: Optional[str], fail_msg: str) -> Any:
@@ -149,10 +156,16 @@ class BleakClientWinRT(BaseBleakClient):
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
         *,
+        disconnected_callback: Callable[[], None] | None,
+        timeout: float,
         winrt: _WinRTClientArgs,
         **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            disconnected_callback=disconnected_callback,
+            timeout=timeout,
+        )
 
         self._device_info: int | None
 
@@ -249,7 +262,7 @@ class BleakClientWinRT(BaseBleakClient):
 
         def services_changed_handler(sender: BluetoothLEDevice, args: Object) -> None:
             logger.debug("%s: services changed", self.address)
-            loop.call_soon_threadsafe(handle_services_changed)
+            try_call_soon_threadsafe(loop, handle_services_changed)
 
         self._services_changed_token = self._requester.add_gatt_services_changed(
             services_changed_handler
@@ -315,7 +328,7 @@ class BleakClientWinRT(BaseBleakClient):
                 args.error,
                 args.status,
             )
-            loop.call_soon_threadsafe(handle_session_status_changed, args)
+            try_call_soon_threadsafe(loop, handle_session_status_changed, args)
 
         def max_pdu_size_changed_handler(sender: GattSession, args: Object) -> None:
             try:
@@ -842,6 +855,23 @@ class BleakClientWinRT(BaseBleakClient):
 
     # I/O methods
 
+    async def _await_gatt_io(self, operation: Awaitable[_T]) -> _T:
+        """
+        Awaits a GATT I/O operation.
+
+        Windows cancels pending operations when the device disconnects, which
+        raises a confusing "The operation was canceled by the user" error.
+        Raises :class:`BleakError` instead in that case.
+        """
+        try:
+            return await operation
+        except OSError as e:
+            # The operation can be canceled for other reasons too, so only
+            # blame the disconnection if we are actually disconnected.
+            if e.winerror == _E_CANCELLED and not self.is_connected:
+                raise BleakError("disconnected") from e
+            raise
+
     @override
     async def read_gatt_char(
         self,
@@ -872,10 +902,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         value = bytearray(
             _ensure_success(
-                await gatt_char.read_value_with_cache_mode_async(
-                    BluetoothCacheMode.CACHED
-                    if use_cached
-                    else BluetoothCacheMode.UNCACHED
+                await self._await_gatt_io(
+                    gatt_char.read_value_with_cache_mode_async(
+                        BluetoothCacheMode.CACHED
+                        if use_cached
+                        else BluetoothCacheMode.UNCACHED
+                    )
                 ),
                 "value",
                 f"Could not read characteristic handle {characteristic.handle}",
@@ -914,10 +946,12 @@ class BleakClientWinRT(BaseBleakClient):
 
         value = bytearray(
             _ensure_success(
-                await gatt_desc.read_value_with_cache_mode_async(
-                    BluetoothCacheMode.CACHED
-                    if use_cached
-                    else BluetoothCacheMode.UNCACHED
+                await self._await_gatt_io(
+                    gatt_desc.read_value_with_cache_mode_async(
+                        BluetoothCacheMode.CACHED
+                        if use_cached
+                        else BluetoothCacheMode.UNCACHED
+                    )
                 ),
                 "value",
                 f"Could not read Descriptor value for {descriptor.handle:04X}",
@@ -944,13 +978,15 @@ class BleakClientWinRT(BaseBleakClient):
         gatt_char = cast(GattCharacteristic, characteristic.obj)
 
         _ensure_success(
-            await gatt_char.write_value_with_result_and_option_async(
-                buf,
-                (
-                    GattWriteOption.WRITE_WITH_RESPONSE
-                    if response
-                    else GattWriteOption.WRITE_WITHOUT_RESPONSE
-                ),
+            await self._await_gatt_io(
+                gatt_char.write_value_with_result_and_option_async(
+                    buf,
+                    (
+                        GattWriteOption.WRITE_WITH_RESPONSE
+                        if response
+                        else GattWriteOption.WRITE_WITHOUT_RESPONSE
+                    ),
+                )
             ),
             None,
             f"Could not write value {data} to characteristic {characteristic.handle:04X}",
@@ -981,7 +1017,7 @@ class BleakClientWinRT(BaseBleakClient):
         gatt_desc = cast(GattDescriptor, descriptor.obj)
 
         _ensure_success(
-            await gatt_desc.write_value_with_result_async(buf),
+            await self._await_gatt_io(gatt_desc.write_value_with_result_async(buf)),
             None,
             f"Could not write value {data!r} to descriptor {descriptor.handle:04X}",
         )
@@ -1025,15 +1061,17 @@ class BleakClientWinRT(BaseBleakClient):
             sender: GattCharacteristic, args: GattValueChangedEventArgs
         ) -> None:
             value = bytearray(args.characteristic_value)
-            loop.call_soon_threadsafe(callback, value)
+            try_call_soon_threadsafe(loop, callback, value)
 
         event_handler_token = winrt_char.add_value_changed(handle_value_changed)
         self._notification_callbacks[characteristic.handle] = event_handler_token
 
         try:
             _ensure_success(
-                await winrt_char.write_client_characteristic_configuration_descriptor_with_result_async(
-                    cccd
+                await self._await_gatt_io(
+                    winrt_char.write_client_characteristic_configuration_descriptor_with_result_async(
+                        cccd
+                    )
                 ),
                 None,
                 f"Could not start notify on {characteristic.handle:04X}",
@@ -1065,8 +1103,10 @@ class BleakClientWinRT(BaseBleakClient):
         gatt_char = cast(GattCharacteristic, characteristic.obj)
 
         _ensure_success(
-            await gatt_char.write_client_characteristic_configuration_descriptor_with_result_async(
-                GattClientCharacteristicConfigurationDescriptorValue.NONE
+            await self._await_gatt_io(
+                gatt_char.write_client_characteristic_configuration_descriptor_with_result_async(
+                    GattClientCharacteristicConfigurationDescriptorValue.NONE
+                )
             ),
             None,
             f"Could not stop notify on {characteristic.handle:04X}",
@@ -1085,16 +1125,27 @@ class FutureLike(Generic[T]):
     be passed to Python APIs.
 
     Needed until https://github.com/pywinrt/pywinrt/issues/14
+
+    Completion is tracked by the operation's completed handler, not by
+    polling the operation's status. The status flips to COMPLETED before
+    the handler runs, and the result is only fetched inside the handler
+    (it has to be read on that thread), so a fast operation, such as a
+    cached GATT discovery, can already read as completed while its result
+    is still unset. Awaiting it then must wait for the handler.
     """
 
     _asyncio_future_blocking = False
 
     def __init__(self: Self, op: IAsyncOperation[T]) -> None:
-        self._op = op
+        self._cancel_op = op.cancel
         self._callbacks: list[Callable[[Self], None]] = []
         self._loop = asyncio.get_running_loop()
         self._cancel_requested = False
         self._result = None
+        self._error_code = 0
+        # Set by the completed handler; None until it has run. The handler is
+        # the only source of truth about the operation.
+        self._status: Optional[AsyncStatus] = None
 
         def call_callbacks() -> None:
             for c in self._callbacks:
@@ -1106,16 +1157,23 @@ class FutureLike(Generic[T]):
             if status == AsyncStatus.COMPLETED:
                 # have to get result on this thread, otherwise it may not return correct value
                 self._result = op.get_results()
+            elif status == AsyncStatus.ERROR:
+                self._error_code = op.error_code.value
 
-            self._loop.call_soon_threadsafe(call_callbacks)
+            # Publish the status last: done() is true from here on.
+            self._status = status
+
+            try_call_soon_threadsafe(self._loop, call_callbacks)
 
         op.completed = call_callbacks_threadsafe
 
     def result(self) -> T:
-        if self._op.status == AsyncStatus.STARTED:
+        status = self._status
+
+        if status is None or status == AsyncStatus.STARTED:
             raise asyncio.InvalidStateError
 
-        if self._op.status == AsyncStatus.COMPLETED:
+        if status == AsyncStatus.COMPLETED:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
@@ -1123,23 +1181,22 @@ class FutureLike(Generic[T]):
 
             return self._result
 
-        if self._op.status == AsyncStatus.CANCELED:
+        if status == AsyncStatus.CANCELED:
             raise asyncio.CancelledError
 
-        if self._op.status == AsyncStatus.ERROR:
+        if status == AsyncStatus.ERROR:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
-            error_code = self._op.error_code.value
-            raise WinError(error_code)
+            raise WinError(self._error_code)
 
-        assert_never(self._op.status)
+        assert_never(status)
 
     def done(self) -> bool:
-        return self._op.status != AsyncStatus.STARTED
+        return self._status is not None
 
     def cancelled(self) -> bool:
-        return self._cancel_requested or self._op.status == AsyncStatus.CANCELED
+        return self._cancel_requested or self._status == AsyncStatus.CANCELED
 
     def add_done_callback(
         self,
@@ -1153,36 +1210,36 @@ class FutureLike(Generic[T]):
         self._callbacks.remove(callback)
 
     def cancel(self, msg: Optional[str] = None) -> bool:
-        if self._cancel_requested or self._op.status != AsyncStatus.STARTED:
+        if self._cancel_requested or self._status is not None:
             return False
 
         self._cancel_requested = True
-        self._op.cancel()
+        self._cancel_op()
 
         return True
 
     def exception(self) -> Optional[Exception]:
-        if self._op.status == AsyncStatus.STARTED:
+        status = self._status
+
+        if status is None or status == AsyncStatus.STARTED:
             raise asyncio.InvalidStateError
 
-        if self._op.status == AsyncStatus.COMPLETED:
+        if status == AsyncStatus.COMPLETED:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
             return None
 
-        if self._op.status == AsyncStatus.CANCELED:
+        if status == AsyncStatus.CANCELED:
             raise asyncio.CancelledError
 
-        if self._op.status == AsyncStatus.ERROR:
+        if status == AsyncStatus.ERROR:
             if self._cancel_requested:
                 raise asyncio.CancelledError
 
-            error_code = self._op.error_code.value
+            return WinError(self._error_code)
 
-            return WinError(error_code)
-
-        assert_never(self._op.status)
+        assert_never(status)
 
     def get_loop(self) -> asyncio.AbstractEventLoop:
         return self._loop

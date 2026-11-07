@@ -8,12 +8,22 @@ from bumble.core import UUID
 from bumble.device import Device
 
 from bleak import BleakScanner
+from bleak.args.bluez import OrPattern, OrPatternLike
+from bleak.assigned_numbers import AdvertisementDataType
+from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 from bleak.uuids import normalize_uuid_str
 from tests.integration.conftest import configure_and_power_on_bumble_peripheral
 
 DEFAULT_TIMEOUT = 5.0
+
+# The default bumble peripheral advertises Flags == 0x06
+# (LE General Discoverable | BR/EDR not supported), so this pattern matches it.
+_FLAGS_NAMED_TUPLE: list[OrPatternLike] = [
+    OrPattern(0, AdvertisementDataType.FLAGS, b"\x06")
+]
+_FLAGS_PLAIN_TUPLE: list[OrPatternLike] = [(0, AdvertisementDataType.FLAGS, b"\x06")]
 
 
 async def test_discover(bumble_peripheral: Device):
@@ -111,6 +121,47 @@ async def test_adv_data_simple(bumble_peripheral: Device):
 
     # The rssi can vary. So we only check for a plausible range.
     assert -127 <= found_adv_data.rssi <= 20
+
+
+@pytest.mark.skipif(
+    get_default_backend() != BleakBackend.BLUEZ_DBUS,
+    reason="passive scanning with or_patterns is only supported on BlueZ",
+)
+@pytest.mark.parametrize(
+    "or_patterns",
+    [_FLAGS_NAMED_TUPLE, _FLAGS_PLAIN_TUPLE],
+    ids=["named_tuple", "tuple"],
+)
+async def test_passive_scan_or_patterns(
+    bumble_peripheral: Device,
+    or_patterns: list[OrPatternLike],
+):
+    """Passive scanning with ``or_patterns`` discovers the device.
+
+    Exercises the ``org.bluez.AdvertisementMonitor1`` ``Patterns`` property
+    (D-Bus signature ``a(yyay)``) end to end. Both ``OrPattern`` named tuples
+    and plain tuples must marshal over D-Bus without converting each pattern to
+    a ``list`` first.
+    """
+    await configure_and_power_on_bumble_peripheral(bumble_peripheral)
+
+    found_adv_data_future: asyncio.Future[AdvertisementData] = asyncio.Future()
+
+    def detection_callback(device: BLEDevice, adv_data: AdvertisementData):
+        if device.name == bumble_peripheral.name and not found_adv_data_future.done():
+            found_adv_data_future.set_result(adv_data)
+
+    async with BleakScanner(
+        detection_callback,
+        scanning_mode="passive",
+        bluez={"or_patterns": or_patterns},
+    ):
+        found_adv_data = await asyncio.wait_for(
+            found_adv_data_future, timeout=DEFAULT_TIMEOUT
+        )
+
+    assert found_adv_data is not None
+    assert found_adv_data.local_name == bumble_peripheral.name
 
 
 async def test_adv_data_complex(bumble_peripheral: Device):

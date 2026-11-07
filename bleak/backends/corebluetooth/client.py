@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any, Optional, Union
 
 from CoreBluetooth import (
@@ -59,9 +60,16 @@ class BleakClientCoreBluetooth(BaseBleakClient):
         self,
         address_or_ble_device: Union[BLEDevice, str],
         services: Optional[set[str]] = None,
+        *,
+        disconnected_callback: Callable[[], None] | None,
+        timeout: float,
         **kwargs: Any,
     ):
-        super().__init__(address_or_ble_device, **kwargs)
+        super().__init__(
+            address_or_ble_device,
+            disconnected_callback=disconnected_callback,
+            timeout=timeout,
+        )
 
         self._peripheral: Optional[CBPeripheral] = None
         self._delegate: Optional[PeripheralDelegate] = None
@@ -74,9 +82,7 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             ) = address_or_ble_device.details
 
         self._requested_services = (
-            NSArray[CBUUID]
-            .alloc()
-            .initWithArray_(list(map(CBUUID.UUIDWithString_, services)))
+            NSArray[CBUUID].arrayWithArray_(list(map(CBUUID.UUIDWithString_, services)))
             if services
             else None
         )
@@ -117,6 +123,10 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             self.services = None
 
             assert self._delegate is not None
+
+            # CoreBluetooth stops notifications on disconnect, so we need to
+            # forget them too, otherwise start_notify() fails after reconnecting.
+            self._delegate.clear_notifications()
 
             # If there are any pending futures waiting for delegate callbacks, we
             # need to raise an exception since the callback will no longer be
