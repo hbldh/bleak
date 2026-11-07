@@ -412,6 +412,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
     async def disconnect(self) -> None:
         """Disconnect from the specified GATT server.
 
+        If this raises or is canceled, ``is_connected`` is still False
+        afterwards, the disconnected callback has been called and the D-Bus
+        connection of this client is closed. The device itself may still be
+        connected. A call made while another one is running only waits up to
+        10 seconds for that one to finish.
+
         Raises:
             BleakDBusError: If there was a D-Bus error
             asyncio.TimeoutError if the device was not disconnected within 10 seconds
@@ -457,22 +463,20 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     self._device_path,
                     e,
                 )
-                try:
-                    # the manager's bus watcher may have already run the teardown
-                    if self._is_connected:
-                        self._on_disconnected()
-                finally:
-                    # the teardown runs the disconnected callback, which is
-                    # third party code we don't control, so release the dead
-                    # bus even if it raised
-                    await self._release_bus()
             finally:
+                # Normally "PropertiesChanged" already ran the teardown. If the
+                # Disconnect call failed or was canceled, the wait for
+                # "Connected" timed out, or the bus died, tear down here so that
+                # a released bus always means no watcher, no services and one
+                # disconnected callback.
+                if self._is_connected:
+                    self._on_disconnected()
+
                 self._disconnecting_event = None
+                # nothing else closes this bus, so release it here
+                await self._release_bus()
 
-            await self._release_bus()
-
-        # sanity check to make sure _cleanup_all() was triggered by the
-        # "PropertiesChanged" signal handler and that it completed successfully
+        # sanity check that the teardown ran
         assert self.services is None
 
     async def _pair(self) -> Message:

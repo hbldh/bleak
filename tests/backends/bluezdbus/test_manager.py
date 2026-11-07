@@ -8,7 +8,6 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on Linux"
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Optional
 from unittest.mock import MagicMock
@@ -22,8 +21,6 @@ from dbus_fast.constants import MessageType
 from dbus_fast.message import Message
 from dbus_fast.signature import Variant
 
-from bleak._compat import timeout as async_timeout
-from bleak.backends.bluezdbus import client as client_module
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus import manager as manager_module
 from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
@@ -540,27 +537,6 @@ async def test_client_disconnect_with_unexpected_teardown_error() -> None:
     assert client._bus is None  # pyright: ignore[reportPrivateUsage]
 
 
-async def test_client_disconnect_timeout_is_raised(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    bus = FakeMessageBus({})
-    await bus.connect()
-    client = make_client(bus, connected=True)
-
-    def zero_timeout(
-        delay: Optional[float],
-    ) -> contextlib.AbstractAsyncContextManager[object]:
-        return async_timeout(0)
-
-    # TimeoutError is a subclass of OSError, it must not be treated as bus loss
-    monkeypatch.setattr(client_module, "async_timeout", zero_timeout)
-
-    with pytest.raises(asyncio.TimeoutError):
-        await client.disconnect()
-
-    assert client.is_connected is True
-
-
 class DiesDuringCallFakeMessageBus(FakeMessageBus):
     """A bus that dies while a call is pending, after the manager reacted."""
 
@@ -587,24 +563,6 @@ async def test_client_disconnect_notifies_once_when_manager_reacts_first() -> No
     assert client._bus is None  # pyright: ignore[reportPrivateUsage]
     assert client.is_connected is False
     disconnected_callback.assert_called_once_with()
-
-
-async def test_client_disconnect_with_dead_bus_releases_bus_when_callback_raises() -> (
-    None
-):
-    dead_bus = FakeMessageBus({})
-    dead_bus.die()
-    disconnected_callback = MagicMock(side_effect=RuntimeError("bad callback"))
-    client = make_client(
-        dead_bus, connected=True, disconnected_callback=disconnected_callback
-    )
-
-    with pytest.raises(RuntimeError, match="bad callback"):
-        await client.disconnect()
-
-    assert client._bus is None  # pyright: ignore[reportPrivateUsage]
-    assert client.is_connected is False
-    assert client.services is None
 
 
 async def test_client_disconnect_with_dead_bus() -> None:

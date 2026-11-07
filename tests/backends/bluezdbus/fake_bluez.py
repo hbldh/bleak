@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 import asyncio
 import contextlib
 import tempfile
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any, Literal, Protocol
 
 import pytest
 from dbus_fast import DBusError
@@ -30,6 +30,7 @@ from dbus_fast.annotations import (
 from dbus_fast.constants import BusType, PropertyAccess
 from dbus_fast.service import ServiceInterface, dbus_property, method
 
+from bleak._compat import assert_never
 from bleak._compat import timeout as async_timeout
 from bleak.backends.bluezdbus import defs
 
@@ -83,11 +84,27 @@ class FakeAdapter1(ServiceInterface):
 
 
 class FakeDevice1(ServiceInterface):
-    """A stand-in for the BlueZ org.bluez.Device1 interface."""
+    """A stand-in for the BlueZ org.bluez.Device1 interface.
+
+    :attr:`on_disconnect` picks how the Disconnect method behaves, following
+    bluetoothd's src/device.c:
+
+    - ``"disconnect"``: "Connected" changes to false, then the reply is sent
+      (the order in BlueZ 5.88).
+    - ``"reply"``: the reply is sent before "Connected" changes. BlueZ 5.72
+      does this when the first bearer of a dual-mode device goes down. Here
+      "Connected" never changes.
+    - ``"no-reply"``: the call is not answered. bluetoothd does this when the
+      kernel refuses the disconnect, and answers only once the link drops.
+    """
 
     def __init__(self) -> None:
         super().__init__(defs.DEVICE_INTERFACE)
         self.connected = True
+        self.on_disconnect: Literal["disconnect", "reply", "no-reply"] = "disconnect"
+        self.calls: list[str] = []
+        self._release_held = asyncio.Event()
+        self._held: set[asyncio.Task[Any]] = set()
 
     @dbus_property(access=PropertyAccess.READ)
     def Connected(self) -> DBusBool:
@@ -97,6 +114,28 @@ class FakeDevice1(ServiceInterface):
         """Signals the device disconnecting over the wire."""
         self.connected = False
         self.emit_properties_changed({"Connected": False})
+
+    @method()
+    async def Disconnect(self) -> None:
+        self.calls.append("Disconnect")
+
+        match self.on_disconnect:
+            case "disconnect":
+                self.disconnect()
+            case "reply":
+                pass
+            case "no-reply":
+                task = asyncio.current_task()
+                assert task is not None
+                self._held.add(task)
+                await self._release_held.wait()
+            case _:
+                assert_never(self.on_disconnect)
+
+    async def release_held(self) -> None:
+        """Answers held Disconnect calls so no task is left pending."""
+        self._release_held.set()
+        await asyncio.gather(*self._held)
 
     @dbus_property(access=PropertyAccess.READ)
     def ServicesResolved(self) -> DBusBool:
@@ -111,9 +150,20 @@ class FakeDevice1(ServiceInterface):
         return DEVICE_ADDRESS
 
 
-# A minimal bus configuration so the test does not depend on the
-# system's session bus setup (e.g. launchd on macOS).
-BUS_CONFIG = f"""\
+def bus_config(reply_timeout_ms: int | None) -> str:
+    """A minimal bus configuration so the test does not depend on the
+    system's session bus setup (e.g. launchd on macOS).
+
+    ``reply_timeout_ms`` sets how long the daemon waits for a method reply
+    before it answers the caller with NoReply.
+    """
+    limit = (
+        ""
+        if reply_timeout_ms is None
+        else f'  <limit name="reply_timeout">{reply_timeout_ms}</limit>\n'
+    )
+
+    return f"""\
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
@@ -125,7 +175,7 @@ BUS_CONFIG = f"""\
     <allow eavesdrop="true"/>
     <allow own="*"/>
   </policy>
-</busconfig>
+{limit}</busconfig>
 """
 
 
@@ -137,7 +187,8 @@ class RealDBusDaemon:
     GetManagedObjects for the exported objects itself.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, reply_timeout_ms: int | None = None) -> None:
+        self.reply_timeout_ms = reply_timeout_ms
         self.process: asyncio.subprocess.Process | None = None
         self.bluez_bus: MessageBus | None = None
         self.adapter = FakeAdapter1()
@@ -145,7 +196,7 @@ class RealDBusDaemon:
 
     async def start(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         config_file = tmp_path / "bus.conf"
-        config_file.write_text(BUS_CONFIG)
+        config_file.write_text(bus_config(self.reply_timeout_ms))
         self.process = await asyncio.create_subprocess_exec(
             "dbus-daemon",
             f"--config-file={config_file}",
@@ -184,10 +235,15 @@ class RealDBusDaemon:
 
     async def stop(self) -> None:
         """Kill the daemon and reap it."""
+        if self.bluez_bus is not None:
+            await self.device.release_held()
         self.kill()
         if self.process is not None:
             await self.process.wait()
             self.process = None
 
 
-StartDaemon = Callable[[], Awaitable[RealDBusDaemon]]
+class StartDaemon(Protocol):
+    def __call__(
+        self, *, reply_timeout_ms: int | None = None
+    ) -> Awaitable[RealDBusDaemon]: ...

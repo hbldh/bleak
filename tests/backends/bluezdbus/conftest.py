@@ -110,8 +110,8 @@ async def start_daemon(
 
     daemons: "list[RealDBusDaemon]" = []
 
-    async def _start() -> "RealDBusDaemon":
-        daemon = RealDBusDaemon()
+    async def _start(*, reply_timeout_ms: "int | None" = None) -> "RealDBusDaemon":
+        daemon = RealDBusDaemon(reply_timeout_ms)
         await daemon.start(monkeypatch, tmp_path)
         daemons.append(daemon)
         return daemon
