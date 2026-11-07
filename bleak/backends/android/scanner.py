@@ -109,7 +109,7 @@ class BleakScannerAndroid(BaseBleakScanner):
             Set to ``"passive"`` to avoid the ``"active"`` scanning mode.
     """
 
-    __scanner = None
+    __scanner: BleakScannerAndroid | None = None
 
     def __init__(
         self,
