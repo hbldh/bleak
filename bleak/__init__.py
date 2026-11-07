@@ -433,7 +433,7 @@ class BleakAdapter:
     To get an instance, use ``adapter = await BleakAdapter.get()`` instead of
     ``adapter = BleakAdapter()``.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 3.1
     """
 
     def __init__(self, backend: BaseBleakAdapter):

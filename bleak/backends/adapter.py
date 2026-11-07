@@ -15,7 +15,7 @@ class BaseBleakAdapter:
 
     Instances should be obtained via :meth:`get`.
 
-    .. versionadded:: unreleased
+    .. versionadded:: 3.1
     """
 
     @classmethod

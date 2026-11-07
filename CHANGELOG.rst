@@ -10,6 +10,9 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+`3.1.0`_ (2026-11-07)
+=====================
+
 Added
 -----
 * Added ``BleakAdapter`` class with ``get_connected_devices()`` to retrieve BLE devices that are already connected to the system without scanning.
@@ -25,7 +28,7 @@ Fixed
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
 * Fixed memory leaks when scanning and using a notification discriminator in CoreBluetooth backend.
 * Fixed ``BleakClient`` being kept alive by the ``CentralManagerDelegate`` after a failed connection attempt in CoreBluetooth backend.
-* Fixed leaking Bluetooth address data when scanning with ``use_bdaddr=True`` in CoreBluetooth backend.
+* Fixed leaking Bluetooth address data when scanning with ``cb={"use_bdaddr": True}`` in CoreBluetooth backend.
 * Fixed crash in WinRT backend if a WinRT event handler is called after the asyncio event loop is closed.
 * Fixed device removed callbacks in BlueZ backend matching devices on adapters whose name starts with the watched adapter name, e.g. ``hci10`` for ``hci1``.
 * Fixed BlueZ backend not detecting loss of the D-Bus connection, which left clients reporting connected forever and disconnect callbacks never firing.
@@ -1242,7 +1245,8 @@ Fixed
 * Bleak created.
 
 
-.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.0.2...develop
+.. _Unreleased: https://github.com/hbldh/bleak/compare/v3.1.0...develop
+.. _3.1.0: https://github.com/hbldh/bleak/compare/v3.0.2...v3.1.0
 .. _3.0.2: https://github.com/hbldh/bleak/compare/v3.0.1...v3.0.2
 .. _3.0.1: https://github.com/hbldh/bleak/compare/v3.0.0...v3.0.1
 .. _3.0.0: https://github.com/hbldh/bleak/compare/v2.1.1...v3.0.0
