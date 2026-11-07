@@ -442,13 +442,33 @@ class BlueZManager:
         # clear first so callbacks observe the updated state, like _parse_msg
         self._reset_cached_state()
 
-        for path in disconnected_paths:
-            self._notify_device_property_changed(path, {"Connected": False})
+        first_error: Optional[Exception] = None
 
-        # Report all devices as removed so pending service discovery waits
-        # finish and scanners drop their seen devices.
+        def notify(callback: Callable[[Any], None], value: Any) -> None:
+            nonlocal first_error
+            try:
+                callback(value)
+            except Exception as error:
+                if first_error is None:
+                    first_error = error
+
+        # A failing callback must not prevent other clients or discovery
+        # waiters from learning that the manager connection was lost.
+        for path in disconnected_paths:
+            for item in tuple(self._condition_callbacks.get(path, ())):
+                if item.property_name == "Connected":
+                    notify(item.callback, False)
+            for watcher in tuple(self._device_watchers.get(path, ())):
+                notify(watcher.on_connected_changed, False)
+
+        # Callbacks may remove their own registration while being notified.
         for path, _ in devices:
-            self._notify_device_removed(path)
+            for callback, adapter_path in tuple(self._device_removed_callbacks):
+                if path.startswith(f"{adapter_path}/"):
+                    notify(callback, path)
+
+        if first_error is not None:
+            raise first_error
 
     def _notify_device_property_changed(
         self, device_path: str, changed: Mapping[str, Any]

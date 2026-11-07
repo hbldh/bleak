@@ -21,6 +21,7 @@ Changed
 
 Fixed
 -----
+* Fixed one failing callback preventing other clients and discovery waiters from being notified of D-Bus connection loss in the BlueZ backend.
 * Fixed deprecated ``adapter`` keyword argument mutating shared defaults and caller-provided ``bluez`` arguments in ``BleakScanner`` and ``BleakClient``. Fixes #2028.
 * Fixed handling empty notification payloads in BlueZ backend when using "AcquireNotify". Fixes #1982.
 * Fixed memory leaks when scanning and using a notification discriminator in CoreBluetooth backend.

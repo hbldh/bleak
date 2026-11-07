@@ -628,3 +628,123 @@ async def test_client_disconnect_with_dead_bus() -> None:
     # finishes and the consumer learns about the disconnect
     assert monitor_event.is_set()
     disconnected_callback.assert_called_once_with()
+
+
+@pytest.mark.parametrize("failing_kind", ["condition", "watcher", "removed"])
+async def test_bus_loss_notifies_remaining_callbacks_after_error(
+    make_manager: MakeManager, failing_kind: str
+) -> None:
+    manager, _ = await make_manager(build_managed_objects(include_second_adapter=True))
+    connected_changes = watch_connected(manager)
+    other_changes: list[bool] = []
+    manager.add_device_watcher(
+        SECOND_DEVICE_PATH, other_changes.append, noop_characteristic_value_changed
+    )
+    condition_changes: list[Any] = []
+    conditions = manager._condition_callbacks  # pyright: ignore[reportPrivateUsage]
+    conditions[DEVICE_PATH] = {
+        manager_module.DeviceConditionCallback(condition_changes.append, "Connected")
+    }
+    removed_paths: list[str] = []
+
+    def fail(value: Any) -> None:
+        assert not manager.is_connected(DEVICE_PATH)
+        raise RuntimeError("synthetic callback failure")
+
+    if failing_kind == "condition":
+        conditions[DEVICE_PATH].add(
+            manager_module.DeviceConditionCallback(fail, "Connected")
+        )
+    elif failing_kind == "watcher":
+        manager.add_device_watcher(DEVICE_PATH, fail, noop_characteristic_value_changed)
+    else:
+        manager._device_removed_callbacks.append(  # pyright: ignore[reportPrivateUsage]
+            manager_module.DeviceRemovedCallbackAndState(fail, ADAPTER_PATH)
+        )
+    manager._device_removed_callbacks.append(  # pyright: ignore[reportPrivateUsage]
+        manager_module.DeviceRemovedCallbackAndState(removed_paths.append, ADAPTER_PATH)
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic callback failure"):
+        manager._handle_bus_disconnect(None)  # pyright: ignore[reportPrivateUsage]
+
+    assert condition_changes == [False]
+    assert connected_changes == [False]
+    assert other_changes == [False]
+    assert removed_paths == [DEVICE_PATH]
+
+
+async def test_bus_loss_reports_first_error_after_all_notifications(
+    make_manager: MakeManager,
+) -> None:
+    manager, factory = await make_manager()
+    first_error = RuntimeError("first callback failure")
+    calls: list[str] = []
+
+    def fail_condition(value: Any) -> None:
+        calls.append("condition")
+        raise first_error
+
+    def fail_watcher(connected: bool) -> None:
+        calls.append("watcher")
+        raise ValueError("later callback failure")
+
+    def removed(path: str) -> None:
+        calls.append("removed")
+
+    manager._condition_callbacks[DEVICE_PATH] = {  # pyright: ignore[reportPrivateUsage]
+        manager_module.DeviceConditionCallback(fail_condition, "Connected")
+    }
+    manager.add_device_watcher(
+        DEVICE_PATH, fail_watcher, noop_characteristic_value_changed
+    )
+    manager._device_removed_callbacks.append(  # pyright: ignore[reportPrivateUsage]
+        manager_module.DeviceRemovedCallbackAndState(removed, ADAPTER_PATH)
+    )
+
+    with pytest.raises(RuntimeError) as error:
+        manager._handle_bus_disconnect(None)  # pyright: ignore[reportPrivateUsage]
+
+    assert error.value is first_error
+    assert calls == ["condition", "watcher", "removed"]
+    # Stop the fake bus without delivering its notifications a second time.
+    await reap_watcher_task(manager)
+    factory.instances[0].disconnect()
+
+
+async def test_bus_loss_callbacks_can_remove_their_own_registration(
+    make_manager: MakeManager,
+) -> None:
+    manager, _ = await make_manager()
+    conditions = manager._condition_callbacks  # pyright: ignore[reportPrivateUsage]
+    removals = manager._device_removed_callbacks  # pyright: ignore[reportPrivateUsage]
+    calls: list[str] = []
+
+    def condition(value: Any) -> None:
+        calls.append("condition")
+        conditions[DEVICE_PATH].remove(condition_item)
+
+    def watcher(connected: bool) -> None:
+        calls.append("watcher")
+        manager.remove_device_watcher(watcher_item)
+
+    def removal(path: str) -> None:
+        calls.append("removal")
+        removals.remove(removal_item)
+
+    condition_item = manager_module.DeviceConditionCallback(condition, "Connected")
+    conditions[DEVICE_PATH] = {condition_item}
+    watcher_item = manager.add_device_watcher(
+        DEVICE_PATH, watcher, noop_characteristic_value_changed
+    )
+    removal_item = manager_module.DeviceRemovedCallbackAndState(removal, ADAPTER_PATH)
+    removals.append(removal_item)
+    removed_paths: list[str] = []
+    removals.append(
+        manager_module.DeviceRemovedCallbackAndState(removed_paths.append, ADAPTER_PATH)
+    )
+
+    manager._handle_bus_disconnect(None)  # pyright: ignore[reportPrivateUsage]
+
+    assert calls == ["condition", "watcher", "removal"]
+    assert removed_paths == [DEVICE_PATH]
