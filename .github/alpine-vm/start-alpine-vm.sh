@@ -95,7 +95,7 @@ check_dependencies() {
 
     if [ ${#missing_deps[@]} -ne 0 ]; then
         log_error "Missing dependencies: ${missing_deps[*]}"
-        log_info "On Ubuntu/Debian: sudo apt-get install qemu-system-x86 qemu-utils qemu-kvm"
+        log_info "On Ubuntu/Debian: sudo apt-get install qemu-system-x86 qemu-utils"
         exit 1
     fi
     
