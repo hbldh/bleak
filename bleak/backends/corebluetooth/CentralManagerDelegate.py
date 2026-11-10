@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, Optional, TypedDict, cast
+from typing import Any, Optional, Self, TypedDict, cast
 
 import objc
 from CoreBluetooth import (
@@ -43,8 +43,6 @@ from Foundation import (
 )
 from libdispatch import DISPATCH_QUEUE_SERIAL, dispatch_queue_create
 
-from bleak._compat import Self
-from bleak._compat import timeout as async_timeout
 from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.backends.corebluetooth.utils import cb_manager_state_message
 from bleak.exc import (
@@ -295,12 +293,12 @@ class CentralManagerDelegate:
             self._connect_futures[peripheral.identifier()] = future
             try:
                 self.central_manager.connectPeripheral_options_(peripheral, None)
-                async with async_timeout(timeout):
+                async with asyncio.timeout(timeout):
                     await future
             finally:
                 del self._connect_futures[peripheral.identifier()]
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug(f"Connection timed out after {timeout} seconds.")
             del self._disconnect_callbacks[peripheral.identifier()]
             future = self.event_loop.create_future()

@@ -210,7 +210,7 @@ class BleakScannerAndroid(BaseBleakScanner):
         try:
             # Wait a short time to check if "onScanFailed" is called.
             await asyncio.wait_for(scanfuture, timeout=0.2)
-        except asyncio.exceptions.TimeoutError:
+        except TimeoutError:
             # If the scan started successfully but no device is found in the
             # short waiting period, a timeout occurs. This is not an error.
             pass

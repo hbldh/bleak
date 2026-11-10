@@ -11,11 +11,21 @@ import sys
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from types import TracebackType
-from typing import Any, Literal, Optional, TypedDict, Union, cast, overload
+from typing import (
+    Any,
+    Literal,
+    Never,
+    Optional,
+    Self,
+    TypedDict,
+    Union,
+    Unpack,
+    assert_never,
+    cast,
+    overload,
+)
 from warnings import warn
 
-from bleak._compat import Never, Self, Unpack, assert_never
-from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.args.bluez import (
     BlueZAdapterArgs,
@@ -414,12 +424,12 @@ class BleakScanner:
         """
         async with cls(**kwargs) as scanner:
             try:
-                async with async_timeout(timeout):
+                async with asyncio.timeout(timeout):
                     async for bd, ad in scanner.advertisement_data():
                         if filterfunc(bd, ad):
                             return bd
                     assert_never(cast(Never, "advertisement_data() should never stop"))
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 return None
 
 

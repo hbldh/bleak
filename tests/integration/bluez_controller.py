@@ -19,7 +19,6 @@ from bumble.transport.common import Transport
 from dbus_fast import BusType, Message, MessageType, Variant
 from dbus_fast.aio.message_bus import MessageBus
 
-from bleak._compat import timeout as async_timeout
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.signals import MatchRules, add_match
 from bleak.backends.bluezdbus.utils import assert_reply, get_dbus_authenticator
@@ -52,7 +51,7 @@ async def power_on_controller(
     It may take some time for the adapter to fully configure itself after
     powering on. So we make multiple attempts until timeout is reached.
     """
-    async with async_timeout(timeout):
+    async with asyncio.timeout(timeout):
         while True:
             try:
                 reply = await bus.call(

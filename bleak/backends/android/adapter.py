@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
-from typing import Any, cast
+from typing import Any, Self, cast
 
 from android.bluetooth import (
     BluetoothAdapter,
@@ -19,7 +19,7 @@ from android.bluetooth import (
 )
 from android.content import Context
 
-from bleak._compat import Self, override
+from bleak._compat import override
 from bleak.backends.adapter import BaseBleakAdapter
 from bleak.backends.android.client import BleakClientAndroid
 from bleak.backends.android.permissions import check_for_permissions
@@ -123,7 +123,7 @@ class BleakAdapterAndroid(BaseBleakAdapter):
             return frozenset(
                 normalize_uuid_str(s.uuid) for s in client.services.services.values()
             )
-        except (BleakError, asyncio.TimeoutError) as e:
+        except (BleakError, TimeoutError) as e:
             logger.debug("service discovery failed for %s: %s", address, e)
             return frozenset()
         finally:

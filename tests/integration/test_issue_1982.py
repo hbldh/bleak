@@ -66,5 +66,5 @@ async def test_empty_notification_disconnect_disambiguation(
         )
 
         # A closed AcquireNotify fd/disconnect must not be surfaced as an empty notification.
-        with pytest.raises(asyncio.TimeoutError):
+        with pytest.raises(TimeoutError):
             await asyncio.wait_for(notified_data.get(), timeout=1)

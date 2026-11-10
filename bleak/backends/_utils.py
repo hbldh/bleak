@@ -1,9 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, ParamSpec, TypeVar
-
-from bleak._compat import TypeVarTuple, Unpack
+from typing import Any, ParamSpec, TypeVar, TypeVarTuple
 
 _Ts = TypeVarTuple("_Ts")
 
@@ -13,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 def try_call_soon_threadsafe(
     event_loop: asyncio.AbstractEventLoop,
-    callback: Callable[[Unpack[_Ts]], Any],
-    *args: Unpack[_Ts],
+    callback: Callable[[*_Ts], Any],
+    *args: *_Ts,
 ) -> None:
     """Call a callback on the event loop thread, handling closed loop errors gracefully."""
     try:

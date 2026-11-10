@@ -20,7 +20,7 @@ import asyncio
 import itertools
 import logging
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 import objc
 from CoreBluetooth import (
@@ -35,8 +35,6 @@ from CoreBluetooth import (
 )
 from Foundation import NSUUID, NSArray, NSData, NSError, NSNumber, NSObject
 
-from bleak._compat import Self
-from bleak._compat import timeout as async_timeout
 from bleak.args.corebluetooth import NotificationDiscriminator
 from bleak.backends._utils import external_thread_callback, try_call_soon_threadsafe
 from bleak.backends.client import NotifyCallback
@@ -408,7 +406,7 @@ class PeripheralDelegate:
 
         try:
             self.peripheral.readValueForCharacteristic_(characteristic)
-            async with async_timeout(timeout):
+            async with asyncio.timeout(timeout):
                 return await future
         finally:
             del self._characteristic_read_futures[characteristic.handle()]

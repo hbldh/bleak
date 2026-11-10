@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     if sys.platform != "win32":
         assert False, "This backend is only available on Windows"
 
+from typing import Self
 from uuid import UUID
 
 from winrt.system import unbox_string
@@ -17,7 +18,7 @@ from winrt.windows.devices.bluetooth import (
 from winrt.windows.devices.bluetooth.genericattributeprofile import GattDeviceService
 from winrt.windows.devices.enumeration import DeviceInformation
 
-from bleak._compat import Self, override
+from bleak._compat import override
 from bleak.backends.adapter import BaseBleakAdapter
 from bleak.backends.device import BLEDevice
 from bleak.backends.winrt.util import assert_mta

@@ -1,16 +1,11 @@
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, NewType, Optional, SupportsIndex, TypeVar, overload
+from typing import Any, NewType, Optional, Self, SupportsIndex, TypeVar, overload
 
 if sys.version_info < (3, 12):
     from typing_extensions import Buffer
 else:
     from collections.abc import Buffer
-
-if sys.version_info < (3, 11):
-    from typing_extensions import Self
-else:
-    from typing import Self
 
 TNSObject = TypeVar("TNSObject", bound=NSObject)
 

@@ -1,6 +1,5 @@
-from typing import Any
+from typing import Any, Self
 
-from bleak._compat import Self
 from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
