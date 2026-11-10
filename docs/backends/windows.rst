@@ -15,6 +15,7 @@ Client
 ~~~~~~
  - The constructor keyword ``address_type`` which can have the values ``"public"`` or ``"random"``. This value
    makes sure that the connection is made in a fashion that suits the peripheral.
+ - The ``winrt`` constructor keyword takes Windows-specific options. See :class:`bleak.args.winrt.WinRTClientArgs`.
 
 API
 ---

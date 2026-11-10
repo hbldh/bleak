@@ -187,7 +187,7 @@ class BleakClientWinRT(BaseBleakClient):
         # os-specific options
         self._use_cached_services = winrt.get("use_cached_services")
         self._address_type = winrt.get("address_type")
-        self._retry_on_services_changed = False
+        self._retry_on_services_changed = winrt.get("retry_on_services_changed", False)
 
         self._services_changed_token: Optional[EventRegistrationToken] = None
         self._session_status_changed_token: Optional[EventRegistrationToken] = None

@@ -1,4 +1,4 @@
-"""Tests for the WinRT client's async-operation plumbing."""
+"""Tests for the WinRT client."""
 
 import asyncio
 import sys
@@ -17,7 +17,8 @@ if sys.platform != "win32":
 
 from winrt.windows.foundation import AsyncStatus
 
-from bleak.backends.winrt.client import FutureLike
+from bleak.args.winrt import WinRTClientArgs
+from bleak.backends.winrt.client import BleakClientWinRT, FutureLike
 
 if TYPE_CHECKING:
     from winrt.windows.foundation import IAsyncOperation
@@ -98,3 +99,21 @@ async def test_future_like_result_before_handler_is_invalid_state() -> None:
     future = future_of(op)
     with pytest.raises(asyncio.InvalidStateError):
         future.result()
+
+
+@pytest.mark.parametrize(
+    "winrt,expected",
+    [
+        ({}, False),
+        ({"retry_on_services_changed": False}, False),
+        ({"retry_on_services_changed": True}, True),
+    ],
+)
+def test_retry_on_services_changed_arg(winrt: WinRTClientArgs, expected: bool) -> None:
+    client = BleakClientWinRT(
+        "00:00:00:00:00:00", disconnected_callback=None, timeout=10.0, winrt=winrt
+    )
+    assert (
+        client._retry_on_services_changed  # pyright: ignore[reportPrivateUsage]
+        is expected
+    )

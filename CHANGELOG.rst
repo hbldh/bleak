@@ -10,6 +10,10 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added ``retry_on_services_changed`` option to ``WinRTClientArgs`` to restart getting services if the device reports that its services changed during service discovery in WinRT backend.
+
 `3.1.0`_ (2026-11-07)
 =====================
 
