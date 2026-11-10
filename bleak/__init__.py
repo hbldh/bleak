@@ -708,8 +708,14 @@ class BleakClient:
 
         Consider using :attr:`bleak.backends.characteristic.BleakGATTCharacteristic.max_write_without_response_size` instead.
 
-        .. warning:: The BlueZ backend will always return 23 (the minimum MTU size).
-            See the ``mtu_size.py`` example for a way to hack around this.
+        .. warning:: The BlueZ backend requires BlueZ >= 5.62 to get the MTU
+            size. With older versions, it will always return 23 (the minimum
+            MTU size).
+
+        .. note:: In rare cases, a device may take a long time to update this
+            value, so reading this property may return the default value of
+            ``23`` and reading it again after some time may return the expected
+            higher value.
 
         """
         return self._backend.mtu_size

@@ -106,9 +106,6 @@ class BleakClientBlueZDBus(BaseBleakClient):
         # map of characteristic D-Bus path to AcquireNotify file descriptor
         self._notification_fds: dict[str, int] = {}
 
-        # used to override mtu_size property
-        self._mtu_size: Optional[int] = None
-
     # Connectivity methods
 
     @override
@@ -600,54 +597,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
         return False if self._bus is None else self._is_connected
 
     async def _acquire_mtu(self) -> None:
-        """Acquires the MTU for this device by calling the "AcquireWrite" or
-        "AcquireNotify" method of the first characteristic that has such a method.
-
-        This method only needs to be called once, after connecting to the device
-        but before accessing the ``mtu_size`` property.
-
-        If a device uses encryption on characteristics, it will need to be bonded
-        first before calling this method.
-        """
-
-        assert (
-            self.services is not None
-        ), "Services must be acquired before acquiring MTU"
-
-        # This will try to get the "best" characteristic for getting the MTU.
-        # We would rather not start notifications if we don't have to.
-        try:
-            method = "AcquireWrite"
-            char = next(
-                c
-                for c in self.services.characteristics.values()
-                if "write-without-response" in c.properties
-            )
-        except StopIteration:
-            method = "AcquireNotify"
-            char = next(
-                c
-                for c in self.services.characteristics.values()
-                if "notify" in c.properties
-            )
-
-        assert self._bus
-
-        reply = await self._bus.call(
-            Message(
-                destination=defs.BLUEZ_SERVICE,
-                path=char.obj[0],
-                interface=defs.GATT_CHARACTERISTIC_INTERFACE,
-                member=method,
-                signature="a{sv}",
-                body=[{}],
-            )
+        """Deprecated. Does nothing, ``mtu_size`` reads the MTU without it."""
+        warnings.warn(
+            "_acquire_mtu() is deprecated and does nothing, mtu_size gets the MTU from BlueZ >= 5.62 without it",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        assert_reply(reply)
-
-        # we aren't actually using the write or notify, we just want the MTU
-        os.close(reply.unix_fds[0])
-        self._mtu_size = reply.body[1]
 
     async def _get_adapter_path(self) -> str:
         """Private coroutine to return the BlueZ path to the adapter this client is assigned to.
@@ -692,13 +647,18 @@ class BleakClientBlueZDBus(BaseBleakClient):
     @override
     def mtu_size(self) -> int:
         """Get ATT MTU size for active connection"""
-        if self._mtu_size is None:
-            warnings.warn(
-                "Using default MTU value. Call _acquire_mtu() or set _mtu_size first to avoid this warning."
-            )
-            return 23
+        if self.services is not None:
+            # BlueZ has no MTU property on the device, only one on each
+            # characteristic (added in BlueZ 5.62), which is the ATT MTU of the
+            # connection, so any characteristic will do.
+            char = next(iter(self.services.characteristics.values()), None)
+            if char is not None and "MTU" in char.obj[1]:
+                return char.obj[1]["MTU"]
 
-        return self._mtu_size
+        logger.warning(
+            "Using default MTU value. BlueZ >= 5.62 is required to get the MTU."
+        )
+        return 23
 
     # GATT services methods
 
