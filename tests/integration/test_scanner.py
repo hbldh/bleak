@@ -81,7 +81,7 @@ async def test_discover_filter_by_service_uuid(
         service_uuids=[normalize_uuid_str("180f")],
     ):
         found_adv_data = None
-        with contextlib.suppress(asyncio.TimeoutError):
+        with contextlib.suppress(TimeoutError):
             found_adv_data = await asyncio.wait_for(
                 found_adv_data_future, timeout=DEFAULT_TIMEOUT
             )

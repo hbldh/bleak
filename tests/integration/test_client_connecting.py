@@ -6,7 +6,6 @@ from bumble.gatt import Characteristic, CharacteristicValue, Service
 from bumble.hci import HCI_REMOTE_USER_TERMINATED_CONNECTION_ERROR
 
 from bleak import BleakClient
-from bleak._compat import timeout as async_timeout
 from bleak.exc import BleakError
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
@@ -47,7 +46,7 @@ async def test_connect_timeout(bumble_peripheral: Device):
 
     await bumble_peripheral.stop_advertising()
 
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(TimeoutError):
         async with BleakClient(device, timeout=1.0):
             pass
 
@@ -83,7 +82,7 @@ async def test_disconnect_callback(bumble_peripheral: Device):
         await virtual_connection.disconnect()
 
         # Wait for disconnected callback to be called
-        async with async_timeout(5):
+        async with asyncio.timeout(5):
             disconnected_client = await disconnected_client_future
         assert disconnected_client is client
 
@@ -119,7 +118,7 @@ async def test_disconnect_during_read(bumble_peripheral: Device):
         async with BleakClient(device, services=[service_uuid]) as client:
             read_task = asyncio.create_task(client.read_gatt_char(characteristic_uuid))
 
-            async with async_timeout(5):
+            async with asyncio.timeout(5):
                 await read_started.wait()
 
             connection = next(iter(bumble_peripheral.connections.values()))
@@ -128,7 +127,7 @@ async def test_disconnect_during_read(bumble_peripheral: Device):
             )
 
             with pytest.raises(BleakError):
-                async with async_timeout(5):
+                async with asyncio.timeout(5):
                     await read_task
     finally:
         read_finished.set()

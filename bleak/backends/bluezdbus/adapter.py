@@ -5,9 +5,9 @@ if TYPE_CHECKING:
     if sys.platform != "linux":
         assert False, "This backend is only available on Linux"
 
-from typing import Any
+from typing import Any, Self
 
-from bleak._compat import Self, override
+from bleak._compat import override
 from bleak.args.bluez import BlueZAdapterArgs
 from bleak.backends.adapter import BaseBleakAdapter
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager

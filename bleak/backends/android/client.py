@@ -30,7 +30,6 @@ from java.chaquopy import jarray
 from java.util import UUID
 
 from bleak._compat import override
-from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.assigned_numbers import gatt_char_props_to_strs
 from bleak.backends.android.broadcast import BroadcastReceiver
@@ -153,7 +152,7 @@ class BleakClientAndroid(BaseBleakClient):
             return pending_gatt
 
         try:
-            async with async_timeout(timeout):
+            async with asyncio.timeout(timeout):
                 gatt, conn_result = await callbacks.dispatcher.perform_and_wait(
                     dispatch_func=_do_connect,
                     callback_api=OnConnectionStateChangeCallback(),

@@ -15,7 +15,7 @@ import contextlib
 import tempfile
 from collections.abc import Awaitable
 from pathlib import Path
-from typing import Annotated, Any, Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol, assert_never
 
 import pytest
 from dbus_fast import DBusError
@@ -30,8 +30,6 @@ from dbus_fast.annotations import (
 from dbus_fast.constants import BusType, PropertyAccess
 from dbus_fast.service import ServiceInterface, dbus_property, method
 
-from bleak._compat import assert_never
-from bleak._compat import timeout as async_timeout
 from bleak.backends.bluezdbus import defs
 
 from .conftest import ADAPTER_PATH, DEVICE_ADDRESS, DEVICE_PATH
@@ -206,7 +204,7 @@ class RealDBusDaemon:
         )
         try:
             assert self.process.stdout is not None
-            async with async_timeout(10):
+            async with asyncio.timeout(10):
                 address = (await self.process.stdout.readline()).decode().strip()
             assert address
 

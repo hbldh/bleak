@@ -1,10 +1,4 @@
-import sys
-from typing import Any, NewType, Optional, Protocol, TypeVar
-
-if sys.version_info < (3, 11):
-    from typing_extensions import Self
-else:
-    from typing import Self
+from typing import Any, NewType, Optional, Protocol, Self, TypeVar
 
 from Foundation import (
     NSUUID,

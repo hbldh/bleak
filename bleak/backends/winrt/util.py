@@ -10,7 +10,6 @@ import ctypes
 from ctypes import wintypes
 from enum import IntEnum
 
-from bleak._compat import timeout as async_timeout
 from bleak.exc import BleakError
 
 
@@ -163,9 +162,9 @@ async def assert_mta() -> None:
     timer = _SetTimer(None, 1, 0, callback)
 
     try:
-        async with async_timeout(0.5):
+        async with asyncio.timeout(0.5):
             await event.wait()
-    except asyncio.TimeoutError:
+    except TimeoutError:
         raise BleakError(
             "Thread is configured for Windows GUI but callbacks are not working."
             + (

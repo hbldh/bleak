@@ -15,7 +15,6 @@ from android.permissions import Permission, request_permissions
 from jnius import cast, java_method
 
 from bleak._compat import override
-from bleak._compat import timeout as async_timeout
 from bleak.backends.p4android import defs, utils
 from bleak.backends.scanner import (
     AdvertisementData,
@@ -138,9 +137,9 @@ class BleakScannerP4Android(BaseBleakScanner):
         self.__javascanner.flushPendingScanResults(self.__callback.java)
 
         try:
-            async with async_timeout(0.2):
+            async with asyncio.timeout(0.2):
                 await scanfuture
-        except asyncio.exceptions.TimeoutError:
+        except TimeoutError:
             pass
         except BleakError as bleakerror:
             await self.stop()

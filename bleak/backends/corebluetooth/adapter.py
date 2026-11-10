@@ -5,12 +5,12 @@ if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
 
-from typing import Any
+from typing import Any, Self
 
 from CoreBluetooth import CBUUID
 from Foundation import NSArray
 
-from bleak._compat import Self, override
+from bleak._compat import override
 from bleak.backends.adapter import BaseBleakAdapter
 from bleak.backends.corebluetooth.CentralManagerDelegate import CentralManagerDelegate
 from bleak.backends.device import BLEDevice

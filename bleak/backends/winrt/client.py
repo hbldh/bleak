@@ -16,7 +16,18 @@ import uuid
 from collections.abc import Awaitable, Callable
 from contextvars import Context
 from ctypes import WinError  # type: ignore[attr-defined]
-from typing import Any, Generic, Optional, Protocol, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Generic,
+    Optional,
+    Protocol,
+    Self,
+    Sequence,
+    TypeVar,
+    Union,
+    assert_never,
+    cast,
+)
 from warnings import warn
 
 from winrt.system import Object
@@ -56,8 +67,7 @@ from winrt.windows.foundation import (
 from winrt.windows.storage.streams import Buffer
 
 from bleak import BleakScanner
-from bleak._compat import Self, assert_never, override
-from bleak._compat import timeout as async_timeout
+from bleak._compat import override
 from bleak.args import SizedBuffer
 from bleak.args.winrt import WinRTClientArgs as _WinRTClientArgs
 from bleak.assigned_numbers import gatt_char_props_to_strs
@@ -394,7 +404,7 @@ class BleakClientWinRT(BaseBleakClient):
                 # https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothledevice.gattserviceschanged
                 service_cache_mode = cache_mode
 
-                async with async_timeout(timeout):
+                async with asyncio.timeout(timeout):
                     if self._retry_on_services_changed:
                         while True:
                             services_changed_event.clear()
