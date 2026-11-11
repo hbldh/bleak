@@ -172,6 +172,11 @@ help = "Run tests using Python 3.14"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
 executor = { python = "3.14", no-group = "dev", group = "test" }
 
+[tool.poe.tasks.test-py315]
+help = "Run tests using Python 3.15"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.15", no-group = "dev", group = "test" }
+
 [tool.poe.tasks.test-all]
 help = "Run tests using all supported Python versions"
 sequence = [
@@ -179,6 +184,7 @@ sequence = [
     "test-py312",
     "test-py313",
     "test-py314",
+    "test-py315",
 ]
 
 [tool.poe.tasks.test-android-emulator]
