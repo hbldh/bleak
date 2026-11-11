@@ -87,8 +87,13 @@ build-backend = "uv_build"
 # keeps bumble's own specifier and adds a marker that is false on Windows, so
 # the requirement is dropped there and resolution everywhere else is exactly
 # what bumble declares.
+#
+# grpcio is dropped everywhere: it is only used by bumble's Android emulator
+# transports, which only run inside the Android testbed app, and that gets its
+# own copy of bumble from briefcase. It often has no wheels for new Python
+# versions or for musl, which the BlueZ integration test VM uses.
 override-dependencies = [
-    "grpcio>=1.62.1 ; sys_platform != 'win32'",
+    "grpcio ; sys_platform == 'never'",
     "libusb-package==1.0.26.1 ; sys_platform != 'win32'",
     "libusb1>=2.0.1 ; sys_platform != 'win32'",
     "pyusb>=1.2 ; sys_platform != 'win32'",
