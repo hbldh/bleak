@@ -6,7 +6,7 @@ authors = [{ name = "Henrik Blidh", email = "henrik.blidh@nedomkull.com" }]
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.rst"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Framework :: AsyncIO",
     "Operating System :: Microsoft :: Windows :: Windows 11",
@@ -15,7 +15,6 @@ classifiers = [
     "Operating System :: Android",
 ]
 dependencies = [
-    "async-timeout>=3.0.0; python_version<'3.11'",
     "typing-extensions>=4.7.0; python_version<'3.12'",
     "pyobjc-core>=10.3; platform_system=='Darwin'",
     "pyobjc-framework-CoreBluetooth>=10.3; platform_system=='Darwin'",
@@ -44,8 +43,8 @@ pythonista = ["bleak-pythonista>=0.1.1"]
 
 [dependency-groups]
 docs = [
-    "Sphinx>=8.2.3; python_version>='3.11'",
-    "sphinx-rtd-theme>=3.0.2; python_version>='3.11'",
+    "Sphinx>=8.2.3",
+    "sphinx-rtd-theme>=3.0.2",
 ]
 lint = [
    "black>=24.3,<25.0",
@@ -63,7 +62,7 @@ test = [
     "pytest-rerunfailures>=16.7",
 ]
 test-android = [
-    "briefcase>=0.4.5; python_version >= '3.11'",
+    "briefcase>=0.4.5",
     "chaquopy-stubs-android~=36.0",
     # only needed for type checking bleak/backends/android/permissions.py
     "toga-core>=0.5.4",
@@ -88,8 +87,13 @@ build-backend = "uv_build"
 # keeps bumble's own specifier and adds a marker that is false on Windows, so
 # the requirement is dropped there and resolution everywhere else is exactly
 # what bumble declares.
+#
+# grpcio is dropped everywhere: it is only used by bumble's Android emulator
+# transports, which only run inside the Android testbed app, and that gets its
+# own copy of bumble from briefcase. It often has no wheels for new Python
+# versions or for musl, which the BlueZ integration test VM uses.
 override-dependencies = [
-    "grpcio>=1.62.1 ; sys_platform != 'win32'",
+    "grpcio ; sys_platform == 'never'",
     "libusb-package==1.0.26.1 ; sys_platform != 'win32'",
     "libusb1>=2.0.1 ; sys_platform != 'win32'",
     "pyusb>=1.2 ; sys_platform != 'win32'",
@@ -111,12 +115,12 @@ module-root = ""
 
 [tool.isort]
 profile = "black"
-py_version=310
+py_version=311
 src_paths = ["bleak", "examples", "tests"]
 extend_skip = [".buildozer", "docs"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 disable_error_code = ["import-not-found"]
 exclude = "(.venv|kivy|recipes|testbed)/"
 mypy_path = "typings"
@@ -133,9 +137,6 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "error",
-    # There is an issue with coverage binary extensions on Python 3.10 on Linux.
-    # Not a big deal, just reduces performance a bit.
-    '''ignore:Couldn't import C tracer:coverage.exceptions.CoverageWarning''',
 ]
 
 addopts = """
@@ -150,11 +151,6 @@ addopts = """
 [tool.poe.executor]
 type = "uv"
 isolated = true
-
-[tool.poe.tasks.test-py310]
-help = "Run tests using Python 3.10"
-cmd = "pytest tests -v $POE_EXTRA_ARGS"
-executor = { python = "3.10", no-group = "dev", group = "test" }
 
 [tool.poe.tasks.test-py311]
 help = "Run tests using Python 3.11"
@@ -176,14 +172,19 @@ help = "Run tests using Python 3.14"
 cmd = "pytest tests -v $POE_EXTRA_ARGS"
 executor = { python = "3.14", no-group = "dev", group = "test" }
 
+[tool.poe.tasks.test-py315]
+help = "Run tests using Python 3.15"
+cmd = "pytest tests -v $POE_EXTRA_ARGS"
+executor = { python = "3.15", no-group = "dev", group = "test" }
+
 [tool.poe.tasks.test-all]
 help = "Run tests using all supported Python versions"
 sequence = [
-    "test-py310",
     "test-py311",
     "test-py312",
     "test-py313",
     "test-py314",
+    "test-py315",
 ]
 
 [tool.poe.tasks.test-android-emulator]

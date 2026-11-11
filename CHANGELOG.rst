@@ -10,6 +10,18 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Added
+-----
+* Added support for Python 3.15.
+
+Changed
+-------
+* Changed ``BleakBackend`` to be a ``StrEnum``, so ``str()`` and ``format()`` return the plain value, e.g. ``"bluez_dbus"``.
+
+Removed
+-------
+* Removed support for Python 3.10.
+
 `3.1.0`_ (2026-11-07)
 =====================
 

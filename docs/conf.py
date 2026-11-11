@@ -15,12 +15,7 @@
 import os
 import pathlib
 import sys
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    # tell type checkers to ignore this file if using Python 3.10
-    assert False
+import tomllib
 
 PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.resolve()
 
@@ -117,7 +112,6 @@ pygments_style = "sphinx"
 
 autodoc_mock_imports = [
     "android",
-    "async_timeout",
     "winrt",
     "CoreBluetooth",
     "dbus_fast",

@@ -14,7 +14,6 @@ from collections.abc import Generator
 from pathlib import Path
 
 import uiautomator2 as u2  # pyright: ignore[reportMissingTypeStubs]
-from bumble.transport.android_netsim import find_grpc_port
 
 PREFIX = "[run-android-tests]"
 
@@ -96,6 +95,44 @@ def get_emulator_abi() -> str:
 # ---------------------------------------------------------------------------
 
 NETSIM_DEVICE_PORT = 8000
+
+
+def _find_netsim_grpc_port() -> int:
+    """
+    Return the gRPC port that NetSim published in its netsim.ini file, or 0.
+
+    This is the same lookup as ``bumble.transport.android_netsim.find_grpc_port``
+    for instance 0. That module imports grpc, which the host side does not
+    otherwise need since the tests talk to NetSim from inside the app.
+    """
+    if sys.platform == "darwin":
+        if tmpdir := os.environ.get("TMPDIR"):
+            ini_dir = Path(tmpdir)
+        elif home := os.environ.get("HOME"):
+            ini_dir = Path(home) / "Library/Caches/TemporaryItems"
+        else:
+            return 0
+    elif sys.platform == "win32":
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data is None:
+            return 0
+        ini_dir = Path(local_app_data) / "Temp"
+    else:
+        ini_dir = Path(
+            os.environ.get("XDG_RUNTIME_DIR") or os.environ.get("TMPDIR", "/tmp")
+        )
+
+    try:
+        lines = (ini_dir / "netsim.ini").read_text().splitlines()
+    except OSError:
+        return 0
+
+    for line in lines:
+        key, sep, value = line.partition("=")
+        if sep and key == "grpc.port":
+            return int(value)
+
+    return 0
 
 
 def _find_emulator_serial(adb: ADB, avd_name: str) -> str | None:
@@ -202,7 +239,7 @@ def _netsim_forwarding(
     forwarded_port: int | None = None
     while not stop_event.is_set():
         try:
-            port = find_grpc_port(instance_number=0)
+            port = _find_netsim_grpc_port()
             if port != 0:
                 log(
                     f"Found NetSim gRPC on port {port}, setting up ADB reverse forwarding "

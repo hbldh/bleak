@@ -27,7 +27,6 @@ from dbus_fast.signature import Variant
 
 from bleak import BleakScanner
 from bleak._compat import override
-from bleak._compat import timeout as async_timeout
 from bleak.args import SizedBuffer
 from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
@@ -123,7 +122,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         Raises:
             BleakError: If the device is already connected or if the device could not be found.
             BleakDBusError: If there was a D-Bus error
-            asyncio.TimeoutError: If the connection timed out
+            TimeoutError: If the connection timed out
         """
         logger.debug("Connecting to device @ %s", self.address)
 
@@ -157,7 +156,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         manager = await get_global_bluez_manager()
 
-        async with async_timeout(timeout):
+        async with asyncio.timeout(timeout):
             while True:
                 async with AsyncExitStack() as stack:
                     # Each BLE connection session needs a new D-Bus connection to avoid a
@@ -420,7 +419,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
         Raises:
             BleakDBusError: If there was a D-Bus error
-            asyncio.TimeoutError if the device was not disconnected within 10 seconds
+            TimeoutError if the device was not disconnected within 10 seconds
         """
         logger.debug("Disconnecting (%s)", self._device_path)
 
@@ -434,7 +433,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         if self._disconnecting_event:
             # another call to disconnect() is already in progress
             logger.debug("already in progress (%s)", self._device_path)
-            async with async_timeout(10):
+            async with asyncio.timeout(10):
                 await self._disconnecting_event.wait()
         else:
             self._disconnecting_event = asyncio.Event()
@@ -451,7 +450,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     )
                     assert_reply(reply)
 
-                    async with async_timeout(10):
+                    async with asyncio.timeout(10):
                         await self._disconnecting_event.wait()
             except Exception as e:
                 if self._bus.connected:

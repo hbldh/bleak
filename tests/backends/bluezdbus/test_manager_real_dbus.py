@@ -15,7 +15,7 @@ import pytest
 if sys.platform != "linux":
     pytest.skip("skipping linux-only tests", allow_module_level=True)
 
-from bleak._compat import timeout as async_timeout
+
 from bleak.backends.bluezdbus import manager as manager_module
 from bleak.backends.bluezdbus.manager import BlueZManager
 
@@ -50,7 +50,7 @@ async def test_manager_recovers_from_real_dbus_daemon_death(
 
     # A real socket death, through the real dbus_fast reader
     daemon.kill()
-    async with async_timeout(10):
+    async with asyncio.timeout(10):
         await watcher_task
 
     assert connected_changes == [False]
@@ -59,7 +59,7 @@ async def test_manager_recovers_from_real_dbus_daemon_death(
 
     # A new daemon comes up at a new address; async_init recovers
     daemon = await start_daemon()
-    async with async_timeout(10):
+    async with asyncio.timeout(10):
         await manager.async_init()
 
     assert manager.is_connected(DEVICE_PATH) is True
@@ -67,7 +67,7 @@ async def test_manager_recovers_from_real_dbus_daemon_death(
     # the watcher registered before the loss still gets real signals on
     # the new bus, exercising the match rules added by async_init
     daemon.device.disconnect()
-    async with async_timeout(10):
+    async with asyncio.timeout(10):
         while len(connected_changes) < 2:
             await asyncio.sleep(0.01)
 
@@ -94,13 +94,13 @@ async def test_async_init_notifies_watchers_when_it_sees_daemon_death_first(
     # The reader resolves the disconnect future in its callback, which queues
     # the watcher wakeup behind this task's sleep(0) wakeup since the ready
     # queue is FIFO. A non-zero sleep would let the watcher run first.
-    async with async_timeout(10):
+    async with asyncio.timeout(10):
         while bus.connected:
             await asyncio.sleep(0)
     if watcher_task.done():
         pytest.fail("the watcher task ran before async_init could see the dead bus")
 
-    async with async_timeout(10):
+    async with asyncio.timeout(10):
         await manager.async_init()
 
     assert watcher_task.done()

@@ -15,7 +15,7 @@ import sys
 from bleak.exc import BleakError
 
 
-class BleakBackend(str, enum.Enum):
+class BleakBackend(enum.StrEnum):
     """
     Identifiers for available built-in Bleak backends.
 

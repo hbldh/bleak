@@ -106,7 +106,7 @@ async def test_notification_sent_before_write_response(
 
             assert data == b"test"
         else:
-            with pytest.raises(asyncio.TimeoutError):
+            with pytest.raises(TimeoutError):
                 await asyncio.wait_for(notification_queue.get(), timeout=3)
 
         # Normally we don't bother with calling stop_notify() but we are doing

@@ -376,7 +376,7 @@ async def test_notify_gatt_char(
     )
 
     # Verify no notification was received
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(TimeoutError):
         await asyncio.wait_for(notified_data.get(), timeout=1)
 
 
@@ -438,7 +438,7 @@ async def test_indicate_gatt_char(
     )
 
     # Verify no indication was received after stop
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(TimeoutError):
         await asyncio.wait_for(indicated_data.get(), timeout=1)
 
 

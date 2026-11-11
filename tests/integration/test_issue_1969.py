@@ -80,7 +80,7 @@ async def test_notify_after_reconnect(
 
             # a notification subscription left over from a previous connection
             # would cause the same notification to be delivered more than once
-            with pytest.raises(asyncio.TimeoutError):
+            with pytest.raises(TimeoutError):
                 await asyncio.wait_for(notified_data.get(), timeout=0.5)
 
             disconnected.clear()
