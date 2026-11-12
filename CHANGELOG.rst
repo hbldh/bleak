@@ -10,6 +10,16 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 `Unreleased`_
 =============
 
+Changed
+-------
+* Changed ``BleakClient.mtu_size`` to read the "MTU" property of the characteristics in BlueZ backend. BlueZ >= 5.62 is required to get the MTU.
+* Deprecated the private ``_acquire_mtu()`` method in BlueZ backend. It now does nothing.
+
+Removed
+-------
+* Removed the private ``_mtu_size`` override in BlueZ backend.
+* Removed ``mtu_size.py`` example.
+
 `3.1.0`_ (2026-11-07)
 =====================
 
