@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 from collections.abc import AsyncGenerator
 
@@ -11,6 +12,7 @@ from bumble.transport.common import Transport
 
 from bleak import BleakAdapter, BleakClient
 from bleak.backends.device import BLEDevice
+from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
 from tests.integration.conftest import (
     configure_and_power_on_bumble_peripheral,
     create_bumble_peripheral,
@@ -99,3 +101,29 @@ async def test_get_connected_devices_filters_by_service_uuid(
 
     not_connected = await adapter.get_connected_devices([OTHER_SERVICE_UUID])
     assert not_connected == []
+
+
+@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.usefixtures("hci_transport")
+async def test_get_raises_when_powered_off() -> None:
+    """``BleakAdapter.get()`` raises ``BleakBluetoothNotAvailableError`` with
+    reason ``POWERED_OFF`` when the local Bluetooth adapter is not powered on.
+
+    This test power-cycles the BlueZ adapter via ``bluetoothctl``, so it must
+    be the last test in the module - it leaves the adapter back in
+    ``POWERED_ON`` but subsequent tests would race the recovery.
+    """
+    proc = await asyncio.create_subprocess_exec("bluetoothctl", "power", "off")
+    await proc.wait()
+    # Allow the BlueZ PropertiesChanged signal to propagate to the manager's
+    # cached properties before calling get().
+    await asyncio.sleep(1.0)
+
+    try:
+        with pytest.raises(BleakBluetoothNotAvailableError) as exc_info:
+            await BleakAdapter.get()
+        assert exc_info.value.reason == BleakBluetoothNotAvailableReason.POWERED_OFF
+    finally:
+        proc = await asyncio.create_subprocess_exec("bluetoothctl", "power", "on")
+        await proc.wait()
+        await asyncio.sleep(1.0)

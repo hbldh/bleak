@@ -10,8 +10,10 @@ from typing import Any
 from bleak._compat import Self, override
 from bleak.args.bluez import BlueZAdapterArgs
 from bleak.backends.adapter import BaseBleakAdapter
+from bleak.backends.bluezdbus import defs
 from bleak.backends.bluezdbus.manager import get_global_bluez_manager
 from bleak.backends.device import BLEDevice
+from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason
 
 
 class BleakAdapterBlueZDBus(BaseBleakAdapter):
@@ -25,9 +27,27 @@ class BleakAdapterBlueZDBus(BaseBleakAdapter):
     async def get(cls, *, bluez: BlueZAdapterArgs = {}, **kwargs: Any) -> Self:
         manager = await get_global_bluez_manager()
         adapter = bluez.get("adapter")
-        adapter_path = (
-            f"/org/bluez/{adapter}" if adapter else manager.get_default_adapter()
-        )
+
+        if adapter is None:
+            # get_default_adapter() already raises BleakBluetoothNotAvailableError
+            # if there is no powered BLE-central adapter.
+            return cls(manager.get_default_adapter())
+
+        adapter_path = f"/org/bluez/{adapter}"
+        adapter_props = manager._properties.get(  # pyright: ignore[reportPrivateUsage]
+            adapter_path, {}
+        ).get(defs.ADAPTER_INTERFACE)
+        if adapter_props is None:
+            raise BleakBluetoothNotAvailableError(
+                f"Bluetooth adapter '{adapter_path}' is unavailable",
+                BleakBluetoothNotAvailableReason.NO_BLUETOOTH,
+            )
+        if not adapter_props.get("Powered"):
+            raise BleakBluetoothNotAvailableError(
+                "Bluetooth adapter is not powered on",
+                BleakBluetoothNotAvailableReason.POWERED_OFF,
+            )
+
         return cls(adapter_path)
 
     @override
