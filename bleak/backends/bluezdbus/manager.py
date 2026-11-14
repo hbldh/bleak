@@ -165,6 +165,15 @@ def get_max_write_without_response_size(char_props: GattCharacteristic1) -> int:
     return char_props.get("MTU", 23) - 3
 
 
+def _get_max_write_without_response_size(
+    mtus: dict[str, int], device_path: str, char_props: GattCharacteristic1
+) -> int:
+    mtu = mtus.get(device_path)
+    if mtu is None:
+        return get_max_write_without_response_size(char_props)
+    return mtu - 3
+
+
 class BlueZManager:
     """
     BlueZ D-Bus object manager.
@@ -200,6 +209,9 @@ class BlueZManager:
         self._device_watchers: dict[str, set[DeviceWatcher]] = {}
         self._condition_callbacks: dict[str, set[DeviceConditionCallback]] = {}
         self._services_cache: dict[str, BleakGATTServiceCollection] = {}
+        # map of device D-Bus object path to the ATT MTU of its connection, read
+        # from BlueZ by refresh_mtu()
+        self._mtus: dict[str, int] = {}
 
     def _reset_cached_state(self) -> None:
         """Clears all state cached from the message bus."""
@@ -208,6 +220,7 @@ class BlueZManager:
         self._characteristic_map.clear()
         self._descriptor_map.clear()
         self._services_cache.clear()
+        self._mtus.clear()
         self._adapters.clear()
 
     def _iter_device_props(self) -> Iterator[tuple[str, Device1]]:
@@ -464,6 +477,9 @@ class BlueZManager:
                     item.callback(changed[name])
 
         if "Connected" in changed:
+            if not changed["Connected"]:
+                self._mtus.pop(device_path, None)
+
             if watchers := self._device_watchers.get(device_path):
                 connected = changed["Connected"]
                 # callbacks may remove the watcher, hence the copy
@@ -890,6 +906,60 @@ class BlueZManager:
         if not self._device_watchers[device_path]:
             del self._device_watchers[device_path]
 
+    async def refresh_mtu(self, device_path: str) -> Optional[int]:
+        """
+        Reads the ATT MTU of a connected device from BlueZ, for ``mtu_size``
+        and every characteristic's ``max_write_without_response_size``.
+
+        BlueZ has the MTU only as the "MTU" property of each characteristic,
+        the same on all of them. It is read with ``Properties.Get`` rather
+        than from the properties cached from signals: on a reconnect to a
+        device whose GATT objects BlueZ kept from an earlier connection, BlueZ
+        emits no ``PropertiesChanged`` for it, and it leaves it out while the
+        device is disconnected, so a cache filled in the meantime is stale or
+        lacks it for the whole connection.
+
+        Args:
+            device_path:
+                The D-Bus object path of the Bluetooth device.
+
+        Returns:
+            The MTU, or ``None`` if the device has no characteristic or BlueZ
+            is older than 5.62, which has no "MTU" property.
+        """
+        assert self._bus
+
+        char_path = next(
+            (
+                char_path
+                for service_path in self._service_map.get(device_path, set())
+                for char_path in self._characteristic_map.get(service_path, set())
+            ),
+            None,
+        )
+        if char_path is None:
+            return None
+
+        reply = await self._bus.call(
+            Message(
+                destination=defs.BLUEZ_SERVICE,
+                path=char_path,
+                interface=defs.PROPERTIES_INTERFACE,
+                member="Get",
+                signature="ss",
+                body=[defs.GATT_CHARACTERISTIC_INTERFACE, "MTU"],
+            )
+        )
+        assert reply
+
+        if reply.message_type == MessageType.ERROR:
+            logger.debug("MTU not available for %s: %s", device_path, reply.body)
+            return None
+
+        mtu = cast(int, reply.body[0].value)
+        self._mtus[device_path] = mtu
+        return mtu
+
     async def get_services(
         self, device_path: str, use_cached: bool, requested_services: Optional[set[str]]
     ) -> BleakGATTServiceCollection:
@@ -960,7 +1030,12 @@ class BlueZManager:
                     # directly bind a closure (i.e. lambda) to it;
                     # instead, we let `functools.partial` create a new
                     # function frame to close over at each iteration.
-                    partial(get_max_write_without_response_size, char_props),
+                    partial(
+                        _get_max_write_without_response_size,
+                        self._mtus,
+                        device_path,
+                        char_props,
+                    ),
                     service,
                 )
 

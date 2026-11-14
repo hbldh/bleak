@@ -38,6 +38,23 @@ of Bleak, you can set ``bluez={"use_start_notify": True}`` to make it work on
 all versions of Bleak.
 
 
+MTU size
+--------
+
+BlueZ >= 5.62 provides the negotiated ATT MTU in the "MTU" property of each
+characteristic, which ``BleakClient.mtu_size`` reads. Older versions of BlueZ
+do not provide the MTU, so ``mtu_size`` logs a warning and returns the default
+value of 23.
+
+Older versions of Bleak needed the private ``_acquire_mtu()`` method to be
+called before reading ``mtu_size``. It is now deprecated and does nothing. To
+support older versions of Bleak without the deprecation warning, only call it
+when the ``_mtu_size`` attribute exists::
+
+    if hasattr(client._backend, "_mtu_size"):
+        await client._backend._acquire_mtu()
+
+
 Parallel Access
 ---------------
 

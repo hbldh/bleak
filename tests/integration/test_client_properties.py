@@ -47,11 +47,7 @@ async def test_mtu_size(bumble_peripheral: Device):
     device = await find_ble_device(bumble_peripheral)
 
     async with BleakClient(device) as client:
-        if client.backend_id == BleakBackend.BLUEZ_DBUS:
-            with pytest.warns(UserWarning):
-                mtu_size = client.mtu_size
-        else:
-            mtu_size = client.mtu_size
+        mtu_size = client.mtu_size
 
         # Verify that this value is an integer and not some other
         # type from a ffi binding framework.
