@@ -17,6 +17,7 @@ Added
 Changed
 -------
 * Changed ``BleakBackend`` to be a ``StrEnum``, so ``str()`` and ``format()`` return the plain value, e.g. ``"bluez_dbus"``.
+* Changed minimum ``winrt-runtime`` to 4.2.1 and ``winrt-Windows.*`` to 4 on Windows.
 
 Removed
 -------
