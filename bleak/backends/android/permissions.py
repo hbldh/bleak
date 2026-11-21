@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from android import Manifest
 from android.content.pm import PackageManager

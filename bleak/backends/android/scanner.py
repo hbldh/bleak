@@ -118,7 +118,7 @@ class BleakScannerAndroid(BaseBleakScanner):
         scanning_mode: Literal["active", "passive"],
         **kwargs: Any,
     ):
-        super(BleakScannerAndroid, self).__init__(detection_callback, service_uuids)
+        super().__init__(detection_callback, service_uuids)
 
         self._loop = asyncio.get_running_loop()
 

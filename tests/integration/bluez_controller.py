@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 import asyncio
 import contextlib
 import logging
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from bumble import hci
 from bumble.controller import Controller

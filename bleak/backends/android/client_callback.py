@@ -96,8 +96,8 @@ class OnDescriptorWriteCallback(CallbackApi[EmptyCallbackResult]):
 class PythonBluetoothGattCallback(static_proxy(BluetoothGattCallback)):  # type: ignore[misc]
     """Callback class for GattClient. PRIVATE."""
 
-    def __init__(self, client: "BleakClientAndroid", loop: asyncio.AbstractEventLoop):
-        super(PythonBluetoothGattCallback, self).__init__()
+    def __init__(self, client: BleakClientAndroid, loop: asyncio.AbstractEventLoop):
+        super().__init__()
         self.java = self
         self._loop = loop
         self._client = client

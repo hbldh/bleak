@@ -108,7 +108,7 @@ async def start_daemon(
 
     from .fake_bluez import RealDBusDaemon
 
-    daemons: "list[RealDBusDaemon]" = []
+    daemons: list[RealDBusDaemon] = []
 
     async def _start(*, reply_timeout_ms: "int | None" = None) -> "RealDBusDaemon":
         daemon = RealDBusDaemon(reply_timeout_ms)

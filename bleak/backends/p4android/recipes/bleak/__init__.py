@@ -28,7 +28,7 @@ class BleakRecipe(PythonRecipe):
             # So, we create a setup.py file only for android
 
             fix_setup_py_path = join(self.get_recipe_dir(), self.fix_setup_filename)
-            with open(fix_setup_py_path, "r") as f:
+            with open(fix_setup_py_path) as f:
                 contents = f.read()
 
             # Write to the correct location and fill in the version number

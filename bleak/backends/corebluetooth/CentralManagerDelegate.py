@@ -75,7 +75,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
     """
 
     def initWithPyDelegate_(
-        self, py_delegate: weakref.ReferenceType["CentralManagerDelegate"]
+        self, py_delegate: weakref.ReferenceType[CentralManagerDelegate]
     ) -> Self | None:
         """macOS init function for NSObject"""
         self = objc.super(ObjcCentralManagerDelegate, self).init()  # type: ignore[assignment]

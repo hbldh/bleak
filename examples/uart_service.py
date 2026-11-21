@@ -9,8 +9,8 @@ An example showing how to write a simple program using the Nordic Semiconductor
 
 import asyncio
 import sys
+from collections.abc import Iterator
 from itertools import count, takewhile
-from typing import Iterator
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic

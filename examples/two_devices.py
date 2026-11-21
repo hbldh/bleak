@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import contextlib
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
