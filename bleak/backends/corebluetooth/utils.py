@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -5,7 +7,7 @@ if TYPE_CHECKING:
     if sys.platform != "darwin":
         assert False, "This backend is only available on macOS"
 
-from typing import Any, Optional, TypeGuard, overload
+from typing import Any, TypeGuard, overload
 
 from CoreBluetooth import (
     CBUUID,
@@ -67,7 +69,7 @@ def to_optional_str(value: NSString) -> str: ...
 def to_optional_str(value: None) -> None: ...
 
 
-def to_optional_str(value: Optional[NSString]) -> Optional[str]:
+def to_optional_str(value: NSString | None) -> str | None:
     """Converts an NSString to a Python string or None.
 
     Args:
@@ -88,7 +90,7 @@ def to_optional_int(value: NSNumber) -> int: ...
 def to_optional_int(value: None) -> None: ...
 
 
-def to_optional_int(value: Optional[NSNumber]) -> Optional[int]:
+def to_optional_int(value: NSNumber | None) -> int | None:
     """Converts an NSNumber to a Python int or None.
 
     Args:

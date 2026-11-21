@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING, Any
 
@@ -7,7 +9,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import logging
-from typing import Literal, NamedTuple, Optional
+from typing import Literal, NamedTuple
 from uuid import UUID
 
 from winrt.windows.devices.bluetooth import BluetoothAdapter
@@ -60,11 +62,11 @@ class RawAdvData(NamedTuple):
     advertising data like other platforms, so we have to do it ourselves.
     """
 
-    adv: Optional[BluetoothLEAdvertisementReceivedEventArgs]
+    adv: BluetoothLEAdvertisementReceivedEventArgs | None
     """
     The advertisement data received from the BluetoothLEAdvertisementWatcher.Received event.
     """
-    scan: Optional[BluetoothLEAdvertisementReceivedEventArgs]
+    scan: BluetoothLEAdvertisementReceivedEventArgs | None
     """
     The scan response for the same device as *adv*.
     """
@@ -89,16 +91,16 @@ class BleakScannerWinRT(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         **kwargs: Any,
     ):
         super().__init__(detection_callback, service_uuids)
 
-        self.watcher: Optional[BluetoothLEAdvertisementWatcher] = None
+        self.watcher: BluetoothLEAdvertisementWatcher | None = None
         self._advertisement_pairs: dict[str, RawAdvData] = {}
-        self._stopped_event: Optional[asyncio.Event] = None
+        self._stopped_event: asyncio.Event | None = None
 
         # case insensitivity is for backwards compatibility on Windows only
         if scanning_mode.lower() == "passive":
@@ -114,8 +116,8 @@ class BleakScannerWinRT(BaseBleakScanner):
         self._signal_strength_filter = kwargs.get("SignalStrengthFilter", None)
         self._advertisement_filter = kwargs.get("AdvertisementFilter", None)
 
-        self._received_token: Optional[EventRegistrationToken] = None
-        self._stopped_token: Optional[EventRegistrationToken] = None
+        self._received_token: EventRegistrationToken | None = None
+        self._stopped_token: EventRegistrationToken | None = None
 
     def _received_handler(
         self,

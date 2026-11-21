@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, Optional, Self, TypedDict, cast
+from typing import Any, Self, TypedDict, cast
 
 import objc
 from CoreBluetooth import (
@@ -76,7 +76,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
 
     def initWithPyDelegate_(
         self, py_delegate: weakref.ReferenceType["CentralManagerDelegate"]
-    ) -> Optional[Self]:
+    ) -> Self | None:
         """macOS init function for NSObject"""
         self = objc.super(ObjcCentralManagerDelegate, self).init()  # type: ignore[assignment]
 
@@ -145,7 +145,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self,
         centralManager: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("centralManager_didFailToConnectPeripheral_error_")
 
@@ -165,7 +165,7 @@ class ObjcCentralManagerDelegate(NSObject, protocols=[CBCentralManagerDelegate])
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("centralManager_didDisconnectPeripheral_error_")
 
@@ -264,7 +264,7 @@ class CentralManagerDelegate:
                 BleakBluetoothNotAvailableReason.UNKNOWN,
             )
 
-    async def start_scan(self, service_uuids: Optional[list[str]]) -> None:
+    async def start_scan(self, service_uuids: list[str] | None) -> None:
         _service_uuids = (
             NSArray[CBUUID].arrayWithArray_(
                 list(map(CBUUID.UUIDWithString_, service_uuids))
@@ -379,7 +379,7 @@ class CentralManagerDelegate:
         self,
         centralManager: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         future = self._connect_futures.get(peripheral.identifier(), None)
         if future is not None:
@@ -392,7 +392,7 @@ class CentralManagerDelegate:
         self,
         central: CBCentralManager,
         peripheral: CBPeripheral,
-        error: Optional[NSError],
+        error: NSError | None,
     ) -> None:
         logger.debug("Peripheral Device disconnected!")
 

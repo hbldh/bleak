@@ -4,7 +4,7 @@ import asyncio
 import sys
 import threading
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
@@ -34,7 +34,7 @@ class FakeAsyncOperation:
 
     def __init__(self, result: str, status: AsyncStatus = AsyncStatus.STARTED):
         self.status = status
-        self.completed: Optional[Callable[[FakeAsyncOperation, AsyncStatus], None]]
+        self.completed: Callable[[FakeAsyncOperation, AsyncStatus], None] | None
         self.completed = None
         self._result = result
         self.results_read_on: list[str] = []

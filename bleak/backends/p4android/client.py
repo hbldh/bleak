@@ -2,6 +2,8 @@
 BLE Client for python-for-android
 """
 
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -14,7 +16,7 @@ import logging
 import uuid
 import warnings
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any
 
 from android.broadcast import BroadcastReceiver
 from jnius import java_method
@@ -45,8 +47,8 @@ class BleakClientP4Android(BaseBleakClient):
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[set[uuid.UUID]],
+        address_or_ble_device: BLEDevice | str,
+        services: set[uuid.UUID] | None,
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
@@ -391,7 +393,7 @@ class BleakClientP4Android(BaseBleakClient):
     @override
     async def write_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptor, str, uuid.UUID],
+        desc_specifier: BleakGATTDescriptor | str | uuid.UUID,
         data: bytearray,
     ) -> None:
         """Perform a write operation on the specified GATT descriptor.

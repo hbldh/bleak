@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from typing import Any, Optional, Union
+from typing import Any
 
 
 class BleakError(Exception):
@@ -79,9 +79,9 @@ class BleakCharacteristicNotFoundError(BleakError):
     .. versionadded:: 0.22
     """
 
-    char_specifier: Union[int, str, uuid.UUID]
+    char_specifier: int | str | uuid.UUID
 
-    def __init__(self, char_specifier: Union[int, str, uuid.UUID]) -> None:
+    def __init__(self, char_specifier: int | str | uuid.UUID) -> None:
         """
         Args:
             characteristic (str): handle or UUID of the characteristic which was not found
@@ -126,7 +126,7 @@ class BleakDBusError(BleakError):
         return self.args[0]
 
     @property
-    def dbus_error_details(self) -> Optional[str]:
+    def dbus_error_details(self) -> str | None:
         """Gets the optional D-Bus error details, e.g. 'Invalid UUID'."""
         if len(self.args) > 1:
             details = self.args[1]

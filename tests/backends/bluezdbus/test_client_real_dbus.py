@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 import asyncio
 from collections.abc import Callable
-from typing import Optional
 
 import pytest
 
@@ -189,7 +188,7 @@ async def test_disconnect_timeout_tears_down(
 
     real_timeout = asyncio.timeout
 
-    def short_timeout(delay: Optional[float]) -> asyncio.Timeout:
+    def short_timeout(delay: float | None) -> asyncio.Timeout:
         return real_timeout(0.1)
 
     # disconnect() waits 10 s for "Connected" to change

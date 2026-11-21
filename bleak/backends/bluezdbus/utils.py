@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -7,7 +9,6 @@ if TYPE_CHECKING:
 
 import os
 import re
-from typing import Optional
 
 from dbus_fast.auth import AuthExternal
 from dbus_fast.constants import MessageType
@@ -152,7 +153,7 @@ def device_path_from_characteristic_path(characteristic_path: str) -> str:
     return characteristic_path[:-21]
 
 
-def get_dbus_authenticator() -> Optional[AuthExternal]:
+def get_dbus_authenticator() -> AuthExternal | None:
     uid = None
     try:
         uid = int(os.environ.get("BLEAK_DBUS_AUTH_UID", ""))

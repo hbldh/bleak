@@ -11,7 +11,6 @@ Updated on 2019-07-03 by hbldh <henrik.blidh@gmail.com>
 import argparse
 import asyncio
 import logging
-from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -20,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class Args(argparse.Namespace):
-    name: Optional[str]
-    address: Optional[str]
+    name: str | None
+    address: str | None
     macos_use_bdaddr: bool
     characteristic: str
     pair: bool

@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Literal, Optional, TypeVar, overload
+from typing import Literal, TypeVar, overload
 
 from CoreBluetooth import CBCentralManagerDelegate, CBPeripheralDelegate
 from Foundation import NSObject
@@ -20,9 +20,9 @@ class autorelease_pool:
     def __enter__(self) -> None: ...
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None: ...
 
 def super(cls: type, self: T) -> T: ...
@@ -31,7 +31,7 @@ def python_method(func: T) -> T: ...
 
 class WeakRef:
     def __init__(self, object: NSObject) -> None: ...
-    def __call__(self) -> Optional[NSObject]: ...
+    def __call__(self) -> NSObject | None: ...
 
 @overload
 def protocolNamed(

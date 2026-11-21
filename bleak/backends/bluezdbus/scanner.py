@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -7,7 +9,7 @@ if TYPE_CHECKING:
 
 import logging
 from collections.abc import Callable, Coroutine
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from warnings import warn
 
 from dbus_fast import Variant
@@ -68,8 +70,8 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         *,
         bluez: _BlueZScannerArgs,
@@ -81,7 +83,7 @@ class BleakScannerBlueZDBus(BaseBleakScanner):
         self._adapter = bluez.get("adapter")
 
         # callback from manager for stopping scanning if it has been started
-        self._stop: Optional[Callable[[], Coroutine[Any, Any, None]]] = None
+        self._stop: Callable[[], Coroutine[Any, Any, None]] | None = None
 
         # Discovery filters
 

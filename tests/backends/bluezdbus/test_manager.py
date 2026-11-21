@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -90,9 +90,9 @@ class FakeMessageBus:
     def __init__(self, managed_objects: dict[str, Any]) -> None:
         self._managed_objects = managed_objects
         self.connected = False
-        self.connect_error: Optional[Exception] = None
+        self.connect_error: Exception | None = None
         self.disconnect_calls = 0
-        self.handler: Optional[Callable[[Message], None]] = None
+        self.handler: Callable[[Message], None] | None = None
         self._disconnect_future: asyncio.Future[None] = (
             asyncio.get_running_loop().create_future()
         )
@@ -123,7 +123,7 @@ class FakeMessageBus:
     async def wait_for_disconnect(self) -> None:
         return await self._disconnect_future
 
-    def die(self, exc: Optional[Exception] = None) -> None:
+    def die(self, exc: Exception | None = None) -> None:
         """Simulate the socket dying abnormally."""
         self.connected = False
         if not self._disconnect_future.done():
@@ -131,7 +131,7 @@ class FakeMessageBus:
                 exc or EOFError("dbus daemon went away")
             )
 
-    def _finalize(self, err: Optional[Exception]) -> None:
+    def _finalize(self, err: Exception | None) -> None:
         """Release resources like the real MessageBus does."""
         self.connected = False
         if self._disconnect_future.done():
@@ -148,7 +148,7 @@ class FakeMessageBusFactory:
     def __init__(self, managed_objects: dict[str, Any]) -> None:
         self.managed_objects = managed_objects
         self.instances: list[FakeMessageBus] = []
-        self.next_connect_error: Optional[Exception] = None
+        self.next_connect_error: Exception | None = None
 
     def __call__(self, *args: Any, **kwargs: Any) -> FakeMessageBus:
         bus = FakeMessageBus(self.managed_objects)
@@ -159,10 +159,10 @@ class FakeMessageBusFactory:
 
 
 def make_client(
-    bus: Optional[FakeMessageBus],
+    bus: FakeMessageBus | None,
     connected: bool = False,
-    disconnected_callback: Optional[Callable[[], None]] = None,
-    monitor: Optional[asyncio.Event] = None,
+    disconnected_callback: Callable[[], None] | None = None,
+    monitor: asyncio.Event | None = None,
 ) -> BleakClientBlueZDBus:
     client = BleakClientBlueZDBus(
         DEVICE_ADDRESS,
@@ -188,7 +188,7 @@ async def make_manager(
     managers: list[BlueZManager] = []
 
     async def _make(
-        managed_objects: Optional[dict[str, Any]] = None,
+        managed_objects: dict[str, Any] | None = None,
     ) -> tuple[BlueZManager, FakeMessageBusFactory]:
         factory = FakeMessageBusFactory(managed_objects or build_managed_objects())
         monkeypatch.setattr(manager_module, "MessageBus", factory)
@@ -494,7 +494,7 @@ async def test_watcher_logs_unexpected_handler_error(
     manager, factory = await make_manager()
     bus = factory.instances[0]
 
-    def raising_handler(exc: Optional[Exception]) -> None:
+    def raising_handler(exc: Exception | None) -> None:
         raise RuntimeError("unexpected handler failure")
 
     monkeypatch.setattr(manager, "_handle_bus_disconnect", raising_handler)

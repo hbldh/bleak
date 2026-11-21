@@ -5,7 +5,7 @@ CoreBluetooth backend arguments
 """
 
 from collections.abc import Callable
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 
 class CBScannerArgs(TypedDict, total=False):
@@ -31,7 +31,7 @@ class CBStartNotifyArgs(TypedDict, total=False):
     :meth:`bleak.BleakClient.start_notify` method.
     """
 
-    notification_discriminator: Optional[NotificationDiscriminator]
+    notification_discriminator: NotificationDiscriminator | None
     """
     A function that takes a single argument of a characteristic value
     and returns ``True`` if the value is from a notification or

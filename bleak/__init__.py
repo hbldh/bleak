@@ -15,10 +15,8 @@ from typing import (
     Any,
     Literal,
     Never,
-    Optional,
     Self,
     TypedDict,
-    Union,
     Unpack,
     assert_never,
     cast,
@@ -125,13 +123,13 @@ class BleakScanner:
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback] = None,
-        service_uuids: Optional[list[str]] = None,
+        detection_callback: AdvertisementDataCallback | None = None,
+        service_uuids: list[str] | None = None,
         scanning_mode: Literal["active", "passive"] = "active",
         *,
         bluez: BlueZScannerArgs = {},
         cb: CBScannerArgs = {},
-        backend: Optional[type[BaseBleakScanner]] = None,
+        backend: type[BaseBleakScanner] | None = None,
         **kwargs: Any,
     ) -> None:
         PlatformBleakScanner, backend_id = (
@@ -179,9 +177,9 @@ class BleakScanner:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         await self.stop()
 
@@ -353,7 +351,7 @@ class BleakScanner:
     @classmethod
     async def find_device_by_address(
         cls, device_identifier: str, timeout: float = 10.0, **kwargs: Unpack[ExtraArgs]
-    ) -> Optional[BLEDevice]:
+    ) -> BLEDevice | None:
         """Obtain a ``BLEDevice`` for a BLE server specified by Bluetooth address or (macOS) UUID address.
 
         Args:
@@ -375,7 +373,7 @@ class BleakScanner:
     @classmethod
     async def find_device_by_name(
         cls, name: str, timeout: float = 10.0, **kwargs: Unpack[ExtraArgs]
-    ) -> Optional[BLEDevice]:
+    ) -> BLEDevice | None:
         """Obtain a ``BLEDevice`` for a BLE server specified by the local name in the advertising data.
 
         Args:
@@ -400,7 +398,7 @@ class BleakScanner:
         filterfunc: AdvertisementDataFilter,
         timeout: float = 10.0,
         **kwargs: Unpack[ExtraArgs],
-    ) -> Optional[BLEDevice]:
+    ) -> BLEDevice | None:
         """Obtain a ``BLEDevice`` for a BLE server that matches a given filter function.
 
         This can be used to find a BLE server by other identifying information than its address,
@@ -454,7 +452,7 @@ class BleakAdapter:
         cls,
         *,
         bluez: BlueZAdapterArgs = {},
-        backend: Optional[type[BaseBleakAdapter]] = None,
+        backend: type[BaseBleakAdapter] | None = None,
     ) -> Self:
         """
         Get a Bluetooth adapter for the current platform.
@@ -518,7 +516,7 @@ class BleakAdapter:
 
 
 def _resolve_characteristic(
-    char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+    char_specifier: BleakGATTCharacteristic | int | str | uuid.UUID,
     services: BleakGATTServiceCollection,
 ) -> BleakGATTCharacteristic:
 
@@ -534,7 +532,7 @@ def _resolve_characteristic(
 
 
 def _resolve_descriptor(
-    desc_specifier: Union[BleakGATTDescriptor, int],
+    desc_specifier: BleakGATTDescriptor | int,
     services: BleakGATTServiceCollection,
 ) -> BleakGATTDescriptor:
 
@@ -628,15 +626,15 @@ class BleakClient:
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        disconnected_callback: Optional[Callable[[BleakClient], None]] = None,
-        services: Optional[Iterable[str]] = None,
+        address_or_ble_device: BLEDevice | str,
+        disconnected_callback: Callable[[BleakClient], None] | None = None,
+        services: Iterable[str] | None = None,
         *,
         timeout: float = 30,
         pair: bool = False,
         bluez: BlueZClientArgs = {},
         winrt: WinRTClientArgs = {},
-        backend: Optional[type[BaseBleakClient]] = None,
+        backend: type[BaseBleakClient] | None = None,
         **kwargs: Any,
     ) -> None:
         PlatformBleakClient, backend_id = (
@@ -738,9 +736,9 @@ class BleakClient:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         await self.disconnect()
 
@@ -825,7 +823,7 @@ class BleakClient:
 
     async def read_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        char_specifier: BleakGATTCharacteristic | int | str | uuid.UUID,
         *,
         use_cached: bool = False,
         **kwargs: Any,
@@ -862,9 +860,9 @@ class BleakClient:
 
     async def write_gatt_char(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        char_specifier: BleakGATTCharacteristic | int | str | uuid.UUID,
         data: SizedBuffer,
-        response: Optional[bool] = None,
+        response: bool | None = None,
     ) -> None:
         r"""
         Perform a write operation on the specified GATT characteristic.
@@ -934,9 +932,9 @@ class BleakClient:
 
     async def start_notify(
         self,
-        char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID],
+        char_specifier: BleakGATTCharacteristic | int | str | uuid.UUID,
         callback: Callable[
-            [BleakGATTCharacteristic, bytearray], Union[None, Awaitable[None]]
+            [BleakGATTCharacteristic, bytearray], None | Awaitable[None]
         ],
         *,
         bluez: BlueZNotifyArgs = {},
@@ -1004,7 +1002,7 @@ class BleakClient:
         )
 
     async def stop_notify(
-        self, char_specifier: Union[BleakGATTCharacteristic, int, str, uuid.UUID]
+        self, char_specifier: BleakGATTCharacteristic | int | str | uuid.UUID
     ) -> None:
         """
         Deactivate notification/indication on a specified characteristic.
@@ -1029,7 +1027,7 @@ class BleakClient:
 
     async def read_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptor, int],
+        desc_specifier: BleakGATTDescriptor | int,
         *,
         use_cached: bool = False,
         **kwargs: Any,
@@ -1064,7 +1062,7 @@ class BleakClient:
 
     async def write_gatt_descriptor(
         self,
-        desc_specifier: Union[BleakGATTDescriptor, int],
+        desc_specifier: BleakGATTDescriptor | int,
         data: SizedBuffer,
     ) -> None:
         """
