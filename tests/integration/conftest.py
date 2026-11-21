@@ -5,8 +5,8 @@ import logging
 import sys
 import threading
 import time
-from collections.abc import Callable
-from typing import AsyncGenerator, ParamSpec, TypeVar
+from collections.abc import AsyncGenerator, Callable
+from typing import ParamSpec, TypeVar
 
 import pytest
 from bumble import data_types

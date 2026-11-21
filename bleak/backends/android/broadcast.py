@@ -8,7 +8,7 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on Android"
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from android.content import BroadcastReceiver as _BroadcastReceiver
 from android.content import Context, Intent, IntentFilter
@@ -30,7 +30,7 @@ class BroadcastReceiver(static_proxy(_BroadcastReceiver)):  # type: ignore[misc]
         actions: list[str] | None = None,
         categories: list[str] | None = None,
     ):
-        super(BroadcastReceiver, self).__init__()
+        super().__init__()
         self.context = context
         self.callback = callback
 
@@ -41,9 +41,9 @@ class BroadcastReceiver(static_proxy(_BroadcastReceiver)):  # type: ignore[misc]
             if "." in partial_name:
                 return partial_name  # Its actually a full dotted name
             else:
-                name = "ACTION_{}".format(partial_name.upper())
+                name = f"ACTION_{partial_name.upper()}"
                 if not hasattr(Intent, name):
-                    raise Exception("The intent {} does not exist".format(name))
+                    raise Exception(f"The intent {name} does not exist")
                 return getattr(Intent, name)
 
         # resolve actions/categories first

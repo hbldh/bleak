@@ -1,9 +1,10 @@
 import asyncio
 
-import bleak
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
+
+import bleak
 
 # bind bleak's python logger into kivy's logger before importing python module using logging
 from kivy.logger import Logger  # isort: skip

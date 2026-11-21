@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 import asyncio
 import dataclasses
 import logging
-from typing import Any, Callable, Generic, TypeVar
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar
 
 from bleak.exc import BleakError
 

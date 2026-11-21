@@ -91,7 +91,7 @@ class BleakClientAndroid(BaseBleakClient):
         timeout: float,
         **kwargs: Any,
     ):
-        super(BleakClientAndroid, self).__init__(
+        super().__init__(
             address_or_ble_device,
             disconnected_callback=disconnected_callback,
             timeout=timeout,

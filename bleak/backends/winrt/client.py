@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import uuid
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from contextvars import Context
 from ctypes import WinError  # type: ignore[attr-defined]
-from typing import Any, Generic, Protocol, Self, Sequence, TypeVar, assert_never, cast
+from typing import Any, Generic, Protocol, Self, TypeVar, assert_never, cast
 from warnings import warn
 
 from winrt.system import Object

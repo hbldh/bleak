@@ -155,7 +155,7 @@ def serial_tcp_bridge(
             while not relay_stop.is_set():
                 try:
                     data = conn.recv(4096)
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 if not data:
                     break
@@ -170,7 +170,7 @@ def serial_tcp_bridge(
             while not stop.is_set():
                 try:
                     conn, addr = server_sock.accept()
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 except OSError:
                     return

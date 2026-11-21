@@ -7,7 +7,8 @@ if TYPE_CHECKING:
     if sys.platform != "android":
         assert False, "This backend is only available on Android"
 
-from typing import Iterator, TypeVar
+from collections.abc import Iterator
+from typing import TypeVar
 
 from java.lang import Iterable
 from org.beeware.android import MainActivity

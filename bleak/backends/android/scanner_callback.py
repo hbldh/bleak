@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class OnScanResult(CallbackResult):
-    result: "None | ScanResult"
+    result: None | ScanResult
 
 
 @dataclasses.dataclass(frozen=True)
@@ -48,8 +48,8 @@ class PythonScanCallback(static_proxy(ScanCallback)):  # type: ignore[misc]
     It is not intended to call this class directly.
     """
 
-    def __init__(self, scanner: "BleakScannerAndroid", loop: asyncio.AbstractEventLoop):
-        super(PythonScanCallback, self).__init__()
+    def __init__(self, scanner: BleakScannerAndroid, loop: asyncio.AbstractEventLoop):
+        super().__init__()
         self._loop = loop
         self._scanner = scanner
         self.java = self
