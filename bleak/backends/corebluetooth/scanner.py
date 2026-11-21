@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -6,7 +8,7 @@ if TYPE_CHECKING:
         assert False, "This backend is only available on macOS"
 
 import logging
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 from warnings import warn
 
 import objc
@@ -77,8 +79,8 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         *,
         cb: _CBScannerArgs,
@@ -153,7 +155,7 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
             if self._use_bdaddr:
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
                 address_bytes = cast(
-                    Optional[NSData],
+                    NSData | None,
                     self._manager.central_manager.retrieveAddressForPeripheral_(peripheral),  # type: ignore
                 )
                 if address_bytes is None:

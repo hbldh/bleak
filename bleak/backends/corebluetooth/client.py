@@ -3,6 +3,8 @@
 BLE Client for CoreBluetooth on macOS
 """
 
+from __future__ import annotations
+
 import functools
 import sys
 from typing import TYPE_CHECKING
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any, Optional, Union
+from typing import Any
 
 from CoreBluetooth import (
     CBUUID,
@@ -58,8 +60,8 @@ class BleakClientCoreBluetooth(BaseBleakClient):
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[set[str]] = None,
+        address_or_ble_device: BLEDevice | str,
+        services: set[str] | None = None,
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
@@ -71,9 +73,9 @@ class BleakClientCoreBluetooth(BaseBleakClient):
             timeout=timeout,
         )
 
-        self._peripheral: Optional[CBPeripheral] = None
-        self._delegate: Optional[PeripheralDelegate] = None
-        self._central_manager_delegate: Optional[CentralManagerDelegate] = None
+        self._peripheral: CBPeripheral | None = None
+        self._delegate: PeripheralDelegate | None = None
+        self._central_manager_delegate: CentralManagerDelegate | None = None
 
         if isinstance(address_or_ble_device, BLEDevice):
             (

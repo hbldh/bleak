@@ -11,7 +11,7 @@ import asyncio
 import dataclasses
 import logging
 import time
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from android.bluetooth import BluetoothAdapter
 from android.bluetooth.le import (
@@ -113,8 +113,8 @@ class BleakScannerAndroid(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         **kwargs: Any,
     ):
@@ -127,7 +127,7 @@ class BleakScannerAndroid(BaseBleakScanner):
         else:
             self.__scan_mode = ScanSettings.SCAN_MODE_LOW_LATENCY
 
-        self._scan_objs: Optional[ScanObjects] = None
+        self._scan_objs: ScanObjects | None = None
 
     @override
     async def start(self) -> None:

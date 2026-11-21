@@ -5,7 +5,7 @@ Base class for backend clients.
 
 import abc
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 from bleak.args import SizedBuffer
 from bleak.backends import BleakBackend, get_default_backend
@@ -46,7 +46,7 @@ class BaseBleakClient(abc.ABC):
         else:
             self.address = address_or_ble_device
 
-        self.services: Optional[BleakGATTServiceCollection] = None
+        self.services: BleakGATTServiceCollection | None = None
 
         self._timeout = timeout
         self._disconnected_callback = disconnected_callback
@@ -67,7 +67,7 @@ class BaseBleakClient(abc.ABC):
     # Connectivity methods
 
     def set_disconnected_callback(
-        self, callback: Optional[Callable[[], None]], **kwargs: Any
+        self, callback: Callable[[], None] | None, **kwargs: Any
     ) -> None:
         """Set the disconnect callback.
         The callback will only be called on unsolicited disconnect event.

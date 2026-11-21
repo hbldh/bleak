@@ -2,7 +2,7 @@ import abc
 import asyncio
 import inspect
 from collections.abc import Callable, Coroutine, Hashable
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from bleak.backends import BleakBackend, get_default_backend
 from bleak.backends.device import BLEDevice
@@ -17,7 +17,7 @@ class AdvertisementData(NamedTuple):
     Wrapper around the advertisement data that each platform returns upon discovery
     """
 
-    local_name: Optional[str]
+    local_name: str | None
     """
     The local name of the device or ``None`` if not included in advertising data.
     """
@@ -41,7 +41,7 @@ class AdvertisementData(NamedTuple):
     List of service UUIDs from the received advertisement data or empty list if not present.
     """
 
-    tx_power: Optional[int]
+    tx_power: int | None
     """
     TX Power Level of the remote device from the received advertising data or ``None`` if not present.
 
@@ -80,7 +80,7 @@ class AdvertisementData(NamedTuple):
 
 AdvertisementDataCallback = Callable[
     [BLEDevice, AdvertisementData],
-    Optional[Coroutine[Any, Any, None]],
+    Coroutine[Any, Any, None] | None,
 ]
 """
 Type alias for callback called when advertisement data is received.
@@ -121,8 +121,8 @@ class BaseBleakScanner(abc.ABC):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
     ):
         self._ad_callbacks: dict[
             Hashable, Callable[[BLEDevice, AdvertisementData], None]
@@ -134,14 +134,14 @@ class BaseBleakScanner(abc.ABC):
         if detection_callback is not None:
             self.register_detection_callback(detection_callback)
 
-        self._service_uuids: Optional[list[str]] = (
+        self._service_uuids: list[str] | None = (
             [u.lower() for u in service_uuids] if service_uuids is not None else None
         )
 
         self.seen_devices = {}
 
     def register_detection_callback(
-        self, callback: Optional[AdvertisementDataCallback]
+        self, callback: AdvertisementDataCallback | None
     ) -> Callable[[], None]:
         """
         Register a callback that is called when an advertisement event from the
@@ -185,7 +185,7 @@ class BaseBleakScanner(abc.ABC):
 
         return remove
 
-    def is_allowed_uuid(self, service_uuids: Optional[list[str]]) -> bool:
+    def is_allowed_uuid(self, service_uuids: list[str] | None) -> bool:
         """
         Check if the advertisement data contains any of the service UUIDs
         matching the filter. If no filter is set, this will always return
@@ -238,7 +238,7 @@ class BaseBleakScanner(abc.ABC):
         self,
         key: str,
         address: str,
-        name: Optional[str],
+        name: str | None,
         details: Any,
         adv: AdvertisementData,
     ) -> BLEDevice:

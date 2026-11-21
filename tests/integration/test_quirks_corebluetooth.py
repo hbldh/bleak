@@ -9,7 +9,7 @@ if sys.platform != "darwin":
 
 import gc
 import weakref
-from typing import Any, Optional, cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 from bumble.device import Device
@@ -233,7 +233,7 @@ async def test_did_fail_to_connect_peripheral(
     )
 
     def simulate_connection_failure(
-        peripheral: CBPeripheral, options: Optional[NSDictionary[str, Any]]
+        peripheral: CBPeripheral, options: NSDictionary[str, Any] | None
     ):
         # Simulate connection failure by calling the delegate method
         central_manager_delegate.objc_delegate.centralManager_didFailToConnectPeripheral_error_(

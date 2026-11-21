@@ -12,7 +12,6 @@ Created on 2019-03-25 by hbldh <henrik.blidh@nedomkull.com>
 import argparse
 import asyncio
 import logging
-from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 
@@ -20,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class Args(argparse.Namespace):
-    name: Optional[str]
-    address: Optional[str]
+    name: str | None
+    address: str | None
     macos_use_bdaddr: bool
     services: list[str]
     pair: bool

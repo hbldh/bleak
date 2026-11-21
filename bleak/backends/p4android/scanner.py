@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -8,7 +10,7 @@ if TYPE_CHECKING:
 import asyncio
 import logging
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 from android.broadcast import BroadcastReceiver
 from android.permissions import Permission, request_permissions
@@ -46,8 +48,8 @@ class BleakScannerP4Android(BaseBleakScanner):
 
     def __init__(
         self,
-        detection_callback: Optional[AdvertisementDataCallback],
-        service_uuids: Optional[list[str]],
+        detection_callback: AdvertisementDataCallback | None,
+        service_uuids: list[str] | None,
         scanning_mode: Literal["active", "passive"],
         **kwargs,
     ):

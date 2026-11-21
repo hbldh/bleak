@@ -12,7 +12,7 @@ import dataclasses
 import logging
 import uuid
 from collections.abc import Callable
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from android.bluetooth import (
     BluetoothAdapter,
@@ -84,8 +84,8 @@ class BleakClientAndroid(BaseBleakClient):
 
     def __init__(
         self,
-        address_or_ble_device: Union[BLEDevice, str],
-        services: Optional[set[uuid.UUID]],
+        address_or_ble_device: BLEDevice | str,
+        services: set[uuid.UUID] | None,
         *,
         disconnected_callback: Callable[[], None] | None,
         timeout: float,
@@ -102,7 +102,7 @@ class BleakClientAndroid(BaseBleakClient):
 
         self._loop = asyncio.get_running_loop()
         self._mtu: int = 23
-        self._conn_objs: Optional[ConnectObjects] = None
+        self._conn_objs: ConnectObjects | None = None
 
     # Connectivity methods
 

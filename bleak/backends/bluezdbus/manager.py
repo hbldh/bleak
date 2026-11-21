@@ -6,6 +6,8 @@ This module contains code for the global BlueZ D-Bus object manager that is
 used internally by Bleak.
 """
 
+from __future__ import annotations
+
 import sys
 from typing import TYPE_CHECKING
 
@@ -20,7 +22,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable, Coroutine, Iterator, Mapping
 from functools import partial
-from typing import Any, NamedTuple, Optional, cast
+from typing import Any, NamedTuple, cast
 
 from dbus_fast import AuthError, BusType, Message, MessageType, Variant, unpack_variants
 from dbus_fast.aio.message_bus import MessageBus
@@ -63,7 +65,7 @@ Args:
 """
 
 
-DevicePropertiesChangedCallback = Callable[[Optional[Any]], None]
+DevicePropertiesChangedCallback = Callable[[Any | None], None]
 """
 A callback that is called when the properties of a device change in BlueZ.
 
@@ -173,9 +175,9 @@ class BlueZManager:
     """
 
     def __init__(self) -> None:
-        self._bus: Optional[MessageBus] = None
+        self._bus: MessageBus | None = None
         self._bus_lock = asyncio.Lock()
-        self._bus_watcher_task: Optional[asyncio.Task[None]] = None
+        self._bus_watcher_task: asyncio.Task[None] | None = None
 
         # dict of object path: dict of interface name: dict of property name: property value
         self._properties: dict[str, dict[str, dict[str, Any]]] = {}
@@ -299,7 +301,7 @@ class BlueZManager:
                 # Add signal listeners
 
                 bus.add_message_handler(self._parse_msg)
-                reply: Optional[Message]
+                reply: Message | None
 
                 rules = MatchRules(
                     interface=defs.OBJECT_MANAGER_INTERFACE,
@@ -399,7 +401,7 @@ class BlueZManager:
         """
         Waits for the message bus to disconnect and resets the manager state.
         """
-        exc: Optional[Exception] = None
+        exc: Exception | None = None
         try:
             await bus.wait_for_disconnect()
         except Exception as e:
@@ -412,7 +414,7 @@ class BlueZManager:
             # the error as a destroyed pending task at garbage collection.
             logger.exception("error handling bus disconnect")
 
-    def _handle_bus_disconnect(self, exc: Optional[Exception]) -> None:
+    def _handle_bus_disconnect(self, exc: Exception | None) -> None:
         """
         Resets cached state and notifies watchers after the message bus died.
 
@@ -524,7 +526,7 @@ class BlueZManager:
             BleakBluetoothNotAvailableReason.POWERED_OFF,
         )
 
-    async def _recover_from_rejected_stop(self, adapter_path: str) -> Optional[Message]:
+    async def _recover_from_rejected_stop(self, adapter_path: str) -> Message | None:
         """
         Clears bluetoothd's stale discovery state after ``StopDiscovery`` was
         rejected with ``InProgress``.
@@ -891,7 +893,7 @@ class BlueZManager:
             del self._device_watchers[device_path]
 
     async def get_services(
-        self, device_path: str, use_cached: bool, requested_services: Optional[set[str]]
+        self, device_path: str, use_cached: bool, requested_services: set[str] | None
     ) -> BleakGATTServiceCollection:
         """
         Builds a new :class:`BleakGATTServiceCollection` from the current state.
@@ -1186,7 +1188,7 @@ class BlueZManager:
 
         event = asyncio.Event()
 
-        def _wait_condition_callback(new_value: Optional[Any]) -> None:
+        def _wait_condition_callback(new_value: Any | None) -> None:
             """Callback for when a property changes."""
             if new_value == property_value:
                 event.set()
