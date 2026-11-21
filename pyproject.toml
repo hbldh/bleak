@@ -47,9 +47,7 @@ docs = [
     "sphinx-rtd-theme>=3.0.2",
 ]
 lint = [
-   "black>=24.3,<25.0",
-   "flake8>=7.1.1,<8.0.0",
-   "isort>=5.13.2,<6.0.0",
+   "ruff>=0.17.6,<0.18.0",
 ]
 test = [
     "pytest>=8.2.1,<9.0.0",
@@ -113,11 +111,18 @@ constraint-dependencies = [
 module-name = "bleak"
 module-root = ""
 
-[tool.isort]
-profile = "black"
-py_version=311
-src_paths = ["bleak", "examples", "tests"]
-extend_skip = [".buildozer", "docs"]
+[tool.ruff]
+extend-exclude = [".buildozer"]
+
+[tool.ruff.lint]
+# Explicit list so that new ruff versions don't change the rule set.
+# E, F, W are what we used from flake8, I replaces isort and UP keeps us using
+# modern Python syntax. E501 (line length) is left to the formatter.
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["bleak"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -217,12 +222,10 @@ sequence = [
 ]
 
 [tool.poe.tasks.lint]
-help = "Run code linters (isort, black, flake8)"
+help = "Run code linter and formatter (ruff)"
 sequence = [
-    { cmd = "isort . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
-    { cmd = "isort docs ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
-    { cmd = "black . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
-    { cmd = "flake8 . --count --show-source --statistics", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "ruff check . --fix ${checkonly:+--no-fix}", executor = { no-group = "dev", group = "lint" } },
+    { cmd = "ruff format . ${checkonly:+--check --diff}", executor = { no-group = "dev", group = "lint" } },
 ]
 args = [{ name = "checkonly", type = "boolean" }]
 

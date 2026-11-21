@@ -17,7 +17,7 @@ jobs:
         with:
           version: "latest"
 
-      - name: Check import sort with isort, code formatting with black, and lint with flake8
+      - name: Check code formatting and lint with ruff
         run: uv run poe lint --checkonly
 
       - name: Build docs
