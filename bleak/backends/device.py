@@ -4,7 +4,6 @@ Wrapper class for Bluetooth LE servers returned from calling
 :py:meth:`bleak.discover`.
 """
 
-
 from typing import Any
 from warnings import warn
 

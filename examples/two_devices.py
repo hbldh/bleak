@@ -49,7 +49,6 @@ async def connect_to_device(
 
     try:
         async with contextlib.AsyncExitStack() as stack:
-
             # Trying to establish a connection to two devices at the same time
             # can cause errors, so use a lock to avoid this.
             async with lock:

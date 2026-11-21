@@ -65,23 +65,19 @@ def get_emulator_abi() -> str:
     Equivalent to the ``emulator_abi`` property in Briefcase's AndroidSDK:
     https://github.com/beeware/briefcase/blob/0332fe66e22d094d938dc24ceb4ba9431ce76558/src/briefcase/integrations/android_sdk.py#L155-L175
     """
-    abi = (
-        {
-            "Linux": {
-                "x86_64": "x86_64",
-                "aarch64": "arm64-v8a",
-            },
-            "Darwin": {
-                "x86_64": "x86_64",
-                "arm64": "arm64-v8a",
-            },
-            "Windows": {
-                "AMD64": "x86_64",
-            },
-        }
-        .get(platform.system(), {})
-        .get(platform.machine())
-    )
+    abi = {
+        "Linux": {
+            "x86_64": "x86_64",
+            "aarch64": "arm64-v8a",
+        },
+        "Darwin": {
+            "x86_64": "x86_64",
+            "arm64": "arm64-v8a",
+        },
+        "Windows": {
+            "AMD64": "x86_64",
+        },
+    }.get(platform.system(), {}).get(platform.machine())
     if abi is None:
         raise RuntimeError(
             f"The Android emulator does not support "

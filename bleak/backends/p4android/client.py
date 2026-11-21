@@ -269,7 +269,6 @@ class BleakClientP4Android(BaseBleakClient):
             services.add_service(service)
 
             for java_characteristic in java_service.getCharacteristics():
-
                 characteristic = BleakGATTCharacteristic(
                     java_characteristic,
                     java_characteristic.getInstanceId(),
@@ -283,7 +282,6 @@ class BleakClientP4Android(BaseBleakClient):
                 for descriptor_index, java_descriptor in enumerate(
                     java_characteristic.getDescriptors()
                 ):
-
                     descriptor = BleakGATTDescriptor(
                         java_descriptor,
                         characteristic.handle + 1 + descriptor_index,

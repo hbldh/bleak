@@ -72,9 +72,9 @@ async def power_on_controller(
 
 
 @contextlib.asynccontextmanager
-async def wait_for_new_adapter() -> (
-    AsyncGenerator[tuple[MessageBus, asyncio.Future[str]], None]
-):
+async def wait_for_new_adapter() -> AsyncGenerator[
+    tuple[MessageBus, asyncio.Future[str]], None
+]:
     """
     Connect to D-Bus and wait for a new Bluetooth adapter to be added.
 

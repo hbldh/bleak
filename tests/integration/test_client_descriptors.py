@@ -361,9 +361,9 @@ async def test_read_gatt_descriptor_error(
         raise ATT_Error(gatt_error)
 
     # Set data to a known value
-    descr_test_peripheral.readable_descr[CUSTOM_BINARY_DESCRIPTOR_UUID].value = (
-        AttributeValue(read=error_on_read)
-    )
+    descr_test_peripheral.readable_descr[
+        CUSTOM_BINARY_DESCRIPTOR_UUID
+    ].value = AttributeValue(read=error_on_read)
 
     with pytest.raises(BleakGATTProtocolError) as exc_info:
         await descr_test_peripheral.bleak_client.read_gatt_descriptor(descriptor)
@@ -448,9 +448,9 @@ async def test_write_gatt_descriptor_error(
         raise ATT_Error(gatt_error)
 
     # Set data to a known value
-    descr_test_peripheral.writable_descr[CUSTOM_BINARY_DESCRIPTOR_UUID].value = (
-        AttributeValue(write=error_on_write)
-    )
+    descr_test_peripheral.writable_descr[
+        CUSTOM_BINARY_DESCRIPTOR_UUID
+    ].value = AttributeValue(write=error_on_write)
 
     with pytest.raises(BleakGATTProtocolError) as exc_info:
         await descr_test_peripheral.bleak_client.write_gatt_descriptor(descriptor, b"")

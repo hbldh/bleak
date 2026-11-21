@@ -2,6 +2,7 @@
 """
 Interface class for the Bleak representation of a GATT Descriptor
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

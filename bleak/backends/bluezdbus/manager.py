@@ -503,8 +503,9 @@ class BlueZManager:
 
         ble_central_adapters = list(
             filter(
-                lambda a: "central"
-                in self._properties[a][defs.ADAPTER_INTERFACE]["Roles"],
+                lambda a: (
+                    "central" in self._properties[a][defs.ADAPTER_INTERFACE]["Roles"]
+                ),
                 self._adapters,
             )
         )

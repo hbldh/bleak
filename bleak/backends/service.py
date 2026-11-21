@@ -2,6 +2,7 @@
 """
 Gatt Service Collection class and interface class for the Bleak representation of a GATT Service.
 """
+
 import logging
 from collections.abc import Iterator
 from typing import Any, cast

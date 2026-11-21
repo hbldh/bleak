@@ -46,7 +46,6 @@ async def test_empty_notification_disconnect_disambiguation(
     device = await find_ble_device(bumble_peripheral)
 
     async with BleakClient(device, services=[TEST_SERVICE_UUID]) as client:
-
         notified_data: asyncio.Queue[bytes] = asyncio.Queue()
 
         def notify_callback(characteristic: BleakGATTCharacteristic, data: bytearray):

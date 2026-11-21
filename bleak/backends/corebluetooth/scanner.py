@@ -156,7 +156,9 @@ class BleakScannerCoreBluetooth(BaseBleakScanner):
                 # HACK: retrieveAddressForPeripheral_ is undocumented but seems to do the trick
                 address_bytes = cast(
                     NSData | None,
-                    self._manager.central_manager.retrieveAddressForPeripheral_(peripheral),  # type: ignore
+                    self._manager.central_manager.retrieveAddressForPeripheral_(  # type: ignore
+                        peripheral
+                    ),
                 )
                 if address_bytes is None:
                     logger.debug(

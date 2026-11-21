@@ -2,6 +2,7 @@
 """
 Interface class for the Bleak representation of a GATT Characteristic
 """
+
 from __future__ import annotations
 
 import enum
