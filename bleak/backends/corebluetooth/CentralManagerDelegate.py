@@ -3,6 +3,7 @@
 CentralManagerDelegate will implement the CBCentralManagerDelegate protocol to
 manage CoreBluetooth services and resources on the Central End
 """
+
 from __future__ import annotations
 
 import sys

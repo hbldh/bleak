@@ -611,9 +611,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         first before calling this method.
         """
 
-        assert (
-            self.services is not None
-        ), "Services must be acquired before acquiring MTU"
+        assert self.services is not None, (
+            "Services must be acquired before acquiring MTU"
+        )
 
         # This will try to get the "best" characteristic for getting the MTU.
         # We would rather not start notifications if we don't have to.
