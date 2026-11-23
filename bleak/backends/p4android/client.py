@@ -64,6 +64,7 @@ class BleakClientP4Android(BaseBleakClient):
         )
         self.__gatt = None
         self.__mtu = 23
+        self.__auto_connect = kwargs.get("auto_connect", False)
 
         self.__callbacks = None
 
@@ -95,7 +96,7 @@ class BleakClientP4Android(BaseBleakClient):
             dispatchApi=self.__device.connectGatt,
             dispatchParams=(
                 defs.context,
-                False,
+                self.__auto_connect,
                 self.__callbacks.java,
                 defs.BluetoothDevice.TRANSPORT_LE,
             ),
