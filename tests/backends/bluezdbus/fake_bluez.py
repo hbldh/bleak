@@ -114,6 +114,12 @@ class FakeDevice1(ServiceInterface):
         self.emit_properties_changed({"Connected": False})
 
     @method()
+    def Connect(self) -> None:
+        self.calls.append("Connect")
+        self.connected = True
+        self.emit_properties_changed({"Connected": True})
+
+    @method()
     async def Disconnect(self) -> None:
         self.calls.append("Disconnect")
 

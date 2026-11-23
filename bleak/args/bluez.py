@@ -128,6 +128,22 @@ class BlueZClientArgs(TypedDict, total=False):
          vendor and product ID.
     """
 
+    preserve_existing_connection: bool
+    """
+    If true and the device is already connected when
+    :meth:`bleak.BleakClient.connect` is called, for example by another process
+    that also uses it, this client does not own that connection. Then
+    :meth:`bleak.BleakClient.disconnect`, a failed ``connect()`` and event loop
+    shutdown release this client's resources without calling the ``Disconnect``
+    D-Bus method, so the connection stays up for its other users. A connection
+    that this client established itself is disconnected as usual.
+
+    Defaults to false: BlueZ connections are shared by every client on the
+    system, and ``Disconnect`` drops the connection for all of them.
+
+    .. versionadded:: unreleased
+    """
+
 
 class BlueZAdapterArgs(TypedDict, total=False):
     """

@@ -79,6 +79,11 @@ class BleakClientBlueZDBus(BaseBleakClient):
         )
 
         self._adapter = bluez.get("adapter")
+        self._preserve_existing_connection = bluez.get(
+            "preserve_existing_connection", False
+        )
+        # False while connected over a connection that existed before connect()
+        self._owns_connection = True
         self._device_path: str | None
         self._device_info: dict[str, Any] | None
 
@@ -205,7 +210,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                         # if connection was successful but _get_services() raises (e.g.
                         # because task was cancelled), then we still need to disconnect
                         # before passing on the exception.
-                        if self._bus:
+                        if self._bus and not self._keeps_connection():
                             # If disconnected callback already fired, this will be a no-op
                             # since self._bus will be None and the _cleanup_all call will
                             # have already disconnected.
@@ -245,7 +250,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             'skipping calling "Connect" since %s is already connected',
                             self._device_path,
                         )
+                        self._owns_connection = False
                     else:
+                        self._owns_connection = True
                         logger.debug("Connecting to BlueZ path %s", self._device_path)
 
                         # Calling pair will fail if we are already paired, so
@@ -310,6 +317,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
                             self._bus,
                             self._device_path,
                             local_disconnect_monitor_event,
+                            disconnect_on_cancel=not self._keeps_connection(),
                         )
                     )
                     _background_tasks.add(task)
@@ -324,13 +332,26 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     stack.pop_all()
                     return
 
+    def _keeps_connection(self) -> bool:
+        """
+        True if this client must not disconnect the device: the connection
+        existed before connect() and ``preserve_existing_connection`` is set.
+        """
+        return self._preserve_existing_connection and not self._owns_connection
+
     @staticmethod
     async def _disconnect_monitor(
-        bus: MessageBus, device_path: str, disconnect_monitor_event: asyncio.Event
+        bus: MessageBus,
+        device_path: str,
+        disconnect_monitor_event: asyncio.Event,
+        *,
+        disconnect_on_cancel: bool = True,
     ) -> None:
         # This task runs until the device is disconnected. If the task is
-        # cancelled, it probably means that the event loop crashed so we
-        # try to disconnected the device. Otherwise BlueZ will keep the device
+        # cancelled, the event loop is shutting down (it crashed, or
+        # asyncio.run() returned without disconnect() being called) so we
+        # try to disconnect the device, unless disconnect_on_cancel is false
+        # because the connection is not ours. Otherwise BlueZ will keep the device
         # connected even after Python exits. This will only work if the event
         # loop is called with asyncio.run() or otherwise runs pending tasks
         # after the original event loop stops. This will also cause an exception
@@ -340,6 +361,9 @@ class BleakClientBlueZDBus(BaseBleakClient):
         try:
             await disconnect_monitor_event.wait()
         except asyncio.CancelledError:
+            if not disconnect_on_cancel:
+                # the connection is not ours to drop (preserve_existing_connection)
+                return
             try:
                 # by using send() instead of call(), we ensure that the message
                 # gets sent, but we don't wait for a reply, which could take
@@ -419,6 +443,10 @@ class BleakClientBlueZDBus(BaseBleakClient):
         connected. A call made while another one is running only waits up to
         10 seconds for that one to finish.
 
+        With ``bluez={"preserve_existing_connection": True}``, a connection
+        that existed before :meth:`connect` is left up: only this client's
+        resources are released.
+
         Raises:
             BleakDBusError: If there was a D-Bus error
             TimeoutError if the device was not disconnected within 10 seconds
@@ -440,7 +468,7 @@ class BleakClientBlueZDBus(BaseBleakClient):
         else:
             self._disconnecting_event = asyncio.Event()
             try:
-                if self.is_connected:
+                if self.is_connected and not self._keeps_connection():
                     # Try to disconnect the actual device/peripheral
                     reply = await self._bus.call(
                         Message(
