@@ -26,6 +26,10 @@ On Linux, a specific adapter can be selected via the ``bluez`` argument::
 
     adapter = await BleakAdapter.get(bluez={"adapter": "hci1"})
 
+:meth:`BleakAdapter.get` raises :class:`~bleak.exc.BleakBluetoothNotAvailableError`
+if the local Bluetooth adapter is not currently powered on or is otherwise
+unavailable.
+
 .. automethod:: bleak.BleakAdapter.get
 
 -----------------------------
