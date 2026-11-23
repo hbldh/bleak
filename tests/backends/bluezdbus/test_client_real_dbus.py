@@ -18,6 +18,8 @@ if sys.platform != "linux":
 from dbus_fast.aio.message_bus import MessageBus
 
 from bleak import BleakClient
+from bleak.args.bluez import BlueZClientArgs
+from bleak.backends.bluezdbus import client as client_module
 from bleak.backends.bluezdbus.client import BleakClientBlueZDBus
 from bleak.backends.bluezdbus.manager import BlueZManager, get_global_bluez_manager
 from bleak.backends.bluezdbus.version import BlueZFeatures
@@ -40,11 +42,13 @@ def skip_bluez_version_check(monkeypatch: pytest.MonkeyPatch) -> None:
 
 async def connect(
     disconnected_callback: Callable[[BleakClient], None],
+    bluez: BlueZClientArgs | None = None,
 ) -> tuple[BleakClient, MessageBus]:
     """Connects to the fake device and returns the client's own bus."""
     client = BleakClient(
         BLEDevice(DEVICE_ADDRESS, None, {"path": DEVICE_PATH, "props": {}}),
         disconnected_callback=disconnected_callback,
+        bluez=bluez or {},
     )
     await client.connect()
 
@@ -238,3 +242,87 @@ async def test_reconnect_after_failed_disconnect(
 
     await client.disconnect()
     await assert_torn_down(client, bus)
+
+
+async def cancel_disconnect_monitor() -> None:
+    """Cancels the disconnect monitor like a shutting down event loop does."""
+    tasks = [
+        task
+        for task in client_module._background_tasks  # pyright: ignore[reportPrivateUsage]
+        if not task.done()
+    ]
+    assert len(tasks) == 1
+    tasks[0].cancel()
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def wait_for_calls(daemon_calls: list[str], expected: list[str]) -> None:
+    # the monitor sends Disconnect without waiting for a reply
+    async with asyncio.timeout(2):
+        while daemon_calls != expected:
+            await asyncio.sleep(0.01)
+
+
+async def test_loop_shutdown_disconnects_by_default(
+    start_daemon: StartDaemon,
+    global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
+) -> None:
+    daemon = await start_daemon()
+    client, _ = await connect(lambda _: None)
+
+    await cancel_disconnect_monitor()
+
+    await wait_for_calls(daemon.device.calls, ["Disconnect"])
+    await client.disconnect()
+
+
+async def test_preserve_existing_connection_disconnect_leaves_it_up(
+    start_daemon: StartDaemon,
+    global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
+) -> None:
+    # the fake device starts connected, as if another process held it
+    daemon = await start_daemon()
+    disconnections: list[BleakClient] = []
+    client, bus = await connect(
+        disconnections.append, {"preserve_existing_connection": True}
+    )
+
+    await client.disconnect()
+
+    assert daemon.device.calls == []
+    assert daemon.device.connected is True
+    await assert_torn_down(client, bus)
+    assert disconnections == [client]
+
+
+async def test_preserve_existing_connection_loop_shutdown_leaves_it_up(
+    start_daemon: StartDaemon,
+    global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
+) -> None:
+    daemon = await start_daemon()
+    client, _ = await connect(lambda _: None, {"preserve_existing_connection": True})
+
+    await cancel_disconnect_monitor()
+    await asyncio.sleep(0.2)  # time for a Disconnect to arrive if one were sent
+
+    assert daemon.device.calls == []
+    await client.disconnect()
+    assert daemon.device.calls == []
+
+
+async def test_preserve_existing_connection_disconnects_its_own_connection(
+    start_daemon: StartDaemon,
+    global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
+) -> None:
+    daemon = await start_daemon()
+    daemon.device.connected = False
+    disconnections: list[BleakClient] = []
+    client, bus = await connect(
+        disconnections.append, {"preserve_existing_connection": True}
+    )
+
+    await client.disconnect()
+
+    assert daemon.device.calls == ["Connect", "Disconnect"]
+    await assert_torn_down(client, bus)
+    assert disconnections == [client]

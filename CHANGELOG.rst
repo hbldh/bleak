@@ -13,6 +13,7 @@ and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0
 Added
 -----
 * Added support for Python 3.15.
+* Added ``preserve_existing_connection`` BlueZ client argument: a connection that already existed when ``connect()`` was called, e.g. one held by another process, is not disconnected by ``disconnect()``, a failed ``connect()`` or event loop shutdown. Related to #2050.
 
 Changed
 -------
