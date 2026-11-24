@@ -18,6 +18,10 @@ Changed
 -------
 * Changed ``BleakBackend`` to be a ``StrEnum``, so ``str()`` and ``format()`` return the plain value, e.g. ``"bluez_dbus"``.
 
+Fixed
+-----
+* Fixed ``BleakClient.connect()`` on BlueZ cancelling another process's pending connection to the same device: when BlueZ rejects ``Connect`` with ``org.bluez.Error.InProgress``, Bleak no longer sends ``Disconnect``.
+
 Removed
 -------
 * Removed support for Python 3.10.

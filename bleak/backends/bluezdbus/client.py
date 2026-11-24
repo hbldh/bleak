@@ -200,12 +200,16 @@ class BleakClientBlueZDBus(BaseBleakClient):
                     # was not triggered by a D-Bus callback
                     stack.callback(local_disconnect_monitor_event.set)
 
+                    # False once BlueZ rejects our Connect with InProgress: the
+                    # pending connect request then belongs to another D-Bus client.
+                    cancel_pending_connect = True
+
                     async def disconnect_device() -> None:
                         # Calling Disconnect cancels any pending connect request. Also,
                         # if connection was successful but _get_services() raises (e.g.
                         # because task was cancelled), then we still need to disconnect
                         # before passing on the exception.
-                        if self._bus:
+                        if self._bus and cancel_pending_connect:
                             # If disconnected callback already fired, this will be a no-op
                             # since self._bus will be None and the _cleanup_all call will
                             # have already disconnected.
@@ -293,6 +297,12 @@ class BleakClientBlueZDBus(BaseBleakClient):
 
                                 # Jump way back to the `while True:`` to retry.
                                 continue
+
+                            if reply.error_name == defs.BLUEZ_ERROR_IN_PROGRESS:
+                                # Another D-Bus client is connecting this device
+                                # and we have no request of our own to cancel:
+                                # Disconnect would cancel theirs.
+                                cancel_pending_connect = False
 
                             if reply.error_name == ErrorType.UNKNOWN_OBJECT.value:
                                 raise BleakDeviceNotFoundError(

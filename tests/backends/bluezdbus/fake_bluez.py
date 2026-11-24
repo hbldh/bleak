@@ -94,12 +94,20 @@ class FakeDevice1(ServiceInterface):
       "Connected" never changes.
     - ``"no-reply"``: the call is not answered. bluetoothd does this when the
       kernel refuses the disconnect, and answers only once the link drops.
+
+    :attr:`on_connect` picks how the Connect method behaves:
+
+    - ``"connect"``: "Connected" changes to true, then the reply is sent.
+    - ``"in-progress"``: ``org.bluez.Error.InProgress``, which bluetoothd
+      returns while another D-Bus client's Connect of the same device is
+      pending (src/device.c, ``dev_connect``).
     """
 
     def __init__(self) -> None:
         super().__init__(defs.DEVICE_INTERFACE)
         self.connected = True
         self.on_disconnect: Literal["disconnect", "reply", "no-reply"] = "disconnect"
+        self.on_connect: Literal["connect", "in-progress"] = "connect"
         self.calls: list[str] = []
         self._release_held = asyncio.Event()
         self._held: set[asyncio.Task[Any]] = set()
@@ -112,6 +120,19 @@ class FakeDevice1(ServiceInterface):
         """Signals the device disconnecting over the wire."""
         self.connected = False
         self.emit_properties_changed({"Connected": False})
+
+    @method()
+    def Connect(self) -> None:
+        self.calls.append("Connect")
+
+        match self.on_connect:
+            case "connect":
+                self.connected = True
+                self.emit_properties_changed({"Connected": True})
+            case "in-progress":
+                raise DBusError(defs.BLUEZ_ERROR_IN_PROGRESS, "In Progress")
+            case _:
+                assert_never(self.on_connect)
 
     @method()
     async def Disconnect(self) -> None:
