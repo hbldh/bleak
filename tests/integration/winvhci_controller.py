@@ -114,9 +114,9 @@ async def wait_for_adapter(address: str, timeout: float = 30.0) -> BluetoothAdap
     while loop.time() < deadline:
         adapter = await BluetoothAdapter.get_default_async()
 
-        # The projection types this as non-optional, but a machine with no
-        # Bluetooth at all is exactly what has to fail cleanly here.
-        if adapter is None:  # pyright: ignore[reportUnnecessaryComparison]
+        # A machine with no Bluetooth at all is exactly what has to fail
+        # cleanly here.
+        if adapter is None:
             await asyncio.sleep(0.25)
             continue
 

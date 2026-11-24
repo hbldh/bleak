@@ -43,10 +43,8 @@ class BleakAdapterWinRT(BaseBleakAdapter):
         selector = BluetoothLEDevice.get_device_selector_from_connection_status(
             BluetoothConnectionStatus.CONNECTED
         )
-        connected_devices = (
-            await DeviceInformation.find_all_async_aqs_filter_and_additional_properties(
-                selector, ["System.Devices.Aep.DeviceAddress"]
-            )
+        connected_devices = await DeviceInformation.find_all_async(
+            selector, ["System.Devices.Aep.DeviceAddress"]
         )
 
         devices: list[BLEDevice] = []
@@ -62,7 +60,7 @@ class BleakAdapterWinRT(BaseBleakAdapter):
                     # seem to return any results, so we have to provide a device id
                     # as well. Which means we have to check each device for each
                     # service UUID.
-                    selector = GattDeviceService.get_device_selector_for_bluetooth_device_id_and_uuid_with_cache_mode(
+                    selector = GattDeviceService.get_device_selector_for_bluetooth_device_id_and_uuid(
                         BluetoothDeviceId.from_id(device_info.id),
                         UUID(service),
                         # Try to avoid I/O if we can.
