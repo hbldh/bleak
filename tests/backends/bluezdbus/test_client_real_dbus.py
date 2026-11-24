@@ -238,3 +238,24 @@ async def test_reconnect_after_failed_disconnect(
 
     await client.disconnect()
     await assert_torn_down(client, bus)
+
+
+async def test_connect_rejected_in_progress_leaves_other_connect_alone(
+    start_daemon: StartDaemon,
+    global_instances: dict[asyncio.AbstractEventLoop, BlueZManager],
+) -> None:
+    # Another D-Bus client (another process) is connecting the device right now.
+    daemon = await start_daemon()
+    daemon.device.connected = False
+    daemon.device.on_connect = "in-progress"
+    client = BleakClient(
+        BLEDevice(DEVICE_ADDRESS, None, {"path": DEVICE_PATH, "props": {}})
+    )
+
+    with pytest.raises(BleakDBusError) as raised:
+        await client.connect()
+
+    assert raised.value.dbus_error == "org.bluez.Error.InProgress"
+    # Disconnect would cancel the other client's pending connect.
+    assert daemon.device.calls == ["Connect"]
+    assert client.is_connected is False
